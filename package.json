@@ -1,0 +1,13 @@
+{
+  "name": "aep-pa",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "backend:start": "npm run start --workspace @aep-pa/backend",
+    "backend:start:dev": "npm run start:dev --workspace @aep-pa/backend"
+  }
+}
