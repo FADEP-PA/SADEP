@@ -7,12 +7,178 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  INTERN_SERVER
+  IMMEDIATE_SUPERVISOR
+  CESAD_MEMBER
+  HOMOLOGATION_AUTHORITY
+  ADMIN
+}
+
+enum ProcessStatus {
+  EM_AVALIACAO
+  AGUARDANDO_ASSINATURA
+  ASSINADO
+  EM_ANALISE_CESAD
+  PARECER_EMITIDO
+  HOMOLOGADO
+  NOTIFICADO
+  CIENTE
+  ENCERRADO
+}
+
+enum AuditEventType {
+  PROCESS_CREATED
+  STAGE_ACTIVATED
+  EVALUATION_STARTED
+  EVALUATION_DRAFT_SAVED
+  EVALUATION_COMPLETED
+  EVALUATION_RECTIFIED
+  SIGNATURE_REQUESTED
+  DOCUMENT_SIGNED
+  SELF_EVALUATION_SUBMITTED
+  SENT_TO_CESAD
+  CESAD_OPINION_STARTED
+  CESAD_OPINION_ISSUED
+  CESAD_OPINION_SIGNED
+  ADJUSTMENT_REQUESTED
+  SENT_TO_HOMOLOGATION
+  RESULT_HOMOLOGATED
+  DOCUMENT_GENERATED
+  NOTIFICATION_SENT
+  ACKNOWLEDGEMENT_RECORDED
+  PROCESS_CLOSED
+}
+
+enum DocumentType {
+  SUPERVISOR_EVALUATION
+  SELF_EVALUATION
+  CESAD_OPINION
+  HOMOLOGATION_RECORD
+  RESULT_NOTIFICATION
+  ACKNOWLEDGEMENT_RECORD
+  ORDINANCE
+}
+
+enum DocumentStatus {
+  DRAFT
+  CONSOLIDATED
+  READY_FOR_SIGNATURE
+  SIGNED
+  INVALIDATED_OR_SUPERSEDED
+}
+
+enum SignatureProvider {
+  INTERNAL
+  GOVBR
+  OTHER
+}
+
+enum SignatureStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  role         String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                       String              @id @default(cuid())
+  email                    String              @unique
+  passwordHash             String
+  role                     UserRole
+  isActive                 Boolean             @default(true)
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  evaluationProcesses      EvaluationProcess[] @relation("EvaluationProcessEvaluatedUser")
+  auditEvents              AuditEvent[]        @relation("AuditEventActor")
+  signatureRecords         SignatureRecord[]   @relation("SignatureRecordSignatory")
+}
+
+model EvaluationProcess {
+  id              String          @id @default(cuid())
+  evaluatedUserId String
+  status          ProcessStatus     @default(EM_AVALIACAO)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  evaluatedUser   User            @relation("EvaluationProcessEvaluatedUser", fields: [evaluatedUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  stages          ProcessStage[]
+  auditEvents     AuditEvent[]
+  documents       ProcessDocument[]
+
+  @@index([evaluatedUserId])
+  @@index([status])
+}
+
+model ProcessStage {
+  id                  String            @id @default(cuid())
+  evaluationProcessId String
+  sequence            Int
+  stageCode           String
+  startedAt           DateTime?
+  endedAt             DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  evaluationProcess   EvaluationProcess @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  documents           ProcessDocument[]
+
+  @@unique([evaluationProcessId, sequence])
+  @@unique([evaluationProcessId, stageCode])
+  @@index([evaluationProcessId])
+  @@index([stageCode])
+}
+
+model AuditEvent {
+  id                  String            @id @default(cuid())
+  evaluationProcessId String
+  actorUserId         String?
+  actorRole           UserRole?
+  eventType           AuditEventType
+  beforeState         Json?
+  afterState          Json?
+  metadata            Json?
+  occurredAt          DateTime          @default(now())
+  evaluationProcess   EvaluationProcess @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  actorUser           User?             @relation("AuditEventActor", fields: [actorUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([evaluationProcessId, occurredAt])
+  @@index([actorUserId])
+  @@index([eventType])
+}
+
+model ProcessDocument {
+  id                  String            @id @default(cuid())
+  evaluationProcessId String
+  processStageId      String?
+  documentType        DocumentType
+  documentStatus      DocumentStatus    @default(DRAFT)
+  version             Int               @default(1)
+  artifactPath        String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  evaluationProcess   EvaluationProcess @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  processStage        ProcessStage?     @relation(fields: [processStageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  signatureRecords    SignatureRecord[]
+
+  @@index([evaluationProcessId])
+  @@index([processStageId])
+  @@index([documentType, documentStatus])
+}
+
+model SignatureRecord {
+  id                String            @id @default(cuid())
+  processDocumentId String
+  signatoryUserId   String
+  signatoryRole     UserRole
+  provider          SignatureProvider
+  status            SignatureStatus   @default(PENDING)
+  externalReference String?
+  signedAt          DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  processDocument   ProcessDocument   @relation(fields: [processDocumentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  signatoryUser     User              @relation("SignatureRecordSignatory", fields: [signatoryUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([processDocumentId])
+  @@index([signatoryUserId])
+  @@index([status])
 }
