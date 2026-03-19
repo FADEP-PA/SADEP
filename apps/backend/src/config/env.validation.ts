@@ -5,6 +5,8 @@ type NodeEnv = (typeof VALID_NODE_ENVS)[number];
 export interface AppEnvironment {
   NODE_ENV: NodeEnv;
   PORT: number;
+  DATABASE_URL: string;
+  JWT_SECRET: string;
 }
 
 export function validateEnvironmentVariables(config: Record<string, unknown>): AppEnvironment {
@@ -22,8 +24,22 @@ export function validateEnvironmentVariables(config: Record<string, unknown>): A
     throw new Error(`Invalid PORT: ${String(config.PORT ?? '')}. Expected an integer between 1 and 65535.`);
   }
 
+  const databaseUrl = String(config.DATABASE_URL ?? 'file:./dev.db').trim();
+
+  if (!databaseUrl) {
+    throw new Error('Invalid DATABASE_URL: value is required.');
+  }
+
+  const jwtSecret = String(config.JWT_SECRET ?? 'dev-only-change-me').trim();
+
+  if (jwtSecret.length < 16) {
+    throw new Error('Invalid JWT_SECRET: expected at least 16 characters.');
+  }
+
   return {
     NODE_ENV: nodeEnv as NodeEnv,
     PORT: parsedPort,
+    DATABASE_URL: databaseUrl,
+    JWT_SECRET: jwtSecret,
   };
 }

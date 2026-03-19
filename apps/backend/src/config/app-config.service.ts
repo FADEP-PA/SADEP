@@ -14,4 +14,12 @@ export class AppConfigService {
   get port(): number {
     return this.configService.get('PORT', { infer: true });
   }
+
+  get databaseUrl(): string {
+    return this.configService.get('DATABASE_URL', { infer: true });
+  }
+
+  get jwtSecret(): string {
+    return this.configService.get('JWT_SECRET', { infer: true });
+  }
 }

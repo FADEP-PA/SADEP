@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
-import { HealthModule } from '../health/health.module';
-import { validateEnvironmentVariables } from '../config/env.validation';
+import { AuthModule } from '../auth/auth.module';
 import { AppLogger } from '../common/logging/app-logger.service';
+import { validateEnvironmentVariables } from '../config/env.validation';
+import { HealthModule } from '../health/health.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { AppLogger } from '../common/logging/app-logger.service';
       validate: validateEnvironmentVariables,
     }),
     HealthModule,
+    AuthModule,
   ],
   providers: [AppLogger],
 })
