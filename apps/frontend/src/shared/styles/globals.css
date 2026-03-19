@@ -228,6 +228,201 @@ button {
   transform: translateY(0);
 }
 
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+}
+
+.app-shell__sidebar {
+  display: grid;
+  align-content: start;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-right: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.98);
+  color: #e2e8f0;
+}
+
+.app-shell__brand {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.app-shell__brand-badge {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  background: rgba(37, 99, 235, 0.18);
+  color: #bfdbfe;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-shell__brand strong {
+  display: block;
+  font-size: 1.15rem;
+}
+
+.app-shell__brand p {
+  margin: 0.35rem 0 0;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.app-shell__nav {
+  display: grid;
+  gap: 1rem;
+}
+
+.app-shell__nav-group {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.app-shell__nav-group p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-shell__nav-group ul,
+.app-shell__sidebar-card ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-shell__nav-group li,
+.app-shell__sidebar-card li {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.app-shell__nav-group span {
+  border-radius: 0.9rem;
+  padding: 0.8rem 0.95rem;
+  background: rgba(30, 41, 59, 0.9);
+  color: #e2e8f0;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.app-shell__nav-group span:hover {
+  background: rgba(37, 99, 235, 0.22);
+  transform: translateX(2px);
+}
+
+.app-shell__sidebar-card {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.56);
+}
+
+.app-shell__sidebar-card strong {
+  font-size: 0.95rem;
+}
+
+.app-shell__sidebar-card span {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.app-shell__sidebar-card small {
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.app-shell__content {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.app-shell__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2rem 2rem 1.5rem;
+}
+
+.app-shell__eyebrow {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  color: var(--accent-strong);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-shell__header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.6rem);
+}
+
+.app-shell__header p {
+  margin: 0.55rem 0 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.app-shell__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.app-shell__status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.app-shell__actions button {
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 0.95rem;
+  padding: 0.85rem 1rem;
+  background: #ffffff;
+  color: var(--text-primary);
+  font-weight: 700;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.app-shell__main {
+  padding: 0 2rem 2rem;
+}
+
+.app-shell__main:empty::before {
+  content: 'A próxima etapa conectará a primeira página pós-login a este layout base.';
+  display: block;
+  border: 1px dashed rgba(148, 163, 184, 0.55);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
 @media (max-width: 960px) {
   .login-shell {
     grid-template-columns: 1fr;
@@ -241,6 +436,23 @@ button {
   .login-hero h1 {
     max-width: none;
   }
+
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell__sidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  }
+
+  .app-shell__header {
+    flex-direction: column;
+  }
+
+  .app-shell__actions {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 640px) {
@@ -252,5 +464,11 @@ button {
   .login-form__meta {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .app-shell__header,
+  .app-shell__main {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
   }
 }
