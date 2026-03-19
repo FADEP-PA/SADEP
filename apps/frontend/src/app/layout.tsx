@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'AEP-PA | Login',
-  description: 'Tela de acesso ao sistema AEP-PA.',
+  title: 'AEP-PA',
+  description: 'Plataforma interna para autenticação e operação do sistema AEP-PA.',
 };
 
 export default function RootLayout({
