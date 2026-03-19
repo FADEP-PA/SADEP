@@ -5,6 +5,7 @@ import { AuthModule } from '../auth/auth.module';
 import { AppLogger } from '../common/logging/app-logger.service';
 import { validateEnvironmentVariables } from '../config/env.validation';
 import { HealthModule } from '../health/health.module';
+import { ProcessesModule } from '../processes/processes.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { HealthModule } from '../health/health.module';
     }),
     HealthModule,
     AuthModule,
+    ProcessesModule,
   ],
   providers: [AppLogger],
 })
