@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import './globals.css';
+import '@/shared/styles/globals.css';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'AEP-PA | Login',
-  description: 'Tela de acesso ao sistema AEP-PA.',
+  title: 'AEP-PA',
+  description: 'Plataforma interna para autenticação e operação do sistema AEP-PA.',
 };
 
 export default function RootLayout({

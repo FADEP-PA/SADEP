@@ -4,7 +4,7 @@ const highlights = [
   'Layout responsivo para desktop, tablet e celular.',
 ];
 
-export default function LoginPage() {
+export function LoginPage() {
   return (
     <main className="login-shell">
       <section className="login-hero" aria-label="Apresentação do sistema">
