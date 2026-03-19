@@ -252,7 +252,11 @@ export class ProcessesService {
     return eventType as AuditEventType;
   }
 
-  private toContractUserRole(role: PrismaUserRole): UserRole {
+  private toContractUserRole(role: PrismaUserRole | null): UserRole | null {
+    if (role === null) {
+      return null;
+    }
+
     if (!Object.values(UserRole).includes(role as UserRole)) {
       throw new BadRequestException(`Unsupported user role ${role}`);
     }

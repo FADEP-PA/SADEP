@@ -35,8 +35,10 @@ export async function createTestContext(databaseName: string): Promise<TestConte
   process.env.JWT_SECRET = 'test-secret-with-16-chars';
   process.env.DATABASE_URL = `file:${databaseFile}`;
 
+  const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+
   execFileSync(
-    'npx',
+    npxCommand,
     ['prisma', 'db', 'push', '--schema', 'prisma/schema.prisma', '--skip-generate'],
     { cwd: backendRoot, stdio: 'ignore', env: process.env },
   );
