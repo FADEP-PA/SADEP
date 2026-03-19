@@ -20,5 +20,6 @@ import { RolesGuard } from './guards/roles.guard';
     AppLogger,
     Reflector,
   ],
+  exports: [JwtAuthGuard],
 })
 export class AuthModule {}
