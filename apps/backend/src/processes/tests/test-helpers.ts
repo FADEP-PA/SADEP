@@ -2,7 +2,11 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
 
-import { PrismaClient } from '@prisma/client';
+import {
+  PrismaClient,
+  ProcessStatus as PrismaProcessStatus,
+  UserRole as PrismaUserRole,
+} from '@prisma/client';
 import {
   ProcessStatus,
   UserRole,
@@ -64,7 +68,7 @@ export async function createUser(
     data: {
       email,
       passwordHash: await hashPassword('Test123456!'),
-      role,
+      role: toDatabaseRole(role),
       isActive: true,
     },
   });
@@ -78,17 +82,41 @@ export async function createProcess(
   return prisma.evaluationProcess.create({
     data: {
       evaluatedUserId,
-      status,
+      status: toDatabaseProcessStatus(status),
     },
   });
 }
 
-export function authenticatedUser(userId: string, role: UserRole) {
+export function authenticatedUser(userId: string, role: UserRole | PrismaUserRole) {
   return {
     sub: userId,
     email: `${userId}@test.local`,
-    role,
+    role: toContractRole(role),
   };
+}
+
+function toDatabaseRole(role: UserRole): PrismaUserRole {
+  if (!Object.values(PrismaUserRole).includes(role as PrismaUserRole)) {
+    throw new Error(`Unsupported user role ${role}`);
+  }
+
+  return role as PrismaUserRole;
+}
+
+function toDatabaseProcessStatus(status: ProcessStatus): PrismaProcessStatus {
+  if (!Object.values(PrismaProcessStatus).includes(status as PrismaProcessStatus)) {
+    throw new Error(`Unsupported process status ${status}`);
+  }
+
+  return status as PrismaProcessStatus;
+}
+
+function toContractRole(role: UserRole | PrismaUserRole): UserRole {
+  if (!Object.values(UserRole).includes(role as UserRole)) {
+    throw new Error(`Unsupported user role ${role}`);
+  }
+
+  return role as UserRole;
 }
 
 export const workflowActions = {

@@ -4,11 +4,18 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Prisma, PrismaClient } from '@prisma/client';
 import {
+  AuditEventType as PrismaAuditEventType,
+  Prisma,
+  PrismaClient,
+  ProcessStatus as PrismaProcessStatus,
+  UserRole as PrismaUserRole,
+} from '@prisma/client';
+import {
+  AuditEventType,
   type AuditMetadata,
   ProcessAction,
-  type ProcessStatus,
+  ProcessStatus,
   UserRole,
 } from '@aep-pa/contracts';
 
@@ -45,10 +52,12 @@ export class ProcessesService {
       throw new NotFoundException(`Evaluation process ${processId} was not found`);
     }
 
+    const status = this.toContractProcessStatus(process.status);
+
     return {
       id: process.id,
-      status: process.status,
-      availableActions: this.getAllowedActions(process.status, user.role),
+      status,
+      availableActions: this.getAllowedActions(status, user.role),
     };
   }
 
@@ -61,16 +70,17 @@ export class ProcessesService {
     });
 
     return events
-      .filter((event) => isWorkflowAuditEventType(event.eventType))
+      .filter((event) => isWorkflowAuditEventType(this.toContractAuditEventType(event.eventType)))
       .map((event) => {
         const metadata = this.asAuditMetadata(event.metadata);
+        const eventType = this.toContractAuditEventType(event.eventType);
 
         return {
           id: event.id,
-          action: metadata?.action ?? this.mapEventTypeToAction(event.eventType),
-          eventType: event.eventType,
+          action: metadata?.action ?? this.mapEventTypeToAction(eventType),
+          eventType,
           actorUserId: event.actorUserId,
-          actorRole: event.actorRole,
+          actorRole: this.toContractUserRole(event.actorRole),
           beforeState: event.beforeState,
           afterState: event.afterState,
           comment: this.readComment(event.metadata),
@@ -92,7 +102,8 @@ export class ProcessesService {
 
     return this.prismaService.$transaction(async (transaction) => {
       const process = await this.findProcessOrThrow(transaction, processId);
-      const transition = getWorkflowTransition(process.status, payload.action);
+      const currentStatus = this.toContractProcessStatus(process.status);
+      const transition = getWorkflowTransition(currentStatus, payload.action);
 
       if (!transition) {
         throw new BadRequestException(
@@ -110,7 +121,7 @@ export class ProcessesService {
 
       await transaction.evaluationProcess.update({
         where: { id: processId },
-        data: { status: transition.to },
+        data: { status: this.toDatabaseProcessStatus(transition.to) },
       });
 
       const occurredAt = new Date().toISOString();
@@ -129,8 +140,8 @@ export class ProcessesService {
           evaluationProcessId: process.id,
           actorUserId: user.sub,
           actorRole: this.toDatabaseRole(user.role),
-          eventType: transition.eventType,
-          beforeState: { status: process.status },
+          eventType: this.toDatabaseAuditEventType(transition.eventType),
+          beforeState: { status: currentStatus },
           afterState: { status: transition.to },
           metadata,
         },
@@ -212,24 +223,64 @@ export class ProcessesService {
     return candidate as AuditMetadata;
   }
 
-  private mapEventTypeToAction(eventType: string): ProcessAction {
+  private mapEventTypeToAction(eventType: AuditEventType): ProcessAction {
     switch (eventType) {
-      case 'SENT_TO_CESAD':
+      case AuditEventType.SENT_TO_CESAD:
         return ProcessAction.SEND_TO_CESAD;
-      case 'CESAD_OPINION_ISSUED':
+      case AuditEventType.CESAD_OPINION_ISSUED:
         return ProcessAction.ISSUE_CESAD_OPINION;
-      case 'ADJUSTMENT_REQUESTED':
+      case AuditEventType.ADJUSTMENT_REQUESTED:
         return ProcessAction.REQUEST_ADJUSTMENT;
       default:
         throw new BadRequestException(`Workflow history contains unsupported event type ${eventType}`);
     }
   }
 
-  private toDatabaseRole(role: UserRole): UserRole {
-    if (!Object.values(UserRole).includes(role)) {
+  private toContractProcessStatus(status: PrismaProcessStatus): ProcessStatus {
+    if (!Object.values(ProcessStatus).includes(status as ProcessStatus)) {
+      throw new BadRequestException(`Unsupported process status ${status}`);
+    }
+
+    return status as ProcessStatus;
+  }
+
+  private toContractAuditEventType(eventType: PrismaAuditEventType): AuditEventType {
+    if (!Object.values(AuditEventType).includes(eventType as AuditEventType)) {
+      throw new BadRequestException(`Unsupported audit event type ${eventType}`);
+    }
+
+    return eventType as AuditEventType;
+  }
+
+  private toContractUserRole(role: PrismaUserRole): UserRole {
+    if (!Object.values(UserRole).includes(role as UserRole)) {
       throw new BadRequestException(`Unsupported user role ${role}`);
     }
 
-    return role;
+    return role as UserRole;
+  }
+
+  private toDatabaseProcessStatus(status: ProcessStatus): PrismaProcessStatus {
+    if (!Object.values(PrismaProcessStatus).includes(status as PrismaProcessStatus)) {
+      throw new BadRequestException(`Unsupported process status ${status}`);
+    }
+
+    return status as PrismaProcessStatus;
+  }
+
+  private toDatabaseAuditEventType(eventType: AuditEventType): PrismaAuditEventType {
+    if (!Object.values(PrismaAuditEventType).includes(eventType as PrismaAuditEventType)) {
+      throw new BadRequestException(`Unsupported audit event type ${eventType}`);
+    }
+
+    return eventType as PrismaAuditEventType;
+  }
+
+  private toDatabaseRole(role: UserRole): PrismaUserRole {
+    if (!Object.values(PrismaUserRole).includes(role as PrismaUserRole)) {
+      throw new BadRequestException(`Unsupported user role ${role}`);
+    }
+
+    return role as PrismaUserRole;
   }
 }
