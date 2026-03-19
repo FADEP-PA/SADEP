@@ -423,6 +423,99 @@ button {
   line-height: 1.7;
 }
 
+.technical-home {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.technical-home__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+  gap: 1rem;
+}
+
+.technical-home__badge,
+.technical-home__section-label {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--accent-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.technical-home__hero h2,
+.technical-home__checklist h3,
+.technical-home__card h3 {
+  margin: 0;
+}
+
+.technical-home__hero h2 {
+  margin-top: 0.8rem;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+}
+
+.technical-home__hero p,
+.technical-home__card p {
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.technical-home__panel,
+.technical-home__card,
+.technical-home__checklist {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+.technical-home__panel {
+  padding: 1.25rem;
+}
+
+.technical-home__panel strong {
+  display: block;
+  margin-bottom: 0.8rem;
+}
+
+.technical-home__panel ul,
+.technical-home__checklist ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.technical-home__panel li,
+.technical-home__checklist li {
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.technical-home__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.technical-home__card {
+  padding: 1.25rem;
+}
+
+.technical-home__card h3 {
+  margin-bottom: 0.6rem;
+}
+
+.technical-home__checklist {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
 @media (max-width: 960px) {
   .login-shell {
     grid-template-columns: 1fr;
@@ -452,6 +545,11 @@ button {
 
   .app-shell__actions {
     justify-content: flex-start;
+  }
+
+  .technical-home__hero,
+  .technical-home__grid {
+    grid-template-columns: 1fr;
   }
 }
 
