@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  INTERN_SERVER
+  IMMEDIATE_SUPERVISOR
+  CESAD_MEMBER
+  HOMOLOGATION_AUTHORITY
+  ADMIN
+}
+
+enum ProcessStatus {
+  EM_AVALIACAO
+  AGUARDANDO_ASSINATURA
+  ASSINADO
+  EM_ANALISE_CESAD
+  PARECER_EMITIDO
+  HOMOLOGADO
+  NOTIFICADO
+  CIENTE
+  ENCERRADO
+}
+
+enum AuditEventType {
+  PROCESS_CREATED
+  STAGE_ACTIVATED
+  EVALUATION_STARTED
+  EVALUATION_DRAFT_SAVED
+  EVALUATION_COMPLETED
+  EVALUATION_RECTIFIED
+  SIGNATURE_REQUESTED
+  DOCUMENT_SIGNED
+  SELF_EVALUATION_SUBMITTED
+  SENT_TO_CESAD
+  CESAD_OPINION_STARTED
+  CESAD_OPINION_ISSUED
+  CESAD_OPINION_SIGNED
+  ADJUSTMENT_REQUESTED
+  SENT_TO_HOMOLOGATION
+  RESULT_HOMOLOGATED
+  DOCUMENT_GENERATED
+  NOTIFICATION_SENT
+  ACKNOWLEDGEMENT_RECORDED
+  PROCESS_CLOSED
+}
+
+enum DocumentType {
+  SUPERVISOR_EVALUATION
+  SELF_EVALUATION
+  CESAD_OPINION
+  HOMOLOGATION_RECORD
+  RESULT_NOTIFICATION
+  ACKNOWLEDGEMENT_RECORD
+  ORDINANCE
+}
+
+enum DocumentStatus {
+  DRAFT
+  CONSOLIDATED
+  READY_FOR_SIGNATURE
+  SIGNED
+  INVALIDATED_OR_SUPERSEDED
+}
+
+enum SignatureProvider {
+  INTERNAL
+  GOVBR
+  OTHER
+}
+
+enum SignatureStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+model User {
+  id                String             @id @default(cuid())
+  email             String             @unique
+  passwordHash      String
+  role              UserRole
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  evaluatedProcesses EvaluationProcess[] @relation("EvaluatedUserProcesses")
+  auditEvents       AuditEvent[]       @relation("AuditActorEvents")
+  signatureRecords  SignatureRecord[]  @relation("DocumentSignatureUser")
+}
+
+model EvaluationProcess {
+  id              String            @id @default(cuid())
+  evaluatedUserId String
+  status          ProcessStatus
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  evaluatedUser   User              @relation("EvaluatedUserProcesses", fields: [evaluatedUserId], references: [id], onDelete: Restrict)
+  stages          ProcessStage[]
+  auditEvents     AuditEvent[]
+  documents       ProcessDocument[]
+
+  @@index([evaluatedUserId])
+  @@index([status])
+}
+
+model ProcessStage {
+  id          String            @id @default(cuid())
+  processId   String
+  stageCode   String
+  sequence    Int
+  startedAt   DateTime?
+  completedAt DateTime?
+  dueAt       DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  process     EvaluationProcess @relation(fields: [processId], references: [id], onDelete: Restrict)
+  documents   ProcessDocument[]
+
+  @@index([processId])
+  @@unique([processId, sequence])
+}
+
+model AuditEvent {
+  id              String            @id @default(cuid())
+  processId       String
+  actorUserId     String?
+  actorRole       UserRole?
+  eventType       AuditEventType
+  beforeState     String?
+  afterState      String?
+  metadataSummary String?
+  createdAt       DateTime          @default(now())
+  process         EvaluationProcess @relation(fields: [processId], references: [id], onDelete: Restrict)
+  actorUser       User?             @relation("AuditActorEvents", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([processId, createdAt])
+}
+
+model ProcessDocument {
+  id             String            @id @default(cuid())
+  processId      String
+  stageId        String?
+  documentType   DocumentType
+  documentStatus DocumentStatus
+  version        Int               @default(1)
+  storageKey     String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  process        EvaluationProcess @relation(fields: [processId], references: [id], onDelete: Restrict)
+  stage          ProcessStage?     @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  signatures     SignatureRecord[]
+
+  @@index([processId, documentType])
+}
+
+model SignatureRecord {
+  id                String          @id @default(cuid())
+  documentId        String
+  signatoryUserId   String
+  signatoryRole     UserRole
+  provider          SignatureProvider
+  status            SignatureStatus
+  externalReference String?
+  requestedAt       DateTime?
+  signedAt          DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  document          ProcessDocument @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  signatoryUser     User            @relation("DocumentSignatureUser", fields: [signatoryUserId], references: [id], onDelete: Restrict)
+
+  @@index([documentId, status])
+}
