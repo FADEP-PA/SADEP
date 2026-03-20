@@ -32,6 +32,8 @@ No ambiente auditado anteriormente, a validação de instalação e compilação
 6. subir o backend:
    - `npm run backend:start:dev`
 
+> Observação: para integração local com o frontend em `http://localhost:3001`, o backend agora usa `FRONTEND_ORIGIN` para responder corretamente ao preflight CORS (`OPTIONS`) em endpoints como `/auth/login`.
+
 ## Endpoints técnicos para validação
 
 - `GET /health`
