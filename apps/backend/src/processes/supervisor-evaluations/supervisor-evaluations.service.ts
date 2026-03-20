@@ -27,6 +27,7 @@ import type {
   SupervisorEvaluationResponseDto,
   UpsertSupervisorEvaluationDto,
 } from './dto/supervisor-evaluation.dto';
+import { isSupervisorEvaluationContentDto } from './dto/supervisor-evaluation.dto';
 
 const ALLOWED_ROLES = [UserRole.ADMIN, UserRole.IMMEDIATE_SUPERVISOR] as const;
 
@@ -88,7 +89,7 @@ export class SupervisorEvaluationsService {
               status: PrismaSupervisorEvaluationStatus.DRAFT,
               summary: normalizedPayload.summary,
               generalComments: normalizedPayload.generalComments,
-              content: normalizedPayload.content,
+              content: this.toPrismaJsonContent(normalizedPayload.content),
               submittedAt: null,
             },
           })
@@ -99,7 +100,7 @@ export class SupervisorEvaluationsService {
               status: PrismaSupervisorEvaluationStatus.DRAFT,
               summary: normalizedPayload.summary,
               generalComments: normalizedPayload.generalComments,
-              content: normalizedPayload.content,
+              content: this.toPrismaJsonContent(normalizedPayload.content),
             },
           });
 
@@ -157,7 +158,7 @@ export class SupervisorEvaluationsService {
               evaluatorUserId: user.sub,
               summary: normalizedPayload.summary,
               generalComments: normalizedPayload.generalComments,
-              content: normalizedPayload.content,
+              content: this.toPrismaJsonContent(normalizedPayload.content),
               status: PrismaSupervisorEvaluationStatus.SUBMITTED,
               submittedAt,
             },
@@ -168,7 +169,7 @@ export class SupervisorEvaluationsService {
               evaluatorUserId: user.sub,
               summary: normalizedPayload.summary,
               generalComments: normalizedPayload.generalComments,
-              content: normalizedPayload.content,
+              content: this.toPrismaJsonContent(normalizedPayload.content),
               status: PrismaSupervisorEvaluationStatus.SUBMITTED,
               submittedAt,
             },
@@ -251,7 +252,7 @@ export class SupervisorEvaluationsService {
           evaluatorUserId: user.sub,
           summary: normalizedPayload.summary,
           generalComments: normalizedPayload.generalComments,
-          content: normalizedPayload.content,
+          content: this.toPrismaJsonContent(normalizedPayload.content),
           status: PrismaSupervisorEvaluationStatus.SUBMITTED,
         },
       });
@@ -382,6 +383,38 @@ export class SupervisorEvaluationsService {
     };
   }
 
+  private toPrismaJsonContent(content: SupervisorEvaluationContentDto): Prisma.InputJsonObject {
+    return {
+      criteria: content.criteria.map((criterion) => ({
+        code: criterion.code,
+        label: criterion.label,
+        rating: criterion.rating,
+        ...(criterion.comment !== undefined ? { comment: criterion.comment } : {}),
+      })),
+    };
+  }
+
+  private toNullablePrismaJson(
+    value: Prisma.InputJsonObject | null,
+  ): Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue | undefined {
+    return value ?? Prisma.JsonNull;
+  }
+
+  private parseStoredContent(content: Prisma.JsonValue): SupervisorEvaluationContentDto {
+    if (!isSupervisorEvaluationContentDto(content)) {
+      throw new BadRequestException('Stored supervisor evaluation content is invalid');
+    }
+
+    return {
+      criteria: content.criteria.map((criterion) => ({
+        code: criterion.code,
+        label: criterion.label,
+        rating: criterion.rating,
+        ...(criterion.comment !== undefined ? { comment: criterion.comment } : {}),
+      })),
+    };
+  }
+
   private buildAuditEvent(params: {
     processId: string;
     user: AuthenticatedUser;
@@ -390,15 +423,15 @@ export class SupervisorEvaluationsService {
     processStatus: ProcessStatus;
     occurredAt: string;
     comment?: string | null;
-    beforeState: Prisma.InputJsonValue | null;
-    afterState: Prisma.InputJsonValue;
+    beforeState: Prisma.InputJsonObject | null;
+    afterState: Prisma.InputJsonObject;
   }): Prisma.AuditEventUncheckedCreateInput {
     return {
       evaluationProcessId: params.processId,
       actorUserId: params.user.sub,
       actorRole: this.toDatabaseRole(params.user.role),
       eventType: this.toDatabaseAuditEventType(params.eventType),
-      beforeState: params.beforeState,
+      beforeState: this.toNullablePrismaJson(params.beforeState),
       afterState: params.afterState,
       metadata: {
         eventType: params.eventType,
@@ -432,7 +465,7 @@ export class SupervisorEvaluationsService {
       status: this.toContractEvaluationStatus(evaluation.status),
       summary: evaluation.summary,
       generalComments: evaluation.generalComments,
-      content: evaluation.content as SupervisorEvaluationContentDto,
+      content: this.parseStoredContent(evaluation.content),
       submittedAt: evaluation.submittedAt?.toISOString() ?? null,
       createdAt: evaluation.createdAt.toISOString(),
       updatedAt: evaluation.updatedAt.toISOString(),
