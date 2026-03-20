@@ -27,3 +27,70 @@ O frontend está organizado em camadas mínimas para permitir evolução increme
 - Recursos transversais, como estilos, helpers de autenticação e cliente HTTP, devem ficar em `src/shared`.
 - A sessão autenticada é persistida no navegador usando `localStorage` ou `sessionStorage`, conforme a opção de login.
 - A área autenticada só deve ser renderizada após validação da sessão em `/auth/me`.
+
+## Ponto de integração ao final da etapa
+
+### `POST /auth/login`
+
+Retorno esperado pelo frontend:
+
+```json
+{
+  "accessToken": "jwt-ou-token-equivalente",
+  "user": {
+    "sub": "uuid-do-usuario",
+    "email": "usuario@aep-pa.local",
+    "role": "ADMIN"
+  }
+}
+```
+
+### `GET /auth/me`
+
+Retorno esperado pelo frontend:
+
+```json
+{
+  "sub": "uuid-do-usuario",
+  "email": "usuario@aep-pa.local",
+  "role": "ADMIN"
+}
+```
+
+### Payload do usuário autenticado
+
+O frontend considera obrigatórios, nesta etapa:
+
+- `sub`
+- `email`
+- `role`
+
+### Campo `role`
+
+O campo `role` é usado para:
+
+- decidir o redirecionamento pós-login;
+- renderizar o menu lateral por perfil;
+- proteger páginas técnicas por papel;
+- exibir o shell correspondente ao perfil autenticado.
+
+### Convenção de erro de autenticação
+
+O cliente HTTP trata falhas JSON de autenticação usando, nesta ordem:
+
+1. `message`
+2. `error`
+3. fallback com status HTTP
+
+Para falhas de autenticação, a convenção atual é:
+
+- `401` para credenciais inválidas;
+- `401` para token inválido;
+- `401` para token expirado.
+
+### Estratégia de token no frontend
+
+- `rememberMe = true` → persistir sessão em `localStorage`;
+- `rememberMe = false` → persistir sessão em `sessionStorage`;
+- no bootstrap da aplicação, o frontend chama `/auth/me` com `Bearer <token>`;
+- se o backend responder `401`, a sessão local é descartada e o usuário é redirecionado para a página técnica de sessão expirada.
