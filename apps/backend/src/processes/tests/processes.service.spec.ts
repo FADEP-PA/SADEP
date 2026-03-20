@@ -26,7 +26,7 @@ export async function runProcessesServiceTests() {
       process.id,
       authenticatedUser(supervisor.id, supervisor.role),
     );
-    assert.deepEqual(workflow.availableActions, [ProcessAction.SEND_TO_CESAD]);
+    assert.deepEqual(workflow.availableActions, [ProcessAction.RELEASE_FOR_SERVER_SIGNATURE]);
 
     await assert.rejects(
       () =>
@@ -42,50 +42,38 @@ export async function runProcessesServiceTests() {
       () =>
         context.service.transitionWorkflow(
           process.id,
-          authenticatedUser(intern.id, intern.role),
-          { action: workflowActions.sendToCesad },
+          authenticatedUser(supervisor.id, supervisor.role),
+          { action: workflowActions.releaseForSignature },
         ),
-      /cannot execute action SEND_TO_CESAD/,
+      /submitted supervisor evaluation exists/,
     );
-
-    const sentToCesad = await context.service.transitionWorkflow(
-      process.id,
-      authenticatedUser(supervisor.id, supervisor.role),
-      { action: workflowActions.sendToCesad },
-    );
-    assert.equal(sentToCesad.status, ProcessStatus.EM_ANALISE_CESAD);
 
     await assert.rejects(
       () =>
         context.service.transitionWorkflow(
           process.id,
-          authenticatedUser(cesad.id, cesad.role),
-          { action: workflowActions.requestAdjustment },
+          authenticatedUser(intern.id, intern.role),
+          { action: workflowActions.releaseForSignature },
         ),
-      /requires a non-empty comment/,
+      /cannot execute action RELEASE_FOR_SERVER_SIGNATURE/,
     );
 
-    const returnedForAdjustment = await context.service.transitionWorkflow(
-      process.id,
-      authenticatedUser(cesad.id, cesad.role),
-      {
-        action: workflowActions.requestAdjustment,
-        comment: 'Ajustar inconsistências identificadas pela CESAD.',
-      },
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          process.id,
+          authenticatedUser(supervisor.id, supervisor.role),
+          { action: workflowActions.sendToCesad },
+        ),
+      /Unsupported workflow action: SEND_TO_CESAD/,
     );
-    assert.equal(returnedForAdjustment.status, ProcessStatus.EM_AVALIACAO);
 
     const events = await context.prisma.auditEvent.findMany({
       where: { evaluationProcessId: process.id },
       orderBy: { occurredAt: 'asc' },
     });
 
-    assert.equal(events.length, 2);
-    assert.deepEqual(events[0].beforeState, { status: ProcessStatus.EM_AVALIACAO });
-    assert.deepEqual(events[0].afterState, { status: ProcessStatus.EM_ANALISE_CESAD });
-    assert.deepEqual(events[1].beforeState, { status: ProcessStatus.EM_ANALISE_CESAD });
-    assert.deepEqual(events[1].afterState, { status: ProcessStatus.EM_AVALIACAO });
-    assert.equal((events[1].metadata as { comment?: string }).comment, 'Ajustar inconsistências identificadas pela CESAD.');
+    assert.equal(events.length, 0);
   } finally {
     await disposeTestContext(context);
   }

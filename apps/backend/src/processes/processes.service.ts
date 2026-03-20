@@ -9,6 +9,7 @@ import {
   Prisma,
   PrismaClient,
   ProcessStatus as PrismaProcessStatus,
+  SupervisorEvaluationStatus as PrismaSupervisorEvaluationStatus,
   UserRole as PrismaUserRole,
 } from '@prisma/client';
 import {
@@ -33,7 +34,7 @@ import {
   isWorkflowAuditEventType,
 } from './workflow-catalog';
 
-type PrismaTransactionClient = Omit<
+export type PrismaTransactionClient = Omit<
   PrismaClient,
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
 >;
@@ -98,70 +99,18 @@ export class ProcessesService {
       throw new BadRequestException(`Unsupported workflow action: ${String(payload.action)}`);
     }
 
-    const normalizedComment = this.normalizeComment(payload.comment);
-
     return this.prismaService.$transaction(async (transaction) => {
-      const process = await this.findProcessOrThrow(transaction, processId);
-      const currentStatus = this.toContractProcessStatus(process.status);
-      const transition = getWorkflowTransition(currentStatus, payload.action);
-
-      if (!transition) {
-        throw new BadRequestException(
-          `Action ${payload.action} is not allowed when process is in status ${process.status}`,
-        );
-      }
-
-      if (!transition.allowedRoles.includes(user.role)) {
-        throw new ForbiddenException(`Role ${user.role} cannot execute action ${payload.action}`);
-      }
-
-      if (transition.requiresComment && !normalizedComment) {
-        throw new BadRequestException(`Action ${payload.action} requires a non-empty comment`);
-      }
-
-      await transaction.evaluationProcess.update({
-        where: { id: processId },
-        data: { status: this.toDatabaseProcessStatus(transition.to) },
-      });
-
-      const occurredAt = new Date().toISOString();
-      const metadata: Prisma.InputJsonValue = {
-        eventType: transition.eventType,
-        action: transition.action,
-        performedByUserId: user.sub,
-        performedByRole: user.role,
-        occurredAt,
-        processStatus: transition.to,
-        ...(normalizedComment ? { comment: normalizedComment } : {}),
-      };
-
-      await transaction.auditEvent.create({
-        data: {
-          evaluationProcessId: process.id,
-          actorUserId: user.sub,
-          actorRole: this.toDatabaseRole(user.role),
-          eventType: this.toDatabaseAuditEventType(transition.eventType),
-          beforeState: { status: currentStatus },
-          afterState: { status: transition.to },
-          metadata,
-        },
-      });
+      const status = await this.transitionWorkflowInTransaction(transaction, processId, user, payload);
 
       return {
-        id: process.id,
-        status: transition.to,
-        availableActions: this.getAllowedActions(transition.to, user.role),
+        id: processId,
+        status,
+        availableActions: this.getAllowedActions(status, user.role),
       };
     });
   }
 
-  private getAllowedActions(status: ProcessStatus, role: UserRole): ProcessAction[] {
-    return getAvailableWorkflowTransitions(status)
-      .filter((transition) => transition.allowedRoles.includes(role))
-      .map((transition) => transition.action);
-  }
-
-  private async ensureProcessExists(processId: string): Promise<void> {
+  async ensureProcessExists(processId: string): Promise<void> {
     const process = await this.prismaService.evaluationProcess.findUnique({
       where: { id: processId },
       select: { id: true },
@@ -172,7 +121,80 @@ export class ProcessesService {
     }
   }
 
-  private async findProcessOrThrow(transaction: PrismaTransactionClient, processId: string) {
+  async transitionWorkflowInTransaction(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    user: AuthenticatedUser,
+    payload: WorkflowTransitionRequestDto,
+  ): Promise<ProcessStatus> {
+    if (!isWorkflowAction(payload.action)) {
+      throw new BadRequestException(`Unsupported workflow action: ${String(payload.action)}`);
+    }
+
+    const normalizedComment = this.normalizeComment(payload.comment);
+    const process = await this.findProcessOrThrow(transaction, processId);
+    const currentStatus = this.toContractProcessStatus(process.status);
+    const transition = getWorkflowTransition(currentStatus, payload.action);
+
+    if (!transition) {
+      throw new BadRequestException(
+        `Action ${payload.action} is not allowed when process is in status ${process.status}`,
+      );
+    }
+
+    if (!transition.allowedRoles.includes(user.role)) {
+      throw new ForbiddenException(`Role ${user.role} cannot execute action ${payload.action}`);
+    }
+
+    if (transition.requiresComment && !normalizedComment) {
+      throw new BadRequestException(`Action ${payload.action} requires a non-empty comment`);
+    }
+
+    if (payload.action === ProcessAction.RELEASE_FOR_SERVER_SIGNATURE) {
+      const supervisorEvaluation = await transaction.supervisorEvaluation.findUnique({
+        where: { processId },
+        select: { status: true },
+      });
+
+      if (!supervisorEvaluation || supervisorEvaluation.status !== PrismaSupervisorEvaluationStatus.SUBMITTED) {
+        throw new BadRequestException(
+          'Process can only move to AGUARDANDO_ASSINATURA after a submitted supervisor evaluation exists',
+        );
+      }
+    }
+
+    await transaction.evaluationProcess.update({
+      where: { id: processId },
+      data: { status: this.toDatabaseProcessStatus(transition.to) },
+    });
+
+    const occurredAt = new Date().toISOString();
+    const metadata: Prisma.InputJsonValue = {
+      eventType: transition.eventType,
+      action: transition.action,
+      performedByUserId: user.sub,
+      performedByRole: user.role,
+      occurredAt,
+      processStatus: transition.to,
+      ...(normalizedComment ? { comment: normalizedComment } : {}),
+    };
+
+    await transaction.auditEvent.create({
+      data: {
+        evaluationProcessId: process.id,
+        actorUserId: user.sub,
+        actorRole: this.toDatabaseRole(user.role),
+        eventType: this.toDatabaseAuditEventType(transition.eventType),
+        beforeState: { status: currentStatus },
+        afterState: { status: transition.to },
+        metadata,
+      },
+    });
+
+    return transition.to;
+  }
+
+  async findProcessOrThrow(transaction: PrismaTransactionClient, processId: string) {
     const process = await transaction.evaluationProcess.findUnique({
       where: { id: processId },
       select: { id: true, status: true },
@@ -183,6 +205,12 @@ export class ProcessesService {
     }
 
     return process;
+  }
+
+  private getAllowedActions(status: ProcessStatus, role: UserRole): ProcessAction[] {
+    return getAvailableWorkflowTransitions(status)
+      .filter((transition) => transition.allowedRoles.includes(role))
+      .map((transition) => transition.action);
   }
 
   private normalizeComment(comment?: string): string | null {
@@ -225,6 +253,8 @@ export class ProcessesService {
 
   private mapEventTypeToAction(eventType: AuditEventType): ProcessAction {
     switch (eventType) {
+      case AuditEventType.SIGNATURE_REQUESTED:
+        return ProcessAction.RELEASE_FOR_SERVER_SIGNATURE;
       case AuditEventType.SENT_TO_CESAD:
         return ProcessAction.SEND_TO_CESAD;
       case AuditEventType.CESAD_OPINION_ISSUED:
@@ -272,19 +302,19 @@ export class ProcessesService {
     return status as PrismaProcessStatus;
   }
 
-  private toDatabaseAuditEventType(eventType: AuditEventType): PrismaAuditEventType {
-    if (!Object.values(PrismaAuditEventType).includes(eventType as PrismaAuditEventType)) {
-      throw new BadRequestException(`Unsupported audit event type ${eventType}`);
-    }
-
-    return eventType as PrismaAuditEventType;
-  }
-
   private toDatabaseRole(role: UserRole): PrismaUserRole {
     if (!Object.values(PrismaUserRole).includes(role as PrismaUserRole)) {
       throw new BadRequestException(`Unsupported user role ${role}`);
     }
 
     return role as PrismaUserRole;
+  }
+
+  private toDatabaseAuditEventType(eventType: AuditEventType): PrismaAuditEventType {
+    if (!Object.values(PrismaAuditEventType).includes(eventType as PrismaAuditEventType)) {
+      throw new BadRequestException(`Unsupported audit event type ${eventType}`);
+    }
+
+    return eventType as PrismaAuditEventType;
   }
 }

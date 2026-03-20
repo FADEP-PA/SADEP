@@ -11,14 +11,17 @@ import {
   ProcessStatus,
   UserRole,
   ProcessAction,
+  type SupervisorEvaluationContentInput,
 } from '@aep-pa/contracts';
 
 import { hashPassword } from '../../common/security/password-hasher';
 import { ProcessesService } from '../processes.service';
+import { SupervisorEvaluationsService } from '../supervisor-evaluations/supervisor-evaluations.service';
 
 export type TestContext = {
   prisma: PrismaClient;
   service: ProcessesService;
+  supervisorEvaluationsService: SupervisorEvaluationsService;
   databaseFile: string;
 };
 
@@ -46,9 +49,12 @@ export async function createTestContext(databaseName: string): Promise<TestConte
   const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
   await prisma.$connect();
 
+  const processesService = new ProcessesService(prisma as never);
+
   return {
     prisma,
-    service: new ProcessesService(prisma as never),
+    service: processesService,
+    supervisorEvaluationsService: new SupervisorEvaluationsService(prisma as never, processesService),
     databaseFile,
   };
 }
@@ -97,6 +103,34 @@ export function authenticatedUser(userId: string, role: UserRole | PrismaUserRol
   };
 }
 
+export function buildSupervisorEvaluationPayload(overrides: Partial<{
+  summary: string;
+  generalComments: string;
+  content: SupervisorEvaluationContentInput;
+  comment: string;
+}> = {}) {
+  return {
+    summary: overrides.summary ?? 'Síntese objetiva da avaliação da chefia.',
+    generalComments: overrides.generalComments ?? 'Comentários gerais sobre desempenho e aderência às metas.',
+    content: overrides.content ?? {
+      criteria: [
+        {
+          code: 'ASSIDUIDADE',
+          label: 'Assiduidade',
+          rating: 4,
+          comment: 'Mantém boa regularidade nas entregas.',
+        },
+        {
+          code: 'RESPONSABILIDADE',
+          label: 'Responsabilidade',
+          rating: 5,
+        },
+      ],
+    },
+    ...(overrides.comment ? { comment: overrides.comment } : {}),
+  };
+}
+
 function toDatabaseRole(role: UserRole): PrismaUserRole {
   if (!Object.values(PrismaUserRole).includes(role as PrismaUserRole)) {
     throw new Error(`Unsupported user role ${role}`);
@@ -122,6 +156,7 @@ function toContractRole(role: UserRole | PrismaUserRole): UserRole {
 }
 
 export const workflowActions = {
+  releaseForSignature: ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
   sendToCesad: ProcessAction.SEND_TO_CESAD,
   issueOpinion: ProcessAction.ISSUE_CESAD_OPINION,
   requestAdjustment: ProcessAction.REQUEST_ADJUSTMENT,

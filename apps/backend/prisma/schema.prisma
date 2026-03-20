@@ -81,6 +81,11 @@ enum SignatureStatus {
   CANCELED
 }
 
+enum SupervisorEvaluationStatus {
+  DRAFT
+  SUBMITTED
+}
+
 model User {
   id                       String              @id @default(cuid())
   email                    String              @unique
@@ -92,6 +97,7 @@ model User {
   evaluationProcesses      EvaluationProcess[] @relation("EvaluationProcessEvaluatedUser")
   auditEvents              AuditEvent[]        @relation("AuditEventActor")
   signatureRecords         SignatureRecord[]   @relation("SignatureRecordSignatory")
+  supervisorEvaluations    SupervisorEvaluation[] @relation("SupervisorEvaluationEvaluator")
 }
 
 model EvaluationProcess {
@@ -104,6 +110,7 @@ model EvaluationProcess {
   stages          ProcessStage[]
   auditEvents     AuditEvent[]
   documents       ProcessDocument[]
+  supervisorEvaluation SupervisorEvaluation?
 
   @@index([evaluatedUserId])
   @@index([status])
@@ -162,6 +169,25 @@ model ProcessDocument {
   @@index([evaluationProcessId])
   @@index([processStageId])
   @@index([documentType, documentStatus])
+}
+
+
+model SupervisorEvaluation {
+  id                String                     @id @default(cuid())
+  processId         String                     @unique
+  evaluatorUserId   String
+  status            SupervisorEvaluationStatus @default(DRAFT)
+  summary           String
+  generalComments   String
+  content           Json
+  submittedAt       DateTime?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  evaluationProcess EvaluationProcess          @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  evaluatorUser     User                       @relation("SupervisorEvaluationEvaluator", fields: [evaluatorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([evaluatorUserId])
+  @@index([status])
 }
 
 model SignatureRecord {
