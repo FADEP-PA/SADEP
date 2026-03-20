@@ -16,6 +16,14 @@ const shortcuts = [
     label: 'Menu por perfil',
     description: 'A navegação lateral muda conforme o `UserRole` retornado pelo backend.',
   },
+  {
+    label: 'Processos placeholder',
+    description: 'A rota `/processos` antecipa o contrato visual antes do workflow real.',
+  },
+  {
+    label: 'Erros padronizados',
+    description: 'A UI usa feedback visual consistente para autenticação, sessão expirada e avisos.',
+  },
 ];
 
 export default function AuthenticatedLayout({
@@ -27,7 +35,7 @@ export default function AuthenticatedLayout({
     <AuthGuard>
       <AppShell
         title="Ambiente autenticado"
-        subtitle="Estrutura base para páginas internas do sistema com sessão, RBAC inicial e integração com o backend."
+        subtitle="Estrutura base para páginas internas com sessão, RBAC inicial, placeholders de processo e integração real com o backend."
         sidebarFooter={
           <div className="app-shell__sidebar-card">
             <strong>Fundação do sprint</strong>

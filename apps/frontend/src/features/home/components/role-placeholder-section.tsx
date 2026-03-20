@@ -1,5 +1,7 @@
 import { UserRole } from '@aep-pa/contracts';
 
+import { getRoleMetadata } from '@/shared/rbac/role-metadata';
+
 const placeholderByRole: Record<UserRole, { title: string; items: string[] }> = {
   [UserRole.INTERN_SERVER]: {
     title: 'Próximas entregas para servidor estagiário',
@@ -25,6 +27,7 @@ const placeholderByRole: Record<UserRole, { title: string; items: string[] }> = 
 
 export function RolePlaceholderSection({ role }: { role: UserRole }) {
   const content = placeholderByRole[role];
+  const metadata = getRoleMetadata(role);
 
   return (
     <section className="technical-home__checklist" aria-labelledby="role-placeholder-title">
@@ -34,6 +37,9 @@ export function RolePlaceholderSection({ role }: { role: UserRole }) {
       </div>
 
       <ol>
+        <li>
+          Perfil ativo: {metadata.label} ({metadata.identifier}).
+        </li>
         {content.items.map((item) => (
           <li key={item}>{item}</li>
         ))}

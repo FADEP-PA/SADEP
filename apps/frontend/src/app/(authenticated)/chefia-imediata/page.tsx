@@ -5,6 +5,7 @@ import { RolePlaceholderPage } from '@/features/home/components/role-placeholder
 export default function ImmediateSupervisorPage() {
   return (
     <RolePlaceholderPage
+      pageRole={UserRole.IMMEDIATE_SUPERVISOR}
       allowedRoles={[UserRole.IMMEDIATE_SUPERVISOR, UserRole.ADMIN]}
       title="Área da chefia imediata"
       description="Placeholder inicial para as entregas de avaliação e acompanhamento operacional da chefia imediata."

@@ -2,6 +2,7 @@
 
 import { RolePlaceholderSection } from '@/features/home/components/role-placeholder-section';
 import { useAuth } from '@/shared/auth/auth-context';
+import { getRoleMetadata } from '@/shared/rbac/role-metadata';
 import { DashboardCard } from '@/shared/ui/dashboard-card';
 
 const integrationCards = [
@@ -30,6 +31,7 @@ const integrationChecklist = [
 
 export default function TechnicalHomePage() {
   const { session } = useAuth();
+  const roleMetadata = session ? getRoleMetadata(session.user.role) : null;
 
   return (
     <section className="technical-home">
@@ -48,6 +50,7 @@ export default function TechnicalHomePage() {
           <ul>
             <li>Usuário autenticado: {session?.user.email}</li>
             <li>Perfil ativo: {session?.user.role}</li>
+            <li>Label do perfil: {roleMetadata?.label}</li>
             <li>Token validado a partir do endpoint `/auth/me`.</li>
           </ul>
         </div>

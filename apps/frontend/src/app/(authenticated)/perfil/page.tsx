@@ -2,6 +2,7 @@
 
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { useAuth } from '@/shared/auth/auth-context';
+import { getRoleMetadata } from '@/shared/rbac/role-metadata';
 import { DashboardCard } from '@/shared/ui/dashboard-card';
 
 const integrationPoints = [
@@ -32,6 +33,7 @@ const integrationPoints = [
 
 export default function AuthenticatedProfilePage() {
   const { session, status, bootstrapError } = useAuth();
+  const roleMetadata = session ? getRoleMetadata(session.user.role) : null;
 
   return (
     <AuthGuard>
@@ -53,6 +55,8 @@ export default function AuthenticatedProfilePage() {
               <li>sub: {session?.user.sub}</li>
               <li>email: {session?.user.email}</li>
               <li>role: {session?.user.role}</li>
+              <li>roleLabel: {roleMetadata?.label}</li>
+              <li>roleIdentifier: {roleMetadata?.identifier}</li>
               <li>rememberMe: {session?.rememberMe ? 'true' : 'false'}</li>
             </ul>
           </div>

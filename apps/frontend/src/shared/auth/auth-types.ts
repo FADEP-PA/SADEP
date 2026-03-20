@@ -1,8 +1,7 @@
 import type { UserRole } from '@aep-pa/contracts';
+import type { AuthenticatedUserModel } from '@/shared/api/api-contracts';
 
-export type AuthenticatedUser = {
-  sub: string;
-  email: string;
+export type AuthenticatedUser = AuthenticatedUserModel & {
   role: UserRole;
 };
 

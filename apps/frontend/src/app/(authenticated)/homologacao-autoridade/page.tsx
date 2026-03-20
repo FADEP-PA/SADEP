@@ -5,6 +5,7 @@ import { RolePlaceholderPage } from '@/features/home/components/role-placeholder
 export default function HomologationAuthorityPage() {
   return (
     <RolePlaceholderPage
+      pageRole={UserRole.HOMOLOGATION_AUTHORITY}
       allowedRoles={[UserRole.HOMOLOGATION_AUTHORITY, UserRole.ADMIN]}
       title="Área da autoridade homologadora"
       description="Placeholder inicial para homologação, despacho conclusivo e encerramento administrativo do fluxo."

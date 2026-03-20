@@ -8,6 +8,7 @@ import { getRoleMetadata } from '@/shared/rbac/role-metadata';
 import { DashboardCard } from '@/shared/ui/dashboard-card';
 
 type RolePlaceholderPageProps = {
+  pageRole: UserRole;
   allowedRoles: UserRole[];
   title: string;
   description: string;
@@ -15,13 +16,15 @@ type RolePlaceholderPageProps = {
 };
 
 export function RolePlaceholderPage({
+  pageRole,
   allowedRoles,
   title,
   description,
   highlights,
 }: RolePlaceholderPageProps) {
   const { session } = useAuth();
-  const roleMetadata = session ? getRoleMetadata(session.user.role) : null;
+  const authenticatedRoleMetadata = session ? getRoleMetadata(session.user.role) : null;
+  const pageRoleMetadata = getRoleMetadata(pageRole);
   const placeholderModels = ['ProcessListItem', 'ProcessSummary', 'AuthenticatedUserModel'];
 
   return (
@@ -35,11 +38,12 @@ export function RolePlaceholderPage({
           </div>
 
           <div className="technical-home__panel">
-            <strong>Perfil autenticado</strong>
+            <strong>Contexto da rota</strong>
             <ul>
-              <li>{session?.user.email}</li>
-              <li>{roleMetadata?.label ?? session?.user.role}</li>
-              <li>Identificador técnico: {roleMetadata?.identifier}</li>
+              <li>Perfil da tela: {pageRoleMetadata.label}</li>
+              <li>Identificador da tela: {pageRoleMetadata.identifier}</li>
+              <li>Usuário autenticado: {session?.user.email}</li>
+              <li>Role autenticada: {authenticatedRoleMetadata?.label ?? session?.user.role}</li>
             </ul>
           </div>
         </div>

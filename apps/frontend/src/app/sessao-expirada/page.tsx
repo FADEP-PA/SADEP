@@ -23,6 +23,11 @@ export default function SessionExpiredPage() {
           variant="warning"
         />
 
+        <p>
+          Convenção técnica atual: <code>message</code> é priorizado, <code>error</code> é usado
+          como fallback textual e <code>statusCode</code> compõe o contexto quando disponível.
+        </p>
+
         <div className="forbidden-page__actions">
           <Link href="/">Voltar para o login</Link>
         </div>
