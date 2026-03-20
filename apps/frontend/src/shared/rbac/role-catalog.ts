@@ -39,7 +39,7 @@ export const ROLE_CATALOG: Record<UserRole, RolePresentation> = {
   },
   [UserRole.ADMIN]: {
     role: UserRole.ADMIN,
-    label: 'Administrador técnico',
+    label: 'Administrador',
     shortLabel: 'Admin',
     description: 'Valida acessos, integrações, observabilidade e troubleshooting da plataforma.',
     homePath: '/admin',

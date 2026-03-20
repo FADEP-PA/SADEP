@@ -28,16 +28,18 @@ export function RolePlaceholderPage({
 
   return (
     <AuthGuard allowedRoles={allowedRoles}>
-      <PageSection eyebrow="Placeholder inicial" title={title} description={description}>
+      <PageSection eyebrow="Painel do perfil" title={title} description={description}>
         <div className="technical-home__hero">
           <div className="surface-card">
             <span className="technical-home__badge">Perfil autenticado</span>
             <h3>{rolePresentation?.label ?? 'Perfil não identificado'}</h3>
-            <p className="muted-paragraph">Área pronta para continuidade do sprint antes do workflow real.</p>
+            <p className="muted-paragraph">
+              Visão inicial organizada para evolução das telas do processo conforme as entregas do sprint.
+            </p>
             <KeyValueList
               items={[
                 { label: 'E-mail', value: session?.user.email ?? 'Não informado' },
-                { label: 'Role', value: session?.user.role ?? 'Não informado' },
+                { label: 'Perfil', value: rolePresentation?.label ?? 'Não informado' },
                 { label: 'Rota base', value: rolePresentation?.homePath ?? 'Não informada' },
               ]}
             />
@@ -46,7 +48,11 @@ export function RolePlaceholderPage({
 
         <div className="metrics-grid">
           {highlights.map((item) => (
-            <InfoCard key={item} title={item} description="Espaço reservado para aprofundar o fluxo correspondente a este perfil." />
+            <InfoCard
+              key={item}
+              title={item}
+              description="Espaço preparado para detalhar operações e consultas desse perfil dentro do fluxo administrativo."
+            />
           ))}
         </div>
       </PageSection>

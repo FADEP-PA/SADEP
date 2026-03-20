@@ -7,12 +7,11 @@ export default function SessionExpiredPage() {
         <span className="forbidden-page__badge">Sessão expirada</span>
         <h1 id="session-expired-title">Seu acesso expirou</h1>
         <p>
-          O token armazenado no frontend não é mais válido para o backend. Faça login novamente
-          para revalidar o usuário autenticado em <code>/auth/me</code>.
+          Sua autenticação não é mais válida. Faça login novamente
+          para restabelecer o acesso à área protegida do sistema.
         </p>
         <p>
-          Esta página técnica centraliza o tratamento de <strong>401</strong> recebido durante a
-          navegação protegida.
+          O sistema interrompe a navegação protegida sempre que identifica expiração ou invalidação da sessão.
         </p>
 
         <div className="forbidden-page__actions">

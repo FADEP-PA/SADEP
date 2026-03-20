@@ -895,9 +895,36 @@ button {
   background: rgba(255, 255, 255, 0.6);
 }
 
-.technical-dashboard {
+.process-workspace {
   display: grid;
   gap: 1.5rem;
+}
+
+.process-list-card__item,
+.process-role-grid__item {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1rem;
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.process-list-card__item {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.process-list-card__item p,
+.process-role-grid__item p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.process-role-grid {
+  display: grid;
+  gap: 0.85rem;
 }
 
 @media (max-width: 900px) {
