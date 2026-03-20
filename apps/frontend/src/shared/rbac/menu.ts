@@ -20,6 +20,16 @@ const commonGroups: NavigationGroup[] = [
         href: '/inicio',
         description: 'Resumo do estado da sessão e pontos de integração do frontend.',
       },
+      {
+        label: 'Meu perfil',
+        href: '/perfil',
+        description: 'Dados do usuário autenticado, estratégia de token e estado atual da sessão.',
+      },
+      {
+        label: 'Processos técnicos',
+        href: '/processos',
+        description: 'Placeholders iniciais para listagem e detalhe de processo antes do workflow real.',
+      },
     ],
   },
 ];

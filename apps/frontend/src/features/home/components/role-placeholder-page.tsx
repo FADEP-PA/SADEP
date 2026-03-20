@@ -4,6 +4,8 @@ import type { UserRole } from '@aep-pa/contracts';
 
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { useAuth } from '@/shared/auth/auth-context';
+import { getRoleMetadata } from '@/shared/rbac/role-metadata';
+import { DashboardCard } from '@/shared/ui/dashboard-card';
 
 type RolePlaceholderPageProps = {
   allowedRoles: UserRole[];
@@ -19,6 +21,8 @@ export function RolePlaceholderPage({
   highlights,
 }: RolePlaceholderPageProps) {
   const { session } = useAuth();
+  const roleMetadata = session ? getRoleMetadata(session.user.role) : null;
+  const placeholderModels = ['ProcessListItem', 'ProcessSummary', 'AuthenticatedUserModel'];
 
   return (
     <AuthGuard allowedRoles={allowedRoles}>
@@ -34,20 +38,34 @@ export function RolePlaceholderPage({
             <strong>Perfil autenticado</strong>
             <ul>
               <li>{session?.user.email}</li>
-              <li>{session?.user.role}</li>
-              <li>Área pronta para continuidade do sprint.</li>
+              <li>{roleMetadata?.label ?? session?.user.role}</li>
+              <li>Identificador técnico: {roleMetadata?.identifier}</li>
             </ul>
           </div>
         </div>
 
         <div className="technical-home__grid">
           {highlights.map((item) => (
-            <article key={item} className="technical-home__card">
-              <h3>{item}</h3>
-              <p>Espaço reservado para aprofundar o fluxo correspondente a este perfil.</p>
-            </article>
+            <DashboardCard
+              key={item}
+              title={item}
+              description="Espaço reservado para aprofundar o fluxo correspondente a este perfil."
+            />
           ))}
         </div>
+
+        <section className="technical-home__checklist" aria-labelledby="role-conventions-title">
+          <div>
+            <span className="technical-home__section-label">Convenções deste dashboard</span>
+            <h3 id="role-conventions-title">Modelos mínimos e placeholders</h3>
+          </div>
+
+          <ul className="technical-home__list">
+            {placeholderModels.map((model) => (
+              <li key={model}>{model}</li>
+            ))}
+          </ul>
+        </section>
       </section>
     </AuthGuard>
   );

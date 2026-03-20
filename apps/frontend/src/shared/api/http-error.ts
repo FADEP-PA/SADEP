@@ -1,8 +1,6 @@
-export type HttpErrorPayload = {
-  message?: string;
-  error?: string;
-  statusCode?: number;
-};
+import type { ApiErrorResponse } from './api-contracts';
+
+export type HttpErrorPayload = ApiErrorResponse;
 
 export class HttpError extends Error {
   readonly status: number;
@@ -26,4 +24,26 @@ export function getRequestErrorMessage(error: unknown, fallback = 'Não foi poss
   }
 
   return fallback;
+}
+
+export function getUiErrorState(error: unknown, fallback = 'Não foi possível concluir a solicitação.') {
+  if (error instanceof HttpError) {
+    return {
+      title: `Erro ${error.status}`,
+      message: error.message || fallback,
+      statusCode: error.status,
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      title: 'Erro inesperado',
+      message: error.message || fallback,
+    };
+  }
+
+  return {
+    title: 'Erro inesperado',
+    message: fallback,
+  };
 }
