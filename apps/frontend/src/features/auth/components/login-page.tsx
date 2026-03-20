@@ -1,10 +1,42 @@
+'use client';
+
+import { useState } from 'react';
+
+import { getRequestErrorMessage } from '@/shared/api/http-error';
+import { useAuth } from '@/shared/auth/auth-context';
+
 const highlights = [
   'Acesso rápido para servidores, chefias e comissões.',
-  'Interface pronta para integrar com a autenticação já existente.',
-  'Layout responsivo para desktop, tablet e celular.',
+  'Integração preparada com `/auth/login` e `/auth/me` do backend.',
+  'Persistência de sessão simples para manter o frontend autenticado.',
 ];
 
 export function LoginPage() {
+  const { signIn, status, bootstrapError } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrorMessage(null);
+    setIsSubmitting(true);
+
+    try {
+      await signIn({
+        email,
+        password,
+        rememberMe,
+      });
+    } catch (error) {
+      setErrorMessage(getRequestErrorMessage(error, 'Não foi possível realizar o login.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <main className="login-shell">
       <section className="login-hero" aria-label="Apresentação do sistema">
@@ -29,7 +61,7 @@ export function LoginPage() {
           <p>Use as mesmas credenciais cadastradas no backend.</p>
         </div>
 
-        <form className="login-form">
+        <form className="login-form" onSubmit={handleSubmit}>
           <label className="field-group" htmlFor="email">
             <span>E-mail</span>
             <input
@@ -38,6 +70,10 @@ export function LoginPage() {
               type="email"
               placeholder="nome@orgao.pa.gov.br"
               autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              disabled={isSubmitting || status === 'loading'}
+              required
             />
           </label>
 
@@ -49,21 +85,37 @@ export function LoginPage() {
               type="password"
               placeholder="Digite sua senha"
               autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              disabled={isSubmitting || status === 'loading'}
+              required
             />
           </label>
 
           <div className="login-form__meta">
             <label className="checkbox-field" htmlFor="remember-me">
-              <input id="remember-me" name="rememberMe" type="checkbox" />
-              <span>Lembrar meu acesso</span>
+              <input
+                id="remember-me"
+                name="rememberMe"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(event) => setRememberMe(event.target.checked)}
+                disabled={isSubmitting || status === 'loading'}
+              />
+              <span>Manter sessão neste dispositivo</span>
             </label>
 
-            <a href="/" aria-label="Recuperar acesso">
-              Esqueci minha senha
-            </a>
+            <span className="login-form__hint">Ambiente técnico da Sprint 1B</span>
           </div>
 
-          <button type="submit">Entrar</button>
+          {errorMessage ? <p className="form-feedback form-feedback--error">{errorMessage}</p> : null}
+          {!errorMessage && bootstrapError ? (
+            <p className="form-feedback form-feedback--warning">{bootstrapError}</p>
+          ) : null}
+
+          <button type="submit" disabled={isSubmitting || status === 'loading'}>
+            {isSubmitting ? 'Entrando...' : 'Entrar'}
+          </button>
         </form>
       </section>
     </main>
