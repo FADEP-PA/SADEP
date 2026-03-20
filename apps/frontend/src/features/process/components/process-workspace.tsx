@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import { getTechnicalProcessSnapshot } from '@/shared/api/services/processes-service';
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import { useAuth } from '@/shared/auth/auth-context';
+import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { PageSection } from '@/shared/ui/page-section';
 
-import type { ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
+import type { ProcessDashboardListItem, ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
 
 import { ProcessActionsCard } from './process-actions-card';
+import { ProcessBlockersCard } from './process-blockers-card';
+import { getProcessBlockers } from './process-formatters';
 import { ProcessHistoryCard } from './process-history-card';
 import { ProcessListCard } from './process-list-card';
 import { ProcessRolePlaceholdersCard } from './process-role-placeholders-card';
@@ -21,13 +24,32 @@ function getInitialProcessId() {
   return process.env.NEXT_PUBLIC_TECHNICAL_PROCESS_ID?.trim() || '';
 }
 
+function upsertConsultedProcess(
+  currentItems: ProcessDashboardListItem[],
+  snapshot: ProcessDashboardSnapshot,
+): ProcessDashboardListItem[] {
+  const nextItem: ProcessDashboardListItem = {
+    id: snapshot.workflow.id,
+    status: snapshot.workflow.status,
+    availableActionsCount: snapshot.workflow.availableActions.length,
+    historyCount: snapshot.history.length,
+    lastViewedAt: new Date().toISOString(),
+  };
+
+  const remainingItems = currentItems.filter((item) => item.id !== nextItem.id);
+  return [nextItem, ...remainingItems].slice(0, 5);
+}
+
 export function ProcessWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState(getInitialProcessId);
   const [snapshot, setSnapshot] = useState<ProcessDashboardSnapshot | null>(null);
+  const [consultedProcesses, setConsultedProcesses] = useState<ProcessDashboardListItem[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const blockers = useMemo(() => getProcessBlockers(snapshot), [snapshot]);
 
   async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,6 +67,7 @@ export function ProcessWorkspace() {
     try {
       const nextSnapshot = await getTechnicalProcessSnapshot(processId.trim(), session.accessToken);
       setSnapshot(nextSnapshot);
+      setConsultedProcesses((currentItems) => upsertConsultedProcess(currentItems, nextSnapshot));
     } catch (error) {
       const payload =
         typeof error === 'object' && error && 'payload' in error
@@ -93,23 +116,25 @@ export function ProcessWorkspace() {
         ) : null}
 
         <div className="metrics-grid">
-          <ProcessListCard snapshot={snapshot} />
+          <ProcessListCard items={consultedProcesses} activeProcessId={snapshot?.workflow.id ?? null} />
           <ProcessRolePlaceholdersCard />
         </div>
 
         {!snapshot && !errorMessage ? (
-          <div className="empty-state">
-            <strong>Estrutura pronta para leitura real.</strong>
-            <p>Carregue um processo existente para habilitar a visualização funcional desta etapa.</p>
-          </div>
+          <ContentState
+            title="Estrutura pronta para leitura real"
+            description="Carregue um processo existente para habilitar a visualização funcional desta etapa e preencher os cards conectados ao workflow base."
+            tone="info"
+          />
         ) : null}
 
         {snapshot ? (
           <div className="metrics-grid">
             <ProcessStatusCard snapshot={snapshot} />
-            <ProcessActionsCard actions={snapshot.workflow.availableActions} />
+            <ProcessActionsCard actions={snapshot.workflow.availableActions} status={snapshot.workflow.status} />
             <ProcessHistoryCard history={snapshot.history} />
             <ProcessTechnicalDetailsCard snapshot={snapshot} />
+            <ProcessBlockersCard blockers={blockers} />
           </div>
         ) : null}
 

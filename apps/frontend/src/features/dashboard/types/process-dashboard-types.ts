@@ -24,6 +24,15 @@ export type WorkflowHistoryItem = {
   occurredAt: string;
 };
 
+
+export type ProcessDashboardListItem = {
+  id: string;
+  status: ProcessStatus;
+  availableActionsCount: number;
+  historyCount: number;
+  lastViewedAt: string;
+};
+
 export type ProcessDashboardSnapshot = {
   workflow: WorkflowResponse;
   history: WorkflowHistoryItem[];

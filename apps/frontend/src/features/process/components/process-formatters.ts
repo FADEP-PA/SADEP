@@ -109,3 +109,33 @@ export function formatDateTime(value: string | null | undefined) {
 export function getLastHistoryEntry(history: WorkflowHistoryItem[]) {
   return history.length > 0 ? history[history.length - 1] : null;
 }
+
+export function getProcessBlockers(snapshot: {
+  workflow: { status: string; availableActions: string[] };
+  history: WorkflowHistoryItem[];
+  supervisorEvaluationWarning?: string | null;
+} | null) {
+  if (!snapshot) {
+    return [];
+  }
+
+  const blockers: string[] = [];
+
+  if (snapshot.workflow.availableActions.length === 0) {
+    blockers.push(`Nenhuma ação foi liberada pelo workflow para o status ${formatProcessStatus(snapshot.workflow.status)}.`);
+  }
+
+  if (snapshot.history.length === 0) {
+    blockers.push('O histórico auditável ainda não possui eventos para apoiar leitura operacional.');
+  }
+
+  if (snapshot.supervisorEvaluationWarning) {
+    blockers.push(snapshot.supervisorEvaluationWarning);
+  }
+
+  if (snapshot.workflow.status === ProcessStatus.ENCERRADO) {
+    blockers.push('O processo está encerrado e a tela permanece apenas para consulta do resultado consolidado.');
+  }
+
+  return blockers;
+}

@@ -1,5 +1,6 @@
 import { InfoCard } from '@/shared/ui/info-card';
 import { KeyValueList } from '@/shared/ui/key-value-list';
+import { ContentState } from '@/shared/ui/content-state';
 
 import type { WorkflowHistoryItem } from '@/features/dashboard/types/process-dashboard-types';
 
@@ -28,7 +29,11 @@ export function ProcessHistoryCard({ history }: ProcessHistoryCardProps) {
           ]}
         />
       ) : (
-        <p className="muted-paragraph">Ainda não há movimentações auditáveis registradas para o processo consultado.</p>
+        <ContentState
+          title="Histórico ainda indisponível"
+          description="Ainda não há movimentações auditáveis registradas para o processo consultado."
+          tone="info"
+        />
       )}
     </InfoCard>
   );
