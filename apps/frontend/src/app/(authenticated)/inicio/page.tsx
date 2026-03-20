@@ -1,55 +1,68 @@
-const systemCards = [
+'use client';
+
+import { AuthIntegrationSummary } from '@/features/auth/components/auth-integration-summary';
+import { RolePlaceholderSection } from '@/features/home/components/role-placeholder-section';
+import { useAuth } from '@/shared/auth/auth-context';
+import { getDefaultRouteByRole } from '@/shared/rbac/menu';
+
+const integrationCards = [
   {
-    title: 'Sessão',
-    description: 'Área preparada para exibir dados do usuário autenticado e seu papel atual.',
+    title: 'Sessão autenticada',
+    description: 'Token persistido no navegador e revalidação do usuário via `/auth/me` no bootstrap.',
   },
   {
-    title: 'Integrações',
-    description: 'Ponto técnico para conectar `/auth/me`, notificações e dados iniciais.',
+    title: 'Cliente HTTP',
+    description: 'Camada base de `fetch` preparada para enviar bearer token e tratar erros comuns.',
   },
   {
-    title: 'Módulos',
-    description: 'Atalho visual para os fluxos internos que serão liberados por perfil.',
+    title: 'RBAC inicial',
+    description: 'Menu lateral, redirecionamento pós-login e dashboards habilitados conforme o `UserRole`.',
   },
 ];
 
 const pendingSteps = [
-  'Conectar autenticação real com backend.',
-  'Ativar guard de rota para área autenticada.',
-  'Exibir menu por UserRole.',
+  'Conectar módulos reais da sprint nas áreas por perfil.',
+  'Refinar feedback de erro por tipo de falha do backend.',
+  'Acoplar logout, refresh e métricas de navegação nas próximas entregas.',
 ];
 
 export default function TechnicalHomePage() {
+  const { session } = useAuth();
+  const defaultRoute = session ? getDefaultRouteByRole(session.user.role) : '/inicio';
+
   return (
     <section className="technical-home">
       <div className="technical-home__hero">
         <div>
           <span className="technical-home__badge">Pós-login</span>
-          <h2>Página inicial técnica</h2>
+          <h2>Centro técnico da shell autenticada</h2>
           <p>
-            Esta é a base provisória da área autenticada, pensada para validar navegação,
-            estrutura visual e pontos de integração do frontend.
+            Esta página consolida o ponto de integração da autenticação, o estado da sessão e o
+            destino padrão por perfil dentro da Sprint 2B.
           </p>
         </div>
 
         <div className="technical-home__panel">
           <strong>Status atual</strong>
           <ul>
-            <li>Layout autenticado disponível.</li>
-            <li>Rota técnica acessível para validação visual.</li>
-            <li>Pronta para receber sessão e dados do usuário.</li>
+            <li>Usuário autenticado: {session?.user.email}</li>
+            <li>Perfil ativo: {session?.user.role}</li>
+            <li>Dashboard padrão do perfil: {defaultRoute}</li>
           </ul>
         </div>
       </div>
 
       <div className="technical-home__grid">
-        {systemCards.map((card) => (
+        {integrationCards.map((card) => (
           <article key={card.title} className="technical-home__card">
             <h3>{card.title}</h3>
             <p>{card.description}</p>
           </article>
         ))}
       </div>
+
+      <AuthIntegrationSummary />
+      {session ? <RolePlaceholderSection role={session.user.role} /> : null}
 
       <section className="technical-home__checklist" aria-labelledby="pending-steps-title">
         <div>

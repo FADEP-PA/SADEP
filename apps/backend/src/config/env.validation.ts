@@ -7,6 +7,7 @@ export interface AppEnvironment {
   PORT: number;
   DATABASE_URL: string;
   JWT_SECRET: string;
+  FRONTEND_ORIGIN: string;
 }
 
 export function validateEnvironmentVariables(config: Record<string, unknown>): AppEnvironment {
@@ -36,10 +37,17 @@ export function validateEnvironmentVariables(config: Record<string, unknown>): A
     throw new Error('Invalid JWT_SECRET: expected at least 16 characters.');
   }
 
+  const frontendOrigin = String(config.FRONTEND_ORIGIN ?? 'http://localhost:3001').trim();
+
+  if (!frontendOrigin) {
+    throw new Error('Invalid FRONTEND_ORIGIN: value is required.');
+  }
+
   return {
     NODE_ENV: nodeEnv as NodeEnv,
     PORT: parsedPort,
     DATABASE_URL: databaseUrl,
     JWT_SECRET: jwtSecret,
+    FRONTEND_ORIGIN: frontendOrigin,
   };
 }

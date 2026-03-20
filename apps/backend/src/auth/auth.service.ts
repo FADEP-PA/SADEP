@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import type { AuthLoginResponse } from '@aep-pa/contracts';
 import { UserRole } from '@aep-pa/contracts';
 
 import { AppLogger } from '../common/logging/app-logger.service';
@@ -27,7 +28,7 @@ export class AuthService {
     private readonly logger: AppLogger,
   ) {}
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string): Promise<AuthLoginResponse> {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await this.prismaService.user.findUnique({ where: { email: normalizedEmail } });
 
