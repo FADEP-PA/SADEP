@@ -20,6 +20,11 @@ const commonGroups: NavigationGroup[] = [
         href: '/inicio',
         description: 'Resumo do estado da sessão e pontos de integração do frontend.',
       },
+      {
+        label: 'Meu perfil',
+        href: '/perfil',
+        description: 'Dados do usuário autenticado, estratégia de token e estado atual da sessão.',
+      },
     ],
   },
 ];

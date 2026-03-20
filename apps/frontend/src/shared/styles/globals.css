@@ -546,6 +546,7 @@ button {
 
 .technical-home__panel ul,
 .technical-home__checklist ol,
+.technical-home__list,
 .guard-feedback ul {
   margin: 0;
   padding-left: 1.2rem;
@@ -553,9 +554,16 @@ button {
 
 .technical-home__panel li,
 .technical-home__checklist li,
+.technical-home__list li,
 .guard-feedback p,
 .forbidden-page__card p,
 .initial-loading p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.technical-home__paragraph {
+  margin: 0;
   color: var(--text-secondary);
   line-height: 1.8;
 }

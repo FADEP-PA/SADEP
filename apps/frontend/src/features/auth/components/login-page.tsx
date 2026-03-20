@@ -8,7 +8,7 @@ import { useAuth } from '@/shared/auth/auth-context';
 const highlights = [
   'Acesso rápido para servidores, chefias e comissões.',
   'Integração preparada com `/auth/login` e `/auth/me` do backend.',
-  'Persistência de sessão simples para manter o frontend autenticado.',
+  'Persistência de sessão simples e redirect pós-login conforme o `UserRole` autenticado.',
 ];
 
 export function LoginPage() {
@@ -105,7 +105,7 @@ export function LoginPage() {
               <span>Manter sessão neste dispositivo</span>
             </label>
 
-            <span className="login-form__hint">Ambiente técnico da Sprint 1B</span>
+            <span className="login-form__hint">Ambiente técnico da Sprint 2B</span>
           </div>
 
           {errorMessage ? <p className="form-feedback form-feedback--error">{errorMessage}</p> : null}
