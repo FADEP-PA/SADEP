@@ -1,10 +1,12 @@
-import { HttpError, type HttpErrorPayload } from './http-error';
+import type { ApiErrorResponse } from './api-conventions';
+import { HttpError, getHttpErrorMessage, type HttpErrorPayload } from './http-error';
 
 type Primitive = string | number | boolean | null;
 type JsonValue = Primitive | JsonValue[] | { [key: string]: JsonValue };
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: JsonValue;
+  params?: Record<string, Primitive | undefined>;
   token?: string;
 };
 
@@ -14,26 +16,45 @@ function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL;
 }
 
-async function parseResponse<T>(response: Response): Promise<T> {
+function buildUrl(path: string, params?: RequestOptions['params']) {
+  const url = new URL(`${getApiBaseUrl()}${path}`);
+
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        url.searchParams.set(key, String(value));
+      }
+    });
+  }
+
+  return url.toString();
+}
+
+async function parseJsonSafely<T>(response: Response): Promise<T | undefined> {
   const contentType = response.headers.get('content-type') || '';
-  const isJson = contentType.includes('application/json');
-  const payload = isJson ? ((await response.json()) as T | HttpErrorPayload) : undefined;
+
+  if (!contentType.includes('application/json')) {
+    return undefined;
+  }
+
+  return (await response.json()) as T;
+}
+
+async function parseResponse<T>(response: Response): Promise<T> {
+  const payload = await parseJsonSafely<T | ApiErrorResponse>(response);
 
   if (!response.ok) {
     const errorPayload = (payload ?? {}) as HttpErrorPayload;
-    const message =
-      errorPayload.message || errorPayload.error || `Falha na requisição (${response.status}).`;
-
-    throw new HttpError(response.status, message, errorPayload);
+    throw new HttpError(response.status, getHttpErrorMessage(response.status, errorPayload), errorPayload);
   }
 
   return (payload as T) ?? (undefined as T);
 }
 
 export async function httpRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, headers, token, ...rest } = options;
+  const { body, headers, params, token, ...rest } = options;
 
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetch(buildUrl(path, params), {
     ...rest,
     headers: {
       'Content-Type': 'application/json',

@@ -5,34 +5,117 @@ Interface operacional desacoplada para os perfis:
 - chefia imediata
 - CESAD/comissão
 - autoridade homologadora
+- administração técnica
 
-Sem lógica de negócio nesta fase (somente estrutura).
+Nesta etapa, o frontend já está autenticado, consome o backend real para login/sessão e também possui um dashboard técnico autenticado para consultar endpoints processuais iniciais.
 
-## Estrutura inicial
+## Estrutura atual
 
-O frontend está organizado em camadas mínimas para permitir evolução incremental:
+- `src/app`: composição de rotas, layouts, páginas técnicas e pontos de entrada do App Router.
+- `src/features/auth`: tela de login e experiência de entrada no sistema.
+- `src/features/dashboard`: dashboard técnico inicial para consultar workflow, histórico e avaliação da chefia.
+- `src/features/home`: placeholders por perfil antes do workflow real.
+- `src/shared/api`: cliente HTTP, tipos de convenção de API e organização dos serviços autenticados.
+- `src/shared/api/services`: serviços HTTP por contexto (`auth`, `processes`).
+- `src/shared/auth`: sessão, provider, bootstrap autenticado, guards e redirects.
+- `src/shared/rbac`: catálogo de perfis, labels, rotas iniciais e menu lateral.
+- `src/shared/ui`: componentes básicos padronizados (`PageSection`, `InfoCard`, `FeedbackAlert`, `StatusBadge`, `KeyValueList`).
+- `src/shared/styles`: estilos globais e tokens visuais.
 
-- `src/app`: composição de rotas, layouts, páginas de loading e pontos de entrada do App Router.
-- `src/features`: telas e componentes orientados à funcionalidade, como autenticação e placeholders por perfil.
-- `src/shared/api`: cliente HTTP base, tratamento de erro e integrações transversais.
-- `src/shared/auth`: sessão, provider, consumo de `/auth/login`, `/auth/me` e guardas de rota.
-- `src/shared/rbac`: definição do menu e navegação inicial baseada em `UserRole`.
-- `src/shared/ui`: shell autenticado, loading inicial e componentes reutilizáveis.
-- `src/shared/styles`: estilos globais da aplicação.
+## Convenções do frontend
 
-## Convenções iniciais
+### 1. Layout base
 
-- Rotas devem ficar em `src/app`.
-- Telas específicas de uma funcionalidade devem ser montadas em `src/features`.
-- Recursos transversais, como estilos, helpers de autenticação e cliente HTTP, devem ficar em `src/shared`.
-- A sessão autenticada é persistida no navegador usando `localStorage` ou `sessionStorage`, conforme a opção de login.
-- A área autenticada só deve ser renderizada após validação da sessão em `/auth/me`.
+- Toda rota autenticada deve passar por `src/app/(authenticated)/layout.tsx`.
+- O `AppShell` é a base visual obrigatória para páginas internas.
+- Páginas devem preferir `PageSection` para estrutura e `InfoCard` para blocos de conteúdo.
+- Dados resumidos devem usar `KeyValueList` em vez de listas ad hoc.
+- Status operacionais devem usar `StatusBadge` para manter consistência visual.
 
-## Ponto de integração ao final da etapa
+### 2. Componentes básicos
 
-### `POST /auth/login`
+Componentes reutilizáveis padronizados nesta etapa:
 
-Retorno esperado pelo frontend:
+- `PageSection`: seção com eyebrow, título e descrição.
+- `InfoCard`: cartão base para blocos técnicos.
+- `FeedbackAlert`: padrão único para sucesso, aviso, erro e informação.
+- `StatusBadge`: badge para estados e situações de integração.
+- `KeyValueList`: renderização de pares label/valor para payloads técnicos.
+
+### 3. Camada de serviços HTTP
+
+A camada HTTP foi organizada em dois níveis:
+
+1. `src/shared/api/http-client.ts`
+   - centraliza `fetch`
+   - aplica `Content-Type`
+   - injeta bearer token
+   - normaliza parsing JSON
+   - converte falhas em `HttpError`
+
+2. `src/shared/api/services/*`
+   - `auth-service.ts`: `/auth/login` e `/auth/me`
+   - `processes-service.ts`: `/processes/:id/workflow`, `/processes/:id/history`, `/processes/:id/supervisor-evaluation`
+
+Regra: páginas e contextos não devem chamar `fetch` bruto diretamente quando o endpoint fizer parte do contrato da aplicação.
+
+### 4. Convenção de listagem e resposta da API
+
+Para novos endpoints de listagem consumidos pelo frontend, o padrão alvo é:
+
+```json
+{
+  "items": [],
+  "meta": {
+    "total": 0,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+Convenções:
+
+- `items` contém os registros.
+- `meta.total` é obrigatório.
+- `meta.page` e `meta.pageSize` são opcionais quando não houver paginação.
+- endpoints legados que ainda retornam array puro devem ser adaptados na camada de serviço, sem contaminar os componentes de tela.
+
+### 5. Convenção de erro na UI
+
+A UI trata erros nesta ordem:
+
+1. `message`
+2. `error`
+3. fallback com status HTTP
+
+Formato alvo de erro:
+
+```json
+{
+  "statusCode": 400,
+  "message": "Mensagem principal",
+  "error": "Bad Request",
+  "path": "/rota",
+  "timestamp": "2026-03-20T00:00:00.000Z",
+  "details": {
+    "campo": ["motivo 1", "motivo 2"]
+  }
+}
+```
+
+Convenções de UI:
+
+- `FeedbackAlert` é o bloco visual padrão.
+- arrays em `message` devem ser unidos em um único texto amigável.
+- `details` é opcional e pode ser exibido em lista.
+- `401` deve limpar sessão local e redirecionar para a tela técnica de sessão expirada.
+
+## Modelos mínimos exibidos na UI
+
+### Sessão autenticada
+
+`POST /auth/login`
 
 ```json
 {
@@ -45,9 +128,7 @@ Retorno esperado pelo frontend:
 }
 ```
 
-### `GET /auth/me`
-
-Retorno esperado pelo frontend:
+`GET /auth/me`
 
 ```json
 {
@@ -57,40 +138,103 @@ Retorno esperado pelo frontend:
 }
 ```
 
-### Payload do usuário autenticado
-
-O frontend considera obrigatórios, nesta etapa:
-
+Campos mínimos obrigatórios nesta etapa:
 - `sub`
 - `email`
 - `role`
 
-### Campo `role`
+### Workflow técnico inicial
 
-O campo `role` é usado para:
+`GET /processes/:id/workflow`
 
-- decidir o redirecionamento pós-login;
-- renderizar o menu lateral por perfil;
-- proteger páginas técnicas por papel;
-- exibir o shell correspondente ao perfil autenticado.
+```json
+{
+  "id": "process-id",
+  "status": "EM_AVALIACAO",
+  "availableActions": ["START_EVALUATION"]
+}
+```
 
-### Convenção de erro de autenticação
+### Histórico técnico inicial
 
-O cliente HTTP trata falhas JSON de autenticação usando, nesta ordem:
+`GET /processes/:id/history`
 
-1. `message`
-2. `error`
-3. fallback com status HTTP
+```json
+[
+  {
+    "id": "audit-id",
+    "action": "START_EVALUATION",
+    "eventType": "EVALUATION_STARTED",
+    "actorUserId": "user-id",
+    "actorRole": "IMMEDIATE_SUPERVISOR",
+    "beforeState": null,
+    "afterState": { "supervisorEvaluationStatus": "DRAFT" },
+    "comment": null,
+    "occurredAt": "2026-03-20T00:00:00.000Z"
+  }
+]
+```
 
-Para falhas de autenticação, a convenção atual é:
+No frontend, esse retorno é adaptado para a convenção interna de listagem `{ items, meta }` dentro da camada de serviço.
 
-- `401` para credenciais inválidas;
-- `401` para token inválido;
-- `401` para token expirado.
+### Avaliação da chefia
 
-### Estratégia de token no frontend
+`GET /processes/:id/supervisor-evaluation`
 
-- `rememberMe = true` → persistir sessão em `localStorage`;
-- `rememberMe = false` → persistir sessão em `sessionStorage`;
-- no bootstrap da aplicação, o frontend chama `/auth/me` com `Bearer <token>`;
-- se o backend responder `401`, a sessão local é descartada e o usuário é redirecionado para a página técnica de sessão expirada.
+```json
+{
+  "id": "evaluation-id",
+  "processId": "process-id",
+  "evaluatorUserId": "user-id",
+  "status": "DRAFT",
+  "summary": "Resumo",
+  "generalComments": "Comentários gerais",
+  "content": {
+    "criteria": [
+      {
+        "code": "CRIT-01",
+        "label": "Critério",
+        "rating": 4,
+        "comment": "Observação opcional"
+      }
+    ]
+  },
+  "submittedAt": null,
+  "createdAt": "2026-03-20T00:00:00.000Z",
+  "updatedAt": "2026-03-20T00:00:00.000Z"
+}
+```
+
+## Identificadores e labels por perfil
+
+Catálogo centralizado usado pelo frontend:
+
+- `INTERN_SERVER` → `Servidor estagiário`
+- `IMMEDIATE_SUPERVISOR` → `Chefia imediata`
+- `CESAD_MEMBER` → `CESAD / comissão`
+- `HOMOLOGATION_AUTHORITY` → `Autoridade homologadora`
+- `ADMIN` → `Administrador técnico`
+
+Cada perfil também possui:
+- descrição curta padronizada
+- rota inicial autenticada
+- placeholder técnico antes do workflow real
+
+## Páginas placeholder antes do workflow real
+
+Mantidas nesta etapa:
+
+- `/servidor-estagiario`
+- `/chefia-imediata`
+- `/cesad-comissao`
+- `/homologacao-autoridade`
+- `/admin`
+
+Essas páginas continuam sem lógica de negócio e funcionam como espaço reservado validado por autenticação + RBAC inicial.
+
+## Estratégia de token no frontend
+
+- `rememberMe = true` → persistir sessão em `localStorage`
+- `rememberMe = false` → persistir sessão em `sessionStorage`
+- no bootstrap, o frontend chama `/auth/me` com `Bearer <token>`
+- se o backend responder `401`, a sessão local é descartada e o usuário é redirecionado para `/sessao-expirada`

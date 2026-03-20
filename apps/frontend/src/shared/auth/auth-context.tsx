@@ -1,11 +1,11 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { HttpError } from '@/shared/api/http-error';
+import { getAuthenticatedUser, login } from '@/shared/api/services/auth-service';
 
-import { loginRequest, meRequest } from './auth-api';
 import {
   DEFAULT_PUBLIC_REDIRECT,
   SESSION_EXPIRED_REDIRECT,
@@ -28,7 +28,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: Readonly<{ children: React.ReactNode }>) {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
     setStatus('loading');
 
     try {
-      const user = await meRequest(storedSession.accessToken);
+      const user = await getAuthenticatedUser(storedSession.accessToken);
       const nextSession = { ...storedSession, user };
 
       persistSession(nextSession);
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
 
   const signIn = useCallback(
     async (input: LoginInput) => {
-      const response = await loginRequest(input);
+      const response = await login(input);
       const nextSession: AuthSession = {
         accessToken: response.accessToken,
         user: response.user,
@@ -135,7 +135,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
     }
 
     try {
-      const user = await meRequest(session.accessToken);
+      const user = await getAuthenticatedUser(session.accessToken);
       const nextSession = { ...session, user };
       persistSession(nextSession);
       setSession(nextSession);

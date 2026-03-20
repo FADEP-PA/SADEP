@@ -2,6 +2,11 @@
 
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { useAuth } from '@/shared/auth/auth-context';
+import { getRolePresentation } from '@/shared/rbac/role-catalog';
+import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { InfoCard } from '@/shared/ui/info-card';
+import { KeyValueList } from '@/shared/ui/key-value-list';
+import { PageSection } from '@/shared/ui/page-section';
 
 const integrationPoints = [
   {
@@ -16,7 +21,7 @@ const integrationPoints = [
     title: 'Convenção de erro de autenticação',
     items: [
       '401 para credenciais inválidas, token inválido ou token expirado.',
-      'Payload tratado pelo frontend via `message`, `error` e `statusCode`.',
+      'Payload tratado pelo frontend via `message`, `error`, `statusCode`, `path` e `timestamp`.',
     ],
   },
   {
@@ -31,56 +36,56 @@ const integrationPoints = [
 
 export default function AuthenticatedProfilePage() {
   const { session, status, bootstrapError } = useAuth();
+  const rolePresentation = session ? getRolePresentation(session.user.role) : null;
 
   return (
     <AuthGuard>
-      <section className="technical-home" aria-labelledby="authenticated-profile-title">
-        <div className="technical-home__hero">
-          <div>
-            <span className="technical-home__badge">Usuário autenticado</span>
-            <h2 id="authenticated-profile-title">Perfil da sessão atual</h2>
-            <p>
-              Painel técnico com o payload devolvido pelo backend e com as convenções de integração
-              usadas pelo frontend nesta etapa.
-            </p>
-          </div>
+      <PageSection
+        eyebrow="Usuário autenticado"
+        title="Perfil da sessão atual"
+        description="Painel técnico com payload do backend, labels por papel e convenções de integração usadas nesta etapa."
+      >
+        <div className="metrics-grid">
+          <InfoCard title="Payload atual" description="Dados mínimos usados para bootstrap e RBAC da UI.">
+            <KeyValueList
+              items={[
+                { label: 'status', value: status },
+                { label: 'sub', value: session?.user.sub ?? 'Não informado' },
+                { label: 'email', value: session?.user.email ?? 'Não informado' },
+                { label: 'role', value: session?.user.role ?? 'Não informado' },
+                { label: 'rememberMe', value: session?.rememberMe ? 'true' : 'false' },
+              ]}
+            />
+          </InfoCard>
 
-          <div className="technical-home__panel">
-            <strong>Payload atual</strong>
-            <ul>
-              <li>status: {status}</li>
-              <li>sub: {session?.user.sub}</li>
-              <li>email: {session?.user.email}</li>
-              <li>role: {session?.user.role}</li>
-              <li>rememberMe: {session?.rememberMe ? 'true' : 'false'}</li>
-            </ul>
-          </div>
+          <InfoCard title="Perfil catalogado" description="Fonte única para labels, descrições e rota inicial por papel.">
+            <KeyValueList
+              items={[
+                { label: 'label', value: rolePresentation?.label ?? 'Não informado' },
+                { label: 'atalho', value: rolePresentation?.shortLabel ?? 'Não informado' },
+                { label: 'homePath', value: rolePresentation?.homePath ?? 'Não informado' },
+                { label: 'descrição', value: rolePresentation?.description ?? 'Não informada' },
+              ]}
+            />
+          </InfoCard>
         </div>
 
-        <div className="technical-home__grid">
+        <div className="metrics-grid">
           {integrationPoints.map((section) => (
-            <article key={section.title} className="technical-home__card">
-              <h3>{section.title}</h3>
-              <ul className="technical-home__list">
+            <InfoCard key={section.title} title={section.title}>
+              <ul className="content-list">
                 {section.items.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
-            </article>
+            </InfoCard>
           ))}
         </div>
 
         {bootstrapError ? (
-          <section className="technical-home__checklist" aria-labelledby="profile-error-title">
-            <div>
-              <span className="technical-home__section-label">Último aviso</span>
-              <h3 id="profile-error-title">Feedback de autenticação capturado</h3>
-            </div>
-
-            <p className="technical-home__paragraph">{bootstrapError}</p>
-          </section>
+          <FeedbackAlert title="Último aviso de autenticação" tone="warning" description={bootstrapError} />
         ) : null}
-      </section>
+      </PageSection>
     </AuthGuard>
   );
 }
