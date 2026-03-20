@@ -6,3 +6,5 @@ export * from './process-status';
 export * from './signature-provider';
 export * from './signature-status';
 export * from './user-role';
+
+export * from './supervisor-evaluation-status';

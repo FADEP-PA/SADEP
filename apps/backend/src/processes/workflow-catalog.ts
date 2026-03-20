@@ -16,10 +16,10 @@ export type WorkflowTransitionDefinition = {
 
 const WORKFLOW_TRANSITIONS: readonly WorkflowTransitionDefinition[] = [
   {
-    action: ProcessAction.SEND_TO_CESAD,
+    action: ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
     from: ProcessStatus.EM_AVALIACAO,
-    to: ProcessStatus.EM_ANALISE_CESAD,
-    eventType: AuditEventType.SENT_TO_CESAD,
+    to: ProcessStatus.AGUARDANDO_ASSINATURA,
+    eventType: AuditEventType.SIGNATURE_REQUESTED,
     allowedRoles: [UserRole.ADMIN, UserRole.IMMEDIATE_SUPERVISOR],
     requiresComment: false,
   },

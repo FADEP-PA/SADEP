@@ -7,6 +7,7 @@ import { AppModule } from '../../app/app.module';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
 import { AppLogger } from '../../common/logging/app-logger.service';
 import {
+  buildSupervisorEvaluationPayload,
   createProcess,
   createTestContext,
   createUser,
@@ -62,6 +63,37 @@ export async function runProcessesEndpointTests() {
     assert.equal(transitionResponse.status, 400);
     const payload = (await transitionResponse.json()) as { message: string };
     assert.match(payload.message, /not allowed when process is in status EM_AVALIACAO/);
+
+    const blockedCesadShortcutResponse = await fetch(`${baseUrl}/processes/${process.id}/workflow/transition`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${loginPayload.accessToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: workflowActions.sendToCesad,
+      }),
+    });
+
+    assert.equal(blockedCesadShortcutResponse.status, 400);
+    const blockedShortcutPayload = (await blockedCesadShortcutResponse.json()) as { message: string };
+    assert.match(blockedShortcutPayload.message, /Workflow action is required and must be valid/);
+
+    const forbiddenDraftResponse = await fetch(
+      `${baseUrl}/processes/${process.id}/supervisor-evaluation/draft`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${loginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(buildSupervisorEvaluationPayload()),
+      },
+    );
+
+    assert.equal(forbiddenDraftResponse.status, 403);
+    const forbiddenPayload = (await forbiddenDraftResponse.json()) as { message: string };
+    assert.match(forbiddenPayload.message, /cannot manipulate supervisor evaluations/);
   } finally {
     await app.close();
     await disposeTestContext(context);
