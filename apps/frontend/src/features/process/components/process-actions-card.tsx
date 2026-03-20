@@ -1,12 +1,14 @@
 import { InfoCard } from '@/shared/ui/info-card';
+import { ContentState } from '@/shared/ui/content-state';
 
-import { formatProcessAction } from './process-formatters';
+import { formatProcessAction, formatProcessStatus } from './process-formatters';
 
 type ProcessActionsCardProps = {
   actions: string[];
+  status: string;
 };
 
-export function ProcessActionsCard({ actions }: ProcessActionsCardProps) {
+export function ProcessActionsCard({ actions, status }: ProcessActionsCardProps) {
   return (
     <InfoCard
       eyebrow="Ações disponíveis"
@@ -20,7 +22,11 @@ export function ProcessActionsCard({ actions }: ProcessActionsCardProps) {
           ))}
         </ul>
       ) : (
-        <p className="muted-paragraph">Nenhuma ação disponível para o perfil autenticado neste momento.</p>
+        <ContentState
+          title="Nenhuma ação liberada no momento"
+          description={`O workflow não retornou ações para o perfil autenticado enquanto o processo está em ${formatProcessStatus(status)}.`}
+          tone="warning"
+        />
       )}
     </InfoCard>
   );

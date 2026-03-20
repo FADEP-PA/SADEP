@@ -30,6 +30,10 @@ export function ProcessTechnicalDetailsCard({ snapshot }: ProcessTechnicalDetail
               ? formatDateTime(snapshot.supervisorEvaluation.updatedAt)
               : formatDateTime(snapshot.history[snapshot.history.length - 1]?.occurredAt),
           },
+          {
+            label: 'Integração parcial',
+            value: snapshot.supervisorEvaluationWarning ? 'Sim, com restrição por perfil' : 'Não identificada',
+          },
         ]}
       />
     </InfoCard>
