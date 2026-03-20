@@ -18,14 +18,14 @@ const commonGroups: NavigationGroup[] = [
     title: 'Base da aplicação',
     items: [
       {
-        label: 'Início técnico',
+        label: 'Início',
         href: '/inicio',
-        description: 'Resumo da sessão, dashboard inicial e contratos ativos entre frontend e backend.',
+        description: 'Resumo da sessão, visão inicial do processo e consultas disponíveis.',
       },
       {
         label: 'Meu perfil',
         href: '/perfil',
-        description: 'Dados do usuário autenticado, labels por papel e estratégia de sessão.',
+        description: 'Dados do usuário autenticado, perfil de acesso e informações da sessão.',
       },
     ],
   },
@@ -40,7 +40,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
         {
           label: getRolePresentation(UserRole.INTERN_SERVER).label,
           href: '/servidor-estagiario',
-          description: 'Placeholder inicial para autoavaliação, ciência e acompanhamento.',
+          description: 'Visão inicial para acompanhamento do processo, ciência e registros do servidor.',
         },
       ],
     },
@@ -53,7 +53,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
         {
           label: getRolePresentation(UserRole.IMMEDIATE_SUPERVISOR).label,
           href: '/chefia-imediata',
-          description: 'Placeholder inicial para avaliações, pendências e fluxos da chefia.',
+          description: 'Visão inicial para avaliação, pendências e acompanhamento da chefia.',
         },
       ],
     },
@@ -66,7 +66,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
         {
           label: getRolePresentation(UserRole.CESAD_MEMBER).label,
           href: '/cesad-comissao',
-          description: 'Placeholder inicial para análise colegiada, pareceres e histórico.',
+          description: 'Visão inicial para análise colegiada, pareceres e histórico do fluxo.',
         },
       ],
     },
@@ -79,7 +79,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
         {
           label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
           href: '/homologacao-autoridade',
-          description: 'Placeholder inicial para homologação, assinatura e despacho final.',
+          description: 'Visão inicial para homologação, despacho e conferência do processo.',
         },
       ],
     },
@@ -87,17 +87,17 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.ADMIN]: [
     ...commonGroups,
     {
-      title: 'Gestão técnica',
+      title: 'Gestão administrativa',
       items: [
         {
           label: getRolePresentation(UserRole.ADMIN).label,
           href: '/admin',
-          description: 'Placeholder inicial para observabilidade, suporte e administração.',
+          description: 'Visão inicial para suporte operacional, permissões e administração.',
         },
         {
           label: getRolePresentation(UserRole.CESAD_MEMBER).label,
           href: '/cesad-comissao',
-          description: 'Visualizar atalhos equivalentes para apoio operacional e validação.',
+          description: 'Visualizar a área colegiada para apoio operacional e validação do fluxo.',
         },
       ],
     },

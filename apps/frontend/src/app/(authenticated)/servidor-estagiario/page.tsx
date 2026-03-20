@@ -7,8 +7,8 @@ export default function InternServerPage() {
     <RolePlaceholderPage
       allowedRoles={[UserRole.INTERN_SERVER, UserRole.ADMIN]}
       title="Área do servidor estagiário"
-      description="Placeholder inicial para os fluxos do servidor em estágio probatório dentro da área autenticada."
-      highlights={['Autoavaliação', 'Ciência do processo', 'Notificações e pendências']}
+      description="Visão inicial para acompanhamento do processo, registros de ciência e pendências do servidor em estágio probatório."
+      highlights={['Situação do processo', 'Ciência do processo', 'Notificações e pendências']}
     />
   );
 }

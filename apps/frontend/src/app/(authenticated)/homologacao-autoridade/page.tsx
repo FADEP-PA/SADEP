@@ -7,8 +7,8 @@ export default function HomologationAuthorityPage() {
     <RolePlaceholderPage
       allowedRoles={[UserRole.HOMOLOGATION_AUTHORITY, UserRole.ADMIN]}
       title="Área da autoridade homologadora"
-      description="Placeholder inicial para homologação, despacho conclusivo e encerramento administrativo do fluxo."
-      highlights={['Homologação', 'Despacho final', 'Conferência de pareceres']}
+      description="Visão inicial para homologação, despacho conclusivo e conferência dos marcos finais do processo."
+      highlights={['Homologação', 'Despacho final', 'Conferência do processo']}
     />
   );
 }

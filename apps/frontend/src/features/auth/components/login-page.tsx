@@ -6,9 +6,9 @@ import { getRequestErrorMessage } from '@/shared/api/http-error';
 import { useAuth } from '@/shared/auth/auth-context';
 
 const highlights = [
-  'Acesso rápido para servidores, chefias e comissões.',
-  'Integração preparada com `/auth/login` e `/auth/me` do backend.',
-  'Persistência de sessão simples e redirect pós-login conforme o `UserRole` autenticado.',
+  'Acesso seguro para os perfis autorizados do fluxo administrativo.',
+  'Autenticação integrada ao ambiente institucional da aplicação.',
+  'Entrada única para acompanhamento dos processos e pendências do sistema.',
 ];
 
 export function LoginPage() {
@@ -58,7 +58,7 @@ export function LoginPage() {
         <div className="login-card__header">
           <p className="login-kicker">Bem-vindo</p>
           <h2 id="login-title">Faça seu login</h2>
-          <p>Use as mesmas credenciais cadastradas no backend.</p>
+          <p>Use suas credenciais institucionais para acessar o ambiente autenticado.</p>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
@@ -105,7 +105,7 @@ export function LoginPage() {
               <span>Manter sessão neste dispositivo</span>
             </label>
 
-            <span className="login-form__hint">Ambiente técnico da Sprint 2B</span>
+            <span className="login-form__hint">Acesso restrito a usuários autorizados</span>
           </div>
 
           {errorMessage ? <p className="form-feedback form-feedback--error">{errorMessage}</p> : null}

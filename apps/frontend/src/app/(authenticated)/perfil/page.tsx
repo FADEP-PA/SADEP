@@ -43,10 +43,10 @@ export default function AuthenticatedProfilePage() {
       <PageSection
         eyebrow="Usuário autenticado"
         title="Perfil da sessão atual"
-        description="Painel técnico com payload do backend, labels por papel e convenções de integração usadas nesta etapa."
+        description="Painel da sessão atual com dados do usuário autenticado, perfil de acesso e informações de autenticação."
       >
         <div className="metrics-grid">
-          <InfoCard title="Payload atual" description="Dados mínimos usados para bootstrap e RBAC da UI.">
+          <InfoCard title="Payload atual" description="Dados utilizados para identificação da sessão autenticada.">
             <KeyValueList
               items={[
                 { label: 'status', value: status },
@@ -58,7 +58,7 @@ export default function AuthenticatedProfilePage() {
             />
           </InfoCard>
 
-          <InfoCard title="Perfil catalogado" description="Fonte única para labels, descrições e rota inicial por papel.">
+          <InfoCard title="Perfil catalogado" description="Referência central para perfil, descrição institucional e rota inicial por papel.">
             <KeyValueList
               items={[
                 { label: 'label', value: rolePresentation?.label ?? 'Não informado' },

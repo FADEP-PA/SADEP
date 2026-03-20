@@ -7,8 +7,8 @@ export default function CesadCommissionPage() {
     <RolePlaceholderPage
       allowedRoles={[UserRole.CESAD_MEMBER, UserRole.ADMIN]}
       title="Área CESAD / comissão"
-      description="Placeholder inicial para análise colegiada, emissão de pareceres e rastreabilidade processual."
-      highlights={['Processos em análise', 'Pareceres', 'Auditoria do fluxo']}
+      description="Visão inicial para análise colegiada, emissão de pareceres e acompanhamento do histórico processual."
+      highlights={['Processos em análise', 'Pareceres', 'Trilha de auditoria']}
     />
   );
 }

@@ -7,8 +7,8 @@ export default function ImmediateSupervisorPage() {
     <RolePlaceholderPage
       allowedRoles={[UserRole.IMMEDIATE_SUPERVISOR, UserRole.ADMIN]}
       title="Área da chefia imediata"
-      description="Placeholder inicial para as entregas de avaliação e acompanhamento operacional da chefia imediata."
-      highlights={['Avaliações', 'Pendências de assinatura', 'Acompanhamento do servidor']}
+      description="Visão inicial para acompanhamento da avaliação, pendências e andamento do processo pela chefia imediata."
+      highlights={['Avaliações em andamento', 'Pendências da etapa', 'Histórico do servidor']}
     />
   );
 }
