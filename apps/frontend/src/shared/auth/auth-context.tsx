@@ -6,6 +6,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { HttpError } from '@/shared/api/http-error';
 
 import { loginRequest, meRequest } from './auth-api';
+import {
+  DEFAULT_PUBLIC_REDIRECT,
+  SESSION_EXPIRED_REDIRECT,
+  getAuthenticatedHomeByRole,
+  isPublicAuthRoute,
+} from './auth-routes';
 import { clearSession, persistSession, readSession } from './session-storage';
 import type { AuthSession, LoginInput } from './auth-types';
 
@@ -22,15 +28,13 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const DEFAULT_AUTHENTICATED_REDIRECT = '/inicio';
-const DEFAULT_PUBLIC_REDIRECT = '/';
-
 export function AuthProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  const [authRedirectPath, setAuthRedirectPath] = useState<string | null>(null);
 
   const bootstrapSession = useCallback(async () => {
     const storedSession = readSession();
@@ -39,6 +43,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
       setSession(null);
       setStatus('anonymous');
       setBootstrapError(null);
+      setAuthRedirectPath(null);
       return;
     }
 
@@ -52,13 +57,25 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
       setSession(nextSession);
       setStatus('authenticated');
       setBootstrapError(null);
+      setAuthRedirectPath(null);
     } catch (error) {
       clearSession();
       setSession(null);
       setStatus('anonymous');
-      setBootstrapError(error instanceof Error ? error.message : 'Sessão inválida ou expirada.');
+
+      const nextErrorMessage =
+        error instanceof Error ? error.message : 'Sessão inválida ou expirada.';
+
+      setBootstrapError(nextErrorMessage);
+
+      if (error instanceof HttpError && error.status === 401 && !isPublicAuthRoute(pathname)) {
+        setAuthRedirectPath(SESSION_EXPIRED_REDIRECT);
+        return;
+      }
+
+      setAuthRedirectPath(null);
     }
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     void bootstrapSession();
@@ -69,15 +86,19 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
       return;
     }
 
-    if (status !== 'authenticated' && pathname !== '/' && pathname !== '/403') {
-      router.replace(DEFAULT_PUBLIC_REDIRECT);
+    if (status !== 'authenticated' && !isPublicAuthRoute(pathname)) {
+      router.replace(authRedirectPath ?? DEFAULT_PUBLIC_REDIRECT);
       return;
     }
 
-    if (status === 'authenticated' && pathname === '/') {
-      router.replace(DEFAULT_AUTHENTICATED_REDIRECT);
+    if (status === 'authenticated' && session && pathname === '/') {
+      router.replace(getAuthenticatedHomeByRole(session.user.role));
     }
-  }, [pathname, router, status]);
+
+    if (status === 'authenticated' && session && pathname === SESSION_EXPIRED_REDIRECT) {
+      router.replace(getAuthenticatedHomeByRole(session.user.role));
+    }
+  }, [authRedirectPath, pathname, router, session, status]);
 
   const signIn = useCallback(
     async (input: LoginInput) => {
@@ -92,7 +113,8 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
       setSession(nextSession);
       setStatus('authenticated');
       setBootstrapError(null);
-      router.replace(DEFAULT_AUTHENTICATED_REDIRECT);
+      setAuthRedirectPath(null);
+      router.replace(getAuthenticatedHomeByRole(response.user.role));
       router.refresh();
     },
     [router],
@@ -102,6 +124,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
     clearSession();
     setSession(null);
     setStatus('anonymous');
+    setAuthRedirectPath(null);
     router.replace(DEFAULT_PUBLIC_REDIRECT);
     router.refresh();
   }, [router]);
@@ -120,13 +143,17 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
       setBootstrapError(null);
     } catch (error) {
       if (error instanceof HttpError && error.status === 401) {
-        signOut();
+        setBootstrapError('Sua sessão expirou. Faça login novamente para continuar.');
+        clearSession();
+        setSession(null);
+        setStatus('anonymous');
+        setAuthRedirectPath(SESSION_EXPIRED_REDIRECT);
         return;
       }
 
       throw error;
     }
-  }, [session, signOut]);
+  }, [session]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

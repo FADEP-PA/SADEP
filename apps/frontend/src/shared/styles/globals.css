@@ -242,8 +242,41 @@ button {
   color: #92400e;
 }
 
+.feedback-banner {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.feedback-banner strong {
+  font-size: 0.95rem;
+}
+
+.feedback-banner p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.feedback-banner--info {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+}
+
+.feedback-banner--warning {
+  background: var(--warning-soft);
+  color: #92400e;
+}
+
+.feedback-banner--error {
+  background: var(--danger-soft);
+  color: #b91c1c;
+}
+
 .login-form button,
 .app-shell__actions button,
+.app-shell__secondary-link,
 .forbidden-page__actions a,
 .guard-feedback a {
   border: 0;
@@ -259,6 +292,7 @@ button {
 
 .login-form button:hover,
 .app-shell__actions button:hover,
+.app-shell__secondary-link:hover,
 .forbidden-page__actions a:hover,
 .guard-feedback a:hover {
   transform: translateY(-1px);
@@ -268,6 +302,7 @@ button {
 
 .login-form button:active,
 .app-shell__actions button:active,
+.app-shell__secondary-link:active,
 .forbidden-page__actions a:active,
 .guard-feedback a:active {
   transform: translateY(0);
@@ -461,6 +496,13 @@ button {
   border: 1px solid rgba(37, 99, 235, 0.18);
 }
 
+.app-shell__secondary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .app-shell__main {
   padding: 0 2rem 2rem;
 }
@@ -546,6 +588,7 @@ button {
 
 .technical-home__panel ul,
 .technical-home__checklist ol,
+.technical-home__list,
 .guard-feedback ul {
   margin: 0;
   padding-left: 1.2rem;
@@ -553,9 +596,16 @@ button {
 
 .technical-home__panel li,
 .technical-home__checklist li,
+.technical-home__list li,
 .guard-feedback p,
 .forbidden-page__card p,
 .initial-loading p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.technical-home__paragraph {
+  margin: 0;
   color: var(--text-secondary);
   line-height: 1.8;
 }
@@ -569,6 +619,26 @@ button {
 .technical-home__checklist {
   display: grid;
   gap: 1rem;
+}
+
+.technical-home__table {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.technical-home__table-row {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.technical-home__table-row span,
+.technical-home__table-row small {
+  color: var(--text-secondary);
+  line-height: 1.7;
 }
 
 .initial-loading,

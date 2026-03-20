@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 
 import { useAuth } from '@/shared/auth/auth-context';
 import { getMenuByRole } from '@/shared/rbac/menu';
+import { getRoleMetadata } from '@/shared/rbac/role-metadata';
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
   const pathname = usePathname();
   const { session, signOut } = useAuth();
   const navigationGroups = session ? getMenuByRole(session.user.role) : [];
+  const roleMetadata = session ? getRoleMetadata(session.user.role) : null;
 
   return (
     <div className="app-shell">
@@ -26,9 +28,26 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
           <span className="app-shell__brand-badge">AEP-PA</span>
           <div>
             <strong>Área interna</strong>
-            <p>Base visual para os fluxos autenticados.</p>
+            <p>Base visual refinada para os fluxos autenticados e dashboards técnicos iniciais.</p>
           </div>
         </div>
+
+        {session && roleMetadata ? (
+          <div className="app-shell__sidebar-card">
+            <strong>{roleMetadata.label}</strong>
+            <small>{roleMetadata.description}</small>
+            <ul>
+              <li>
+                <span>Identificador</span>
+                <small>{roleMetadata.identifier}</small>
+              </li>
+              <li>
+                <span>E-mail ativo</span>
+                <small>{session.user.email}</small>
+              </li>
+            </ul>
+          </div>
+        ) : null}
 
         <nav className="app-shell__nav" aria-label="Seções da aplicação">
           {navigationGroups.map((group) => (
@@ -67,8 +86,11 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
             {headerActions ?? (
               <>
                 <span className="app-shell__status">
-                  {session?.user.email} · {session?.user.role}
+                  {session?.user.email} · {roleMetadata?.shortLabel ?? session?.user.role}
                 </span>
+                <Link href="/processos" className="app-shell__secondary-link">
+                  Ver processos
+                </Link>
                 <button type="button" onClick={signOut}>
                   Sair
                 </button>

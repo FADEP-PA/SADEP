@@ -2,6 +2,7 @@
 
 import { RolePlaceholderSection } from '@/features/home/components/role-placeholder-section';
 import { useAuth } from '@/shared/auth/auth-context';
+import { DashboardCard } from '@/shared/ui/dashboard-card';
 
 const integrationCards = [
   {
@@ -18,10 +19,13 @@ const integrationCards = [
   },
 ];
 
-const pendingSteps = [
-  'Conectar módulos reais da sprint nas áreas por perfil.',
-  'Refinar feedback de erro por tipo de falha do backend.',
-  'Acoplar logout, refresh e métricas de navegação nas próximas entregas.',
+const integrationChecklist = [
+  'Formato de `/auth/login`: `{ accessToken, user: { sub, email, role } }`.',
+  'Formato de `/auth/me`: `{ sub, email, role }`.',
+  'Payload autenticado usa `sub`, `email` e `role` como base mínima.',
+  'Campo `role` é o pivô para redirect pós-login, menu lateral e guard por papel.',
+  'Erros 401 do backend são tratados como sessão inválida/expirada no frontend.',
+  'Token fica em `localStorage` ou `sessionStorage` conforme `rememberMe`.',
 ];
 
 export default function TechnicalHomePage() {
@@ -51,10 +55,7 @@ export default function TechnicalHomePage() {
 
       <div className="technical-home__grid">
         {integrationCards.map((card) => (
-          <article key={card.title} className="technical-home__card">
-            <h3>{card.title}</h3>
-            <p>{card.description}</p>
-          </article>
+          <DashboardCard key={card.title} title={card.title} description={card.description} />
         ))}
       </div>
 
@@ -62,12 +63,12 @@ export default function TechnicalHomePage() {
 
       <section className="technical-home__checklist" aria-labelledby="pending-steps-title">
         <div>
-          <span className="technical-home__section-label">Próximas integrações</span>
-          <h3 id="pending-steps-title">O que falta ligar nesta etapa</h3>
+          <span className="technical-home__section-label">Ponto de integração final</span>
+          <h3 id="pending-steps-title">Contrato técnico consolidado desta etapa</h3>
         </div>
 
         <ol>
-          {pendingSteps.map((step) => (
+          {integrationChecklist.map((step) => (
             <li key={step}>{step}</li>
           ))}
         </ol>

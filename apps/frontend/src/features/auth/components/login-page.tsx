@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 
-import { getRequestErrorMessage } from '@/shared/api/http-error';
+import { getUiErrorState } from '@/shared/api/http-error';
 import { useAuth } from '@/shared/auth/auth-context';
+import { FeedbackBanner } from '@/shared/ui/feedback-banner';
 
 const highlights = [
   'Acesso rápido para servidores, chefias e comissões.',
   'Integração preparada com `/auth/login` e `/auth/me` do backend.',
-  'Persistência de sessão simples para manter o frontend autenticado.',
+  'Persistência de sessão simples e redirect pós-login conforme o `UserRole` autenticado.',
 ];
 
 export function LoginPage() {
@@ -16,12 +17,12 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorState, setErrorState] = useState<{ title: string; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setErrorMessage(null);
+    setErrorState(null);
     setIsSubmitting(true);
 
     try {
@@ -31,7 +32,7 @@ export function LoginPage() {
         rememberMe,
       });
     } catch (error) {
-      setErrorMessage(getRequestErrorMessage(error, 'Não foi possível realizar o login.'));
+      setErrorState(getUiErrorState(error, 'Não foi possível realizar o login.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -105,12 +106,18 @@ export function LoginPage() {
               <span>Manter sessão neste dispositivo</span>
             </label>
 
-            <span className="login-form__hint">Ambiente técnico da Sprint 1B</span>
+            <span className="login-form__hint">Ambiente técnico da Sprint 2B</span>
           </div>
 
-          {errorMessage ? <p className="form-feedback form-feedback--error">{errorMessage}</p> : null}
-          {!errorMessage && bootstrapError ? (
-            <p className="form-feedback form-feedback--warning">{bootstrapError}</p>
+          {errorState ? (
+            <FeedbackBanner title={errorState.title} message={errorState.message} variant="error" />
+          ) : null}
+          {!errorState && bootstrapError ? (
+            <FeedbackBanner
+              title="Aviso de autenticação"
+              message={bootstrapError}
+              variant="warning"
+            />
           ) : null}
 
           <button type="submit" disabled={isSubmitting || status === 'loading'}>
