@@ -1,31 +1,24 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+import { useAuth } from '@/shared/auth/auth-context';
+import { getMenuByRole } from '@/shared/rbac/menu';
 
 type AppShellProps = {
-  children: ReactNode;
+  children: React.ReactNode;
   title: string;
   subtitle?: string;
-  headerActions?: ReactNode;
-  sidebarFooter?: ReactNode;
+  headerActions?: React.ReactNode;
+  sidebarFooter?: React.ReactNode;
 };
 
-const navigationGroups = [
-  {
-    title: 'Base da aplicação',
-    items: ['Visão geral', 'Fluxos internos', 'Atividades recentes'],
-  },
-  {
-    title: 'Módulos',
-    items: ['Processos', 'Documentos', 'Assinaturas'],
-  },
-];
+export function AppShell({ children, title, subtitle, headerActions, sidebarFooter }: AppShellProps) {
+  const pathname = usePathname();
+  const { session, signOut } = useAuth();
+  const navigationGroups = session ? getMenuByRole(session.user.role) : [];
 
-export function AppShell({
-  children,
-  title,
-  subtitle,
-  headerActions,
-  sidebarFooter,
-}: AppShellProps) {
   return (
     <div className="app-shell">
       <aside className="app-shell__sidebar" aria-label="Navegação principal da aplicação">
@@ -42,11 +35,18 @@ export function AppShell({
             <section key={group.title} className="app-shell__nav-group">
               <p>{group.title}</p>
               <ul>
-                {group.items.map((item) => (
-                  <li key={item}>
-                    <span>{item}</span>
-                  </li>
-                ))}
+                {group.items.map((item) => {
+                  const isActive = pathname === item.href;
+
+                  return (
+                    <li key={item.href}>
+                      <Link href={item.href} className={isActive ? 'app-shell__nav-link app-shell__nav-link--active' : 'app-shell__nav-link'}>
+                        <span>{item.label}</span>
+                        <small>{item.description}</small>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           ))}
@@ -66,8 +66,12 @@ export function AppShell({
           <div className="app-shell__actions">
             {headerActions ?? (
               <>
-                <span className="app-shell__status">Sessão autenticada</span>
-                <button type="button">Ações rápidas</button>
+                <span className="app-shell__status">
+                  {session?.user.email} · {session?.user.role}
+                </span>
+                <button type="button" onClick={signOut}>
+                  Sair
+                </button>
               </>
             )}
           </div>

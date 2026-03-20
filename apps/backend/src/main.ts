@@ -17,9 +17,16 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter(logger));
 
   const appConfigService = app.get(AppConfigService);
+  app.enableCors({
+    origin: appConfigService.frontendOrigin,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
   await app.listen(appConfigService.port);
 
   logger.log(`Backend listening on port ${appConfigService.port}`);
+  logger.log(`CORS enabled for ${appConfigService.frontendOrigin}`);
 }
 
 void bootstrap();

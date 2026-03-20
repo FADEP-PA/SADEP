@@ -8,6 +8,9 @@
   --accent: #2563eb;
   --accent-strong: #1d4ed8;
   --accent-soft: rgba(37, 99, 235, 0.12);
+  --success-soft: rgba(22, 163, 74, 0.12);
+  --warning-soft: rgba(245, 158, 11, 0.14);
+  --danger-soft: rgba(239, 68, 68, 0.14);
   --shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
 }
 
@@ -38,6 +41,14 @@ a:hover {
   text-decoration: underline;
 }
 
+code {
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.5rem;
+  background: rgba(15, 23, 42, 0.06);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+}
+
 input,
 button {
   font: inherit;
@@ -60,7 +71,9 @@ button {
   padding: 2rem;
 }
 
-.login-badge {
+.login-badge,
+.forbidden-page__badge,
+.guard-feedback__badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -193,6 +206,10 @@ button {
   font-size: 0.95rem;
 }
 
+.login-form__hint {
+  font-weight: 600;
+}
+
 .checkbox-field {
   display: inline-flex;
   align-items: center;
@@ -207,7 +224,28 @@ button {
   accent-color: var(--accent);
 }
 
-.login-form button {
+.form-feedback {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.form-feedback--error {
+  background: var(--danger-soft);
+  color: #b91c1c;
+}
+
+.form-feedback--warning {
+  background: var(--warning-soft);
+  color: #92400e;
+}
+
+.login-form button,
+.app-shell__actions button,
+.forbidden-page__actions a,
+.guard-feedback a {
   border: 0;
   border-radius: 1rem;
   padding: 1rem 1.2rem;
@@ -219,13 +257,25 @@ button {
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
-.login-form button:hover {
+.login-form button:hover,
+.app-shell__actions button:hover,
+.forbidden-page__actions a:hover,
+.guard-feedback a:hover {
   transform: translateY(-1px);
   filter: brightness(1.03);
+  text-decoration: none;
 }
 
-.login-form button:active {
+.login-form button:active,
+.app-shell__actions button:active,
+.forbidden-page__actions a:active,
+.guard-feedback a:active {
   transform: translateY(0);
+}
+
+.login-form button:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .app-shell {
@@ -308,18 +358,37 @@ button {
   gap: 0.2rem;
 }
 
-.app-shell__nav-group span {
+.app-shell__nav-link {
+  display: grid;
+  gap: 0.25rem;
   border-radius: 0.9rem;
   padding: 0.8rem 0.95rem;
   background: rgba(30, 41, 59, 0.9);
   color: #e2e8f0;
-  font-weight: 600;
   transition: background 0.2s ease, transform 0.2s ease;
 }
 
-.app-shell__nav-group span:hover {
+.app-shell__nav-link span,
+.app-shell__sidebar-card span {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.app-shell__nav-link small,
+.app-shell__sidebar-card small {
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.app-shell__nav-link:hover {
   background: rgba(37, 99, 235, 0.22);
   transform: translateX(2px);
+  text-decoration: none;
+}
+
+.app-shell__nav-link--active {
+  background: rgba(37, 99, 235, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.2);
 }
 
 .app-shell__sidebar-card {
@@ -333,16 +402,6 @@ button {
 
 .app-shell__sidebar-card strong {
   font-size: 0.95rem;
-}
-
-.app-shell__sidebar-card span {
-  color: #f8fafc;
-  font-weight: 600;
-}
-
-.app-shell__sidebar-card small {
-  color: #94a3b8;
-  line-height: 1.5;
 }
 
 .app-shell__content {
@@ -400,12 +459,6 @@ button {
 
 .app-shell__actions button {
   border: 1px solid rgba(37, 99, 235, 0.18);
-  border-radius: 0.95rem;
-  padding: 0.85rem 1rem;
-  background: #ffffff;
-  color: var(--text-primary);
-  font-weight: 700;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
 .app-shell__main {
@@ -468,14 +521,21 @@ button {
 
 .technical-home__panel,
 .technical-home__card,
-.technical-home__checklist {
+.technical-home__checklist,
+.initial-loading,
+.guard-feedback,
+.forbidden-page__card {
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 1.25rem;
   background: rgba(255, 255, 255, 0.86);
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
 }
 
-.technical-home__panel {
+.technical-home__panel,
+.technical-home__card,
+.technical-home__checklist,
+.guard-feedback,
+.forbidden-page__card {
   padding: 1.25rem;
 }
 
@@ -485,13 +545,17 @@ button {
 }
 
 .technical-home__panel ul,
-.technical-home__checklist ol {
+.technical-home__checklist ol,
+.guard-feedback ul {
   margin: 0;
   padding-left: 1.2rem;
 }
 
 .technical-home__panel li,
-.technical-home__checklist li {
+.technical-home__checklist li,
+.guard-feedback p,
+.forbidden-page__card p,
+.initial-loading p {
   color: var(--text-secondary);
   line-height: 1.8;
 }
@@ -502,18 +566,75 @@ button {
   gap: 1rem;
 }
 
-.technical-home__card {
-  padding: 1.25rem;
-}
-
-.technical-home__card h3 {
-  margin-bottom: 0.6rem;
-}
-
 .technical-home__checklist {
   display: grid;
   gap: 1rem;
-  padding: 1.25rem;
+}
+
+.initial-loading,
+.forbidden-page,
+.guard-feedback {
+  min-height: 100%;
+}
+
+.initial-loading,
+.forbidden-page,
+.guard-feedback {
+  display: grid;
+  place-items: center;
+}
+
+.initial-loading {
+  grid-template-columns: auto auto;
+  justify-content: center;
+  gap: 1rem;
+  min-height: calc(100vh - 10rem);
+  padding: 1.5rem;
+}
+
+.initial-loading__spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 0.35rem solid rgba(37, 99, 235, 0.15);
+  border-top-color: var(--accent);
+  border-radius: 999px;
+  animation: spin 1s linear infinite;
+}
+
+.guard-feedback,
+.forbidden-page {
+  min-height: calc(100vh - 8rem);
+  padding: 2rem;
+}
+
+.guard-feedback__badge {
+  margin-bottom: 1rem;
+}
+
+.guard-feedback h2,
+.forbidden-page__card h1 {
+  margin: 0;
+}
+
+.forbidden-page {
+  padding: 2rem;
+}
+
+.forbidden-page__card {
+  max-width: 40rem;
+}
+
+.forbidden-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 960px) {
@@ -559,7 +680,8 @@ button {
     border-radius: 1.4rem;
   }
 
-  .login-form__meta {
+  .login-form__meta,
+  .forbidden-page__actions {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -568,5 +690,10 @@ button {
   .app-shell__main {
     padding-left: 1.25rem;
     padding-right: 1.25rem;
+  }
+
+  .initial-loading {
+    grid-template-columns: 1fr;
+    text-align: center;
   }
 }

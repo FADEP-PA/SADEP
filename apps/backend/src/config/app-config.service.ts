@@ -22,4 +22,8 @@ export class AppConfigService {
   get jwtSecret(): string {
     return this.configService.get('JWT_SECRET', { infer: true });
   }
+
+  get frontendOrigin(): string {
+    return this.configService.get('FRONTEND_ORIGIN', { infer: true });
+  }
 }

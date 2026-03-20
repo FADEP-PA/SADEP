@@ -1,25 +1,32 @@
-const systemCards = [
+'use client';
+
+import { RolePlaceholderSection } from '@/features/home/components/role-placeholder-section';
+import { useAuth } from '@/shared/auth/auth-context';
+
+const integrationCards = [
   {
-    title: 'Sessão',
-    description: 'Área preparada para exibir dados do usuário autenticado e seu papel atual.',
+    title: 'Sessão autenticada',
+    description: 'Token persistido no navegador e revalidação do usuário via `/auth/me` no bootstrap.',
   },
   {
-    title: 'Integrações',
-    description: 'Ponto técnico para conectar `/auth/me`, notificações e dados iniciais.',
+    title: 'Cliente HTTP',
+    description: 'Camada base de `fetch` preparada para enviar bearer token e tratar erros comuns.',
   },
   {
-    title: 'Módulos',
-    description: 'Atalho visual para os fluxos internos que serão liberados por perfil.',
+    title: 'RBAC inicial',
+    description: 'Menu lateral e placeholders habilitados conforme o `UserRole` retornado pelo backend.',
   },
 ];
 
 const pendingSteps = [
-  'Conectar autenticação real com backend.',
-  'Ativar guard de rota para área autenticada.',
-  'Exibir menu por UserRole.',
+  'Conectar módulos reais da sprint nas áreas por perfil.',
+  'Refinar feedback de erro por tipo de falha do backend.',
+  'Acoplar logout, refresh e métricas de navegação nas próximas entregas.',
 ];
 
 export default function TechnicalHomePage() {
+  const { session } = useAuth();
+
   return (
     <section className="technical-home">
       <div className="technical-home__hero">
@@ -27,29 +34,31 @@ export default function TechnicalHomePage() {
           <span className="technical-home__badge">Pós-login</span>
           <h2>Página inicial técnica</h2>
           <p>
-            Esta é a base provisória da área autenticada, pensada para validar navegação,
-            estrutura visual e pontos de integração do frontend.
+            Esta é a base provisória da área autenticada, agora conectada à sessão do usuário,
+            ao consumo de autenticação e à navegação por perfil.
           </p>
         </div>
 
         <div className="technical-home__panel">
           <strong>Status atual</strong>
           <ul>
-            <li>Layout autenticado disponível.</li>
-            <li>Rota técnica acessível para validação visual.</li>
-            <li>Pronta para receber sessão e dados do usuário.</li>
+            <li>Usuário autenticado: {session?.user.email}</li>
+            <li>Perfil ativo: {session?.user.role}</li>
+            <li>Token validado a partir do endpoint `/auth/me`.</li>
           </ul>
         </div>
       </div>
 
       <div className="technical-home__grid">
-        {systemCards.map((card) => (
+        {integrationCards.map((card) => (
           <article key={card.title} className="technical-home__card">
             <h3>{card.title}</h3>
             <p>{card.description}</p>
           </article>
         ))}
       </div>
+
+      {session ? <RolePlaceholderSection role={session.user.role} /> : null}
 
       <section className="technical-home__checklist" aria-labelledby="pending-steps-title">
         <div>
