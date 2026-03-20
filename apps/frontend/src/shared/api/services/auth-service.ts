@@ -1,8 +1,8 @@
 import { httpRequest } from '@/shared/api/http-client';
 
-import type { AuthenticatedUser, LoginInput, LoginResponse } from './auth-types';
+import type { AuthenticatedUser, LoginInput, LoginResponse } from '@/shared/auth/auth-types';
 
-export async function loginRequest(input: LoginInput) {
+export async function login(input: LoginInput) {
   return httpRequest<LoginResponse>('/auth/login', {
     method: 'POST',
     body: {
@@ -12,7 +12,7 @@ export async function loginRequest(input: LoginInput) {
   });
 }
 
-export async function meRequest(accessToken: string) {
+export async function getAuthenticatedUser(accessToken: string) {
   return httpRequest<AuthenticatedUser>('/auth/me', {
     method: 'GET',
     token: accessToken,

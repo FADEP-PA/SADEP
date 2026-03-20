@@ -1,5 +1,7 @@
 import { UserRole } from '@aep-pa/contracts';
 
+import { getRolePresentation } from './role-catalog';
+
 export type NavigationItem = {
   label: string;
   href: string;
@@ -18,12 +20,12 @@ const commonGroups: NavigationGroup[] = [
       {
         label: 'Início técnico',
         href: '/inicio',
-        description: 'Resumo do estado da sessão e pontos de integração do frontend.',
+        description: 'Resumo da sessão, dashboard inicial e contratos ativos entre frontend e backend.',
       },
       {
         label: 'Meu perfil',
         href: '/perfil',
-        description: 'Dados do usuário autenticado, estratégia de token e estado atual da sessão.',
+        description: 'Dados do usuário autenticado, labels por papel e estratégia de sessão.',
       },
     ],
   },
@@ -36,7 +38,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
       title: 'Perfil',
       items: [
         {
-          label: 'Servidor estagiário',
+          label: getRolePresentation(UserRole.INTERN_SERVER).label,
           href: '/servidor-estagiario',
           description: 'Placeholder inicial para autoavaliação, ciência e acompanhamento.',
         },
@@ -49,7 +51,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
       title: 'Perfil',
       items: [
         {
-          label: 'Chefia imediata',
+          label: getRolePresentation(UserRole.IMMEDIATE_SUPERVISOR).label,
           href: '/chefia-imediata',
           description: 'Placeholder inicial para avaliações, pendências e fluxos da chefia.',
         },
@@ -62,7 +64,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
       title: 'Perfil',
       items: [
         {
-          label: 'CESAD / Comissão',
+          label: getRolePresentation(UserRole.CESAD_MEMBER).label,
           href: '/cesad-comissao',
           description: 'Placeholder inicial para análise colegiada, pareceres e histórico.',
         },
@@ -75,7 +77,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
       title: 'Perfil',
       items: [
         {
-          label: 'Autoridade homologadora',
+          label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
           href: '/homologacao-autoridade',
           description: 'Placeholder inicial para homologação, assinatura e despacho final.',
         },
@@ -88,12 +90,12 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
       title: 'Gestão técnica',
       items: [
         {
-          label: 'Painel administrativo',
+          label: getRolePresentation(UserRole.ADMIN).label,
           href: '/admin',
           description: 'Placeholder inicial para observabilidade, suporte e administração.',
         },
         {
-          label: 'CESAD / Comissão',
+          label: getRolePresentation(UserRole.CESAD_MEMBER).label,
           href: '/cesad-comissao',
           description: 'Visualizar atalhos equivalentes para apoio operacional e validação.',
         },

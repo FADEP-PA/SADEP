@@ -1,5 +1,7 @@
 import { UserRole } from '@aep-pa/contracts';
 
+import { getRolePresentation } from '@/shared/rbac/role-catalog';
+
 const placeholderByRole: Record<UserRole, { title: string; items: string[] }> = {
   [UserRole.INTERN_SERVER]: {
     title: 'Próximas entregas para servidor estagiário',
@@ -25,12 +27,16 @@ const placeholderByRole: Record<UserRole, { title: string; items: string[] }> = 
 
 export function RolePlaceholderSection({ role }: { role: UserRole }) {
   const content = placeholderByRole[role];
+  const presentation = getRolePresentation(role);
 
   return (
     <section className="technical-home__checklist" aria-labelledby="role-placeholder-title">
       <div>
         <span className="technical-home__section-label">Placeholders por perfil</span>
         <h3 id="role-placeholder-title">{content.title}</h3>
+        <p className="technical-home__paragraph">
+          {presentation.label}: {presentation.description}
+        </p>
       </div>
 
       <ol>
