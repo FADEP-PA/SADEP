@@ -589,6 +589,40 @@ button {
     rgba(255, 255, 255, 0.96);
 }
 
+.technical-home__hero--institutional {
+  align-items: stretch;
+}
+
+.technical-home__hero-panel,
+.technical-home__panel,
+.technical-home__card,
+.technical-home__checklist,
+.initial-loading,
+.guard-feedback,
+.forbidden-page__card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 20px 55px rgba(15, 23, 42, 0.07);
+}
+
+.technical-home__hero-panel,
+.technical-home__panel,
+.technical-home__card,
+.technical-home__checklist,
+.guard-feedback,
+.forbidden-page__card {
+  padding: 1.4rem;
+}
+
+.technical-home__hero-panel {
+  display: grid;
+  gap: 1rem;
+  background:
+    linear-gradient(135deg, rgba(15, 58, 96, 0.06), rgba(251, 191, 36, 0.06)),
+    rgba(255, 255, 255, 0.96);
+}
+
 .technical-home__badge,
 .technical-home__section-label {
   display: inline-flex;

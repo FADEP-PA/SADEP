@@ -22,6 +22,12 @@ const overviewCards = [
   },
 ];
 
+const governanceHighlights = [
+  'Regras de negócio centralizadas no backend.',
+  'Consultas autenticadas com segregação por perfil.',
+  'Base preparada para evolução das telas por etapa do processo.',
+];
+
 export default function TechnicalHomePage() {
   const { session } = useAuth();
   const rolePresentation = session ? getRolePresentation(session.user.role) : null;
