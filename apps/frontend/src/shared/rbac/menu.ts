@@ -13,97 +13,126 @@ export type NavigationGroup = {
   items: NavigationItem[];
 };
 
-const commonGroups: NavigationGroup[] = [
-  {
-    title: 'Base da aplicação',
-    items: [
-      {
-        label: 'Início',
-        href: '/inicio',
-        description: 'Resumo da sessão, visão inicial do processo e consultas disponíveis.',
-      },
-      {
-        label: 'Meu perfil',
-        href: '/perfil',
-        description: 'Dados do usuário autenticado, perfil de acesso e informações da sessão.',
-      },
-    ],
-  },
-];
-
-const menuByRole: Record<UserRole, NavigationGroup[]> = {
-  [UserRole.INTERN_SERVER]: [
-    ...commonGroups,
+const dashboardGroup: NavigationGroup = {
+  title: 'Painel principal',
+  items: [
     {
-      title: 'Perfil',
-      items: [
-        {
-          label: getRolePresentation(UserRole.INTERN_SERVER).label,
-          href: '/servidor-estagiario',
-          description: 'Visão inicial para acompanhamento do processo, ciência e registros do servidor.',
-        },
-      ],
+      label: 'Início',
+      href: '/inicio',
+      description: 'Visão geral do ambiente autenticado, do perfil em operação e dos acessos disponíveis.',
     },
-  ],
-  [UserRole.IMMEDIATE_SUPERVISOR]: [
-    ...commonGroups,
     {
-      title: 'Perfil',
-      items: [
-        {
-          label: getRolePresentation(UserRole.IMMEDIATE_SUPERVISOR).label,
-          href: '/chefia-imediata',
-          description: 'Visão inicial para avaliação, pendências e acompanhamento da chefia.',
-        },
-      ],
-    },
-  ],
-  [UserRole.CESAD_MEMBER]: [
-    ...commonGroups,
-    {
-      title: 'Perfil',
-      items: [
-        {
-          label: getRolePresentation(UserRole.CESAD_MEMBER).label,
-          href: '/cesad-comissao',
-          description: 'Visão inicial para análise colegiada, pareceres e histórico do fluxo.',
-        },
-      ],
-    },
-  ],
-  [UserRole.HOMOLOGATION_AUTHORITY]: [
-    ...commonGroups,
-    {
-      title: 'Perfil',
-      items: [
-        {
-          label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
-          href: '/homologacao-autoridade',
-          description: 'Visão inicial para homologação, despacho e conferência do processo.',
-        },
-      ],
-    },
-  ],
-  [UserRole.ADMIN]: [
-    ...commonGroups,
-    {
-      title: 'Gestão administrativa',
-      items: [
-        {
-          label: getRolePresentation(UserRole.ADMIN).label,
-          href: '/admin',
-          description: 'Visão inicial para suporte operacional, permissões e administração.',
-        },
-        {
-          label: getRolePresentation(UserRole.CESAD_MEMBER).label,
-          href: '/cesad-comissao',
-          description: 'Visualizar a área colegiada para apoio operacional e validação do fluxo.',
-        },
-      ],
+      label: 'Processos',
+      href: '/processos',
+      description: 'Consultar status, ações disponíveis, histórico e dados operacionais do processo.',
     },
   ],
 };
 
+const accountGroup: NavigationGroup = {
+  title: 'Conta',
+  items: [
+    {
+      label: 'Meu perfil',
+      href: '/perfil',
+      description: 'Consultar dados da sessão autenticada, perfil de acesso e informações do usuário.',
+    },
+  ],
+};
+
+const menuByRole: Record<UserRole, NavigationGroup[]> = {
+  [UserRole.INTERN_SERVER]: [
+    dashboardGroup,
+    {
+      title: 'Minha atuação',
+      items: [
+        {
+          label: getRolePresentation(UserRole.INTERN_SERVER).label,
+          href: '/servidor-estagiario',
+          description: 'Acompanhar ciência, notificações e situação do processo do servidor em estágio.',
+        },
+      ],
+    },
+    accountGroup,
+  ],
+  [UserRole.IMMEDIATE_SUPERVISOR]: [
+    dashboardGroup,
+    {
+      title: 'Minha atuação',
+      items: [
+        {
+          label: 'Avaliação da chefia',
+          href: '/chefia-imediata',
+          description: 'Criar, salvar, submeter e retificar a avaliação da chefia imediata.',
+        },
+      ],
+    },
+    accountGroup,
+  ],
+  [UserRole.CESAD_MEMBER]: [
+    dashboardGroup,
+    {
+      title: 'Minha atuação',
+      items: [
+        {
+          label: getRolePresentation(UserRole.CESAD_MEMBER).label,
+          href: '/cesad-comissao',
+          description: 'Analisar processos, consultar histórico e acompanhar a etapa colegiada.',
+        },
+      ],
+    },
+    accountGroup,
+  ],
+  [UserRole.HOMOLOGATION_AUTHORITY]: [
+    dashboardGroup,
+    {
+      title: 'Minha atuação',
+      items: [
+        {
+          label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
+          href: '/homologacao-autoridade',
+          description: 'Conferir o processo e acompanhar os atos finais de homologação.',
+        },
+      ],
+    },
+    accountGroup,
+  ],
+  [UserRole.ADMIN]: [
+    dashboardGroup,
+    {
+      title: 'Áreas operacionais',
+      items: [
+        {
+          label: getRolePresentation(UserRole.ADMIN).label,
+          href: '/admin',
+          description: 'Suporte operacional, administração do ambiente e acompanhamento técnico.',
+        },
+        {
+          label: 'Avaliação da chefia',
+          href: '/chefia-imediata',
+          description: 'Acessar a área da chefia imediata para apoio operacional ou conferência.',
+        },
+        {
+          label: getRolePresentation(UserRole.CESAD_MEMBER).label,
+          href: '/cesad-comissao',
+          description: 'Abrir a área colegiada para análise, conferência e suporte ao fluxo.',
+        },
+        {
+          label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
+          href: '/homologacao-autoridade',
+          description: 'Consultar a área de homologação e os marcos finais do processo.',
+        },
+        {
+          label: getRolePresentation(UserRole.INTERN_SERVER).label,
+          href: '/servidor-estagiario',
+          description: 'Visualizar a experiência do servidor para apoio e validação operacional.',
+        },
+      ],
+    },
+    accountGroup,
+  ],
+};
+
 export function getMenuByRole(role: UserRole) {
-  return menuByRole[role] ?? commonGroups;
+  return menuByRole[role] ?? [dashboardGroup, accountGroup];
 }

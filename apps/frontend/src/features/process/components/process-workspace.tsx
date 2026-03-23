@@ -16,7 +16,6 @@ import { ProcessBlockersCard } from './process-blockers-card';
 import { getProcessBlockers } from './process-formatters';
 import { ProcessHistoryCard } from './process-history-card';
 import { ProcessListCard } from './process-list-card';
-import { ProcessRolePlaceholdersCard } from './process-role-placeholders-card';
 import { ProcessStatusCard } from './process-status-card';
 import { ProcessTechnicalDetailsCard } from './process-technical-details-card';
 
@@ -55,7 +54,7 @@ export function ProcessWorkspace() {
     event.preventDefault();
 
     if (!session?.accessToken || processId.trim().length === 0) {
-      setErrorMessage('Informe um identificador de processo para carregar a visão funcional do fluxo.');
+      setErrorMessage('Informe um identificador de processo para consultar os dados disponíveis.');
       setErrorDetails([]);
       return;
     }
@@ -84,9 +83,9 @@ export function ProcessWorkspace() {
   return (
     <div className="process-workspace">
       <PageSection
-        eyebrow="Sprint 3B"
-        title="Primeiras telas funcionais de processo"
-        description="A estrutura abaixo organiza leitura do estado atual, ações disponíveis, histórico resumido, listagem inicial e detalhes técnicos do processo."
+        eyebrow="Processos"
+        title="Consulta operacional de processos"
+        description="Informe um processo para visualizar o status atual, as ações permitidas, o histórico e os dados complementares disponíveis para o seu perfil."
       >
         <form className="inline-form" onSubmit={handleLoadProcess}>
           <label className="field-group" htmlFor="process-workspace-id">
@@ -102,7 +101,7 @@ export function ProcessWorkspace() {
           </label>
 
           <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Carregando processo...' : 'Carregar processo'}
+            {isLoading ? 'Carregando processo...' : 'Consultar processo'}
           </button>
         </form>
 
@@ -117,13 +116,12 @@ export function ProcessWorkspace() {
 
         <div className="metrics-grid">
           <ProcessListCard items={consultedProcesses} activeProcessId={snapshot?.workflow.id ?? null} />
-          <ProcessRolePlaceholdersCard />
         </div>
 
         {!snapshot && !errorMessage ? (
           <ContentState
-            title="Estrutura pronta para leitura real"
-            description="Carregue um processo existente para habilitar a visualização funcional desta etapa e preencher os cards conectados ao workflow base."
+            title="Nenhum processo carregado"
+            description="Faça uma consulta para visualizar os dados operacionais disponíveis para este perfil."
             tone="info"
           />
         ) : null}

@@ -1,56 +1,104 @@
 'use client';
 
-import { ProcessWorkspace } from '@/features/process/components/process-workspace';
+import Link from 'next/link';
+
 import { useAuth } from '@/shared/auth/auth-context';
+import { getRolePresentation } from '@/shared/rbac/role-catalog';
 import { InfoCard } from '@/shared/ui/info-card';
+import { KeyValueList } from '@/shared/ui/key-value-list';
 
 const overviewCards = [
   {
-    title: 'Leitura do estado atual',
-    description: 'Consulta do status do processo com base no workflow definido no backend.',
+    title: 'Consulta do processo',
+    description: 'Acesso direto à leitura do status, do histórico e das ações autorizadas no fluxo.',
   },
   {
-    title: 'Ações disponíveis',
-    description: 'Exibição das operações permitidas para o perfil autenticado no momento da consulta.',
+    title: 'Áreas por perfil',
+    description: 'Cada papel institucional possui uma área própria disponível pela navegação lateral.',
   },
   {
-    title: 'Histórico resumido',
-    description: 'Apresentação da última movimentação auditável para apoio operacional da etapa atual.',
+    title: 'Rastreabilidade',
+    description: 'As informações exibidas respeitam autenticação, perfil de acesso e dados do backend.',
   },
 ];
 
 export default function TechnicalHomePage() {
   const { session } = useAuth();
+  const rolePresentation = session ? getRolePresentation(session.user.role) : null;
 
   return (
     <section className="technical-home">
-      <div className="technical-home__hero">
-        <div>
-          <span className="technical-home__badge">Central de processos</span>
-          <h2>Acompanhamento funcional do fluxo</h2>
+      <div className="technical-home__hero technical-home__hero--institutional">
+        <article className="technical-home__hero-panel">
+          <span className="technical-home__badge">Painel central</span>
+          <h2>Ambiente organizado para navegação operacional</h2>
           <p>
-            A área autenticada passa a concentrar a primeira estrutura de telas do processo administrativo,
-            com foco em consulta de estado, ações liberadas, histórico e preparação das próximas visões por perfil.
+            Use a barra lateral para acessar diretamente a consulta de processos, sua área de atuação
+            e as demais telas liberadas para o seu perfil.
           </p>
-        </div>
 
-        <div className="technical-home__panel">
-          <strong>Sessão ativa</strong>
-          <ul>
-            <li>Usuário autenticado: {session?.user.email}</li>
-            <li>Perfil ativo: {session?.user.role}</li>
-            <li>Leitura protegida por autenticação da aplicação.</li>
-          </ul>
-        </div>
+          <div className="technical-home__hero-actions">
+            <Link href="/processos" className="secondary-button technical-home__link-button">
+              Abrir processos
+            </Link>
+            <Link
+              href={rolePresentation?.homePath ?? '/perfil'}
+              className="ghost-button technical-home__link-button"
+            >
+              Ir para minha área
+            </Link>
+          </div>
+        </article>
+
+        <aside className="technical-home__panel technical-home__panel--institutional">
+          <span className="technical-home__section-label">Sessão autenticada</span>
+          <KeyValueList
+            items={[
+              { label: 'Usuário', value: session?.user.email ?? 'Não informado' },
+              { label: 'Perfil', value: rolePresentation?.label ?? session?.user.role ?? 'Não informado' },
+              { label: 'Área principal', value: rolePresentation?.homePath ?? 'Não informada' },
+            ]}
+          />
+          <p className="technical-home__paragraph">
+            Todos os acessos disponíveis para este perfil estão organizados na barra lateral.
+          </p>
+        </aside>
       </div>
 
       <div className="metrics-grid">
         {overviewCards.map((card) => (
-          <InfoCard key={card.title} title={card.title} description={card.description} />
+          <InfoCard
+            key={card.title}
+            eyebrow="Navegação"
+            title={card.title}
+            description={card.description}
+          />
         ))}
       </div>
 
-      <ProcessWorkspace />
+      <div className="technical-home__institutional-grid">
+        <InfoCard
+          eyebrow="Perfil em operação"
+          title={rolePresentation?.label ?? 'Perfil não identificado'}
+          description={rolePresentation?.description ?? 'A sessão atual não retornou um perfil catalogado.'}
+        >
+          <p className="muted-paragraph">
+            A navegação lateral mantém o acesso principal às telas disponíveis para este papel.
+          </p>
+        </InfoCard>
+
+        <InfoCard
+          eyebrow="Como navegar"
+          title="Acesso direto pelas seções do menu"
+          description="A barra lateral concentra as entradas do sistema para reduzir dispersão e facilitar a operação diária."
+        >
+          <ul className="content-list">
+            <li>Abra “Processos” para consultar workflow, histórico e ações liberadas.</li>
+            <li>Use “Minha atuação” ou “Áreas operacionais” para entrar na área do seu perfil.</li>
+            <li>Consulte “Meu perfil” para validar os dados da sessão autenticada.</li>
+          </ul>
+        </InfoCard>
+      </div>
     </section>
   );
 }

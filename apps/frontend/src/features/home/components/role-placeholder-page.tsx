@@ -34,13 +34,13 @@ export function RolePlaceholderPage({
             <span className="technical-home__badge">Perfil autenticado</span>
             <h3>{rolePresentation?.label ?? 'Perfil não identificado'}</h3>
             <p className="muted-paragraph">
-              Visão inicial organizada para evolução das telas do processo conforme as entregas do sprint.
+              Esta área reúne as consultas e operações atualmente disponíveis para o perfil em uso.
             </p>
             <KeyValueList
               items={[
                 { label: 'E-mail', value: session?.user.email ?? 'Não informado' },
                 { label: 'Perfil', value: rolePresentation?.label ?? 'Não informado' },
-                { label: 'Rota base', value: rolePresentation?.homePath ?? 'Não informada' },
+                { label: 'Rota principal', value: rolePresentation?.homePath ?? 'Não informada' },
               ]}
             />
           </div>
@@ -51,7 +51,7 @@ export function RolePlaceholderPage({
             <InfoCard
               key={item}
               title={item}
-              description="Espaço preparado para detalhar operações e consultas desse perfil dentro do fluxo administrativo."
+              description="Bloco disponível para consulta e acompanhamento operacional desta área do sistema."
             />
           ))}
         </div>

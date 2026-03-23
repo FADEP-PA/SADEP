@@ -6,7 +6,18 @@ import type {
   WorkflowHistoryItem,
   WorkflowResponse,
 } from '@/features/dashboard/types/process-dashboard-types';
-import type { SupervisorEvaluationRef } from '@aep-pa/contracts';
+import type {
+  SupervisorEvaluationContentInput,
+  SupervisorEvaluationRef,
+} from '@aep-pa/contracts';
+
+export type UpsertSupervisorEvaluationInput = {
+  summary: string;
+  generalComments: string;
+  content: SupervisorEvaluationContentInput;
+  comment?: string;
+};
+
 
 export async function getWorkflow(processId: string, accessToken: string) {
   return httpRequest<WorkflowResponse>(`/processes/${processId}/workflow`, {
@@ -33,6 +44,42 @@ export async function getSupervisorEvaluation(processId: string, accessToken: st
   return httpRequest<SupervisorEvaluationRef | null>(`/processes/${processId}/supervisor-evaluation`, {
     method: 'GET',
     token: accessToken,
+  });
+}
+
+export async function saveSupervisorEvaluationDraft(
+  processId: string,
+  accessToken: string,
+  body: UpsertSupervisorEvaluationInput,
+) {
+  return httpRequest<SupervisorEvaluationRef>(`/processes/${processId}/supervisor-evaluation/draft`, {
+    method: 'POST',
+    token: accessToken,
+    body,
+  });
+}
+
+export async function submitSupervisorEvaluation(
+  processId: string,
+  accessToken: string,
+  body: UpsertSupervisorEvaluationInput,
+) {
+  return httpRequest<SupervisorEvaluationRef>(`/processes/${processId}/supervisor-evaluation/submit`, {
+    method: 'POST',
+    token: accessToken,
+    body,
+  });
+}
+
+export async function rectifySupervisorEvaluation(
+  processId: string,
+  accessToken: string,
+  body: UpsertSupervisorEvaluationInput,
+) {
+  return httpRequest<SupervisorEvaluationRef>(`/processes/${processId}/supervisor-evaluation/rectify`, {
+    method: 'POST',
+    token: accessToken,
+    body,
   });
 }
 

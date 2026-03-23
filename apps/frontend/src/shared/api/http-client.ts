@@ -2,10 +2,9 @@ import type { ApiErrorResponse } from './api-conventions';
 import { HttpError, getHttpErrorMessage, type HttpErrorPayload } from './http-error';
 
 type Primitive = string | number | boolean | null;
-type JsonValue = Primitive | JsonValue[] | { [key: string]: JsonValue };
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
-  body?: JsonValue;
+  body?: unknown;
   params?: Record<string, Primitive | undefined>;
   token?: string;
 };
