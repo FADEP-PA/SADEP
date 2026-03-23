@@ -28,13 +28,29 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     const isHttpException = exception instanceof HttpException;
     const status = isHttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-    const message = isHttpException ? exception.message : 'Internal server error';
+    const exceptionResponse = isHttpException ? exception.getResponse() : undefined;
+    const normalizedResponse =
+      exceptionResponse && typeof exceptionResponse === 'object'
+        ? (exceptionResponse as {
+            message?: string | string[];
+            error?: string;
+            details?: Record<string, string | string[] | undefined>;
+          })
+        : undefined;
+    const message =
+      normalizedResponse?.message ?? (isHttpException ? exception.message : 'Internal server error');
 
-    this.logger.error(message, exception instanceof Error ? exception.stack : undefined, request.url);
+    this.logger.error(
+      Array.isArray(message) ? message.join(' | ') : message,
+      exception instanceof Error ? exception.stack : undefined,
+      request.url,
+    );
 
     response.status(status).json({
       statusCode: status,
       message,
+      error: normalizedResponse?.error ?? (isHttpException ? exception.name : 'Internal Server Error'),
+      details: normalizedResponse?.details,
       path: request.url,
       timestamp: new Date().toISOString(),
     });

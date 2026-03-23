@@ -19,9 +19,10 @@ import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InfoCard } from '@/shared/ui/info-card';
 import { KeyValueList } from '@/shared/ui/key-value-list';
 import { PageSection } from '@/shared/ui/page-section';
+import { StatusBadge } from '@/shared/ui/status-badge';
 
 import { ProcessActionsCard } from './process-actions-card';
-import { formatDateTime, formatProcessStatus } from './process-formatters';
+import { formatDateTime, formatProcessStatus, getStatusTone } from './process-formatters';
 import { ProcessHistoryCard } from './process-history-card';
 import { ProcessStatusCard } from './process-status-card';
 
@@ -136,6 +137,16 @@ function getEvaluationStatusLabel(status: SupervisorEvaluationStatus | undefined
   return 'Ainda não iniciada';
 }
 
+
+function renderEvaluationStatus(status: SupervisorEvaluationStatus | undefined) {
+  return (
+    <StatusBadge
+      label={getEvaluationStatusLabel(status)}
+      tone={status ? getStatusTone(status) : 'neutral'}
+    />
+  );
+}
+
 export function SupervisorEvaluationWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState(getInitialProcessId);
@@ -163,7 +174,7 @@ export function SupervisorEvaluationWorkspace() {
       },
       {
         label: 'Status da avaliação',
-        value: getEvaluationStatusLabel(snapshot?.supervisorEvaluation?.status),
+        value: renderEvaluationStatus(snapshot?.supervisorEvaluation?.status),
       },
       {
         label: 'Última submissão',
@@ -343,6 +354,11 @@ export function SupervisorEvaluationWorkspace() {
                 description={snapshot.supervisorEvaluationWarning}
               />
             ) : null}
+
+            <div className="supervisor-evaluation-status-panel">
+              <span>Situação da ficha da chefia</span>
+              {renderEvaluationStatus(snapshot.supervisorEvaluation?.status)}
+            </div>
 
             {successMessage ? (
               <FeedbackAlert title="Operação concluída" tone="success" description={successMessage} />
