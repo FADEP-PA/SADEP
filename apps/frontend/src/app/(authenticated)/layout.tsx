@@ -5,16 +5,16 @@ import { AppShell } from '@/shared/ui/app-shell';
 
 const shortcuts = [
   {
-    label: 'Sessão persistida',
-    description: 'A sessão é restaurada com `localStorage` ou `sessionStorage` conforme o login.',
+    label: 'Sessão institucional',
+    description: 'A sessão autenticada é restaurada conforme a política definida no login.',
   },
   {
-    label: 'Guard de rota',
-    description: 'A área autenticada só é exibida após validação do token em `/auth/me`.',
+    label: 'Validação contínua',
+    description: 'As rotas internas só são exibidas após revalidação do token em `/auth/me`.',
   },
   {
-    label: 'Menu por perfil',
-    description: 'A navegação lateral muda conforme o `UserRole` retornado pelo backend.',
+    label: 'Navegação por perfil',
+    description: 'Os atalhos laterais respeitam o papel retornado pelo backend para cada usuário.',
   },
 ];
 
@@ -27,10 +27,10 @@ export default function AuthenticatedLayout({
     <AuthGuard>
       <AppShell
         title="Ambiente autenticado"
-        subtitle="Estrutura base para páginas internas do sistema com sessão, RBAC inicial e integração com o backend."
+        subtitle="Painel interno com identidade institucional para acompanhamento processual, consulta operacional e execução controlada das etapas do AEP-PA."
         sidebarFooter={
           <div className="app-shell__sidebar-card">
-            <strong>Fundação do sprint</strong>
+            <strong>Diretrizes do ambiente</strong>
             <ul>
               {shortcuts.map((item) => (
                 <li key={item.label}>
