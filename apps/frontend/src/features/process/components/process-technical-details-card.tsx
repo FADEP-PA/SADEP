@@ -12,9 +12,9 @@ type ProcessTechnicalDetailsCardProps = {
 export function ProcessTechnicalDetailsCard({ snapshot }: ProcessTechnicalDetailsCardProps) {
   return (
     <InfoCard
-      eyebrow="Detalhes técnicos"
-      title="Dados complementares do processo"
-      description="Informações auxiliares para suporte operacional e conferência da integração front-back."
+      eyebrow="Dados operacionais"
+      title="Informações complementares do processo"
+      description="Resumo auxiliar para conferência do processo consultado e da disponibilidade de dados para o perfil autenticado."
     >
       <KeyValueList
         items={[
@@ -31,8 +31,8 @@ export function ProcessTechnicalDetailsCard({ snapshot }: ProcessTechnicalDetail
               : formatDateTime(snapshot.history[snapshot.history.length - 1]?.occurredAt),
           },
           {
-            label: 'Integração parcial',
-            value: snapshot.supervisorEvaluationWarning ? 'Sim, com restrição por perfil' : 'Não identificada',
+            label: 'Restrição por perfil',
+            value: snapshot.supervisorEvaluationWarning ? 'Sim' : 'Não identificada',
           },
         ]}
       />

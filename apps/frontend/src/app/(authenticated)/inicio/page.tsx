@@ -1,6 +1,7 @@
 'use client';
 
-import { ProcessWorkspace } from '@/features/process/components/process-workspace';
+import Link from 'next/link';
+
 import { useAuth } from '@/shared/auth/auth-context';
 import { getRolePresentation } from '@/shared/rbac/role-catalog';
 import { InfoCard } from '@/shared/ui/info-card';
@@ -8,16 +9,16 @@ import { KeyValueList } from '@/shared/ui/key-value-list';
 
 const overviewCards = [
   {
-    title: 'Leitura do estado processual',
-    description: 'Consulta do status corrente, com apoio ao acompanhamento formal de cada etapa do fluxo.',
+    title: 'Consulta do processo',
+    description: 'Acesso direto à leitura do status, do histórico e das ações autorizadas no fluxo.',
   },
   {
-    title: 'Ações autorizadas',
-    description: 'Exibição das operações permitidas ao perfil autenticado conforme o workflow vigente.',
+    title: 'Áreas por perfil',
+    description: 'Cada papel institucional possui uma área própria disponível pela navegação lateral.',
   },
   {
-    title: 'Rastreabilidade auditável',
-    description: 'Visualização resumida das movimentações registradas para suporte operacional e validação.',
+    title: 'Rastreabilidade',
+    description: 'As informações exibidas respeitam autenticação, perfil de acesso e dados do backend.',
   },
 ];
 
@@ -36,18 +37,22 @@ export default function TechnicalHomePage() {
       <div className="technical-home__hero technical-home__hero--institutional">
         <article className="technical-home__hero-panel">
           <span className="technical-home__badge">Painel central</span>
-          <h2>Central institucional de acompanhamento processual</h2>
+          <h2>Ambiente organizado para navegação operacional</h2>
           <p>
-            O ambiente pós-login concentra a navegação interna do AEP-PA com uma apresentação mais
-            formal, adequada ao contexto administrativo e preparada para expandir as etapas do fluxo.
+            Use a barra lateral para acessar diretamente a consulta de processos, sua área de atuação
+            e as demais telas liberadas para o seu perfil.
           </p>
 
-          <div className="technical-home__hero-highlights" aria-label="Pilares do ambiente autenticado">
-            {governanceHighlights.map((item) => (
-              <div key={item}>
-                <strong>{item}</strong>
-              </div>
-            ))}
+          <div className="technical-home__hero-actions">
+            <Link href="/processos" className="secondary-button technical-home__link-button">
+              Abrir processos
+            </Link>
+            <Link
+              href={rolePresentation?.homePath ?? '/perfil'}
+              className="ghost-button technical-home__link-button"
+            >
+              Ir para minha área
+            </Link>
           </div>
         </article>
 
@@ -57,19 +62,23 @@ export default function TechnicalHomePage() {
             items={[
               { label: 'Usuário', value: session?.user.email ?? 'Não informado' },
               { label: 'Perfil', value: rolePresentation?.label ?? session?.user.role ?? 'Não informado' },
-              { label: 'Área inicial', value: rolePresentation?.homePath ?? 'Não informada' },
+              { label: 'Área principal', value: rolePresentation?.homePath ?? 'Não informada' },
             ]}
           />
           <p className="technical-home__paragraph">
-            O ambiente respeita autenticação, RBAC inicial e integração direta com os endpoints do
-            backend já disponíveis nesta etapa.
+            Todos os acessos disponíveis para este perfil estão organizados na barra lateral.
           </p>
         </aside>
       </div>
 
       <div className="metrics-grid">
         {overviewCards.map((card) => (
-          <InfoCard key={card.title} eyebrow="Capacidade disponível" title={card.title} description={card.description} />
+          <InfoCard
+            key={card.title}
+            eyebrow="Navegação"
+            title={card.title}
+            description={card.description}
+          />
         ))}
       </div>
 
@@ -77,28 +86,25 @@ export default function TechnicalHomePage() {
         <InfoCard
           eyebrow="Perfil em operação"
           title={rolePresentation?.label ?? 'Perfil não identificado'}
-          description={rolePresentation?.description ?? 'A sessão atual não retornou um catálogo de perfil válido.'}
+          description={rolePresentation?.description ?? 'A sessão atual não retornou um perfil catalogado.'}
         >
           <p className="muted-paragraph">
-            Esta home funciona como ponto de entrada do ambiente autenticado e organiza o acesso às
-            telas por papel institucional.
+            A navegação lateral mantém o acesso principal às telas disponíveis para este papel.
           </p>
         </InfoCard>
 
         <InfoCard
-          eyebrow="Escopo atual"
-          title="Consultas e primeiras operações do processo"
-          description="A interface já está preparada para leitura de estado, ações disponíveis, histórico resumido e evolução das áreas por perfil."
+          eyebrow="Como navegar"
+          title="Acesso direto pelas seções do menu"
+          description="A barra lateral concentra as entradas do sistema para reduzir dispersão e facilitar a operação diária."
         >
           <ul className="content-list">
-            <li>Workflow consultado em tempo real no backend.</li>
-            <li>Histórico resumido para apoio à análise operacional.</li>
-            <li>Base pronta para telas funcionais específicas por etapa.</li>
+            <li>Abra “Processos” para consultar workflow, histórico e ações liberadas.</li>
+            <li>Use “Minha atuação” ou “Áreas operacionais” para entrar na área do seu perfil.</li>
+            <li>Consulte “Meu perfil” para validar os dados da sessão autenticada.</li>
           </ul>
         </InfoCard>
       </div>
-
-      <ProcessWorkspace />
     </section>
   );
 }

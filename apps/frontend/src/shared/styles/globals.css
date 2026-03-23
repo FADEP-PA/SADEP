@@ -534,7 +534,7 @@ button {
 }
 
 .app-shell__main:empty::before {
-  content: 'A próxima etapa conectará a primeira página pós-login a este layout base.';
+  content: 'Nenhum conteúdo disponível para esta área.';
   display: block;
   border: 1px dashed rgba(148, 163, 184, 0.55);
   border-radius: 1.25rem;
@@ -553,6 +553,40 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.95fr);
   gap: 1rem;
+}
+
+.technical-home__hero--institutional {
+  align-items: stretch;
+}
+
+.technical-home__hero-panel,
+.technical-home__panel,
+.technical-home__card,
+.technical-home__checklist,
+.initial-loading,
+.guard-feedback,
+.forbidden-page__card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 20px 55px rgba(15, 23, 42, 0.07);
+}
+
+.technical-home__hero-panel,
+.technical-home__panel,
+.technical-home__card,
+.technical-home__checklist,
+.guard-feedback,
+.forbidden-page__card {
+  padding: 1.4rem;
+}
+
+.technical-home__hero-panel {
+  display: grid;
+  gap: 1rem;
+  background:
+    linear-gradient(135deg, rgba(15, 58, 96, 0.06), rgba(251, 191, 36, 0.06)),
+    rgba(255, 255, 255, 0.96);
 }
 
 .technical-home__hero--institutional {
@@ -639,6 +673,23 @@ button {
 .technical-home__hero-highlights strong {
   color: #0f2740;
   line-height: 1.55;
+}
+
+.technical-home__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.technical-home__link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.technical-home__link-button:hover {
+  text-decoration: none;
 }
 
 .technical-home__panel--institutional {
