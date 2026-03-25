@@ -74,6 +74,39 @@ export async function runProcessesServiceTests() {
     });
 
     assert.equal(events.length, 0);
+
+    const completedProcess = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id);
+    const completedSupervisor = await createUser(
+      context.prisma,
+      UserRole.IMMEDIATE_SUPERVISOR,
+      'supervisor-complete@test.local',
+    );
+
+    await context.prisma.supervisorEvaluation.create({
+      data: {
+        processId: completedProcess.id,
+        evaluatorUserId: completedSupervisor.id,
+        status: 'SUBMITTED',
+        summary: 'Avaliação concluída para liberar assinatura.',
+        generalComments: 'Pronta para assinatura do servidor.',
+        content: { criteria: [{ code: 'ASSID', label: 'Assiduidade', rating: 5 }] },
+        submittedAt: new Date(),
+      },
+    });
+
+    const transitionedWorkflow = await context.service.transitionWorkflow(
+      completedProcess.id,
+      authenticatedUser(completedSupervisor.id, completedSupervisor.role),
+      { action: workflowActions.releaseForSignature },
+    );
+
+    assert.equal(transitionedWorkflow.status, ProcessStatus.AGUARDANDO_ASSINATURA);
+
+    const transitionEvent = await context.prisma.auditEvent.findFirstOrThrow({
+      where: { evaluationProcessId: completedProcess.id },
+    });
+    const metadata = transitionEvent.metadata as { occurredAt?: string };
+    assert.equal(transitionEvent.occurredAt.toISOString(), metadata.occurredAt);
   } finally {
     await disposeTestContext(context);
   }

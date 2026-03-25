@@ -254,6 +254,7 @@ export class SupervisorEvaluationsService {
           generalComments: normalizedPayload.generalComments,
           content: this.toPrismaJsonContent(normalizedPayload.content),
           status: PrismaSupervisorEvaluationStatus.SUBMITTED,
+          submittedAt: new Date(),
         },
       });
 
@@ -433,6 +434,7 @@ export class SupervisorEvaluationsService {
       eventType: this.toDatabaseAuditEventType(params.eventType),
       beforeState: this.toNullablePrismaJson(params.beforeState),
       afterState: params.afterState,
+      occurredAt: new Date(params.occurredAt),
       metadata: {
         eventType: params.eventType,
         action: params.action,

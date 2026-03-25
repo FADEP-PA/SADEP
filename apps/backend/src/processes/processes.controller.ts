@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import type { WorkflowTransitionRequestDto } from './dto/workflow-transition.dto';
 import { ProcessesService } from './processes.service';
+import { isWorkflowAction } from './workflow-catalog';
 
 @Controller('processes')
 @UseGuards(JwtAuthGuard)
@@ -61,7 +62,7 @@ export class ProcessesController {
     const action = body.action;
     const comment = body.comment;
 
-    if (typeof action !== 'string' || !Object.values(ProcessAction).includes(action as ProcessAction)) {
+    if (typeof action !== 'string' || !isWorkflowAction(action)) {
       throw new BadRequestException('Workflow action is required and must be valid');
     }
 

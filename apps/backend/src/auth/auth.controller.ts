@@ -4,6 +4,7 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  HttpCode,
   Post,
   UnauthorizedException,
   UseGuards,
@@ -22,6 +23,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @HttpCode(200)
   async login(@Body() body: Record<string, unknown>) {
     const email = typeof body.email === 'string' ? body.email : '';
     const password = typeof body.password === 'string' ? body.password : '';

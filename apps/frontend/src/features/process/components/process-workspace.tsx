@@ -64,7 +64,11 @@ export function ProcessWorkspace() {
     setErrorDetails([]);
 
     try {
-      const nextSnapshot = await getTechnicalProcessSnapshot(processId.trim(), session.accessToken);
+      const nextSnapshot = await getTechnicalProcessSnapshot(
+        processId.trim(),
+        session.accessToken,
+        session.user.role,
+      );
       setSnapshot(nextSnapshot);
       setConsultedProcesses((currentItems) => upsertConsultedProcess(currentItems, nextSnapshot));
     } catch (error) {

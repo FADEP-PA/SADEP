@@ -193,7 +193,11 @@ export function SupervisorEvaluationWorkspace() {
       return;
     }
 
-    const nextSnapshot = await getTechnicalProcessSnapshot(activeProcessId, session.accessToken);
+    const nextSnapshot = await getTechnicalProcessSnapshot(
+      activeProcessId,
+      session.accessToken,
+      session.user.role,
+    );
     setSnapshot(nextSnapshot);
     setForm(buildFormState(nextSnapshot));
     setSuccessMessage(success ?? null);
