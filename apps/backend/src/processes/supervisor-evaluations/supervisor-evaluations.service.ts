@@ -22,6 +22,7 @@ import {
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { ProcessesService } from '../processes.service';
+import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import type {
   SupervisorEvaluationContentDto,
   SupervisorEvaluationResponseDto,
@@ -36,6 +37,7 @@ export class SupervisorEvaluationsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly processesService: ProcessesService,
+    private readonly processDocumentsService: ProcessDocumentsService,
   ) {}
 
   async getByProcessId(
@@ -49,7 +51,24 @@ export class SupervisorEvaluationsService {
       where: { processId },
     });
 
-    return evaluation ? this.toResponseDto(evaluation) : null;
+    if (!evaluation) {
+      return null;
+    }
+
+    const response = this.toResponseDto(evaluation);
+
+    // Add document context if evaluation is submitted
+    if (evaluation.status === PrismaSupervisorEvaluationStatus.SUBMITTED) {
+      const documentContext = await this.processDocumentsService.getSupervisorEvaluationDocumentContext(
+        this.prismaService,
+        processId,
+      );
+      if (documentContext) {
+        response.documentContext = documentContext;
+      }
+    }
+
+    return response;
   }
 
   async saveDraft(
@@ -212,6 +231,33 @@ export class SupervisorEvaluationsService {
         comment: normalizedPayload.comment,
       });
 
+      // Create or ensure ProcessDocument for supervisor evaluation
+      const { documentId } = await this.processDocumentsService.ensureSupervisorEvaluationDocument(
+        transaction,
+        processId,
+        user,
+      );
+
+      // Get the intern user ID from the process
+      const processWithIntern = await transaction.evaluationProcess.findUnique({
+        where: { id: processId },
+        select: { evaluatedUserId: true },
+      });
+
+      if (!processWithIntern) {
+        throw new NotFoundException(`Process ${processId} not found`);
+      }
+
+      // Create signature records
+      await this.processDocumentsService.createSupervisorEvaluationSignatures(
+        transaction,
+        processId,
+        documentId,
+        user.sub, // supervisor user ID
+        processWithIntern.evaluatedUserId, // intern user ID
+        user,
+      );
+
       return this.toResponseDto(savedEvaluation);
     });
   }
@@ -244,6 +290,16 @@ export class SupervisorEvaluationsService {
 
       if (existingEvaluation.status !== PrismaSupervisorEvaluationStatus.SUBMITTED) {
         throw new BadRequestException('Only submitted supervisor evaluations can be rectified');
+      }
+
+      // Check if rectification is allowed (intern hasn't signed)
+      const canRectify = await this.processDocumentsService.canRectifySupervisorEvaluation(
+        transaction,
+        processId,
+      );
+
+      if (!canRectify) {
+        throw new BadRequestException('Supervisor evaluation cannot be rectified after intern signature');
       }
 
       const rectifiedEvaluation = await transaction.supervisorEvaluation.update({

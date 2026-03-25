@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { ProcessDocumentsModule as ApiProcessDocumentsModule } from '../api/documents/process-documents.module';
+import { ProcessDocumentsService } from '../application/documents/process-documents.service';
 import { AuthModule } from '../auth/auth.module';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { ProcessesController } from './processes.controller';
@@ -8,8 +10,8 @@ import { SupervisorEvaluationsController } from './supervisor-evaluations/superv
 import { SupervisorEvaluationsService } from './supervisor-evaluations/supervisor-evaluations.service';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, ApiProcessDocumentsModule],
   controllers: [ProcessesController, SupervisorEvaluationsController],
-  providers: [ProcessesService, SupervisorEvaluationsService, PrismaService],
+  providers: [ProcessesService, SupervisorEvaluationsService, ProcessDocumentsService, PrismaService],
 })
 export class ProcessesModule {}

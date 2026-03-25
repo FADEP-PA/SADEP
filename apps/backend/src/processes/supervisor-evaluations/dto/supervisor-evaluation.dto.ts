@@ -3,6 +3,10 @@ import {
   type SupervisorEvaluationContentInput,
   type SupervisorEvaluationCriterionInput,
   type SupervisorEvaluationRef,
+  DocumentType,
+  DocumentStatus,
+  SignatureStatus,
+  UserRole,
 } from '@aep-pa/contracts';
 
 export type SupervisorEvaluationCriterionDto = SupervisorEvaluationCriterionInput;
@@ -15,7 +19,21 @@ export interface UpsertSupervisorEvaluationDto {
   comment?: string;
 }
 
-export interface SupervisorEvaluationResponseDto extends SupervisorEvaluationRef {}
+export interface SupervisorEvaluationDocumentContext {
+  documentId: string;
+  documentType: DocumentType;
+  documentStatus: DocumentStatus;
+  signatures: Array<{
+    signatoryRole: UserRole;
+    status: SignatureStatus;
+    signedAt: string | null;
+  }>;
+  internSignaturePending: boolean;
+}
+
+export interface SupervisorEvaluationResponseDto extends SupervisorEvaluationRef {
+  documentContext?: SupervisorEvaluationDocumentContext;
+}
 
 export function isSupervisorEvaluationStatus(value: string): value is SupervisorEvaluationStatus {
   return Object.values(SupervisorEvaluationStatus).includes(value as SupervisorEvaluationStatus);

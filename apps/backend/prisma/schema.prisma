@@ -166,6 +166,7 @@ model ProcessDocument {
   processStage        ProcessStage?     @relation(fields: [processStageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   signatureRecords    SignatureRecord[]
 
+  @@unique([evaluationProcessId, documentType])
   @@index([evaluationProcessId])
   @@index([processStageId])
   @@index([documentType, documentStatus])
