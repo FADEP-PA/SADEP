@@ -20,23 +20,18 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
   const { session, signOut } = useAuth();
   const navigationGroups = session ? getMenuByRole(session.user.role) : [];
   const rolePresentation = session ? getRolePresentation(session.user.role) : null;
-  const headerDescription = subtitle ?? rolePresentation?.description;
 
   return (
     <div className="app-shell">
       <aside className="app-shell__sidebar" aria-label="Navegação principal da aplicação">
-        <div className="app-shell__sidebar-glow" aria-hidden="true" />
         <div className="app-shell__brand">
           <span className="app-shell__brand-badge">Governo do Pará</span>
-          <div className="app-shell__brand-heading">
-            <span className="app-shell__brand-mark">PA</span>
-            <div>
-              <strong>Sistema AEP-PA</strong>
-              <p>
-                Ambiente interno para acompanhamento do estágio probatório com trilha auditável,
-                workflow processual e segregação por perfil.
-              </p>
-            </div>
+          <div>
+            <strong>Sistema AEP-PA</strong>
+            <p>
+              Ambiente interno para acompanhamento do estágio probatório com trilha auditável,
+              workflow processual e segregação por perfil.
+            </p>
           </div>
         </div>
 
@@ -85,21 +80,15 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
 
       <div className="app-shell__content">
         <div className="app-shell__topbar">
-          <span className="app-shell__topbar-label">
-            Governo do Estado do Pará · Sistema de Avaliação de Estágio Probatório
-          </span>
-          <span className="app-shell__topbar-security">Uso restrito a perfis autorizados</span>
+          <span>Governo do Estado do Pará · Sistema de Avaliação de Estágio Probatório</span>
+          <span>Uso restrito a perfis autorizados</span>
         </div>
 
         <header className="app-shell__header">
-          <div className="app-shell__header-copy">
+          <div>
             <span className="app-shell__eyebrow">Painel institucional</span>
             <h1>{title}</h1>
-            {headerDescription ? <p>{headerDescription}</p> : null}
-            <div className="app-shell__header-ribbon">
-              <span>Perfil em sessão</span>
-              <strong>{rolePresentation?.shortLabel ?? 'Acesso autenticado'}</strong>
-            </div>
+            {subtitle ? <p>{subtitle}</p> : null}
           </div>
 
           <div className="app-shell__actions">
@@ -108,7 +97,6 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
                 <div className="app-shell__user-panel" aria-label="Resumo da sessão autenticada">
                   <strong>{rolePresentation?.label ?? session?.user.role ?? 'Perfil não identificado'}</strong>
                   <span>{session?.user.email}</span>
-                  <small>Operação autenticada com trilha institucional.</small>
                 </div>
                 <button type="button" onClick={signOut}>
                   Sair
