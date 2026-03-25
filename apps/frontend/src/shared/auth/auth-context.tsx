@@ -59,20 +59,28 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setBootstrapError(null);
       setAuthRedirectPath(null);
     } catch (error) {
-      clearSession();
-      setSession(null);
-      setStatus('anonymous');
-
       const nextErrorMessage =
         error instanceof Error ? error.message : 'Sessão inválida ou expirada.';
 
-      setBootstrapError(nextErrorMessage);
-
       if (error instanceof HttpError && error.status === 401 && !isPublicAuthRoute(pathname)) {
+        clearSession();
+        setSession(null);
+        setStatus('anonymous');
+        setBootstrapError(nextErrorMessage);
         setAuthRedirectPath(SESSION_EXPIRED_REDIRECT);
         return;
       }
 
+      if (error instanceof HttpError && error.status === 401) {
+        clearSession();
+        setSession(null);
+        setStatus('anonymous');
+      } else {
+        setSession(storedSession);
+        setStatus('authenticated');
+      }
+
+      setBootstrapError(nextErrorMessage);
       setAuthRedirectPath(null);
     }
   }, [pathname]);

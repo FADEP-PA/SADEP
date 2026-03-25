@@ -6,9 +6,10 @@ import type {
   WorkflowHistoryItem,
   WorkflowResponse,
 } from '@/features/dashboard/types/process-dashboard-types';
-import type {
+import {
   SupervisorEvaluationContentInput,
   SupervisorEvaluationRef,
+  UserRole,
 } from '@aep-pa/contracts';
 
 export type UpsertSupervisorEvaluationInput = {
@@ -86,6 +87,7 @@ export async function rectifySupervisorEvaluation(
 export async function getTechnicalProcessSnapshot(
   processId: string,
   accessToken: string,
+  userRole: UserRole,
 ): Promise<ProcessDashboardSnapshot> {
   const [workflow, historyResponse] = await Promise.all([
     getWorkflow(processId, accessToken),
@@ -102,7 +104,10 @@ export async function getTechnicalProcessSnapshot(
       supervisorEvaluationWarning: null,
     };
   } catch (error) {
-    if (error instanceof HttpError && error.status === 403) {
+    const canConsultSupervisorEvaluation =
+      userRole === UserRole.ADMIN || userRole === UserRole.IMMEDIATE_SUPERVISOR;
+
+    if (error instanceof HttpError && error.status === 403 && !canConsultSupervisorEvaluation) {
       return {
         workflow,
         history: historyResponse.items,

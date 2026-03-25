@@ -1,3 +1,5 @@
+import { clearSession } from '@/shared/auth/session-storage';
+
 import type { ApiErrorResponse } from './api-conventions';
 import { HttpError, getHttpErrorMessage, type HttpErrorPayload } from './http-error';
 
@@ -44,6 +46,10 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
   if (!response.ok) {
     const errorPayload = (payload ?? {}) as HttpErrorPayload;
+    if (response.status === 401 && typeof window !== 'undefined') {
+      clearSession();
+      window.location.assign('/sessao-expirada');
+    }
     throw new HttpError(response.status, getHttpErrorMessage(response.status, errorPayload), errorPayload);
   }
 

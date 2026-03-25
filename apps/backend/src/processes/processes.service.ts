@@ -188,6 +188,7 @@ export class ProcessesService {
         beforeState: { status: currentStatus },
         afterState: { status: transition.to },
         metadata,
+        occurredAt: new Date(occurredAt),
       },
     });
 

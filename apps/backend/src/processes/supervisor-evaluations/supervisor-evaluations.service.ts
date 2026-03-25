@@ -434,6 +434,7 @@ export class SupervisorEvaluationsService {
       eventType: this.toDatabaseAuditEventType(params.eventType),
       beforeState: this.toNullablePrismaJson(params.beforeState),
       afterState: params.afterState,
+      occurredAt: new Date(params.occurredAt),
       metadata: {
         eventType: params.eventType,
         action: params.action,

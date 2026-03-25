@@ -72,6 +72,18 @@ export async function runSupervisorEvaluationsServiceTests() {
     assert.equal(auditEvents[0].eventType, AuditEventType.EVALUATION_STARTED);
     assert.equal(auditEvents[1].eventType, AuditEventType.EVALUATION_COMPLETED);
     assert.equal(auditEvents[2].eventType, AuditEventType.SIGNATURE_REQUESTED);
+    assert.equal(
+      auditEvents[0].occurredAt.toISOString(),
+      (auditEvents[0].metadata as { occurredAt?: string }).occurredAt,
+    );
+    assert.equal(
+      auditEvents[1].occurredAt.toISOString(),
+      (auditEvents[1].metadata as { occurredAt?: string }).occurredAt,
+    );
+    assert.equal(
+      auditEvents[2].occurredAt.toISOString(),
+      (auditEvents[2].metadata as { occurredAt?: string }).occurredAt,
+    );
 
     const rectified = await context.supervisorEvaluationsService.rectify(
       process.id,
