@@ -139,8 +139,8 @@ export class SupervisorEvaluationsController {
     }
 
     return {
-      summary,
-      generalComments,
+      summary: summary as string,
+      generalComments: generalComments as string,
       content: content as UpsertSupervisorEvaluationDto['content'],
       ...(typeof comment === 'string' ? { comment } : {}),
     };

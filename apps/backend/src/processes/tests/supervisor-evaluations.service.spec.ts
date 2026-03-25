@@ -87,6 +87,8 @@ export async function runSupervisorEvaluationsServiceTests() {
       rectified.generalComments,
       'Comentários retificados antes da assinatura do servidor.',
     );
+    assert.ok(rectified.submittedAt);
+    assert.notEqual(rectified.submittedAt, submitted.submittedAt);
 
     const rectificationAudit = await context.prisma.auditEvent.findFirstOrThrow({
       where: {

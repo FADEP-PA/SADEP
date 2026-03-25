@@ -254,6 +254,7 @@ export class SupervisorEvaluationsService {
           generalComments: normalizedPayload.generalComments,
           content: this.toPrismaJsonContent(normalizedPayload.content),
           status: PrismaSupervisorEvaluationStatus.SUBMITTED,
+          submittedAt: new Date(),
         },
       });
 
