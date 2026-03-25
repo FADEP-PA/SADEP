@@ -41,12 +41,12 @@ async function parseJsonSafely<T>(response: Response): Promise<T | undefined> {
   return (await response.json()) as T;
 }
 
-async function parseResponse<T>(response: Response): Promise<T> {
+async function parseResponse<T>(response: Response, token?: string): Promise<T> {
   const payload = await parseJsonSafely<T | ApiErrorResponse>(response);
 
   if (!response.ok) {
     const errorPayload = (payload ?? {}) as HttpErrorPayload;
-    if (response.status === 401 && typeof window !== 'undefined') {
+    if (response.status === 401 && token && typeof window !== 'undefined') {
       clearSession();
       window.location.assign('/sessao-expirada');
     }
@@ -70,5 +70,5 @@ export async function httpRequest<T>(path: string, options: RequestOptions = {})
     cache: 'no-store',
   });
 
-  return parseResponse<T>(response);
+  return parseResponse<T>(response, token);
 }
