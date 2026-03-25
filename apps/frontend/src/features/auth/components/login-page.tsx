@@ -40,18 +40,41 @@ export function LoginPage() {
   return (
     <main className="login-shell">
       <section className="login-hero" aria-label="Apresentação do sistema">
-        <span className="login-badge">AEP-PA</span>
-        <h1>Portal de autenticação</h1>
-        <p>
-          Entre com seu e-mail institucional e senha para acessar os fluxos internos do
-          sistema.
-        </p>
+        <div className="login-hero__panel">
+          <span className="login-badge">Ambiente institucional</span>
+          <p className="login-hero__eyebrow">AEP-PA · Governo do Pará</p>
+          <h1>Operação auditável para o estágio probatório.</h1>
+          <p>
+            Entre com seu e-mail institucional e senha para acessar os fluxos internos do
+            sistema com rastreabilidade, segregação por perfil e controle rigoroso de estado.
+          </p>
 
-        <ul className="login-highlights">
-          {highlights.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
+          <div className="login-hero__grid" aria-label="Destaques operacionais">
+            <div>
+              <strong>Fluxo orientado a estados</strong>
+              <span>Transições controladas no backend com validação processual.</span>
+            </div>
+            <div>
+              <strong>Trilha auditável</strong>
+              <span>Registro contínuo de ação, perfil e momento da operação.</span>
+            </div>
+            <div>
+              <strong>Uso restrito</strong>
+              <span>Acesso exclusivo a perfis autorizados do ambiente interno.</span>
+            </div>
+          </div>
+
+          <ul className="login-highlights">
+            {highlights.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+
+          <div className="login-hero__footer">
+            <span>Secretaria de Estado de Educação</span>
+            <span>Plataforma interna autenticada</span>
+          </div>
+        </div>
       </section>
 
       <section className="login-card" aria-labelledby="login-title">
@@ -117,6 +140,11 @@ export function LoginPage() {
             {isSubmitting ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+
+        <div className="login-card__trust">
+          <strong>Acesso institucional</strong>
+          <p>Use credenciais autorizadas para operar o ambiente interno do AEP-PA.</p>
+        </div>
       </section>
     </main>
   );
