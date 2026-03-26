@@ -1,7 +1,7 @@
 import type {
   ProcessAction,
   ProcessStatus,
-  SupervisorEvaluationRef,
+  SupervisorEvaluationWithDocumentContextRef,
   UserRole,
   AuditEventType,
 } from '@aep-pa/contracts';
@@ -38,6 +38,6 @@ export type ProcessDashboardListItem = {
 export type ProcessDashboardSnapshot = {
   workflow: WorkflowResponse;
   history: WorkflowHistoryItem[];
-  supervisorEvaluation: SupervisorEvaluationRef | null;
+  supervisorEvaluation: SupervisorEvaluationWithDocumentContextRef | null;
   supervisorEvaluationWarning?: string | null;
 };

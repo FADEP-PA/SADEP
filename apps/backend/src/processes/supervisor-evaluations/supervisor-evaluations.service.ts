@@ -30,7 +30,8 @@ import type {
 } from './dto/supervisor-evaluation.dto';
 import { isSupervisorEvaluationContentDto } from './dto/supervisor-evaluation.dto';
 
-const ALLOWED_ROLES = [UserRole.ADMIN, UserRole.IMMEDIATE_SUPERVISOR] as const;
+const READ_ALLOWED_ROLES = [UserRole.ADMIN, UserRole.IMMEDIATE_SUPERVISOR, UserRole.INTERN_SERVER] as const;
+const WRITE_ALLOWED_ROLES = [UserRole.ADMIN, UserRole.IMMEDIATE_SUPERVISOR] as const;
 
 @Injectable()
 export class SupervisorEvaluationsService {
@@ -44,7 +45,7 @@ export class SupervisorEvaluationsService {
     processId: string,
     user: AuthenticatedUser,
   ): Promise<SupervisorEvaluationResponseDto | null> {
-    this.ensureAllowedRole(user.role);
+    this.ensureAllowedRole(user.role, 'read');
     await this.processesService.ensureProcessExists(processId);
 
     const evaluation = await this.prismaService.supervisorEvaluation.findUnique({
@@ -53,6 +54,12 @@ export class SupervisorEvaluationsService {
 
     if (!evaluation) {
       return null;
+    }
+
+    if (user.role === UserRole.INTERN_SERVER && evaluation.status !== PrismaSupervisorEvaluationStatus.SUBMITTED) {
+      throw new ForbiddenException(
+        'Intern server can only access supervisor evaluation after submission and document formalization',
+      );
     }
 
     const response = this.toResponseDto(evaluation);
@@ -76,7 +83,7 @@ export class SupervisorEvaluationsService {
     user: AuthenticatedUser,
     payload: UpsertSupervisorEvaluationDto,
   ): Promise<SupervisorEvaluationResponseDto> {
-    this.ensureAllowedRole(user.role);
+    this.ensureAllowedRole(user.role, 'write');
     const normalizedPayload = this.normalizePayload(payload);
 
     return this.prismaService.$transaction(async (transaction) => {
@@ -148,7 +155,7 @@ export class SupervisorEvaluationsService {
     user: AuthenticatedUser,
     payload: UpsertSupervisorEvaluationDto,
   ): Promise<SupervisorEvaluationResponseDto> {
-    this.ensureAllowedRole(user.role);
+    this.ensureAllowedRole(user.role, 'write');
     const normalizedPayload = this.normalizePayload(payload);
 
     return this.prismaService.$transaction(async (transaction) => {
@@ -267,7 +274,7 @@ export class SupervisorEvaluationsService {
     user: AuthenticatedUser,
     payload: UpsertSupervisorEvaluationDto,
   ): Promise<SupervisorEvaluationResponseDto> {
-    this.ensureAllowedRole(user.role);
+    this.ensureAllowedRole(user.role, 'write');
     const normalizedPayload = this.normalizePayload(payload);
 
     return this.prismaService.$transaction(async (transaction) => {
@@ -332,9 +339,15 @@ export class SupervisorEvaluationsService {
     });
   }
 
-  private ensureAllowedRole(role: UserRole): void {
-    if (!ALLOWED_ROLES.some((allowedRole) => allowedRole === role)) {
-      throw new ForbiddenException(`Role ${role} cannot manipulate supervisor evaluations`);
+  private ensureAllowedRole(role: UserRole, mode: 'read' | 'write'): void {
+    const allowedRoles = mode === 'read' ? READ_ALLOWED_ROLES : WRITE_ALLOWED_ROLES;
+
+    if (!allowedRoles.some((allowedRole) => allowedRole === role)) {
+      throw new ForbiddenException(
+        mode === 'read'
+          ? `Role ${role} cannot read supervisor evaluations`
+          : `Role ${role} cannot manipulate supervisor evaluations`,
+      );
     }
   }
 

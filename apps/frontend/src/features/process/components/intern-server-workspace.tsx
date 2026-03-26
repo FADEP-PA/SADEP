@@ -5,6 +5,7 @@ import { useState, type FormEvent } from 'react';
 
 import type { ProcessDashboardListItem, ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
 import { ProcessListCard } from '@/features/process/components/process-list-card';
+import { SupervisorEvaluationDocumentCard } from '@/features/process/components/supervisor-evaluation-document-card';
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import { getTechnicalProcessSnapshot } from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
@@ -118,6 +119,7 @@ export function InternServerWorkspace() {
 
         <div className="metrics-grid">
           <ProcessListCard items={consultedProcesses} activeProcessId={snapshot?.workflow.id ?? null} />
+          <SupervisorEvaluationDocumentCard evaluation={snapshot?.supervisorEvaluation ?? null} />
         </div>
 
         {!snapshot && !errorMessage ? (
@@ -125,6 +127,14 @@ export function InternServerWorkspace() {
             title="Nenhum processo no painel"
             description="Carregue um processo para iniciar o acompanhamento da etapa atual e das ações disponíveis."
             tone="info"
+          />
+        ) : null}
+
+        {snapshot?.supervisorEvaluationWarning ? (
+          <FeedbackAlert
+            title="Avaliação da chefia indisponível"
+            tone="warning"
+            description={snapshot.supervisorEvaluationWarning}
           />
         ) : null}
       </PageSection>
