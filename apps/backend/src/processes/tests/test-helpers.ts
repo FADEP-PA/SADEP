@@ -17,12 +17,15 @@ import {
 import { hashPassword } from '../../common/security/password-hasher';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import { ProcessesService } from '../processes.service';
+import { SelfEvaluationsService } from '../self-evaluations/self-evaluations.service';
 import { SupervisorEvaluationsService } from '../supervisor-evaluations/supervisor-evaluations.service';
 
 export type TestContext = {
   prisma: PrismaClient;
   service: ProcessesService;
+  processDocumentsService: ProcessDocumentsService;
   supervisorEvaluationsService: SupervisorEvaluationsService;
+  selfEvaluationsService: SelfEvaluationsService;
   databaseFile: string;
 };
 
@@ -72,15 +75,22 @@ export async function createTestContext(databaseName: string): Promise<TestConte
 
   const processesService = new ProcessesService(prisma as never);
   const processDocumentsService = new ProcessDocumentsService(prisma as never, processesService);
+  const selfEvaluationsService = new SelfEvaluationsService(
+    prisma as never,
+    processesService,
+    processDocumentsService,
+  );
 
   return {
     prisma,
     service: processesService,
+    processDocumentsService,
     supervisorEvaluationsService: new SupervisorEvaluationsService(
       prisma as never,
       processesService,
       processDocumentsService,
     ),
+    selfEvaluationsService,
     databaseFile,
   };
 }
@@ -153,6 +163,20 @@ export function buildSupervisorEvaluationPayload(overrides: Partial<{
         },
       ],
     },
+    ...(overrides.comment ? { comment: overrides.comment } : {}),
+  };
+}
+
+export function buildSelfEvaluationPayload(overrides: Partial<{
+  selfReflection: string;
+  additionalNotes: string;
+  comment: string;
+}> = {}) {
+  return {
+    selfReflection: overrides.selfReflection ?? 'Reflexão objetiva do servidor sobre o período avaliado.',
+    ...(typeof overrides.additionalNotes === 'string'
+      ? { additionalNotes: overrides.additionalNotes }
+      : { additionalNotes: 'Observações complementares do servidor-estagiário.' }),
     ...(overrides.comment ? { comment: overrides.comment } : {}),
   };
 }

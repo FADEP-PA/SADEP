@@ -188,6 +188,186 @@ export class ProcessDocumentsService {
 
   }
 
+  async hasCompletedSupervisorEvaluationSignatures(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+    internUserId: string,
+  ): Promise<boolean> {
+    const document = await transaction.processDocument.findFirst({
+      where: {
+        evaluationProcessId: processId,
+        documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
+      },
+      include: {
+        signatureRecords: true,
+      },
+    });
+
+    if (!document || document.documentStatus !== PrismaDocumentStatus.SIGNED) {
+      return false;
+    }
+
+    const supervisorSigned = document.signatureRecords.some(
+      (sig) =>
+        sig.signatoryRole === PrismaUserRole.IMMEDIATE_SUPERVISOR &&
+        sig.status === PrismaSignatureStatus.COMPLETED,
+    );
+    const internSigned = document.signatureRecords.some(
+      (sig) =>
+        sig.signatoryRole === PrismaUserRole.INTERN_SERVER &&
+        sig.signatoryUserId === internUserId &&
+        sig.status === PrismaSignatureStatus.COMPLETED,
+    );
+
+    return supervisorSigned && internSigned;
+  }
+
+  async ensureSelfEvaluationDocument(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+    user: AuthenticatedUser,
+  ): Promise<{ documentId: string }> {
+    const existingDocument = await transaction.processDocument.findFirst({
+      where: {
+        evaluationProcessId: processId,
+        documentType: PrismaDocumentType.SELF_EVALUATION,
+      },
+    });
+
+    if (existingDocument) {
+      return { documentId: existingDocument.id };
+    }
+
+    let document;
+    try {
+      document = await transaction.processDocument.create({
+        data: {
+          evaluationProcessId: processId,
+          documentType: PrismaDocumentType.SELF_EVALUATION,
+          documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
+          artifactPath: '',
+        },
+      });
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const existingAfterConflict = await transaction.processDocument.findFirst({
+          where: {
+            evaluationProcessId: processId,
+            documentType: PrismaDocumentType.SELF_EVALUATION,
+          },
+        });
+
+        if (existingAfterConflict) {
+          return { documentId: existingAfterConflict.id };
+        }
+      }
+      throw error;
+    }
+
+    await transaction.auditEvent.create({
+      data: this.buildAuditEvent({
+        processId,
+        user,
+        eventType: AuditEventType.DOCUMENT_GENERATED,
+        action: ProcessAction.SUBMIT_SELF_EVALUATION,
+        processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
+        occurredAt: new Date().toISOString(),
+        metadata: {
+          documentId: document.id,
+          documentType: DocumentType.SELF_EVALUATION,
+        },
+      }),
+    });
+
+    return { documentId: document.id };
+  }
+
+  async createSelfEvaluationSignatures(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+    documentId: string,
+    internUserId: string,
+    supervisorUserId: string,
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    const now = new Date();
+    const existingSignatures = await transaction.signatureRecord.findMany({
+      where: {
+        processDocumentId: documentId,
+        signatoryRole: {
+          in: [PrismaUserRole.INTERN_SERVER, PrismaUserRole.IMMEDIATE_SUPERVISOR],
+        },
+      },
+    });
+
+    const internSignature = existingSignatures.find(
+      (sig) => sig.signatoryRole === PrismaUserRole.INTERN_SERVER,
+    );
+    const supervisorSignature = existingSignatures.find(
+      (sig) => sig.signatoryRole === PrismaUserRole.IMMEDIATE_SUPERVISOR,
+    );
+
+    if (!internSignature) {
+      await transaction.signatureRecord.create({
+        data: {
+          processDocumentId: documentId,
+          signatoryUserId: internUserId,
+          signatoryRole: PrismaUserRole.INTERN_SERVER,
+          provider: PrismaSignatureProvider.INTERNAL,
+          status: PrismaSignatureStatus.COMPLETED,
+          signedAt: now,
+        },
+      });
+
+      await transaction.auditEvent.create({
+        data: this.buildAuditEvent({
+          processId,
+          user,
+          eventType: AuditEventType.DOCUMENT_SIGNED,
+          action: ProcessAction.SUBMIT_SELF_EVALUATION,
+          processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
+          occurredAt: now.toISOString(),
+          metadata: {
+            documentId,
+            signatoryRole: UserRole.INTERN_SERVER,
+            signatoryUserId: internUserId,
+          },
+        }),
+      });
+    }
+
+    if (!supervisorSignature) {
+      await transaction.signatureRecord.create({
+        data: {
+          processDocumentId: documentId,
+          signatoryUserId: supervisorUserId,
+          signatoryRole: PrismaUserRole.IMMEDIATE_SUPERVISOR,
+          provider: PrismaSignatureProvider.INTERNAL,
+          status: PrismaSignatureStatus.PENDING,
+        },
+      });
+
+      await transaction.auditEvent.create({
+        data: this.buildAuditEvent({
+          processId,
+          user,
+          eventType: AuditEventType.SIGNATURE_REQUESTED,
+          action: ProcessAction.SUBMIT_SELF_EVALUATION,
+          processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
+          occurredAt: now.toISOString(),
+          metadata: {
+            documentId,
+            signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
+            signatoryUserId: supervisorUserId,
+          },
+        }),
+      });
+    }
+  }
+
   async signSupervisorEvaluationDocument(
     processId: string,
     user: AuthenticatedUser,
@@ -325,6 +505,55 @@ export class ProcessDocumentsService {
       documentStatus: this.toContractDocumentStatus(document.documentStatus),
       signatures,
       internSignaturePending,
+    };
+  }
+
+  async getSelfEvaluationDocumentContext(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+  ): Promise<{
+    documentId: string;
+    documentType: DocumentType;
+    documentStatus: DocumentStatus;
+    signatures: Array<{
+      signatoryRole: UserRole;
+      status: SignatureStatus;
+      signedAt: string | null;
+    }>;
+    supervisorSignaturePending: boolean;
+  } | null> {
+    const document = await transaction.processDocument.findFirst({
+      where: {
+        evaluationProcessId: processId,
+        documentType: PrismaDocumentType.SELF_EVALUATION,
+      },
+      include: {
+        signatureRecords: true,
+      },
+    });
+
+    if (!document) {
+      return null;
+    }
+
+    const signatures = document.signatureRecords.map((sig) => ({
+      signatoryRole: this.toContractUserRole(sig.signatoryRole),
+      status: this.toContractSignatureStatus(sig.status),
+      signedAt: sig.signedAt?.toISOString() ?? null,
+    }));
+
+    const supervisorSignaturePending = signatures.some(
+      (sig) =>
+        sig.signatoryRole === UserRole.IMMEDIATE_SUPERVISOR &&
+        sig.status === SignatureStatus.PENDING,
+    );
+
+    return {
+      documentId: document.id,
+      documentType: this.toContractDocumentType(document.documentType),
+      documentStatus: this.toContractDocumentStatus(document.documentStatus),
+      signatures,
+      supervisorSignaturePending,
     };
   }
 

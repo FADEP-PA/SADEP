@@ -4,4 +4,5 @@ export * from './document-ref';
 export * from './process-ref';
 export * from './signature-metadata';
 
+export * from './self-evaluation';
 export * from './supervisor-evaluation';

@@ -1,6 +1,7 @@
 import { runWorkflowCatalogTests } from './workflow-catalog.spec';
 import { runProcessesServiceTests } from './processes.service.spec';
 import { runProcessesEndpointTests } from './processes.endpoint.spec';
+import { runSelfEvaluationsTests } from './self-evaluations.service.spec';
 import { runSupervisorEvaluationsServiceTests } from './supervisor-evaluations.service.spec';
 
 async function main() {
@@ -8,7 +9,8 @@ async function main() {
   await runProcessesServiceTests();
   await runProcessesEndpointTests();
   await runSupervisorEvaluationsServiceTests();
-  console.log('Workflow and supervisor evaluation tests passed.');
+  await runSelfEvaluationsTests();
+  console.log('Workflow, supervisor evaluation, and self evaluation tests passed.');
 }
 
 main().catch((error) => {

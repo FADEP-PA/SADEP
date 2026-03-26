@@ -86,6 +86,11 @@ enum SupervisorEvaluationStatus {
   SUBMITTED
 }
 
+enum SelfEvaluationStatus {
+  DRAFT
+  SUBMITTED
+}
+
 model User {
   id                       String              @id @default(cuid())
   email                    String              @unique
@@ -98,6 +103,7 @@ model User {
   auditEvents              AuditEvent[]        @relation("AuditEventActor")
   signatureRecords         SignatureRecord[]   @relation("SignatureRecordSignatory")
   supervisorEvaluations    SupervisorEvaluation[] @relation("SupervisorEvaluationEvaluator")
+  selfEvaluations          SelfEvaluation[]    @relation("SelfEvaluationAuthor")
 }
 
 model EvaluationProcess {
@@ -111,6 +117,7 @@ model EvaluationProcess {
   auditEvents     AuditEvent[]
   documents       ProcessDocument[]
   supervisorEvaluation SupervisorEvaluation?
+  selfEvaluation       SelfEvaluation?
 
   @@index([evaluatedUserId])
   @@index([status])
@@ -188,6 +195,23 @@ model SupervisorEvaluation {
   evaluatorUser     User                       @relation("SupervisorEvaluationEvaluator", fields: [evaluatorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([evaluatorUserId])
+  @@index([status])
+}
+
+model SelfEvaluation {
+  id                String               @id @default(cuid())
+  processId         String               @unique
+  authorUserId      String
+  status            SelfEvaluationStatus @default(DRAFT)
+  selfReflection    String
+  additionalNotes   String?
+  submittedAt       DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  evaluationProcess EvaluationProcess    @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  authorUser        User                 @relation("SelfEvaluationAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([authorUserId])
   @@index([status])
 }
 
