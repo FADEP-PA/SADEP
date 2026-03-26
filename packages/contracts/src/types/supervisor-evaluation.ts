@@ -1,4 +1,10 @@
-import type { SupervisorEvaluationStatus } from '../enums';
+import type {
+  DocumentStatus,
+  DocumentType,
+  SignatureStatus,
+  SupervisorEvaluationStatus,
+  UserRole,
+} from '../enums';
 
 export interface SupervisorEvaluationCriterionInput {
   code: string;
@@ -22,4 +28,15 @@ export interface SupervisorEvaluationRef {
   submittedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  documentContext?: {
+    documentId: string;
+    documentType: DocumentType;
+    documentStatus: DocumentStatus;
+    signatures: Array<{
+      signatoryRole: UserRole;
+      status: SignatureStatus;
+      signedAt: string | null;
+    }>;
+    internSignaturePending: boolean;
+  };
 }
