@@ -1,4 +1,12 @@
-import { ProcessAction, ProcessStatus, SupervisorEvaluationStatus, UserRole } from '@aep-pa/contracts';
+import {
+  DocumentStatus,
+  DocumentType,
+  ProcessAction,
+  ProcessStatus,
+  SignatureStatus,
+  SupervisorEvaluationStatus,
+  UserRole,
+} from '@aep-pa/contracts';
 
 import type { WorkflowHistoryItem } from '../../dashboard/types/process-dashboard-types';
 
@@ -48,6 +56,31 @@ const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.ADMIN]: 'Administrador',
 };
 
+const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  [DocumentType.SUPERVISOR_EVALUATION]: 'Avaliação da chefia',
+  [DocumentType.SELF_EVALUATION]: 'Autoavaliação',
+  [DocumentType.CESAD_OPINION]: 'Parecer CESAD',
+  [DocumentType.HOMOLOGATION_RECORD]: 'Registro de homologação',
+  [DocumentType.RESULT_NOTIFICATION]: 'Notificação de resultado',
+  [DocumentType.ACKNOWLEDGEMENT_RECORD]: 'Registro de ciência',
+  [DocumentType.ORDINANCE]: 'Portaria',
+};
+
+const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
+  [DocumentStatus.DRAFT]: 'Rascunho',
+  [DocumentStatus.CONSOLIDATED]: 'Consolidado',
+  [DocumentStatus.READY_FOR_SIGNATURE]: 'Pronto para assinatura',
+  [DocumentStatus.SIGNED]: 'Assinado',
+  [DocumentStatus.INVALIDATED_OR_SUPERSEDED]: 'Invalidado ou substituído',
+};
+
+const SIGNATURE_STATUS_LABELS: Record<SignatureStatus, string> = {
+  [SignatureStatus.PENDING]: 'Pendente',
+  [SignatureStatus.COMPLETED]: 'Assinada',
+  [SignatureStatus.FAILED]: 'Falhou',
+  [SignatureStatus.CANCELED]: 'Cancelada',
+};
+
 export function getStatusTone(status: string | undefined) {
   if (!status) {
     return 'neutral' as const;
@@ -86,6 +119,30 @@ export function formatRole(role: string | null | undefined) {
   }
 
   return ROLE_LABELS[role as UserRole] ?? role;
+}
+
+export function formatDocumentType(type: string | undefined) {
+  if (!type) {
+    return 'Não informado';
+  }
+
+  return DOCUMENT_TYPE_LABELS[type as DocumentType] ?? type;
+}
+
+export function formatDocumentStatus(status: string | undefined) {
+  if (!status) {
+    return 'Não informado';
+  }
+
+  return DOCUMENT_STATUS_LABELS[status as DocumentStatus] ?? status;
+}
+
+export function formatSignatureStatus(status: string | undefined) {
+  if (!status) {
+    return 'Não informado';
+  }
+
+  return SIGNATURE_STATUS_LABELS[status as SignatureStatus] ?? status;
 }
 
 export function formatDateTime(value: string | null | undefined) {

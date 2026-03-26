@@ -30,6 +30,8 @@ function upsertConsultedProcess(
   const nextItem: ProcessDashboardListItem = {
     id: snapshot.workflow.id,
     status: snapshot.workflow.status,
+    currentStage: snapshot.workflow.status,
+    primaryAction: snapshot.workflow.availableActions[0] ?? null,
     availableActionsCount: snapshot.workflow.availableActions.length,
     historyCount: snapshot.history.length,
     lastViewedAt: new Date().toISOString(),
