@@ -4,7 +4,7 @@ import { ContentState } from '@/shared/ui/content-state';
 
 import type { ProcessDashboardListItem } from '@/features/dashboard/types/process-dashboard-types';
 
-import { formatDateTime, formatProcessStatus, getStatusTone } from './process-formatters';
+import { formatDateTime, formatProcessAction, formatProcessStatus, getStatusTone } from './process-formatters';
 
 type ProcessListCardProps = {
   items: ProcessDashboardListItem[];
@@ -15,8 +15,8 @@ export function ProcessListCard({ items, activeProcessId }: ProcessListCardProps
   return (
     <InfoCard
       eyebrow="Listagem de processos"
-      title="Estrutura inicial da listagem"
-      description="A listagem agora mantém os últimos processos consultados nesta sessão para apoiar navegação e conferência rápida."
+      title="Processos carregados nesta sessão"
+      description="Cada item destaca status macro do workflow, etapa atual e a principal ação disponível para orientar a próxima movimentação."
     >
       {items.length > 0 ? (
         <div className="process-list-card">
@@ -28,8 +28,10 @@ export function ProcessListCard({ items, activeProcessId }: ProcessListCardProps
                   {item.id === activeProcessId ? ' · em foco' : ''}
                 </strong>
                 <p>
-                  {item.availableActionsCount} ações liberadas · {item.historyCount} eventos auditáveis · última leitura{' '}
-                  {formatDateTime(item.lastViewedAt)}.
+                  Etapa atual: {formatProcessStatus(item.currentStage)} · Próxima ação: {formatProcessAction(item.primaryAction ?? undefined)}.
+                </p>
+                <p>
+                  {item.availableActionsCount} ações liberadas · {item.historyCount} eventos auditáveis · última leitura {formatDateTime(item.lastViewedAt)}.
                 </p>
               </div>
               <StatusBadge label={formatProcessStatus(item.status)} tone={getStatusTone(item.status)} />

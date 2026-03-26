@@ -28,6 +28,8 @@ export type WorkflowHistoryItem = {
 export type ProcessDashboardListItem = {
   id: string;
   status: ProcessStatus;
+  currentStage: ProcessStatus;
+  primaryAction: ProcessAction | null;
   availableActionsCount: number;
   historyCount: number;
   lastViewedAt: string;

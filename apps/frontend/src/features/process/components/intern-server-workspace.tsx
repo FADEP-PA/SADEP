@@ -1,23 +1,19 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { UserRole } from '@aep-pa/contracts';
+import { useState, type FormEvent } from 'react';
 
-import { getTechnicalProcessSnapshot } from '@/shared/api/services/processes-service';
+import type { ProcessDashboardListItem, ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
+import { ProcessListCard } from '@/features/process/components/process-list-card';
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
+import { getTechnicalProcessSnapshot } from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
+import { AuthGuard } from '@/shared/auth/auth-guard';
 import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { PageSection } from '@/shared/ui/page-section';
 
-import type { ProcessDashboardListItem, ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
-
-import { ProcessActionsCard } from './process-actions-card';
-import { ProcessBlockersCard } from './process-blockers-card';
-import { getProcessBlockers } from './process-formatters';
-import { ProcessHistoryCard } from './process-history-card';
-import { ProcessListCard } from './process-list-card';
-import { ProcessStatusCard } from './process-status-card';
-import { ProcessTechnicalDetailsCard } from './process-technical-details-card';
+const ALLOWED_ROLES = [UserRole.INTERN_SERVER, UserRole.ADMIN];
 
 function getInitialProcessId() {
   return process.env.NEXT_PUBLIC_TECHNICAL_PROCESS_ID?.trim() || '';
@@ -38,10 +34,10 @@ function upsertConsultedProcess(
   };
 
   const remainingItems = currentItems.filter((item) => item.id !== nextItem.id);
-  return [nextItem, ...remainingItems].slice(0, 5);
+  return [nextItem, ...remainingItems].slice(0, 8);
 }
 
-export function ProcessWorkspace() {
+export function InternServerWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState(getInitialProcessId);
   const [snapshot, setSnapshot] = useState<ProcessDashboardSnapshot | null>(null);
@@ -50,13 +46,11 @@ export function ProcessWorkspace() {
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const blockers = useMemo(() => getProcessBlockers(snapshot), [snapshot]);
-
   async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!session?.accessToken || processId.trim().length === 0) {
-      setErrorMessage('Informe um identificador de processo para consultar os dados disponíveis.');
+      setErrorMessage('Informe um identificador de processo para consultar seu painel.');
       setErrorDetails([]);
       return;
     }
@@ -71,6 +65,7 @@ export function ProcessWorkspace() {
         session.accessToken,
         session.user.role,
       );
+
       setSnapshot(nextSnapshot);
       setConsultedProcesses((currentItems) => upsertConsultedProcess(currentItems, nextSnapshot));
     } catch (error) {
@@ -78,6 +73,7 @@ export function ProcessWorkspace() {
         typeof error === 'object' && error && 'payload' in error
           ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
           : undefined;
+
       setErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar os dados do processo.'));
       setErrorDetails(getHttpErrorDetails(payload));
       setSnapshot(null);
@@ -87,17 +83,17 @@ export function ProcessWorkspace() {
   }
 
   return (
-    <div className="process-workspace">
+    <AuthGuard allowedRoles={ALLOWED_ROLES}>
       <PageSection
-        eyebrow="Processos"
-        title="Consulta operacional de processos"
-        description="Informe um processo para visualizar o status atual, as ações permitidas, o histórico e os dados complementares disponíveis para o seu perfil."
+        eyebrow="Servidor estagiário"
+        title="Painel de processos do servidor"
+        description="Consulte seus processos para visualizar status macro, etapa atual e a principal ação disponível em cada item carregado."
       >
         <form className="inline-form" onSubmit={handleLoadProcess}>
-          <label className="field-group" htmlFor="process-workspace-id">
+          <label className="field-group" htmlFor="intern-process-id">
             <span>Identificador do processo</span>
             <input
-              id="process-workspace-id"
+              id="intern-process-id"
               name="processId"
               placeholder="Informe o ID do processo"
               value={processId}
@@ -107,7 +103,7 @@ export function ProcessWorkspace() {
           </label>
 
           <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Carregando processo...' : 'Consultar processo'}
+            {isLoading ? 'Carregando processo...' : 'Adicionar ao painel'}
           </button>
         </form>
 
@@ -126,30 +122,12 @@ export function ProcessWorkspace() {
 
         {!snapshot && !errorMessage ? (
           <ContentState
-            title="Nenhum processo carregado"
-            description="Faça uma consulta para visualizar os dados operacionais disponíveis para este perfil."
+            title="Nenhum processo no painel"
+            description="Carregue um processo para iniciar o acompanhamento da etapa atual e das ações disponíveis."
             tone="info"
           />
         ) : null}
-
-        {snapshot ? (
-          <div className="metrics-grid">
-            <ProcessStatusCard snapshot={snapshot} />
-            <ProcessActionsCard actions={snapshot.workflow.availableActions} status={snapshot.workflow.status} />
-            <ProcessHistoryCard history={snapshot.history} />
-            <ProcessTechnicalDetailsCard snapshot={snapshot} />
-            <ProcessBlockersCard blockers={blockers} />
-          </div>
-        ) : null}
-
-        {snapshot?.supervisorEvaluationWarning ? (
-          <FeedbackAlert
-            title="Visualização parcial"
-            tone="warning"
-            description={snapshot.supervisorEvaluationWarning}
-          />
-        ) : null}
       </PageSection>
-    </div>
+    </AuthGuard>
   );
 }
