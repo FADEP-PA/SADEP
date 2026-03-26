@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { DocumentStatus, DocumentType, SignatureStatus, UserRole } from '@aep-pa/contracts';
 
 import { PrismaService } from '../../infrastructure/database/prisma.service';
@@ -171,6 +171,54 @@ describe('SupervisorEvaluationsService', () => {
 
       expect(processDocumentsService.getSupervisorEvaluationDocumentContext).not.toHaveBeenCalled();
       expect(result?.documentContext).toBeUndefined();
+    });
+
+    it('allows intern server to read submitted evaluation but blocks draft visibility', async () => {
+      const processId = 'process-123';
+      const now = new Date('2024-01-01T12:00:00.000Z');
+      const internUser = {
+        sub: 'intern-123',
+        email: 'intern@test.local',
+        role: UserRole.INTERN_SERVER,
+      };
+
+      prismaService.supervisorEvaluation.findUnique.mockResolvedValue({
+        id: 'eval-123',
+        processId,
+        evaluatorUserId: mockUser.sub,
+        status: 'SUBMITTED',
+        summary: validPayload.summary,
+        generalComments: validPayload.generalComments,
+        content: validPayload.content,
+        submittedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+      processDocumentsService.getSupervisorEvaluationDocumentContext.mockResolvedValue({
+        documentId: 'doc-123',
+        documentType: DocumentType.SUPERVISOR_EVALUATION,
+        documentStatus: DocumentStatus.READY_FOR_SIGNATURE,
+        signatures: [],
+        internSignaturePending: true,
+      });
+
+      const submitted = await service.getByProcessId(processId, internUser);
+      expect(submitted?.status).toBe('SUBMITTED');
+
+      prismaService.supervisorEvaluation.findUnique.mockResolvedValue({
+        id: 'eval-123',
+        processId,
+        evaluatorUserId: mockUser.sub,
+        status: 'DRAFT',
+        summary: validPayload.summary,
+        generalComments: validPayload.generalComments,
+        content: validPayload.content,
+        submittedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+
+      await expect(service.getByProcessId(processId, internUser)).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 

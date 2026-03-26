@@ -8,7 +8,7 @@ import type {
 } from '@/features/dashboard/types/process-dashboard-types';
 import {
   SupervisorEvaluationContentInput,
-  SupervisorEvaluationRef,
+  SupervisorEvaluationWithDocumentContextRef,
   UserRole,
 } from '@aep-pa/contracts';
 
@@ -42,10 +42,13 @@ export async function getWorkflowHistory(processId: string, accessToken: string)
 }
 
 export async function getSupervisorEvaluation(processId: string, accessToken: string) {
-  return httpRequest<SupervisorEvaluationRef | null>(`/processes/${processId}/supervisor-evaluation`, {
-    method: 'GET',
-    token: accessToken,
-  });
+  return httpRequest<SupervisorEvaluationWithDocumentContextRef | null>(
+    `/processes/${processId}/supervisor-evaluation`,
+    {
+      method: 'GET',
+      token: accessToken,
+    },
+  );
 }
 
 export async function saveSupervisorEvaluationDraft(
@@ -53,11 +56,14 @@ export async function saveSupervisorEvaluationDraft(
   accessToken: string,
   body: UpsertSupervisorEvaluationInput,
 ) {
-  return httpRequest<SupervisorEvaluationRef>(`/processes/${processId}/supervisor-evaluation/draft`, {
-    method: 'POST',
-    token: accessToken,
-    body,
-  });
+  return httpRequest<SupervisorEvaluationWithDocumentContextRef>(
+    `/processes/${processId}/supervisor-evaluation/draft`,
+    {
+      method: 'POST',
+      token: accessToken,
+      body,
+    },
+  );
 }
 
 export async function submitSupervisorEvaluation(
@@ -65,11 +71,14 @@ export async function submitSupervisorEvaluation(
   accessToken: string,
   body: UpsertSupervisorEvaluationInput,
 ) {
-  return httpRequest<SupervisorEvaluationRef>(`/processes/${processId}/supervisor-evaluation/submit`, {
-    method: 'POST',
-    token: accessToken,
-    body,
-  });
+  return httpRequest<SupervisorEvaluationWithDocumentContextRef>(
+    `/processes/${processId}/supervisor-evaluation/submit`,
+    {
+      method: 'POST',
+      token: accessToken,
+      body,
+    },
+  );
 }
 
 export async function rectifySupervisorEvaluation(
@@ -77,11 +86,14 @@ export async function rectifySupervisorEvaluation(
   accessToken: string,
   body: UpsertSupervisorEvaluationInput,
 ) {
-  return httpRequest<SupervisorEvaluationRef>(`/processes/${processId}/supervisor-evaluation/rectify`, {
-    method: 'POST',
-    token: accessToken,
-    body,
-  });
+  return httpRequest<SupervisorEvaluationWithDocumentContextRef>(
+    `/processes/${processId}/supervisor-evaluation/rectify`,
+    {
+      method: 'POST',
+      token: accessToken,
+      body,
+    },
+  );
 }
 
 export async function getTechnicalProcessSnapshot(
@@ -105,7 +117,9 @@ export async function getTechnicalProcessSnapshot(
     };
   } catch (error) {
     const canConsultSupervisorEvaluation =
-      userRole === UserRole.ADMIN || userRole === UserRole.IMMEDIATE_SUPERVISOR;
+      userRole === UserRole.ADMIN ||
+      userRole === UserRole.IMMEDIATE_SUPERVISOR ||
+      userRole === UserRole.INTERN_SERVER;
 
     if (error instanceof HttpError && error.status === 403 && !canConsultSupervisorEvaluation) {
       return {
@@ -114,6 +128,16 @@ export async function getTechnicalProcessSnapshot(
         supervisorEvaluation: null,
         supervisorEvaluationWarning:
           'Seu perfil não pode consultar a avaliação da chefia. O dashboard exibe apenas workflow e histórico.',
+      };
+    }
+
+    if (error instanceof HttpError && error.status === 403 && userRole === UserRole.INTERN_SERVER) {
+      return {
+        workflow,
+        history: historyResponse.items,
+        supervisorEvaluation: null,
+        supervisorEvaluationWarning:
+          'A avaliação da chefia só fica disponível para o servidor após a formalização documental da etapa.',
       };
     }
 
