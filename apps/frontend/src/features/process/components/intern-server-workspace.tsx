@@ -1,17 +1,18 @@
 'use client';
 
-import { UserRole } from '@aep-pa/contracts';
+import { ProcessAction, UserRole } from '@aep-pa/contracts';
 import { useState, type FormEvent } from 'react';
 
 import type { ProcessDashboardListItem, ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
 import { ProcessListCard } from '@/features/process/components/process-list-card';
 import { SupervisorEvaluationDocumentCard } from '@/features/process/components/supervisor-evaluation-document-card';
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
-import { getTechnicalProcessSnapshot } from '@/shared/api/services/processes-service';
+import { getTechnicalProcessSnapshot, transitionWorkflow } from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { InfoCard } from '@/shared/ui/info-card';
 import { PageSection } from '@/shared/ui/page-section';
 
 const ALLOWED_ROLES = [UserRole.INTERN_SERVER, UserRole.ADMIN];
@@ -45,7 +46,33 @@ export function InternServerWorkspace() {
   const [consultedProcesses, setConsultedProcesses] = useState<ProcessDashboardListItem[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
+  const [signatureComment, setSignatureComment] = useState('');
+  const [signatureErrorMessage, setSignatureErrorMessage] = useState<string | null>(null);
+  const [signatureErrorDetails, setSignatureErrorDetails] = useState<string[]>([]);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
+
+  const canSignEvaluation = Boolean(
+    snapshot?.workflow.availableActions.includes(ProcessAction.SIGN_EVALUATION) &&
+      snapshot.supervisorEvaluation?.documentContext?.internSignaturePending,
+  );
+
+  async function reloadProcessSnapshot(activeProcessId: string, success?: string) {
+    if (!session?.accessToken) {
+      return;
+    }
+
+    const nextSnapshot = await getTechnicalProcessSnapshot(
+      activeProcessId,
+      session.accessToken,
+      session.user.role,
+    );
+
+    setSnapshot(nextSnapshot);
+    setConsultedProcesses((currentItems) => upsertConsultedProcess(currentItems, nextSnapshot));
+    setSuccessMessage(success ?? null);
+  }
 
   async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,16 +86,12 @@ export function InternServerWorkspace() {
     setIsLoading(true);
     setErrorMessage(null);
     setErrorDetails([]);
+    setSignatureErrorMessage(null);
+    setSignatureErrorDetails([]);
+    setSuccessMessage(null);
 
     try {
-      const nextSnapshot = await getTechnicalProcessSnapshot(
-        processId.trim(),
-        session.accessToken,
-        session.user.role,
-      );
-
-      setSnapshot(nextSnapshot);
-      setConsultedProcesses((currentItems) => upsertConsultedProcess(currentItems, nextSnapshot));
+      await reloadProcessSnapshot(processId.trim());
     } catch (error) {
       const payload =
         typeof error === 'object' && error && 'payload' in error
@@ -80,6 +103,39 @@ export function InternServerWorkspace() {
       setSnapshot(null);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleSignEvaluation() {
+    if (!session?.accessToken || !snapshot) {
+      return;
+    }
+
+    setIsSigning(true);
+    setSignatureErrorMessage(null);
+    setSignatureErrorDetails([]);
+    setSuccessMessage(null);
+
+    try {
+      await transitionWorkflow(snapshot.workflow.id, session.accessToken, {
+        action: ProcessAction.SIGN_EVALUATION,
+        ...(signatureComment.trim() ? { comment: signatureComment.trim() } : {}),
+      });
+
+      await reloadProcessSnapshot(snapshot.workflow.id, 'Assinatura registrada com sucesso.');
+      setSignatureComment('');
+    } catch (error) {
+      const payload =
+        typeof error === 'object' && error && 'payload' in error
+          ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
+          : undefined;
+
+      setSignatureErrorMessage(
+        getRequestErrorMessage(error, 'Não foi possível assinar a avaliação da chefia.'),
+      );
+      setSignatureErrorDetails(getHttpErrorDetails(payload));
+    } finally {
+      setIsSigning(false);
     }
   }
 
@@ -117,10 +173,55 @@ export function InternServerWorkspace() {
           />
         ) : null}
 
+        {successMessage ? (
+          <FeedbackAlert title="Operação concluída" tone="success" description={successMessage} />
+        ) : null}
+
         <div className="metrics-grid">
           <ProcessListCard items={consultedProcesses} activeProcessId={snapshot?.workflow.id ?? null} />
           <SupervisorEvaluationDocumentCard evaluation={snapshot?.supervisorEvaluation ?? null} />
         </div>
+
+        {snapshot ? (
+          <InfoCard
+            title="Assinatura do servidor"
+            description="Quando a etapa estiver pronta para assinatura, confirme o ato formal para concluir a avaliação da chefia."
+          >
+            {canSignEvaluation ? (
+              <>
+                <label className="field-group" htmlFor="intern-signature-comment">
+                  <span>Comentário da assinatura (opcional)</span>
+                  <textarea
+                    id="intern-signature-comment"
+                    value={signatureComment}
+                    onChange={(event) => setSignatureComment(event.target.value)}
+                    disabled={isSigning || isLoading}
+                    rows={3}
+                  />
+                </label>
+
+                <button type="button" onClick={() => void handleSignEvaluation()} disabled={isSigning || isLoading}>
+                  {isSigning ? 'Assinando...' : 'Assinar avaliação da chefia'}
+                </button>
+              </>
+            ) : (
+              <ContentState
+                title="Assinatura ainda indisponível"
+                description="A assinatura do servidor será liberada quando o backend indicar a ação SIGN_EVALUATION e houver pendência formal no contexto documental."
+                tone="info"
+              />
+            )}
+
+            {signatureErrorMessage ? (
+              <FeedbackAlert
+                title="Falha ao assinar"
+                tone="error"
+                description={signatureErrorMessage}
+                details={signatureErrorDetails}
+              />
+            ) : null}
+          </InfoCard>
+        ) : null}
 
         {!snapshot && !errorMessage ? (
           <ContentState

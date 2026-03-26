@@ -7,6 +7,7 @@ import type {
   WorkflowResponse,
 } from '@/features/dashboard/types/process-dashboard-types';
 import {
+  ProcessAction,
   SupervisorEvaluationContentInput,
   SupervisorEvaluationWithDocumentContextRef,
   UserRole,
@@ -16,6 +17,11 @@ export type UpsertSupervisorEvaluationInput = {
   summary: string;
   generalComments: string;
   content: SupervisorEvaluationContentInput;
+  comment?: string;
+};
+
+export type WorkflowTransitionInput = {
+  action: ProcessAction;
   comment?: string;
 };
 
@@ -143,4 +149,16 @@ export async function getTechnicalProcessSnapshot(
 
     throw error;
   }
+}
+
+export async function transitionWorkflow(
+  processId: string,
+  accessToken: string,
+  body: WorkflowTransitionInput,
+) {
+  return httpRequest<WorkflowResponse>(`/processes/${processId}/workflow/transition`, {
+    method: 'POST',
+    token: accessToken,
+    body,
+  });
 }
