@@ -15,6 +15,7 @@ import {
 } from '@aep-pa/contracts';
 
 import { hashPassword } from '../../common/security/password-hasher';
+import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import { ProcessesService } from '../processes.service';
 import { SupervisorEvaluationsService } from '../supervisor-evaluations/supervisor-evaluations.service';
 
@@ -28,6 +29,7 @@ export type TestContext = {
 export async function createTestContext(databaseName: string): Promise<TestContext> {
   const backendRoot = path.resolve(__dirname, '../../..');
   const databaseFile = path.join(backendRoot, 'prisma', `${databaseName}.sqlite`);
+  const databaseUrl = `file:${databaseFile.replace(/\\/g, '/')}`;
 
   if (existsSync(databaseFile)) {
     rmSync(databaseFile);
@@ -36,30 +38,49 @@ export async function createTestContext(databaseName: string): Promise<TestConte
   process.env.NODE_ENV = 'test';
   process.env.PORT = '0';
   process.env.JWT_SECRET = 'test-secret-with-16-chars';
-  process.env.DATABASE_URL = `file:${databaseFile}`;
+  process.env.DATABASE_URL = databaseUrl;
+
+  const schemaScript = execFileSync(
+    process.execPath,
+    [
+      require.resolve('prisma/build/index.js'),
+      'migrate',
+      'diff',
+      '--from-empty',
+      '--to-schema-datamodel',
+      'prisma/schema.prisma',
+      '--script',
+    ],
+    { cwd: backendRoot, env: process.env, encoding: 'utf-8' },
+  );
 
   execFileSync(
     process.execPath,
     [
       require.resolve('prisma/build/index.js'),
       'db',
-      'push',
+      'execute',
+      '--stdin',
       '--schema',
       'prisma/schema.prisma',
-      '--skip-generate',
     ],
-    { cwd: backendRoot, stdio: 'ignore', env: process.env },
+    { cwd: backendRoot, env: process.env, input: schemaScript, stdio: ['pipe', 'ignore', 'ignore'] },
   );
 
   const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
   await prisma.$connect();
 
   const processesService = new ProcessesService(prisma as never);
+  const processDocumentsService = new ProcessDocumentsService(prisma as never, processesService);
 
   return {
     prisma,
     service: processesService,
-    supervisorEvaluationsService: new SupervisorEvaluationsService(prisma as never, processesService),
+    supervisorEvaluationsService: new SupervisorEvaluationsService(
+      prisma as never,
+      processesService,
+      processDocumentsService,
+    ),
     databaseFile,
   };
 }

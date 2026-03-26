@@ -68,10 +68,18 @@ export async function runSupervisorEvaluationsServiceTests() {
       orderBy: { occurredAt: 'asc' },
     });
 
-    assert.equal(auditEvents.length, 3);
-    assert.equal(auditEvents[0].eventType, AuditEventType.EVALUATION_STARTED);
-    assert.equal(auditEvents[1].eventType, AuditEventType.EVALUATION_COMPLETED);
-    assert.equal(auditEvents[2].eventType, AuditEventType.SIGNATURE_REQUESTED);
+    assert.equal(auditEvents.length, 6);
+    assert.deepEqual(
+      auditEvents.map((event) => event.eventType),
+      [
+        AuditEventType.EVALUATION_STARTED,
+        AuditEventType.EVALUATION_COMPLETED,
+        AuditEventType.SIGNATURE_REQUESTED,
+        AuditEventType.DOCUMENT_GENERATED,
+        AuditEventType.DOCUMENT_SIGNED,
+        AuditEventType.SIGNATURE_REQUESTED,
+      ],
+    );
     assert.equal(
       auditEvents[0].occurredAt.toISOString(),
       (auditEvents[0].metadata as { occurredAt?: string }).occurredAt,
@@ -83,6 +91,18 @@ export async function runSupervisorEvaluationsServiceTests() {
     assert.equal(
       auditEvents[2].occurredAt.toISOString(),
       (auditEvents[2].metadata as { occurredAt?: string }).occurredAt,
+    );
+    assert.equal(
+      auditEvents[3].occurredAt.toISOString(),
+      (auditEvents[3].metadata as { occurredAt?: string }).occurredAt,
+    );
+    assert.equal(
+      auditEvents[4].occurredAt.toISOString(),
+      (auditEvents[4].metadata as { occurredAt?: string }).occurredAt,
+    );
+    assert.equal(
+      auditEvents[5].occurredAt.toISOString(),
+      (auditEvents[5].metadata as { occurredAt?: string }).occurredAt,
     );
 
     const rectified = await context.supervisorEvaluationsService.rectify(

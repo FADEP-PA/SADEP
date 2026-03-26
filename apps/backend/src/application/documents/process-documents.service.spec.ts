@@ -1,18 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import {
-  AuditEventType,
-  ProcessAction,
-  ProcessStatus,
-  DocumentType,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  Prisma,
+  UserRole as PrismaUserRole,
+  SignatureStatus as PrismaSignatureStatus,
+} from '@prisma/client';
+import {
   DocumentStatus,
+  DocumentType,
   SignatureStatus,
   UserRole,
 } from '@aep-pa/contracts';
 
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { ProcessesService } from '../../../processes/processes.service';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { ProcessesService } from '../../processes/processes.service';
 import { ProcessDocumentsService } from './process-documents.service';
 
 describe('ProcessDocumentsService', () => {
@@ -20,32 +25,35 @@ describe('ProcessDocumentsService', () => {
   let prismaService: jest.Mocked<PrismaService>;
   let processesService: jest.Mocked<ProcessesService>;
 
-  const mockUser = {
-    sub: 'user-123',
+  const mockSupervisorUser = {
+    sub: 'supervisor-123',
+    email: 'supervisor@test.local',
     role: UserRole.IMMEDIATE_SUPERVISOR,
   };
 
-  const mockTransaction = {} as Prisma.TransactionClient;
+  const mockInternUser = {
+    sub: 'intern-123',
+    email: 'intern@test.local',
+    role: UserRole.INTERN_SERVER,
+  };
+
+  let mockTransaction: Record<string, any>;
 
   beforeEach(async () => {
-    const mockPrismaService = {
-      $transaction: jest.fn(),
-    };
-
-    const mockProcessesService = {
-      findProcessOrThrow: jest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProcessDocumentsService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: {
+            $transaction: jest.fn(),
+          },
         },
         {
           provide: ProcessesService,
-          useValue: mockProcessesService,
+          useValue: {
+            findProcessOrThrow: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -53,30 +61,27 @@ describe('ProcessDocumentsService', () => {
     service = module.get<ProcessDocumentsService>(ProcessDocumentsService);
     prismaService = module.get(PrismaService);
     processesService = module.get(ProcessesService);
+    mockTransaction = {};
   });
 
   describe('ensureSupervisorEvaluationDocument', () => {
-    it('should create new document if not exists', async () => {
+    it('creates the document and audits only the real creation', async () => {
       const processId = 'process-123';
-
       mockTransaction.processDocument = {
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'doc-123' }),
-      } as any;
-
+      };
       mockTransaction.auditEvent = {
         create: jest.fn().mockResolvedValue({}),
-      } as any;
+      };
 
-      const result = await service.ensureSupervisorEvaluationDocument(mockTransaction, processId, mockUser);
+      const result = await service.ensureSupervisorEvaluationDocument(
+        mockTransaction,
+        processId,
+        mockSupervisorUser,
+      );
 
-      expect(mockTransaction.processDocument.findFirst).toHaveBeenCalledWith({
-        where: {
-          evaluationProcessId: processId,
-          documentType: 'SUPERVISOR_EVALUATION',
-        },
-      });
-
+      expect(result).toEqual({ documentId: 'doc-123' });
       expect(mockTransaction.processDocument.create).toHaveBeenCalledWith({
         data: {
           evaluationProcessId: processId,
@@ -85,111 +90,175 @@ describe('ProcessDocumentsService', () => {
           artifactPath: '',
         },
       });
-
-      expect(result).toEqual({ documentId: 'doc-123' });
-    });
-
-    it('should return existing document if exists', async () => {
-      const processId = 'process-123';
-      const existingDoc = { id: 'doc-123' };
-
-      mockTransaction.processDocument = {
-        findFirst: jest.fn().mockResolvedValue(existingDoc),
-      } as any;
-
-      const result = await service.ensureSupervisorEvaluationDocument(mockTransaction, processId, mockUser);
-
-      expect(mockTransaction.processDocument.findFirst).toHaveBeenCalledWith({
-        where: {
+      expect(mockTransaction.auditEvent.create).toHaveBeenCalledTimes(1);
+      expect(mockTransaction.auditEvent.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
           evaluationProcessId: processId,
-          documentType: 'SUPERVISOR_EVALUATION',
-        },
+          eventType: 'DOCUMENT_GENERATED',
+          metadata: expect.objectContaining({
+            documentId: 'doc-123',
+            documentType: 'SUPERVISOR_EVALUATION',
+            origin: 'PROCESS_DOCUMENT',
+          }),
+        }),
       });
-
-      expect(result).toEqual({ documentId: 'doc-123' });
     });
 
-    it('should recover from unique constraint duplicate create and return existing document id', async () => {
+    it('returns the existing document without duplicating document creation audit', async () => {
       const processId = 'process-123';
-      const existingDoc = { id: 'doc-123' };
-
       mockTransaction.processDocument = {
-        findFirst: jest.fn().mockResolvedValueOnce(null).mockResolvedValue(existingDoc),
-        create: jest.fn().mockRejectedValue(
-          new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
-            code: 'P2002',
-            clientVersion: '4.0.0',
-          }, ''),
-        ),
-      } as any;
-
+        findFirst: jest.fn().mockResolvedValue({ id: 'doc-123' }),
+        create: jest.fn(),
+      };
       mockTransaction.auditEvent = {
-        create: jest.fn().mockResolvedValue({}),
-      } as any;
+        create: jest.fn(),
+      };
 
-      const result = await service.ensureSupervisorEvaluationDocument(mockTransaction, processId, mockUser);
+      const result = await service.ensureSupervisorEvaluationDocument(
+        mockTransaction,
+        processId,
+        mockSupervisorUser,
+      );
 
       expect(result).toEqual({ documentId: 'doc-123' });
+      expect(mockTransaction.processDocument.create).not.toHaveBeenCalled();
+      expect(mockTransaction.auditEvent.create).not.toHaveBeenCalled();
+    });
+
+    it('returns the existing document after a P2002 retry path without emitting a misleading generation audit', async () => {
+      const processId = 'process-123';
+      mockTransaction.processDocument = {
+        findFirst: jest
+          .fn()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ id: 'doc-123' }),
+        create: jest.fn().mockRejectedValue(
+          new Prisma.PrismaClientKnownRequestError(
+            'Unique constraint failed',
+            {
+              code: 'P2002',
+              clientVersion: '6.8.2',
+            },
+            '',
+          ),
+        ),
+      };
+      mockTransaction.auditEvent = {
+        create: jest.fn(),
+      };
+
+      const result = await service.ensureSupervisorEvaluationDocument(
+        mockTransaction,
+        processId,
+        mockSupervisorUser,
+      );
+
+      expect(result).toEqual({ documentId: 'doc-123' });
+      expect(mockTransaction.processDocument.findFirst).toHaveBeenCalledTimes(2);
+      expect(mockTransaction.auditEvent.create).not.toHaveBeenCalled();
     });
   });
 
   describe('createSupervisorEvaluationSignatures', () => {
-    it('should create supervisor and intern signatures', async () => {
-      const processId = 'process-123';
-      const documentId = 'doc-123';
-      const supervisorUserId = 'supervisor-123';
-      const internUserId = 'intern-123';
-
+    it('creates the missing signature records and preserves the required audit trail', async () => {
       mockTransaction.signatureRecord = {
+        findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn().mockResolvedValue({}),
-      } as any;
-
+      };
       mockTransaction.auditEvent = {
         create: jest.fn().mockResolvedValue({}),
-      } as any;
+      };
 
       await service.createSupervisorEvaluationSignatures(
         mockTransaction,
-        processId,
-        documentId,
-        supervisorUserId,
-        internUserId,
-        mockUser,
+        'process-123',
+        'doc-123',
+        'supervisor-123',
+        'intern-123',
+        mockSupervisorUser,
       );
 
+      expect(mockTransaction.signatureRecord.findMany).toHaveBeenCalledWith({
+        where: {
+          processDocumentId: 'doc-123',
+          signatoryRole: {
+            in: ['IMMEDIATE_SUPERVISOR', 'INTERN_SERVER'],
+          },
+        },
+      });
       expect(mockTransaction.signatureRecord.create).toHaveBeenCalledTimes(2);
+      expect(mockTransaction.auditEvent.create).toHaveBeenCalledTimes(2);
+      expect(mockTransaction.auditEvent.create).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          data: expect.objectContaining({
+            eventType: 'DOCUMENT_SIGNED',
+            metadata: expect.objectContaining({
+              documentId: 'doc-123',
+              signatoryRole: 'IMMEDIATE_SUPERVISOR',
+              signatoryUserId: 'supervisor-123',
+            }),
+          }),
+        }),
+      );
+      expect(mockTransaction.auditEvent.create).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          data: expect.objectContaining({
+            eventType: 'SIGNATURE_REQUESTED',
+            metadata: expect.objectContaining({
+              documentId: 'doc-123',
+              signatoryRole: 'INTERN_SERVER',
+              signatoryUserId: 'intern-123',
+            }),
+          }),
+        }),
+      );
+    });
 
-      // Supervisor signature
-      expect(mockTransaction.signatureRecord.create).toHaveBeenCalledWith({
-        data: {
-          processDocumentId: documentId,
-          signatoryUserId: supervisorUserId,
-          signatoryRole: 'IMMEDIATE_SUPERVISOR',
-          provider: 'INTERNAL',
-          status: 'COMPLETED',
-          signedAt: expect.any(Date),
-        },
-      });
+    it('is idempotent when both signature records already exist', async () => {
+      mockTransaction.signatureRecord = {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            signatoryRole: PrismaUserRole.IMMEDIATE_SUPERVISOR,
+          },
+          {
+            signatoryRole: PrismaUserRole.INTERN_SERVER,
+          },
+        ]),
+        create: jest.fn(),
+      };
+      mockTransaction.auditEvent = {
+        create: jest.fn(),
+      };
 
-      // Intern signature
-      expect(mockTransaction.signatureRecord.create).toHaveBeenCalledWith({
-        data: {
-          processDocumentId: documentId,
-          signatoryUserId: internUserId,
-          signatoryRole: 'INTERN_SERVER',
-          provider: 'INTERNAL',
-          status: 'PENDING',
-        },
-      });
+      await service.createSupervisorEvaluationSignatures(
+        mockTransaction,
+        'process-123',
+        'doc-123',
+        'supervisor-123',
+        'intern-123',
+        mockSupervisorUser,
+      );
+
+      expect(mockTransaction.signatureRecord.create).not.toHaveBeenCalled();
+      expect(mockTransaction.auditEvent.create).not.toHaveBeenCalled();
     });
   });
 
   describe('signSupervisorEvaluationDocument', () => {
-    it('should sign document successfully', async () => {
-      const processId = 'process-123';
-
-      const mockProcess = { id: processId, status: 'AGUARDANDO_ASSINATURA' };
-      const mockDocument = {
+    function mockTransactionForSigning(overrides?: {
+      process?: Record<string, unknown>;
+      document?: Record<string, unknown> | null;
+      allSignatureStatuses?: PrismaSignatureStatus[];
+    }) {
+      const process = {
+        id: 'process-123',
+        status: 'AGUARDANDO_ASSINATURA',
+        evaluatedUserId: 'intern-123',
+        ...overrides?.process,
+      };
+      const document = overrides?.document ?? {
         id: 'doc-123',
         signatureRecords: [
           {
@@ -201,28 +270,40 @@ describe('ProcessDocumentsService', () => {
         ],
       };
 
-      processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
+      processesService.findProcessOrThrow.mockResolvedValue(process as any);
       mockTransaction.processDocument = {
-        findFirst: jest.fn().mockResolvedValue(mockDocument),
+        findFirst: jest.fn().mockResolvedValue(document),
         update: jest.fn().mockResolvedValue({}),
-      } as any;
+      };
       mockTransaction.signatureRecord = {
-        findMany: jest.fn().mockResolvedValue([
-          { status: 'COMPLETED' },
-          { status: 'COMPLETED' },
-        ]),
+        findMany: jest.fn().mockResolvedValue(
+          (overrides?.allSignatureStatuses ?? [
+            PrismaSignatureStatus.COMPLETED,
+            PrismaSignatureStatus.COMPLETED,
+          ]).map((status) => ({ status })),
+        ),
         update: jest.fn().mockResolvedValue({}),
-      } as any;
+      };
       mockTransaction.auditEvent = {
         create: jest.fn().mockResolvedValue({}),
-      } as any;
+      };
+      prismaService.$transaction.mockImplementation(async (callback) => callback(mockTransaction));
+    }
 
-      prismaService.$transaction.mockImplementation(async (fn) => fn(mockTransaction));
+    it('signs the pending intern signature and closes the document when all signatures are complete', async () => {
+      mockTransactionForSigning();
 
-      const internUser = { ...mockUser, sub: 'intern-123', role: UserRole.INTERN_SERVER };
+      await service.signSupervisorEvaluationDocument('process-123', mockInternUser);
 
-      await service.signSupervisorEvaluationDocument(processId, internUser);
-
+      expect(mockTransaction.processDocument.findFirst).toHaveBeenCalledWith({
+        where: {
+          evaluationProcessId: 'process-123',
+          documentType: 'SUPERVISOR_EVALUATION',
+        },
+        include: {
+          signatureRecords: true,
+        },
+      });
       expect(mockTransaction.signatureRecord.update).toHaveBeenCalledWith({
         where: { id: 'sig-1' },
         data: {
@@ -230,120 +311,127 @@ describe('ProcessDocumentsService', () => {
           signedAt: expect.any(Date),
         },
       });
-
       expect(mockTransaction.processDocument.update).toHaveBeenCalledWith({
         where: { id: 'doc-123' },
         data: { documentStatus: 'SIGNED' },
       });
-    });
-
-    it('should reject if process not in correct status', async () => {
-      const processId = 'process-123';
-      const mockProcess = { id: processId, status: 'EM_AVALIACAO' };
-
-      processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
-      prismaService.$transaction.mockImplementation(async (fn) => fn(mockTransaction));
-
-      await expect(service.signSupervisorEvaluationDocument(processId, mockUser)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('should reject if no document found', async () => {
-      const processId = 'process-123';
-      const mockProcess = { id: processId, status: 'AGUARDANDO_ASSINATURA' };
-
-      processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
-      mockTransaction.processDocument = {
-        findFirst: jest.fn().mockResolvedValue(null),
-      } as any;
-      prismaService.$transaction.mockImplementation(async (fn) => fn(mockTransaction));
-
-      await expect(service.signSupervisorEvaluationDocument(processId, mockUser)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('should reject if no pending signature for user', async () => {
-      const processId = 'process-123';
-      const mockProcess = { id: processId, status: 'AGUARDANDO_ASSINATURA' };
-      const mockDocument = {
-        id: 'doc-123',
-        signatureRecords: [
-          {
-            id: 'sig-1',
-            signatoryUserId: 'other-user',
+      expect(mockTransaction.auditEvent.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          eventType: 'DOCUMENT_SIGNED',
+          metadata: expect.objectContaining({
+            documentId: 'doc-123',
             signatoryRole: 'INTERN_SERVER',
-            status: 'PENDING',
-          },
-        ],
-      };
-
-      processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
-      mockTransaction.processDocument = {
-        findFirst: jest.fn().mockResolvedValue(mockDocument),
-      } as any;
-      prismaService.$transaction.mockImplementation(async (fn) => fn(mockTransaction));
-
-      await expect(service.signSupervisorEvaluationDocument(processId, mockUser)).rejects.toThrow(
-        BadRequestException,
-      );
+            signatoryUserId: 'intern-123',
+          }),
+        }),
+      });
     });
 
-    it('should reject if user role is not INTERN_SERVER', async () => {
-      const processId = 'process-123';
-      const mockProcess = { id: processId, status: 'AGUARDANDO_ASSINATURA', evaluatedUserId: 'intern-123' };
-      const managerUser = { ...mockUser, role: UserRole.IMMEDIATE_SUPERVISOR, sub: 'supervisor-123' };
+    it('keeps the process contract explicit by rejecting non-INTERN_SERVER signers', async () => {
+      mockTransactionForSigning();
 
-      processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
-      prismaService.$transaction.mockImplementation(async (fn) => fn(mockTransaction));
-
-      await expect(service.signSupervisorEvaluationDocument(processId, managerUser)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.signSupervisorEvaluationDocument('process-123', mockSupervisorUser),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.signSupervisorEvaluationDocument('process-123', mockSupervisorUser),
+      ).rejects.toThrow('Only INTERN_SERVER can sign supervisor evaluation document');
     });
 
-    it('should reject if intern user does not match process evaluated user', async () => {
-      const processId = 'process-123';
-      const mockProcess = { id: processId, status: 'AGUARDANDO_ASSINATURA', evaluatedUserId: 'intern-456' };
-      const internUser = { ...mockUser, role: UserRole.INTERN_SERVER, sub: 'intern-123' };
+    it('rejects intern signatures when the authenticated user is not the evaluated server', async () => {
+      mockTransactionForSigning({
+        process: {
+          evaluatedUserId: 'intern-999',
+        },
+      });
 
-      processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
-      prismaService.$transaction.mockImplementation(async (fn) => fn(mockTransaction));
+      await expect(
+        service.signSupervisorEvaluationDocument('process-123', mockInternUser),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.signSupervisorEvaluationDocument('process-123', mockInternUser),
+      ).rejects.toThrow('Authenticated user is not the evaluated server for this process');
+    });
 
-      await expect(service.signSupervisorEvaluationDocument(processId, internUser)).rejects.toThrow(
-        ForbiddenException,
-      );
+    it('rejects signing when the process is outside AGUARDANDO_ASSINATURA', async () => {
+      mockTransactionForSigning({
+        process: {
+          status: 'EM_AVALIACAO',
+        },
+      });
+
+      await expect(
+        service.signSupervisorEvaluationDocument('process-123', mockInternUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects signing when the document does not exist', async () => {
+      mockTransactionForSigning({
+        document: null,
+      });
+
+      await expect(
+        service.signSupervisorEvaluationDocument('process-123', mockInternUser),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rejects signing when there is no pending signature for the authenticated intern', async () => {
+      mockTransactionForSigning({
+        document: {
+          id: 'doc-123',
+          signatureRecords: [
+            {
+              id: 'sig-1',
+              signatoryUserId: 'intern-123',
+              signatoryRole: 'INTERN_SERVER',
+              status: 'COMPLETED',
+            },
+          ],
+        },
+      });
+
+      await expect(
+        service.signSupervisorEvaluationDocument('process-123', mockInternUser),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('getSupervisorEvaluationDocumentContext', () => {
-    it('should return document context', async () => {
-      const processId = 'process-123';
-      const mockDocument = {
-        id: 'doc-123',
-        documentType: 'SUPERVISOR_EVALUATION',
-        documentStatus: 'READY_FOR_SIGNATURE',
-        signatureRecords: [
-          {
-            signatoryRole: 'IMMEDIATE_SUPERVISOR',
-            status: 'COMPLETED',
-            signedAt: new Date('2023-01-01'),
-          },
-          {
-            signatoryRole: 'INTERN_SERVER',
-            status: 'PENDING',
-            signedAt: null,
-          },
-        ],
+    it('returns the stable documentContext shape expected by GET /processes/:id/supervisor-evaluation', async () => {
+      mockTransaction.processDocument = {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'doc-123',
+          documentType: 'SUPERVISOR_EVALUATION',
+          documentStatus: 'READY_FOR_SIGNATURE',
+          signatureRecords: [
+            {
+              signatoryRole: 'IMMEDIATE_SUPERVISOR',
+              status: 'COMPLETED',
+              signedAt: new Date('2023-01-01T00:00:00.000Z'),
+            },
+            {
+              signatoryRole: 'INTERN_SERVER',
+              status: 'PENDING',
+              signedAt: null,
+            },
+          ],
+        }),
       };
 
-      mockTransaction.processDocument = {
-        findFirst: jest.fn().mockResolvedValue(mockDocument),
-      } as any;
+      const result = await service.getSupervisorEvaluationDocumentContext(
+        mockTransaction,
+        'process-123',
+      );
 
-      const result = await service.getSupervisorEvaluationDocumentContext(mockTransaction, processId);
-
+      expect(mockTransaction.processDocument.findFirst).toHaveBeenCalledWith({
+        where: {
+          evaluationProcessId: 'process-123',
+          documentType: 'SUPERVISOR_EVALUATION',
+        },
+        include: {
+          signatureRecords: true,
+        },
+      });
       expect(result).toEqual({
         documentId: 'doc-123',
         documentType: DocumentType.SUPERVISOR_EVALUATION,
@@ -364,70 +452,60 @@ describe('ProcessDocumentsService', () => {
       });
     });
 
-    it('should return null if no document', async () => {
-      const processId = 'process-123';
-
+    it('returns null when no supervisor evaluation document exists', async () => {
       mockTransaction.processDocument = {
         findFirst: jest.fn().mockResolvedValue(null),
-      } as any;
+      };
 
-      const result = await service.getSupervisorEvaluationDocumentContext(mockTransaction, processId);
-
-      expect(result).toBeNull();
+      await expect(
+        service.getSupervisorEvaluationDocumentContext(mockTransaction, 'process-123'),
+      ).resolves.toBeNull();
     });
   });
 
   describe('canRectifySupervisorEvaluation', () => {
-    it('should allow rectification if no document', async () => {
-      const processId = 'process-123';
-
+    it('allows rectification when no document exists yet', async () => {
       mockTransaction.processDocument = {
         findFirst: jest.fn().mockResolvedValue(null),
-      } as any;
-
-      const result = await service.canRectifySupervisorEvaluation(mockTransaction, processId);
-
-      expect(result).toBe(true);
-    });
-
-    it('should allow rectification if intern not signed', async () => {
-      const processId = 'process-123';
-      const mockDocument = {
-        signatureRecords: [
-          {
-            signatoryRole: 'INTERN_SERVER',
-            status: 'PENDING',
-          },
-        ],
       };
 
-      mockTransaction.processDocument = {
-        findFirst: jest.fn().mockResolvedValue(mockDocument),
-      } as any;
-
-      const result = await service.canRectifySupervisorEvaluation(mockTransaction, processId);
-
-      expect(result).toBe(true);
+      await expect(
+        service.canRectifySupervisorEvaluation(mockTransaction, 'process-123'),
+      ).resolves.toBe(true);
     });
 
-    it('should deny rectification if intern signed', async () => {
-      const processId = 'process-123';
-      const mockDocument = {
-        signatureRecords: [
-          {
-            signatoryRole: 'INTERN_SERVER',
-            status: 'COMPLETED',
-          },
-        ],
+    it('allows rectification before the intern completes the signature', async () => {
+      mockTransaction.processDocument = {
+        findFirst: jest.fn().mockResolvedValue({
+          signatureRecords: [
+            {
+              signatoryRole: 'INTERN_SERVER',
+              status: 'PENDING',
+            },
+          ],
+        }),
       };
 
+      await expect(
+        service.canRectifySupervisorEvaluation(mockTransaction, 'process-123'),
+      ).resolves.toBe(true);
+    });
+
+    it('blocks rectification after the intern signature is completed', async () => {
       mockTransaction.processDocument = {
-        findFirst: jest.fn().mockResolvedValue(mockDocument),
-      } as any;
+        findFirst: jest.fn().mockResolvedValue({
+          signatureRecords: [
+            {
+              signatoryRole: 'INTERN_SERVER',
+              status: 'COMPLETED',
+            },
+          ],
+        }),
+      };
 
-      const result = await service.canRectifySupervisorEvaluation(mockTransaction, processId);
-
-      expect(result).toBe(false);
+      await expect(
+        service.canRectifySupervisorEvaluation(mockTransaction, 'process-123'),
+      ).resolves.toBe(false);
     });
   });
 });

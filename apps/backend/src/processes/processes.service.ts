@@ -198,7 +198,7 @@ export class ProcessesService {
   async findProcessOrThrow(transaction: PrismaTransactionClient, processId: string) {
     const process = await transaction.evaluationProcess.findUnique({
       where: { id: processId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, evaluatedUserId: true },
     });
 
     if (!process) {

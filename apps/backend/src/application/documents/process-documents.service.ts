@@ -49,22 +49,6 @@ export class ProcessDocumentsService {
     });
 
     if (existingDocument) {
-      // Guarantee audit trail for the existing document path.
-      await transaction.auditEvent.create({
-        data: this.buildAuditEvent({
-          processId,
-          user,
-          eventType: AuditEventType.DOCUMENT_GENERATED,
-          action: ProcessAction.GENERATE_DOCUMENT,
-          processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
-          occurredAt: new Date().toISOString(),
-          metadata: {
-            documentId: existingDocument.id,
-            documentType: DocumentType.SUPERVISOR_EVALUATION,
-            note: 'Existing supervisor evaluation document re-validated',
-          },
-        }),
-      });
       return { documentId: existingDocument.id };
     }
 
@@ -105,7 +89,7 @@ export class ProcessDocumentsService {
         processId,
         user,
         eventType: AuditEventType.DOCUMENT_GENERATED,
-        action: ProcessAction.GENERATE_DOCUMENT,
+        action: ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
         processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
         occurredAt: new Date().toISOString(),
         metadata: {
@@ -162,7 +146,7 @@ export class ProcessDocumentsService {
           processId,
           user,
           eventType: AuditEventType.DOCUMENT_SIGNED,
-          action: ProcessAction.SIGN_DOCUMENT,
+          action: ProcessAction.SIGN_EVALUATION,
           processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
           occurredAt: now.toISOString(),
           metadata: {
@@ -190,7 +174,7 @@ export class ProcessDocumentsService {
           processId,
           user,
           eventType: AuditEventType.SIGNATURE_REQUESTED,
-          action: ProcessAction.SIGN_DOCUMENT,
+          action: ProcessAction.SIGN_EVALUATION,
           processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
           occurredAt: now.toISOString(),
           metadata: {
@@ -284,7 +268,7 @@ export class ProcessDocumentsService {
           processId,
           user,
           eventType: AuditEventType.DOCUMENT_SIGNED,
-          action: ProcessAction.SIGN_DOCUMENT,
+          action: ProcessAction.SIGN_EVALUATION,
           processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
           occurredAt: now.toISOString(),
           metadata: {
@@ -385,7 +369,7 @@ export class ProcessDocumentsService {
       actorUserId: params.user.sub,
       actorRole: this.toDatabaseRole(params.user.role),
       eventType: this.toDatabaseAuditEventType(params.eventType),
-      beforeState: null,
+      beforeState: Prisma.JsonNull,
       afterState: {},
       occurredAt: new Date(params.occurredAt),
       metadata: {

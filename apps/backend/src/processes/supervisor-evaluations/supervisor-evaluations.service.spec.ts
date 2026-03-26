@@ -1,12 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { SupervisorEvaluationStatus, UserRole } from '@aep-pa/contracts';
+import { DocumentStatus, DocumentType, SignatureStatus, UserRole } from '@aep-pa/contracts';
 
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { ProcessesService } from '../../processes.service';
-import { ProcessDocumentsService } from '../../../application/documents/process-documents.service';
-import { SupervisorEvaluationsService } from '../supervisor-evaluations.service';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { ProcessesService } from '../processes.service';
+import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
+import { SupervisorEvaluationsService } from './supervisor-evaluations.service';
 
 describe('SupervisorEvaluationsService', () => {
   let service: SupervisorEvaluationsService;
@@ -16,49 +15,58 @@ describe('SupervisorEvaluationsService', () => {
 
   const mockUser = {
     sub: 'user-123',
+    email: 'supervisor@test.local',
     role: UserRole.IMMEDIATE_SUPERVISOR,
   };
 
+  const validPayload = {
+    summary: 'Good work',
+    generalComments: 'Keep it up',
+    content: {
+      criteria: [
+        {
+          code: 'ASSID',
+          label: 'Assiduidade',
+          rating: 4,
+        },
+      ],
+    },
+  };
+
   beforeEach(async () => {
-    const mockPrismaService = {
-      $transaction: jest.fn(),
-      supervisorEvaluation: {
-        findUnique: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-      },
-      auditEvent: {
-        create: jest.fn(),
-      },
-    };
-
-    const mockProcessesService = {
-      ensureProcessExists: jest.fn(),
-      findProcessOrThrow: jest.fn(),
-      transitionWorkflowInTransaction: jest.fn(),
-    };
-
-    const mockProcessDocumentsService = {
-      ensureSupervisorEvaluationDocument: jest.fn(),
-      createSupervisorEvaluationSignatures: jest.fn(),
-      getSupervisorEvaluationDocumentContext: jest.fn(),
-      canRectifySupervisorEvaluation: jest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SupervisorEvaluationsService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: {
+            $transaction: jest.fn(),
+            supervisorEvaluation: {
+              findUnique: jest.fn(),
+              create: jest.fn(),
+              update: jest.fn(),
+            },
+            auditEvent: {
+              create: jest.fn(),
+            },
+          },
         },
         {
           provide: ProcessesService,
-          useValue: mockProcessesService,
+          useValue: {
+            ensureProcessExists: jest.fn(),
+            findProcessOrThrow: jest.fn(),
+            transitionWorkflowInTransaction: jest.fn(),
+          },
         },
         {
           provide: ProcessDocumentsService,
-          useValue: mockProcessDocumentsService,
+          useValue: {
+            ensureSupervisorEvaluationDocument: jest.fn(),
+            createSupervisorEvaluationSignatures: jest.fn(),
+            getSupervisorEvaluationDocumentContext: jest.fn(),
+            canRectifySupervisorEvaluation: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -70,190 +78,239 @@ describe('SupervisorEvaluationsService', () => {
   });
 
   describe('getByProcessId', () => {
-    it('should return evaluation with document context when submitted', async () => {
+    it('returns documentContext with the stable shape when the evaluation is submitted', async () => {
       const processId = 'process-123';
-      const mockEvaluation = {
+      const now = new Date('2024-01-01T12:00:00.000Z');
+      prismaService.supervisorEvaluation.findUnique.mockResolvedValue({
         id: 'eval-123',
         processId,
-        evaluatorUserId: 'user-123',
+        evaluatorUserId: mockUser.sub,
         status: 'SUBMITTED',
-        summary: 'Good work',
-        generalComments: 'Keep it up',
-        content: {},
-        submittedAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      const mockDocumentContext = {
+        summary: validPayload.summary,
+        generalComments: validPayload.generalComments,
+        content: validPayload.content,
+        submittedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+      processDocumentsService.getSupervisorEvaluationDocumentContext.mockResolvedValue({
         documentId: 'doc-123',
-        documentType: 'SUPERVISOR_EVALUATION',
-        documentStatus: 'READY_FOR_SIGNATURE',
-        signatures: [],
+        documentType: DocumentType.SUPERVISOR_EVALUATION,
+        documentStatus: DocumentStatus.READY_FOR_SIGNATURE,
+        signatures: [
+          {
+            signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
+            status: SignatureStatus.COMPLETED,
+            signedAt: now.toISOString(),
+          },
+          {
+            signatoryRole: UserRole.INTERN_SERVER,
+            status: SignatureStatus.PENDING,
+            signedAt: null,
+          },
+        ],
         internSignaturePending: true,
-      };
-
-      processesService.ensureProcessExists.mockResolvedValue();
-      prismaService.supervisorEvaluation.findUnique.mockResolvedValue(mockEvaluation as any);
-      processDocumentsService.getSupervisorEvaluationDocumentContext.mockResolvedValue(mockDocumentContext);
+      });
 
       const result = await service.getByProcessId(processId, mockUser);
 
-      expect(result).toBeDefined();
-      expect(result?.documentContext).toEqual(mockDocumentContext);
+      expect(processesService.ensureProcessExists).toHaveBeenCalledWith(processId);
+      expect(processDocumentsService.getSupervisorEvaluationDocumentContext).toHaveBeenCalledWith(
+        prismaService,
+        processId,
+      );
+      expect(result).toEqual({
+        id: 'eval-123',
+        processId,
+        evaluatorUserId: mockUser.sub,
+        status: 'SUBMITTED',
+        summary: validPayload.summary,
+        generalComments: validPayload.generalComments,
+        content: validPayload.content,
+        submittedAt: now.toISOString(),
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        documentContext: {
+          documentId: 'doc-123',
+          documentType: DocumentType.SUPERVISOR_EVALUATION,
+          documentStatus: DocumentStatus.READY_FOR_SIGNATURE,
+          signatures: [
+            {
+              signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
+              status: SignatureStatus.COMPLETED,
+              signedAt: now.toISOString(),
+            },
+            {
+              signatoryRole: UserRole.INTERN_SERVER,
+              status: SignatureStatus.PENDING,
+              signedAt: null,
+            },
+          ],
+          internSignaturePending: true,
+        },
+      });
     });
 
-    it('should return evaluation without document context when draft', async () => {
+    it('does not ask for documentContext while the evaluation is still a draft', async () => {
       const processId = 'process-123';
-      const mockEvaluation = {
+      const now = new Date('2024-01-01T12:00:00.000Z');
+      prismaService.supervisorEvaluation.findUnique.mockResolvedValue({
         id: 'eval-123',
         processId,
-        evaluatorUserId: 'user-123',
+        evaluatorUserId: mockUser.sub,
         status: 'DRAFT',
-        summary: 'Good work',
-        generalComments: 'Keep it up',
-        content: {},
+        summary: validPayload.summary,
+        generalComments: validPayload.generalComments,
+        content: validPayload.content,
         submittedAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      processesService.ensureProcessExists.mockResolvedValue();
-      prismaService.supervisorEvaluation.findUnique.mockResolvedValue(mockEvaluation as any);
+        createdAt: now,
+        updatedAt: now,
+      } as any);
 
       const result = await service.getByProcessId(processId, mockUser);
 
-      expect(result).toBeDefined();
+      expect(processDocumentsService.getSupervisorEvaluationDocumentContext).not.toHaveBeenCalled();
       expect(result?.documentContext).toBeUndefined();
     });
   });
 
   describe('submit', () => {
-    it('should create document and signatures on submit', async () => {
+    it('keeps the Incremento 7 flow intact by transitioning workflow and ensuring document plus signatures', async () => {
       const processId = 'process-123';
-      const payload = {
-        summary: 'Good work',
-        generalComments: 'Keep it up',
-        content: { criteria: [] },
+      const submittedAt = new Date('2024-01-01T12:00:00.000Z');
+      const mockProcess = {
+        id: processId,
+        status: 'EM_AVALIACAO',
+        evaluatedUserId: 'intern-123',
       };
-
-      const mockProcess = { id: processId, status: 'EM_AVALIACAO', evaluatedUserId: 'intern-123' };
-      const mockEvaluation = {
+      prismaService.supervisorEvaluation.findUnique.mockResolvedValue(null);
+      prismaService.supervisorEvaluation.create.mockResolvedValue({
         id: 'eval-123',
         processId,
-        evaluatorUserId: 'user-123',
+        evaluatorUserId: mockUser.sub,
         status: 'SUBMITTED',
-        summary: 'Good work',
-        generalComments: 'Keep it up',
-        content: {},
-        submittedAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
+        summary: validPayload.summary,
+        generalComments: validPayload.generalComments,
+        content: validPayload.content,
+        submittedAt,
+        createdAt: submittedAt,
+        updatedAt: submittedAt,
+      } as any);
       processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
-      prismaService.supervisorEvaluation.findUnique.mockResolvedValue(null);
-      prismaService.supervisorEvaluation.create.mockResolvedValue(mockEvaluation as any);
-      processesService.transitionWorkflowInTransaction.mockResolvedValue();
-      processDocumentsService.ensureSupervisorEvaluationDocument.mockResolvedValue({ documentId: 'doc-123' });
-      processDocumentsService.createSupervisorEvaluationSignatures.mockResolvedValue();
-
-      prismaService.$transaction.mockImplementation(async (fn) => {
-        const transaction = {
-          evaluationProcess: { findUnique: jest.fn().mockResolvedValue(mockProcess) },
+      processesService.transitionWorkflowInTransaction.mockResolvedValue(undefined);
+      processDocumentsService.ensureSupervisorEvaluationDocument.mockResolvedValue({
+        documentId: 'doc-123',
+      });
+      processDocumentsService.createSupervisorEvaluationSignatures.mockResolvedValue(undefined);
+      prismaService.$transaction.mockImplementation(async (callback) =>
+        callback({
           supervisorEvaluation: prismaService.supervisorEvaluation,
           auditEvent: prismaService.auditEvent,
-        };
-        return fn(transaction as any);
-      });
+          evaluationProcess: {
+            findUnique: jest.fn().mockResolvedValue({
+              evaluatedUserId: 'intern-123',
+            }),
+          },
+        } as any),
+      );
 
-      const result = await service.submit(processId, mockUser, payload);
+      const result = await service.submit(processId, mockUser, validPayload);
 
-      expect(processDocumentsService.ensureSupervisorEvaluationDocument).toHaveBeenCalled();
+      expect(processesService.transitionWorkflowInTransaction).toHaveBeenCalledWith(
+        expect.any(Object),
+        processId,
+        mockUser,
+        {
+          action: 'RELEASE_FOR_SERVER_SIGNATURE',
+          comment: undefined,
+        },
+      );
+      expect(processDocumentsService.ensureSupervisorEvaluationDocument).toHaveBeenCalledWith(
+        expect.any(Object),
+        processId,
+        mockUser,
+      );
       expect(processDocumentsService.createSupervisorEvaluationSignatures).toHaveBeenCalledWith(
         expect.any(Object),
         processId,
         'doc-123',
-        'user-123', // supervisor
-        'intern-123', // intern
+        mockUser.sub,
+        'intern-123',
         mockUser,
       );
+      expect(result.status).toBe('SUBMITTED');
     });
   });
 
   describe('rectify', () => {
-    it('should allow rectification when intern not signed', async () => {
+    it('allows rectification while the intern has not signed yet', async () => {
       const processId = 'process-123';
-      const payload = {
-        summary: 'Updated work',
-        generalComments: 'Keep it up',
-        content: { criteria: [] },
+      const now = new Date('2024-01-01T12:00:00.000Z');
+      const mockProcess = {
+        id: processId,
+        status: 'AGUARDANDO_ASSINATURA',
       };
-
-      const mockProcess = { id: processId, status: 'AGUARDANDO_ASSINATURA' };
-      const mockEvaluation = {
+      const existingEvaluation = {
         id: 'eval-123',
         processId,
-        evaluatorUserId: 'user-123',
+        evaluatorUserId: mockUser.sub,
         status: 'SUBMITTED',
-        summary: 'Good work',
-        generalComments: 'Keep it up',
-        content: {},
-        submittedAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        summary: validPayload.summary,
+        generalComments: validPayload.generalComments,
+        content: validPayload.content,
+        submittedAt: now,
+        createdAt: now,
+        updatedAt: now,
       };
 
       processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
-      prismaService.supervisorEvaluation.findUnique.mockResolvedValue(mockEvaluation as any);
       processDocumentsService.canRectifySupervisorEvaluation.mockResolvedValue(true);
-      prismaService.supervisorEvaluation.update.mockResolvedValue(mockEvaluation as any);
-
-      prismaService.$transaction.mockImplementation(async (fn) => {
-        const transaction = {
-          supervisorEvaluation: prismaService.supervisorEvaluation,
+      prismaService.$transaction.mockImplementation(async (callback) =>
+        callback({
+          supervisorEvaluation: {
+            findUnique: jest.fn().mockResolvedValue(existingEvaluation),
+            update: jest.fn().mockResolvedValue(existingEvaluation),
+          },
           auditEvent: prismaService.auditEvent,
-        };
-        return fn(transaction as any);
-      });
+        } as any),
+      );
 
-      const result = await service.rectify(processId, mockUser, payload);
-
-      expect(result).toBeDefined();
+      await expect(service.rectify(processId, mockUser, validPayload)).resolves.toBeDefined();
     });
 
-    it('should reject rectification when intern signed', async () => {
+    it('rejects rectification after the intern signature has closed the edit window', async () => {
       const processId = 'process-123';
-      const payload = {
-        summary: 'Updated work',
-        generalComments: 'Keep it up',
-        content: { criteria: [] },
+      const now = new Date('2024-01-01T12:00:00.000Z');
+      const mockProcess = {
+        id: processId,
+        status: 'AGUARDANDO_ASSINATURA',
       };
-
-      const mockProcess = { id: processId, status: 'AGUARDANDO_ASSINATURA' };
-      const mockEvaluation = {
+      const existingEvaluation = {
         id: 'eval-123',
         processId,
-        evaluatorUserId: 'user-123',
+        evaluatorUserId: mockUser.sub,
         status: 'SUBMITTED',
-        summary: 'Good work',
-        generalComments: 'Keep it up',
-        content: {},
-        submittedAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        summary: validPayload.summary,
+        generalComments: validPayload.generalComments,
+        content: validPayload.content,
+        submittedAt: now,
+        createdAt: now,
+        updatedAt: now,
       };
 
       processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
-      prismaService.supervisorEvaluation.findUnique.mockResolvedValue(mockEvaluation as any);
       processDocumentsService.canRectifySupervisorEvaluation.mockResolvedValue(false);
+      prismaService.$transaction.mockImplementation(async (callback) =>
+        callback({
+          supervisorEvaluation: {
+            findUnique: jest.fn().mockResolvedValue(existingEvaluation),
+          },
+        } as any),
+      );
 
-      prismaService.$transaction.mockImplementation(async (fn) => {
-        const transaction = {};
-        return fn(transaction as any);
-      });
-
-      await expect(service.rectify(processId, mockUser, payload)).rejects.toThrow(BadRequestException);
+      await expect(service.rectify(processId, mockUser, validPayload)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

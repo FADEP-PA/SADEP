@@ -3,7 +3,7 @@ import { Controller, Param, Post, UnauthorizedException, UseGuards } from '@nest
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
-import { ProcessDocumentsService } from './process-documents.service';
+import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 
 @Controller('processes/:id/supervisor-evaluation')
 @UseGuards(JwtAuthGuard)
