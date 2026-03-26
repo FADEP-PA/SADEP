@@ -18,8 +18,12 @@ export function runWorkflowCatalogTests() {
   assert.ok(releaseForSignature, 'expected RELEASE_FOR_SERVER_SIGNATURE transition to exist');
   assert.equal(releaseForSignature.to, ProcessStatus.AGUARDANDO_ASSINATURA);
 
-  const sendToCesad = getWorkflowTransition(ProcessStatus.EM_AVALIACAO, ProcessAction.SEND_TO_CESAD);
-  assert.equal(sendToCesad, null);
+  const sendToCesad = getWorkflowTransition(
+    ProcessStatus.AGUARDANDO_ASSINATURA,
+    ProcessAction.SEND_TO_CESAD,
+  );
+  assert.ok(sendToCesad, 'expected SEND_TO_CESAD transition to exist');
+  assert.equal(sendToCesad.to, ProcessStatus.EM_ANALISE_CESAD);
 
   const issueOpinion = getWorkflowTransition(
     ProcessStatus.EM_ANALISE_CESAD,
@@ -38,5 +42,11 @@ export function runWorkflowCatalogTests() {
   assert.deepEqual(
     evaluationTransitions.map((transition) => transition.action),
     [ProcessAction.RELEASE_FOR_SERVER_SIGNATURE],
+  );
+
+  const waitingSignatureTransitions = getAvailableWorkflowTransitions(ProcessStatus.AGUARDANDO_ASSINATURA);
+  assert.deepEqual(
+    waitingSignatureTransitions.map((transition) => transition.action),
+    [ProcessAction.SEND_TO_CESAD],
   );
 }

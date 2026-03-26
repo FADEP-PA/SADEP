@@ -24,6 +24,14 @@ const WORKFLOW_TRANSITIONS: readonly WorkflowTransitionDefinition[] = [
     requiresComment: false,
   },
   {
+    action: ProcessAction.SEND_TO_CESAD,
+    from: ProcessStatus.AGUARDANDO_ASSINATURA,
+    to: ProcessStatus.EM_ANALISE_CESAD,
+    eventType: AuditEventType.SENT_TO_CESAD,
+    allowedRoles: [UserRole.IMMEDIATE_SUPERVISOR],
+    requiresComment: false,
+  },
+  {
     action: ProcessAction.ISSUE_CESAD_OPINION,
     from: ProcessStatus.EM_ANALISE_CESAD,
     to: ProcessStatus.PARECER_EMITIDO,

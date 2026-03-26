@@ -82,7 +82,7 @@ export async function runProcessesEndpointTests() {
 
     assert.equal(blockedCesadShortcutResponse.status, 400);
     const blockedShortcutPayload = (await blockedCesadShortcutResponse.json()) as { message: string };
-    assert.match(blockedShortcutPayload.message, /Workflow action is required and must be valid/);
+    assert.match(blockedShortcutPayload.message, /not allowed when process is in status EM_AVALIACAO/);
 
     const forbiddenDraftResponse = await fetch(
       `${baseUrl}/processes/${process.id}/supervisor-evaluation/draft`,

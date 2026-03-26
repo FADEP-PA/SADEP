@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   AuditEventType as PrismaAuditEventType,
@@ -23,6 +24,7 @@ import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import { ProcessesService } from '../processes.service';
 import type {
+  SignSelfEvaluationDto,
   SelfEvaluationResponseDto,
   UpsertSelfEvaluationDto,
 } from './dto/self-evaluation.dto';
@@ -41,7 +43,15 @@ export class SelfEvaluationsService {
   ): Promise<SelfEvaluationResponseDto | null> {
     const process = await this.prismaService.evaluationProcess.findUnique({
       where: { id: processId },
-      select: { id: true, evaluatedUserId: true },
+      select: {
+        id: true,
+        evaluatedUserId: true,
+        supervisorEvaluation: {
+          select: {
+            evaluatorUserId: true,
+          },
+        },
+      },
     });
 
     if (!process) {
@@ -61,21 +71,53 @@ export class SelfEvaluationsService {
     }
 
     if (this.isOwnIntern(user, process.evaluatedUserId)) {
+      const documentContext =
+        evaluation.status === PrismaSelfEvaluationStatus.SUBMITTED
+          ? (await this.processDocumentsService.getSelfEvaluationDocumentContext(
+              this.prismaService,
+              processId,
+            )) ?? undefined
+          : undefined;
+
       return this.toResponseDto(
         evaluation,
-        evaluation.status === PrismaSelfEvaluationStatus.SUBMITTED
-          ? await this.processDocumentsService.getSelfEvaluationDocumentContext(this.prismaService, processId)
-          : undefined,
+        documentContext,
       );
     }
 
-    if (evaluation.status !== PrismaSelfEvaluationStatus.SUBMITTED || !this.canReviewSubmitted(user.role)) {
+    if (user.role === UserRole.ADMIN) {
+      if (evaluation.status !== PrismaSelfEvaluationStatus.SUBMITTED) {
+        return null;
+      }
+
+      return this.toResponseDto(
+        evaluation,
+        (await this.processDocumentsService.getSelfEvaluationDocumentContext(
+          this.prismaService,
+          processId,
+        )) ?? undefined,
+      );
+    }
+
+    if (user.role !== UserRole.IMMEDIATE_SUPERVISOR) {
+      throw new ForbiddenException('Authenticated user cannot access this self evaluation');
+    }
+
+    const expectedSupervisorUserId = process.supervisorEvaluation?.evaluatorUserId;
+    if (!expectedSupervisorUserId || expectedSupervisorUserId !== user.sub) {
+      throw new ForbiddenException('Authenticated user is not the expected supervisor for this process');
+    }
+
+    if (evaluation.status !== PrismaSelfEvaluationStatus.SUBMITTED) {
       return null;
     }
 
     return this.toResponseDto(
       evaluation,
-      await this.processDocumentsService.getSelfEvaluationDocumentContext(this.prismaService, processId),
+      (await this.processDocumentsService.getSelfEvaluationDocumentContext(
+        this.prismaService,
+        processId,
+      )) ?? undefined,
     );
   }
 
@@ -225,6 +267,53 @@ export class SelfEvaluationsService {
     });
   }
 
+  async sign(
+    processId: string,
+    user: AuthenticatedUser,
+    payload?: SignSelfEvaluationDto,
+  ): Promise<SelfEvaluationResponseDto> {
+    const comment = this.normalizeComment(payload?.comment);
+
+    return this.prismaService.$transaction(async (transaction) => {
+      const process = await this.assertExpectedSupervisorCanSignSelfEvaluation(transaction, processId, user);
+      const evaluation = await transaction.selfEvaluation.findUnique({
+        where: { processId },
+      });
+
+      if (!evaluation) {
+        throw new NotFoundException('Self evaluation not found');
+      }
+
+      if (evaluation.status !== PrismaSelfEvaluationStatus.SUBMITTED) {
+        throw new BadRequestException('Only submitted self evaluation can be signed by the supervisor');
+      }
+
+      await this.processDocumentsService.signSelfEvaluationDocument(
+        transaction,
+        processId,
+        process.immediateSupervisorUserId,
+        user,
+      );
+
+      const documentsComplete = await this.processesService.areRequiredStageDocumentsComplete(
+        transaction,
+        processId,
+      );
+
+      if (documentsComplete) {
+        await this.processesService.transitionWorkflowInTransaction(transaction, processId, user, {
+          action: ProcessAction.SEND_TO_CESAD,
+          comment: comment ?? undefined,
+        });
+      }
+
+      return this.toResponseDto(
+        evaluation,
+        await this.processDocumentsService.getSelfEvaluationDocumentContext(transaction, processId) ?? undefined,
+      );
+    });
+  }
+
   private async assertOwnInternReadyForSelfEvaluation(
     transaction: Prisma.TransactionClient,
     processId: string,
@@ -294,10 +383,57 @@ export class SelfEvaluationsService {
     return role === UserRole.IMMEDIATE_SUPERVISOR || role === UserRole.ADMIN;
   }
 
+  private async assertExpectedSupervisorCanSignSelfEvaluation(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+    user: AuthenticatedUser,
+  ): Promise<{ id: string; immediateSupervisorUserId: string }> {
+    const process = await transaction.evaluationProcess.findUnique({
+      where: { id: processId },
+      select: {
+        id: true,
+        status: true,
+        supervisorEvaluation: {
+          select: {
+            evaluatorUserId: true,
+          },
+        },
+      },
+    });
+
+    if (!process) {
+      throw new BadRequestException(`Evaluation process ${processId} was not found`);
+    }
+
+    if (user.role !== UserRole.IMMEDIATE_SUPERVISOR) {
+      throw new ForbiddenException('Only IMMEDIATE_SUPERVISOR can sign self evaluation');
+    }
+
+    if (this.toContractProcessStatus(process.status) !== ProcessStatus.AGUARDANDO_ASSINATURA) {
+      throw new BadRequestException(
+        `Self evaluation can only be signed while process is in status ${ProcessStatus.AGUARDANDO_ASSINATURA}`,
+      );
+    }
+
+    const expectedSupervisorUserId = process.supervisorEvaluation?.evaluatorUserId;
+    if (!expectedSupervisorUserId) {
+      throw new BadRequestException('Supervisor evaluation must define the expected supervisor');
+    }
+
+    if (expectedSupervisorUserId !== user.sub) {
+      throw new ForbiddenException('Authenticated user is not the expected supervisor for this process');
+    }
+
+    return {
+      id: process.id,
+      immediateSupervisorUserId: expectedSupervisorUserId,
+    };
+  }
+
   private normalizePayload(
     payload: UpsertSelfEvaluationDto,
     requireReflection: boolean,
-  ): UpsertSelfEvaluationDto & { additionalNotes: string | null; comment: string | null } {
+  ): { selfReflection: string; additionalNotes: string | null; comment: string | null } {
     if (!payload || typeof payload !== 'object') {
       throw new BadRequestException('Self evaluation payload must be an object');
     }
@@ -330,6 +466,15 @@ export class SelfEvaluationsService {
           ? payload.comment.trim()
           : null,
     };
+  }
+
+  private normalizeComment(comment?: string): string | null {
+    if (typeof comment !== 'string') {
+      return null;
+    }
+
+    const normalizedComment = comment.trim();
+    return normalizedComment.length > 0 ? normalizedComment : null;
   }
 
   private buildAuditEvent(params: {

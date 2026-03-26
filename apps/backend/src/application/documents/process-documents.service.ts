@@ -368,6 +368,82 @@ export class ProcessDocumentsService {
     }
   }
 
+  async signSelfEvaluationDocument(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+    expectedSupervisorUserId: string,
+    user: AuthenticatedUser,
+  ): Promise<{ documentId: string }> {
+    const document = await transaction.processDocument.findFirst({
+      where: {
+        evaluationProcessId: processId,
+        documentType: PrismaDocumentType.SELF_EVALUATION,
+      },
+      include: {
+        signatureRecords: true,
+      },
+    });
+
+    if (!document) {
+      throw new NotFoundException('Self evaluation document not found');
+    }
+
+    const supervisorSignature = document.signatureRecords.find(
+      (sig) =>
+        sig.signatoryRole === PrismaUserRole.IMMEDIATE_SUPERVISOR &&
+        sig.signatoryUserId === expectedSupervisorUserId &&
+        sig.status === PrismaSignatureStatus.PENDING,
+    );
+
+    if (!supervisorSignature) {
+      throw new BadRequestException('No pending supervisor signature found for this self evaluation');
+    }
+
+    const now = new Date();
+
+    await transaction.signatureRecord.update({
+      where: { id: supervisorSignature.id },
+      data: {
+        status: PrismaSignatureStatus.COMPLETED,
+        signedAt: now,
+      },
+    });
+
+    const allSignatures = document.signatureRecords.map((signature) =>
+      signature.id === supervisorSignature.id
+        ? { ...signature, status: PrismaSignatureStatus.COMPLETED, signedAt: now }
+        : signature,
+    );
+    const allCompleted = allSignatures.every((signature) => signature.status === PrismaSignatureStatus.COMPLETED);
+
+    if (allCompleted) {
+      await transaction.processDocument.update({
+        where: { id: document.id },
+        data: { documentStatus: PrismaDocumentStatus.SIGNED },
+      });
+    }
+
+    await transaction.auditEvent.create({
+      data: this.buildAuditEvent({
+        processId,
+        user,
+        eventType: AuditEventType.DOCUMENT_SIGNED,
+        action: ProcessAction.SIGN_EVALUATION,
+        processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
+        occurredAt: now.toISOString(),
+        metadata: {
+          documentId: document.id,
+          documentType: DocumentType.SELF_EVALUATION,
+          documentStatus: allCompleted ? DocumentStatus.SIGNED : DocumentStatus.READY_FOR_SIGNATURE,
+          signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
+          signatoryUserId: expectedSupervisorUserId,
+        },
+      }),
+    });
+
+    return { documentId: document.id };
+  }
+
   async signSupervisorEvaluationDocument(
     processId: string,
     user: AuthenticatedUser,

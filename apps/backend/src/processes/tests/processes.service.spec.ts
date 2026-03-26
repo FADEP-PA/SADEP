@@ -65,7 +65,7 @@ export async function runProcessesServiceTests() {
           authenticatedUser(supervisor.id, supervisor.role),
           { action: workflowActions.sendToCesad },
         ),
-      /Unsupported workflow action: SEND_TO_CESAD/,
+      /not allowed when process is in status EM_AVALIACAO/,
     );
 
     const events = await context.prisma.auditEvent.findMany({
@@ -107,6 +107,22 @@ export async function runProcessesServiceTests() {
     });
     const metadata = transitionEvent.metadata as { occurredAt?: string };
     assert.equal(transitionEvent.occurredAt.toISOString(), metadata.occurredAt);
+
+    const awaitingSignatureProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.AGUARDANDO_ASSINATURA,
+      evaluatedUser.id,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          awaitingSignatureProcess.id,
+          authenticatedUser(supervisor.id, supervisor.role),
+          { action: workflowActions.sendToCesad },
+        ),
+      /both required stage documents are fully signed/,
+    );
   } finally {
     await disposeTestContext(context);
   }

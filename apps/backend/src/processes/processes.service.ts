@@ -6,15 +6,19 @@ import {
 } from '@nestjs/common';
 import {
   AuditEventType as PrismaAuditEventType,
+  DocumentStatus as PrismaDocumentStatus,
+  DocumentType as PrismaDocumentType,
   Prisma,
   PrismaClient,
   ProcessStatus as PrismaProcessStatus,
+  SignatureStatus as PrismaSignatureStatus,
   SupervisorEvaluationStatus as PrismaSupervisorEvaluationStatus,
   UserRole as PrismaUserRole,
 } from '@prisma/client';
 import {
   AuditEventType,
   type AuditMetadata,
+  DocumentType,
   ProcessAction,
   ProcessStatus,
   UserRole,
@@ -163,6 +167,16 @@ export class ProcessesService {
       }
     }
 
+    if (payload.action === ProcessAction.SEND_TO_CESAD) {
+      const documentsComplete = await this.areRequiredStageDocumentsComplete(transaction, processId);
+
+      if (!documentsComplete) {
+        throw new BadRequestException(
+          'Process can only move to EM_ANALISE_CESAD after both required stage documents are fully signed',
+        );
+      }
+    }
+
     await transaction.evaluationProcess.update({
       where: { id: processId },
       data: { status: this.toDatabaseProcessStatus(transition.to) },
@@ -206,6 +220,35 @@ export class ProcessesService {
     }
 
     return process;
+  }
+
+  async areRequiredStageDocumentsComplete(
+    transaction: PrismaTransactionClient,
+    processId: string,
+  ): Promise<boolean> {
+    const documents = await transaction.processDocument.findMany({
+      where: {
+        evaluationProcessId: processId,
+        documentType: {
+          in: [PrismaDocumentType.SUPERVISOR_EVALUATION, PrismaDocumentType.SELF_EVALUATION],
+        },
+      },
+      include: {
+        signatureRecords: true,
+      },
+    });
+
+    const supervisorEvaluationDocument = documents.find(
+      (document) => document.documentType === PrismaDocumentType.SUPERVISOR_EVALUATION,
+    );
+    const selfEvaluationDocument = documents.find(
+      (document) => document.documentType === PrismaDocumentType.SELF_EVALUATION,
+    );
+
+    return (
+      this.isDocumentComplete(supervisorEvaluationDocument, DocumentType.SUPERVISOR_EVALUATION) &&
+      this.isDocumentComplete(selfEvaluationDocument, DocumentType.SELF_EVALUATION)
+    );
   }
 
   private getAllowedActions(status: ProcessStatus, role: UserRole): ProcessAction[] {
@@ -265,6 +308,36 @@ export class ProcessesService {
       default:
         throw new BadRequestException(`Workflow history contains unsupported event type ${eventType}`);
     }
+  }
+
+  private isDocumentComplete(
+    document:
+      | {
+          documentType: PrismaDocumentType;
+          documentStatus: PrismaDocumentStatus;
+          signatureRecords: Array<{
+            signatoryRole: PrismaUserRole;
+            status: PrismaSignatureStatus;
+          }>;
+        }
+      | undefined,
+    documentType: DocumentType,
+  ): boolean {
+    if (!document || document.documentStatus !== PrismaDocumentStatus.SIGNED) {
+      return false;
+    }
+
+    const expectedRoles =
+      documentType === DocumentType.SUPERVISOR_EVALUATION
+        ? [PrismaUserRole.IMMEDIATE_SUPERVISOR, PrismaUserRole.INTERN_SERVER]
+        : [PrismaUserRole.INTERN_SERVER, PrismaUserRole.IMMEDIATE_SUPERVISOR];
+
+    return expectedRoles.every((role) =>
+      document.signatureRecords.some(
+        (signature) =>
+          signature.signatoryRole === role && signature.status === PrismaSignatureStatus.COMPLETED,
+      ),
+    );
   }
 
   private toContractProcessStatus(status: PrismaProcessStatus): ProcessStatus {

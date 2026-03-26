@@ -13,6 +13,10 @@ export interface UpsertSelfEvaluationDto {
   comment?: string;
 }
 
+export interface SignSelfEvaluationDto {
+  comment?: string;
+}
+
 export interface SelfEvaluationDocumentContext {
   documentId: string;
   documentType: DocumentType;
