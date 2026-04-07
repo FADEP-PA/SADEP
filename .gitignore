@@ -111,3 +111,4 @@ redis-data/
 # Openclaude
 # ------------------------------
 .openclaude-profile.json
+.claude/
