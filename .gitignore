@@ -106,3 +106,8 @@ redis-data/
 *.pid
 *.seed
 *.pid.lock
+
+# ------------------------------
+# Openclaude
+# ------------------------------
+.openclaude-profile.json
