@@ -1,7 +1,7 @@
 # AEP-PA — Catálogo Oficial de Modelagem Documental
 
 **Status:** Aprovado para referência de projeto  
-**Versão:** 1.0.0  
+**Versão:** 1.1.0  
 **Data:** 2026-03-27  
 **Escopo:** Diretriz oficial de modelagem documental do AEP-PA  
 **Aplicação:** Backend, frontend, workflow, geração documental, assinatura e auditoria
@@ -43,11 +43,13 @@ Inclui:
 
 - avaliação da chefia;
 - autoavaliação;
-- parecer CESAD;
+- parecer CESAD de etapa;
+- parecer CESAD conclusivo final;
 - registro de homologação;
 - notificação de resultado;
 - registro de ciência;
-- portaria.
+- portaria;
+- artefatos documentais mínimos relacionados a recursos.
 
 Não substitui:
 
@@ -55,7 +57,8 @@ Não substitui:
 - o documento de instrumentos avaliativos;
 - o documento de auditoria semântica;
 - o documento de regras de assinatura;
-- o documento de arquitetura de geração de PDFs.
+- o documento de arquitetura de geração de PDFs;
+- o documento específico do fluxo de 4 etapas e recursos.
 
 Este catálogo complementa esses artefatos, concentrando a visão documental oficial do sistema.
 
@@ -87,7 +90,9 @@ Exemplos:
 - parecer redigido pela CESAD;
 - registro de homologação;
 - notificação resolvida por template;
-- portaria resolvida por template.
+- portaria resolvida por template;
+- recurso formal registrado pelo servidor;
+- despacho recursal da comissão ou da chefia.
 
 #### b) Documento processual
 É a formalização institucional do conteúdo funcional.
@@ -131,6 +136,8 @@ Toda ação crítica envolvendo documentos deve gerar evento auditável, incluin
 - invalidação ou substituição;
 - reemissão;
 - ciência;
+- abertura de recurso;
+- despacho recursal;
 - encerramento processual.
 
 ---
@@ -197,9 +204,51 @@ Documento que perdeu vigência lógica por substituição formal, correção pos
 
 ---
 
-## 6. Catálogo oficial de documentos
+## 6. Regra estrutural do Caso 2 com 4 etapas
 
-### 6.1. Avaliação da chefia
+### 6.1. Processo único com etapas internas
+
+No Caso 2, o AEP-PA representa:
+
+- **um único processo administrativo**;
+- com **4 etapas avaliativas internas**;
+- cada etapa com seu próprio ciclo documental;
+- e consolidação final apenas após a conclusão das quatro etapas.
+
+### 6.2. Ciclo documental mínimo por etapa
+
+Cada etapa possui, no mínimo:
+
+- avaliação da chefia;
+- assinatura do servidor na avaliação;
+- autoavaliação;
+- assinatura da chefia na autoavaliação;
+- parecer CESAD da etapa, quando concluído.
+
+### 6.3. Parecer conclusivo final
+
+Após a conclusão da 4ª etapa e do respectivo ciclo documental, o sistema deve habilitar a elaboração do **parecer conclusivo final**, que consolida o histórico das 4 etapas.
+
+### 6.4. Trava de homologação
+
+A homologação final só pode ser habilitada quando houver, no mínimo:
+
+- 4 etapas realizadas;
+- 4 etapas documentalmente completas;
+- parecer da CESAD emitido para cada etapa, conforme a regra adotada;
+- parecer conclusivo final emitido.
+
+Antes disso, o sistema não deve:
+
+- habilitar a fila de homologação;
+- gerar notificação final;
+- liberar publicação de portaria.
+
+---
+
+## 7. Catálogo oficial de documentos
+
+### 7.1. Avaliação da chefia
 
 #### Natureza
 Documento originado de formulário preenchido pela chefia imediata no sistema.
@@ -243,7 +292,7 @@ Já consolidado no backend.
 
 ---
 
-### 6.2. Autoavaliação
+### 7.2. Autoavaliação
 
 #### Natureza
 Documento originado de formulário preenchido pelo servidor-estagiário no sistema.
@@ -287,10 +336,10 @@ Já consolidado no backend.
 
 ---
 
-### 6.3. Parecer CESAD
+### 7.3. Parecer CESAD de etapa
 
 #### Natureza
-Documento originado de artefato funcional estruturado da comissão.
+Documento originado de artefato funcional estruturado da comissão, referente a uma etapa específica.
 
 #### Origem
 Conteúdo redigido e consolidado pela CESAD no sistema.
@@ -301,74 +350,126 @@ Conteúdo redigido e consolidado pela CESAD no sistema.
 #### Documento processual
 `ProcessDocument` com `documentType = CESAD_OPINION`
 
+#### Campos mínimos adicionais de escopo
+- `opinionKind = STAGE`
+- `stageNumber = 1 | 2 | 3 | 4`
+
 #### Signatários
 - membros obrigatórios da CESAD
 
 #### Estrutura mínima esperada
-O parecer deve suportar, no mínimo:
+O parecer de etapa deve suportar, no mínimo:
 
 - identificação do servidor;
-- identificação do cargo;
+- identificação da etapa;
+- cargo;
 - lotação;
 - data de exercício;
-- período de acompanhamento;
 - chefia imediata;
-- quadro consolidado de fatores de avaliação, quando aplicável;
+- quadro consolidado de fatores da etapa, quando aplicável;
 - relatório;
 - fundamento legal;
 - conclusão;
-- conceito geral obtido;
-- resultado (apto/inapto);
+- conceito da etapa;
+- resultado da etapa;
 - local/data;
 - signatários da CESAD.
 
-#### Observação importante sobre variabilidade
-O parecer deve suportar diferentes escopos, como:
-
-- parecer de etapa única;
-- parecer de 1ª etapa;
-- parecer consolidado de múltiplas etapas;
-- parecer conclusivo final.
-
-#### Campos funcionais mínimos recomendados
-- `processId`
-- `analysisScope`
-- `reportText`
-- `legalBasisText`
-- `conclusionText`
-- `generalConcept`
-- `decision`
-- `submittedAt`
-- `issuedAt`
-
 #### Fluxo resumido
-1. CESAD abre o processo já instruído;
+1. CESAD abre a etapa já instruída;
 2. CESAD elabora o parecer;
 3. CESAD salva e revisa;
 4. sistema consolida o parecer;
-5. sistema gera o documento oficial do parecer;
-6. sistema cria as pendências de assinatura dos membros;
+5. sistema gera o documento oficial;
+6. sistema cria as pendências de assinatura;
 7. assinaturas são coletadas;
-8. parecer se torna formalmente emitido.
+8. parecer da etapa se torna formalmente emitido.
 
 #### Regras principais
 - a CESAD não altera avaliação ou autoavaliação;
-- o parecer deve nascer de leitura consolidada do processo;
+- o parecer deve nascer de leitura consolidada da etapa;
 - o sistema deve evidenciar quem já assinou e quem falta;
-- o parecer não deve ser considerado conclusivo antes das assinaturas obrigatórias;
+- o parecer da etapa não deve ser considerado emitido antes das assinaturas obrigatórias;
 - eventual devolução para ajuste deve ser auditada e não pode apagar a trilha anterior.
 
 #### Saídas esperadas
-- PDF oficial do parecer;
+- PDF oficial do parecer de etapa;
 - status das assinaturas;
-- visão consolidada do documento no processo.
+- visão consolidada no processo.
 
 #### Status no roadmap
 Próximo documento prioritário do ciclo da CESAD.
 
 ---
 
-### 6.4. Registro de homologação
+### 7.4. Parecer CESAD conclusivo final
+
+#### Natureza
+Documento originado de artefato funcional estruturado da comissão, consolidando as 4 etapas do processo.
+
+#### Origem
+Conteúdo redigido e consolidado pela CESAD no sistema, após a conclusão das quatro etapas.
+
+#### Artefato funcional sugerido
+`CesadOpinion`
+
+#### Documento processual
+`ProcessDocument` com `documentType = CESAD_OPINION`
+
+#### Campos mínimos adicionais de escopo
+- `opinionKind = FINAL_CONCLUSIVE`
+- `stageNumber = null`
+
+#### Signatários
+- membros obrigatórios da CESAD
+
+#### Estrutura mínima esperada
+O parecer conclusivo final deve suportar, no mínimo:
+
+- identificação do servidor;
+- identificação do cargo;
+- lotação;
+- data de exercício;
+- quadro consolidado das 4 etapas;
+- resultado parcial por etapa ou por fator, quando aplicável;
+- resultado final consolidado;
+- pontuação geral final;
+- conceito final;
+- relatório final;
+- fundamento legal;
+- conclusão final;
+- recomendação final para homologação;
+- local/data;
+- signatários da CESAD.
+
+#### Fluxo resumido
+1. processo fica elegível após a 4ª etapa;
+2. CESAD elabora o parecer conclusivo final;
+3. CESAD salva e revisa;
+4. sistema consolida o parecer final;
+5. sistema gera o documento oficial;
+6. sistema cria as pendências de assinatura;
+7. assinaturas são coletadas;
+8. processo se torna apto à homologação.
+
+#### Regras principais
+- só pode ser iniciado quando as 4 etapas estiverem aptas;
+- consolida os resultados das quatro etapas;
+- não substitui os pareceres de etapa, mas os complementa;
+- é a base formal para a homologação final;
+- não deve ser considerado emitido antes das assinaturas obrigatórias.
+
+#### Saídas esperadas
+- PDF oficial do parecer conclusivo final;
+- status das assinaturas;
+- habilitação do processo para homologação.
+
+#### Status no roadmap
+Posterior aos pareceres de etapa e anterior à homologação.
+
+---
+
+### 7.5. Registro de homologação
 
 #### Natureza
 Documento associado ao ato formal da autoridade homologadora.
@@ -388,7 +489,7 @@ Ato decisório formal no sistema, com estrutura mais enxuta que um parecer.
 #### Conteúdo mínimo recomendado
 - identificação do processo;
 - identificação do servidor;
-- referência ao parecer;
+- referência ao parecer conclusivo final;
 - decisão de homologar ou devolver;
 - fundamento/observação da decisão;
 - local/data;
@@ -396,7 +497,7 @@ Ato decisório formal no sistema, com estrutura mais enxuta que um parecer.
 
 #### Fluxo resumido
 1. autoridade homologadora abre o processo apto;
-2. analisa parecer, histórico e documentos;
+2. analisa parecer final, histórico e documentos;
 3. decide homologar ou devolver;
 4. sistema formaliza o registro;
 5. sistema gera o documento oficial;
@@ -407,7 +508,7 @@ Ato decisório formal no sistema, com estrutura mais enxuta que um parecer.
 - a autoridade não altera conteúdo da avaliação ou do parecer;
 - a decisão deve ser explicitamente auditada;
 - devolução para regularização deve ter fundamento rastreável;
-- homologação formal serve de base para a notificação.
+- homologação formal serve de base para a notificação final.
 
 #### Saídas esperadas
 - documento formal de homologação;
@@ -415,11 +516,11 @@ Ato decisório formal no sistema, com estrutura mais enxuta que um parecer.
 - base formal para notificação posterior.
 
 #### Status no roadmap
-Posterior ao ciclo inicial da CESAD.
+Posterior ao parecer conclusivo final.
 
 ---
 
-### 6.5. Notificação de resultado / Notificação pessoal
+### 7.6. Notificação de resultado / Notificação pessoal
 
 #### Natureza
 Documento gerado automaticamente por template institucional.
@@ -487,13 +588,13 @@ O sistema deve montar a notificação com base em:
 4. sistema formaliza o documento processual;
 5. autoridade homologadora assina;
 6. sistema disponibiliza a notificação ao servidor;
-7. o prazo recursal passa a contar;
+7. o prazo recursal final passa a contar;
 8. posteriormente ocorre a ciência do servidor.
 
 #### Regras principais
 - a notificação deve ser majoritariamente automática;
 - o texto-base deve ser parametrizável, sem depender de alteração de código para pequenas revisões institucionais;
-- a notificação deve servir como marco temporal para o prazo recursal;
+- a notificação deve servir como marco temporal para o prazo recursal final;
 - o campo de ciência no documento não elimina a necessidade de registro funcional próprio da ciência no workflow;
 - a emissão da notificação deve ser auditada.
 
@@ -508,7 +609,7 @@ Incremento futuro, após homologação.
 
 ---
 
-### 6.6. Registro de ciência
+### 7.7. Registro de ciência
 
 #### Natureza
 Ato formal do servidor-estagiário após a notificação.
@@ -556,7 +657,7 @@ Posterior à notificação.
 
 ---
 
-### 6.7. Portaria
+### 7.8. Portaria
 
 #### Natureza
 Documento gerado automaticamente por template, com possibilidade de emissão individual ou coletiva.
@@ -651,23 +752,143 @@ Incremento futuro, após parecer, homologação, notificação e ciência.
 
 ---
 
-## 7. Tabela-resumo do catálogo
+## 8. Artefatos documentais mínimos dos recursos
 
-| Documento | Origem | Artefato funcional | Documento processual | Signatários principais | Situação |
+### 8.1. Recurso de etapa
+
+#### Natureza
+Ato formal do servidor contra o resultado/parecer de uma etapa específica.
+
+#### Origem
+Registro funcional do recurso no sistema, dentro do prazo recursal.
+
+#### Artefato funcional sugerido
+`StageAppeal`
+
+#### Documento processual sugerido
+`ProcessDocument` específico de recurso, se adotado, ou registro formal equivalente vinculado à etapa.
+
+#### Autor do ato
+- servidor-estagiário
+
+#### Regras principais
+- cabível contra o resultado/parecer da etapa;
+- dirigido à CESAD;
+- prazo de 5 dias a contar da ciência/visualização do parecer da etapa no perfil do servidor;
+- após o prazo, a opção de recorrer deve ser desabilitada;
+- a etapa contestada fica suspensa no ponto cabível até resolução do recurso.
+
+---
+
+### 8.2. Despacho da CESAD no recurso de etapa
+
+#### Natureza
+Ato formal da comissão no processamento do recurso de etapa.
+
+#### Artefato funcional sugerido
+`StageAppealDispatch`
+
+#### Conteúdo mínimo recomendado
+- referência ao recurso;
+- referência à etapa;
+- fundamento sintético;
+- encaminhamento à chefia imediata;
+- data;
+- responsáveis.
+
+#### Regras principais
+- a CESAD analisa o recurso;
+- gera despacho para a chefia imediata;
+- o despacho deve ser auditável;
+- o despacho não encerra sozinho a controvérsia quando depende de manifestação da chefia.
+
+---
+
+### 8.3. Despacho da chefia no recurso de etapa
+
+#### Natureza
+Resposta formal da chefia ao encaminhamento da CESAD.
+
+#### Artefato funcional sugerido
+`SupervisorAppealResponse`
+
+#### Possibilidades
+- **manter** a avaliação, com justificativa;
+- **reavaliar** o servidor.
+
+#### Regras principais
+- se mantiver, deve justificar;
+- pode anexar arquivo opcional;
+- se reavaliar, o sistema deve abrir uma nova avaliação substitutiva;
+- a resposta deve ficar vinculada ao recurso e à etapa.
+
+---
+
+### 8.4. Avaliação substitutiva
+
+#### Natureza
+Nova avaliação formal aberta em decorrência de recurso de etapa acolhido para reavaliação.
+
+#### Artefato funcional sugerido
+`SupervisorEvaluation` com marcação de substituição
+ou entidade complementar de versionamento, conforme o desenho adotado.
+
+#### Regras principais
+- não apaga a avaliação anterior;
+- substitui logicamente a avaliação contestada;
+- percorre novo fluxo formal, inclusive com nova assinatura do servidor;
+- deve manter vínculo rastreável com a avaliação original.
+
+---
+
+### 8.5. Recurso final
+
+#### Natureza
+Ato formal do servidor contra o resultado final homologado/notificado.
+
+#### Origem
+Registro funcional do recurso no sistema, dentro do prazo recursal final.
+
+#### Artefato funcional sugerido
+`FinalAppeal`
+
+#### Documento processual sugerido
+`ProcessDocument` específico de recurso final, se adotado, ou registro formal equivalente.
+
+#### Autor do ato
+- servidor-estagiário
+
+#### Regras principais
+- cabível contra o resultado final homologado/notificado;
+- dirigido à autoridade homologadora;
+- prazo de 5 dias a contar da visualização/ciência da notificação;
+- após o prazo, a opção de recorrer deve ser desabilitada;
+- o resultado final fica contestado/suspenso no ponto cabível até a resolução do recurso.
+
+---
+
+## 9. Tabela-resumo do catálogo
+
+| Documento / artefato | Origem | Artefato funcional | Documento processual | Signatários / autores principais | Situação |
 |---|---|---|---|---|---|
 | Avaliação da chefia | Formulário | `SupervisorEvaluation` | `SUPERVISOR_EVALUATION` | chefia + servidor | já consolidado |
 | Autoavaliação | Formulário | `SelfEvaluation` | `SELF_EVALUATION` | servidor + chefia | já consolidado |
-| Parecer CESAD | Conteúdo estruturado | `CesadOpinion` | `CESAD_OPINION` | membros da CESAD | próximo ciclo |
+| Parecer CESAD de etapa | Conteúdo estruturado | `CesadOpinion` | `CESAD_OPINION` | membros da CESAD | próximo ciclo |
+| Parecer CESAD conclusivo final | Conteúdo estruturado | `CesadOpinion` | `CESAD_OPINION` | membros da CESAD | posterior ao ciclo das etapas |
 | Homologação | Ato decisório | `HomologationDecision` | `HOMOLOGATION_RECORD` | autoridade homologadora | posterior |
 | Notificação | Template | `ResultNotification` | `RESULT_NOTIFICATION` | autoridade homologadora | posterior |
 | Ciência | Ato formal | `Acknowledgement` | `ACKNOWLEDGEMENT_RECORD` | servidor | posterior |
 | Portaria | Template individual/coletivo | `PublicationOrdinance` | `ORDINANCE` | autoridade homologadora | futuro |
+| Recurso de etapa | Ato formal | `StageAppeal` | definir | servidor | reservado no domínio |
+| Despacho CESAD do recurso | Ato formal | `StageAppealDispatch` | definir | CESAD | reservado no domínio |
+| Resposta da chefia ao recurso | Ato formal | `SupervisorAppealResponse` | definir | chefia | reservado no domínio |
+| Recurso final | Ato formal | `FinalAppeal` | definir | servidor | reservado no domínio |
 
 ---
 
-## 8. Regras transversais obrigatórias
+## 10. Regras transversais obrigatórias
 
-### 8.1. Toda geração documental relevante deve registrar auditoria
+### 10.1. Toda geração documental relevante deve registrar auditoria
 
 Eventos mínimos sugeridos:
 
@@ -678,17 +899,23 @@ Eventos mínimos sugeridos:
 - assinatura concluída;
 - documento invalidado ou substituído;
 - notificação emitida;
-- ciência registrada.
+- ciência registrada;
+- recurso aberto;
+- despacho emitido;
+- reavaliação aberta;
+- recurso encerrado.
 
 ---
 
-### 8.2. Todo documento oficial deve estar vinculado ao processo
+### 10.2. Todo documento oficial deve estar vinculado ao processo
 
 Mesmo nos casos coletivos, como portaria, deve existir vínculo rastreável entre o documento e os processos abrangidos.
 
+Nos casos de etapa e recurso, deve existir também vínculo claro com a etapa correspondente.
+
 ---
 
-### 8.3. PDF não substitui o dado estruturado
+### 10.3. PDF não substitui o dado estruturado
 
 O sistema não deve tratar o PDF como fonte única da verdade.
 
@@ -696,7 +923,7 @@ A fonte principal deve ser o conteúdo funcional estruturado, a partir do qual o
 
 ---
 
-### 8.4. O sistema deve suportar visualização documental por perfil
+### 10.4. O sistema deve suportar visualização documental por perfil
 
 Perfis diferentes enxergam conjuntos diferentes de documentos, mas todos os acessos devem respeitar:
 
@@ -706,7 +933,7 @@ Perfis diferentes enxergam conjuntos diferentes de documentos, mas todos os aces
 
 ---
 
-### 8.5. O documento oficial deve ter metadados mínimos
+### 10.5. O documento oficial deve ter metadados mínimos
 
 Cada `ProcessDocument` deve, idealmente, manter ou permitir derivar:
 
@@ -724,30 +951,43 @@ Cada `ProcessDocument` deve, idealmente, manter ou permitir derivar:
 
 ---
 
-## 9. Ordem recomendada de implementação documental
+## 11. Ordem recomendada de implementação documental
 
 ### Prioridade 1 — já consolidadas
 - avaliação da chefia
 - autoavaliação
 
-### Prioridade 2 — próximo ciclo
-- parecer CESAD
+### Prioridade 2 — ciclo CESAD por etapa
+- leitura consolidada da etapa
+- parecer CESAD de etapa
+- assinaturas do parecer de etapa
 
-### Prioridade 3 — formalização decisória
-- assinaturas do parecer
+### Prioridade 3 — consolidação final
+- habilitação do parecer conclusivo final
+- parecer conclusivo final
+- assinaturas do parecer final
+
+### Prioridade 4 — formalização decisória
 - homologação
 
-### Prioridade 4 — comunicação formal
+### Prioridade 5 — comunicação formal
 - notificação
 - ciência
 
-### Prioridade 5 — publicação institucional
+### Prioridade 6 — recursos
+- recurso de etapa
+- despacho da CESAD
+- resposta da chefia
+- avaliação substitutiva
+- recurso final
+
+### Prioridade 7 — publicação institucional
 - portaria
 - saída para DOE
 
 ---
 
-## 10. Decisões já consolidadas por este documento
+## 12. Decisões já consolidadas por este documento
 
 Ficam considerados consolidados, para fins de continuidade do projeto:
 
@@ -755,24 +995,27 @@ Ficam considerados consolidados, para fins de continuidade do projeto:
 2. conteúdo funcional, documento processual e assinatura são camadas distintas;
 3. assinaturas recaem sobre documentos formais;
 4. nem todo documento nasce de formulário livre;
-5. parecer, notificação e portaria exigem modelagem documental própria;
-6. a notificação é um documento por template com assinatura da autoridade homologadora;
-7. a ciência do servidor é ato posterior próprio;
-8. a portaria pode ser individual ou coletiva;
-9. a portaria exige numeração sequencial única e saída dupla: PDF oficial e conteúdo copiável para DOE;
-10. qualquer evolução futura deve preservar trilha de auditoria e imutabilidade lógica pós-fechamento.
+5. existe distinção obrigatória entre parecer CESAD de etapa e parecer CESAD conclusivo final;
+6. a homologação final só é habilitada após as quatro etapas e o parecer conclusivo final;
+7. a notificação é um documento por template com assinatura da autoridade homologadora;
+8. a ciência do servidor é ato posterior próprio;
+9. a portaria pode ser individual ou coletiva;
+10. a portaria exige numeração sequencial única e saída dupla: PDF oficial e conteúdo copiável para DOE;
+11. há recurso por etapa e recurso final, com reserva explícita de espaço no domínio;
+12. qualquer evolução futura deve preservar trilha de auditoria e imutabilidade lógica pós-fechamento.
 
 ---
 
-## 11. Histórico de alterações
+## 13. Histórico de alterações
 
 | Versão | Data | Alterações |
 |---|---|---|
 | 1.0.0 | 2026-03-27 | Criação inicial do catálogo oficial de modelagem documental, consolidando avaliação da chefia, autoavaliação, parecer CESAD, homologação, notificação, ciência e portaria. Inclusão do modelo real de notificação pessoal e das regras futuras da portaria. |
+| 1.1.0 | 2026-03-27 | Atualização para diferenciar parecer CESAD de etapa e parecer conclusivo final, registrar a trava de homologação após 4 etapas, incluir artefatos documentais mínimos de recursos e atualizar a ordem recomendada de implementação. |
 
 ---
 
-## 12. Pontos ainda dependentes de detalhamento futuro
+## 14. Pontos ainda dependentes de detalhamento futuro
 
 Este documento não esgota todos os detalhes de implementação. Permanecem como temas futuros, entre outros:
 
@@ -781,13 +1024,14 @@ Este documento não esgota todos os detalhes de implementação. Permanecem como
 - storage definitivo e política de retenção documental;
 - checksum/hash documental;
 - integração futura com GOV.BR;
-- fluxo recursal detalhado;
-- fluxo de publicação efetiva no DOE;
-- modelagem final do ato de homologação, se será mais enxuto ou mais documentalizado.
+- modelagem fina do julgamento do recurso final;
+- fluxo completo de publicação efetiva no DOE;
+- modelagem final do ato de homologação, se será mais enxuto ou mais documentalizado;
+- definição final sobre quais artefatos recursais terão `ProcessDocument` próprio e quais serão registros formais equivalentes.
 
 ---
 
-## 13. Regra de prevalência
+## 15. Regra de prevalência
 
 Na presença de conflito entre:
 - leitura simplificada de telas;
