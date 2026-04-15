@@ -3,16 +3,6 @@
 import { useState, type FormEvent } from 'react';
 import { DocumentType, UserRole, type CesadStageReadSnapshotRef } from '@aep-pa/contracts';
 
-import { getCesadStageReadSnapshot } from '@/shared/api/services/processes-service';
-import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
-import { AuthGuard } from '@/shared/auth/auth-guard';
-import { useAuth } from '@/shared/auth/auth-context';
-import { ContentState } from '@/shared/ui/content-state';
-import { FeedbackAlert } from '@/shared/ui/feedback-alert';
-import { InfoCard } from '@/shared/ui/info-card';
-import { KeyValueList } from '@/shared/ui/key-value-list';
-import { PageSection } from '@/shared/ui/page-section';
-import { StatusBadge } from '@/shared/ui/status-badge';
 import {
   formatDateTime,
   formatDocumentStatus,
@@ -21,27 +11,48 @@ import {
   formatProcessStatus,
   formatRole,
   formatSignatureStatus,
-  getStatusTone,
+  formatStageInstructionStatus,
+  formatSupervisorEvaluationStatus,
+  getDocumentStatusTone,
+  getProcessStatusTone,
+  getSignatureStatusTone,
+  getStageInstructionStatusTone,
+  getSupervisorEvaluationStatusTone,
 } from '@/features/process/components/process-formatters';
+import {
+  getHttpErrorDetails,
+  getRequestErrorMessage,
+  isHttpErrorStatus,
+} from '@/shared/api/http-error';
+import { getCesadStageReadSnapshot } from '@/shared/api/services/processes-service';
+import { useAuth } from '@/shared/auth/auth-context';
+import { AuthGuard } from '@/shared/auth/auth-guard';
+import { ContentState } from '@/shared/ui/content-state';
+import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { InfoCard } from '@/shared/ui/info-card';
+import { KeyValueList } from '@/shared/ui/key-value-list';
+import {
+  AccessBlockedState,
+  InsufficientHistoryState,
+  MissingDocumentState,
+  StageUnavailableState,
+} from '@/shared/ui/operational-states';
+import { PageSection } from '@/shared/ui/page-section';
+import { StatusBadge } from '@/shared/ui/status-badge';
 
 function getInitialStageSequence() {
   return '1';
 }
 
-function getStageReadBadgeTone(document: { exists: boolean; documentStatus: string | null }) {
+function getStageReadBadgeTone(document: {
+  exists: boolean;
+  documentStatus: CesadStageReadSnapshotRef['documents'][number]['documentStatus'];
+}) {
   if (!document.exists) {
     return 'warning' as const;
   }
 
-  if (document.documentStatus === 'SIGNED') {
-    return 'success' as const;
-  }
-
-  if (document.documentStatus === 'READY_FOR_SIGNATURE') {
-    return 'warning' as const;
-  }
-
-  return 'info' as const;
+  return getDocumentStatusTone(document.documentStatus);
 }
 
 function getHistoryDescription(item: CesadStageReadSnapshotRef['history'][number]) {
@@ -60,28 +71,6 @@ function getMissingStageDocumentDescription(documentType: DocumentType) {
   return 'Documento ainda não formalizado para a etapa.';
 }
 
-function getStageInstructionSummary(
-  documentationStatus: CesadStageReadSnapshotRef['documentationStatus'],
-) {
-  switch (documentationStatus.stageInstructionStatus) {
-    case 'COMPLETE':
-      return {
-        label: 'Etapa documentalmente completa',
-        tone: 'success' as const,
-      };
-    case 'PRESENT_WITH_PENDING_SIGNATURES':
-      return {
-        label: 'Documentos presentes com assinaturas pendentes',
-        tone: 'warning' as const,
-      };
-    default:
-      return {
-        label: 'Documentos obrigatórios ausentes',
-        tone: 'warning' as const,
-      };
-  }
-}
-
 export function CesadStageReadWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState('');
@@ -89,10 +78,9 @@ export function CesadStageReadWorkspace() {
   const [snapshot, setSnapshot] = useState<CesadStageReadSnapshotRef | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const stageInstructionSummary = snapshot
-    ? getStageInstructionSummary(snapshot.documentationStatus)
-    : null;
+  const stageInstructionStatus = snapshot?.documentationStatus.stageInstructionStatus;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -103,18 +91,21 @@ export function CesadStageReadWorkspace() {
     if (!session?.accessToken || normalizedProcessId.length === 0) {
       setErrorMessage('Informe um identificador de processo para consultar a etapa.');
       setErrorDetails([]);
+      setErrorStatus(null);
       return;
     }
 
     if (!Number.isInteger(parsedStageSequence) || parsedStageSequence <= 0) {
       setErrorMessage('Informe um número de etapa válido.');
       setErrorDetails([]);
+      setErrorStatus(null);
       return;
     }
 
     setIsLoading(true);
     setErrorMessage(null);
     setErrorDetails([]);
+    setErrorStatus(null);
 
     try {
       const nextSnapshot = await getCesadStageReadSnapshot(
@@ -128,8 +119,17 @@ export function CesadStageReadWorkspace() {
         typeof error === 'object' && error && 'payload' in error
           ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
           : undefined;
-      setErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar a leitura consolidada da etapa.'));
+      setErrorMessage(
+        getRequestErrorMessage(error, 'Não foi possível carregar a leitura consolidada da etapa.'),
+      );
       setErrorDetails(getHttpErrorDetails(payload));
+      if (isHttpErrorStatus(error, 404)) {
+        setErrorStatus(404);
+      } else if (isHttpErrorStatus(error, 403)) {
+        setErrorStatus(403);
+      } else {
+        setErrorStatus(null);
+      }
       setSnapshot(null);
     } finally {
       setIsLoading(false);
@@ -176,12 +176,34 @@ export function CesadStageReadWorkspace() {
           </form>
 
           {errorMessage ? (
-            <FeedbackAlert
-              title="Falha ao carregar leitura consolidada"
-              tone="error"
-              description={errorMessage}
-              details={errorDetails}
-            />
+            errorStatus === 404 ? (
+              <StageUnavailableState>
+                {errorDetails.length > 0 ? (
+                  <ul className="content-list">
+                    {errorDetails.map((detail) => (
+                      <li key={detail}>{detail}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </StageUnavailableState>
+            ) : errorStatus === 403 ? (
+              <AccessBlockedState>
+                {errorDetails.length > 0 ? (
+                  <ul className="content-list">
+                    {errorDetails.map((detail) => (
+                      <li key={detail}>{detail}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </AccessBlockedState>
+            ) : (
+              <FeedbackAlert
+                title="Falha ao carregar leitura consolidada"
+                tone="error"
+                description={errorMessage}
+                details={errorDetails}
+              />
+            )
           ) : null}
 
           {!snapshot && !errorMessage ? (
@@ -206,11 +228,11 @@ export function CesadStageReadWorkspace() {
                   <div className="cesad-stage-read__badges">
                     <StatusBadge
                       label={formatProcessStatus(snapshot.process.status)}
-                      tone={getStatusTone(snapshot.process.status)}
+                      tone={getProcessStatusTone(snapshot.process.status)}
                     />
                     <StatusBadge
-                      label={stageInstructionSummary?.label ?? 'Situação documental indisponível'}
-                      tone={stageInstructionSummary?.tone ?? 'neutral'}
+                      label={formatStageInstructionStatus(stageInstructionStatus)}
+                      tone={getStageInstructionStatusTone(stageInstructionStatus)}
                     />
                   </div>
                 </div>
@@ -221,7 +243,7 @@ export function CesadStageReadWorkspace() {
                     items={[
                       {
                         label: 'Situação da etapa',
-                        value: stageInstructionSummary?.label ?? 'Não informado',
+                        value: formatStageInstructionStatus(stageInstructionStatus),
                       },
                       {
                         label: 'Documentos obrigatórios',
@@ -282,7 +304,9 @@ export function CesadStageReadWorkspace() {
                       {
                         label: 'Nome / cargo / matrícula',
                         value:
-                          snapshot.server.displayName ?? snapshot.server.positionName ?? snapshot.server.registrationNumber
+                          snapshot.server.displayName ??
+                          snapshot.server.positionName ??
+                          snapshot.server.registrationNumber
                             ? [
                                 snapshot.server.displayName ?? 'Nome não cadastrado',
                                 snapshot.server.positionName ?? 'Cargo não cadastrado',
@@ -312,8 +336,8 @@ export function CesadStageReadWorkspace() {
                   {snapshot.supervisorEvaluation ? (
                     <div className="cesad-stage-read__stack">
                       <StatusBadge
-                        label={snapshot.supervisorEvaluation.status}
-                        tone={getStatusTone(snapshot.supervisorEvaluation.status)}
+                        label={formatSupervisorEvaluationStatus(snapshot.supervisorEvaluation.status)}
+                        tone={getSupervisorEvaluationStatusTone(snapshot.supervisorEvaluation.status)}
                       />
                       <KeyValueList
                         items={[
@@ -353,8 +377,8 @@ export function CesadStageReadWorkspace() {
                   {snapshot.selfEvaluation ? (
                     <div className="cesad-stage-read__stack">
                       <StatusBadge
-                        label={snapshot.selfEvaluation.status}
-                        tone={getStatusTone(snapshot.selfEvaluation.status)}
+                        label={formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)}
+                        tone={getSupervisorEvaluationStatusTone(snapshot.selfEvaluation.status)}
                       />
                       <KeyValueList
                         items={[
@@ -431,8 +455,11 @@ export function CesadStageReadWorkspace() {
                               <ul className="content-list cesad-stage-read__signatures">
                                 {document.signatures.map((signature) => (
                                   <li key={signature.signatureId}>
-                                    <strong>{formatRole(signature.signatoryRole)}</strong>:&nbsp;
-                                    {formatSignatureStatus(signature.status)}
+                                    <strong>{formatRole(signature.signatoryRole)}</strong>{' '}
+                                    <StatusBadge
+                                      label={formatSignatureStatus(signature.status)}
+                                      tone={getSignatureStatusTone(signature.status)}
+                                    />
                                     {signature.signedAt
                                       ? ` em ${formatDateTime(signature.signedAt)}`
                                       : ' sem data de conclusão'}
@@ -448,12 +475,12 @@ export function CesadStageReadWorkspace() {
                             />
                           )
                         ) : (
-                          <ContentState
-                            title="Documento não localizado"
+                          <MissingDocumentState
+                            title={`${formatDocumentType(document.documentType)} ausente`}
                             description={
-                              document.missingReason ?? 'O backend sinalizou ausência deste documento no escopo da etapa.'
+                              document.missingReason ??
+                              'O backend sinalizou ausência deste documento no escopo da etapa.'
                             }
-                            tone="warning"
                           />
                         )}
                       </div>
@@ -484,11 +511,7 @@ export function CesadStageReadWorkspace() {
                     </ul>
                   </div>
                 ) : (
-                  <ContentState
-                    title="Histórico resumido indisponível"
-                    description="Nenhum evento relevante foi encontrado para o escopo atual da etapa."
-                    tone="warning"
-                  />
+                  <InsufficientHistoryState />
                 )}
               </PageSection>
             </>

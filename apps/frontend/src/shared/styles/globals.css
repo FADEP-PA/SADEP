@@ -1010,6 +1010,11 @@ button {
   color: #b45309;
 }
 
+.status-badge--danger {
+  background: var(--danger-soft);
+  color: #b91c1c;
+}
+
 .feedback-alert {
   display: grid;
   gap: 0.75rem;
@@ -1050,6 +1055,36 @@ button {
 .feedback-alert--error {
   border-color: rgba(239, 68, 68, 0.22);
   background: rgba(239, 68, 68, 0.08);
+}
+
+.inline-loading-state {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: center;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 1rem;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.inline-loading-state strong,
+.inline-loading-state p {
+  margin: 0;
+}
+
+.inline-loading-state p {
+  margin-top: 0.25rem;
+  color: var(--text-secondary);
+}
+
+.inline-loading-state__spinner {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 0.2rem solid rgba(37, 99, 235, 0.18);
+  border-top-color: var(--accent);
+  border-radius: 999px;
+  animation: spin 1s linear infinite;
 }
 
 .inline-form {
@@ -1197,6 +1232,38 @@ button {
   margin-top: 0.25rem;
 }
 
+.operational-state {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.operational-state__badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.operational-state__badge--info {
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--accent-strong);
+}
+
+.operational-state__badge--warning {
+  background: var(--warning-soft);
+  color: #b45309;
+}
+
+.operational-state__badge--error {
+  background: var(--danger-soft);
+  color: #b91c1c;
+}
+
 .content-list--stacked li {
   padding: 0.7rem 0.85rem;
   border-radius: 0.9rem;
@@ -1206,6 +1273,25 @@ button {
 .process-list-card {
   display: grid;
   gap: 0.85rem;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.95rem;
+  background: rgba(248, 250, 252, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
 textarea {
@@ -1356,6 +1442,12 @@ textarea:disabled {
   }
 
   .supervisor-evaluation-criterion__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .inline-loading-state {
     grid-template-columns: 1fr;
   }
 }

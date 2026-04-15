@@ -24,7 +24,7 @@
 
 ## Bloco 1 — Ajustes transversais e consolidação da base
 
-### [ ] FT-01 — Padronizar semântica visual dos status
+### [x] FT-01 — Padronizar semântica visual dos status
 **Objetivo:** revisar e consolidar o uso visual de status no frontend.
 
 **Escopo:**
@@ -44,7 +44,7 @@
 
 ---
 
-### [ ] FT-02 — Criar componentes reutilizáveis de estados visuais
+### [x] FT-02 — Criar componentes reutilizáveis de estados visuais
 **Objetivo:** padronizar feedback visual de empty state, blocked state e warning state.
 
 **Escopo:**
@@ -61,7 +61,7 @@
 
 ---
 
-### [ ] FT-03 — Revisar loading, erro e sucesso nas telas operacionais atuais
+### [x] FT-03 — Revisar loading, erro e sucesso nas telas operacionais atuais
 **Objetivo:** melhorar consistência de UX nas telas já funcionais.
 
 **Escopo:**

@@ -3,12 +3,15 @@ import {
   DocumentType,
   ProcessAction,
   ProcessStatus,
+  SelfEvaluationStatus,
   SignatureStatus,
   SupervisorEvaluationStatus,
   UserRole,
+  type CesadStageDocumentationStatusRef,
 } from '@aep-pa/contracts';
 
 import type { WorkflowHistoryItem } from '../../dashboard/types/process-dashboard-types';
+import type { StatusBadgeTone } from '@/shared/ui/status-badge';
 
 const STATUS_LABELS: Record<ProcessStatus, string> = {
   [ProcessStatus.EM_AVALIACAO]: 'Em avaliação',
@@ -81,28 +84,33 @@ const SIGNATURE_STATUS_LABELS: Record<SignatureStatus, string> = {
   [SignatureStatus.CANCELED]: 'Cancelada',
 };
 
-export function getStatusTone(status: string | undefined) {
-  if (!status) {
-    return 'neutral' as const;
-  }
-
-  if (status === ProcessStatus.ENCERRADO || status === SupervisorEvaluationStatus.SUBMITTED) {
-    return 'success' as const;
-  }
-
-  if (status === ProcessStatus.EM_ANALISE_CESAD || status === ProcessStatus.AGUARDANDO_ASSINATURA) {
-    return 'warning' as const;
-  }
-
-  return 'info' as const;
-}
-
 export function formatProcessStatus(status: string | undefined) {
   if (!status) {
     return 'Não informado';
   }
 
   return STATUS_LABELS[status as ProcessStatus] ?? status;
+}
+
+export function getProcessStatusTone(status: string | undefined): StatusBadgeTone {
+  if (!status) {
+    return 'neutral';
+  }
+
+  if (
+    status === ProcessStatus.HOMOLOGADO ||
+    status === ProcessStatus.NOTIFICADO ||
+    status === ProcessStatus.CIENTE ||
+    status === ProcessStatus.ENCERRADO
+  ) {
+    return 'success';
+  }
+
+  if (status === ProcessStatus.AGUARDANDO_ASSINATURA || status === ProcessStatus.EM_ANALISE_CESAD) {
+    return 'warning';
+  }
+
+  return 'info';
 }
 
 export function formatProcessAction(action: string | undefined) {
@@ -137,12 +145,111 @@ export function formatDocumentStatus(status: string | null | undefined) {
   return DOCUMENT_STATUS_LABELS[status as DocumentStatus] ?? status;
 }
 
+export function getDocumentStatusTone(status: DocumentStatus | null | undefined): StatusBadgeTone {
+  if (!status) {
+    return 'neutral';
+  }
+
+  if (status === DocumentStatus.SIGNED) {
+    return 'success';
+  }
+
+  if (status === DocumentStatus.READY_FOR_SIGNATURE || status === DocumentStatus.CONSOLIDATED) {
+    return 'warning';
+  }
+
+  if (status === DocumentStatus.INVALIDATED_OR_SUPERSEDED) {
+    return 'danger';
+  }
+
+  return 'info';
+}
+
 export function formatSignatureStatus(status: string | undefined) {
   if (!status) {
     return 'Não informado';
   }
 
   return SIGNATURE_STATUS_LABELS[status as SignatureStatus] ?? status;
+}
+
+export function getSignatureStatusTone(status: SignatureStatus | null | undefined): StatusBadgeTone {
+  if (!status) {
+    return 'neutral';
+  }
+
+  if (status === SignatureStatus.COMPLETED) {
+    return 'success';
+  }
+
+  if (status === SignatureStatus.PENDING) {
+    return 'warning';
+  }
+
+  return 'danger';
+}
+
+export function formatSupervisorEvaluationStatus(
+  status: SupervisorEvaluationStatus | SelfEvaluationStatus | undefined,
+) {
+  if (!status) {
+    return 'Ainda não iniciada';
+  }
+
+  if (status === SupervisorEvaluationStatus.DRAFT) {
+    return 'Rascunho';
+  }
+
+  return 'Submetida';
+}
+
+export function getSupervisorEvaluationStatusTone(
+  status: SupervisorEvaluationStatus | SelfEvaluationStatus | undefined,
+): StatusBadgeTone {
+  if (!status) {
+    return 'neutral';
+  }
+
+  if (
+    status === SupervisorEvaluationStatus.SUBMITTED ||
+    status === SelfEvaluationStatus.SUBMITTED
+  ) {
+    return 'success';
+  }
+
+  return 'info';
+}
+
+export function formatStageInstructionStatus(
+  status: CesadStageDocumentationStatusRef['stageInstructionStatus'] | undefined,
+) {
+  if (!status) {
+    return 'Situação documental indisponível';
+  }
+
+  if (status === 'COMPLETE') {
+    return 'Etapa documentalmente completa';
+  }
+
+  if (status === 'PRESENT_WITH_PENDING_SIGNATURES') {
+    return 'Documentos presentes com assinaturas pendentes';
+  }
+
+  return 'Documentos obrigatórios ausentes';
+}
+
+export function getStageInstructionStatusTone(
+  status: CesadStageDocumentationStatusRef['stageInstructionStatus'] | undefined,
+): StatusBadgeTone {
+  if (!status) {
+    return 'neutral';
+  }
+
+  if (status === 'COMPLETE') {
+    return 'success';
+  }
+
+  return 'warning';
 }
 
 export function formatDateTime(value: string | null | undefined) {
@@ -179,7 +286,9 @@ export function getProcessBlockers(snapshot: {
   const blockers: string[] = [];
 
   if (snapshot.workflow.availableActions.length === 0) {
-    blockers.push(`Nenhuma ação foi liberada pelo workflow para o status ${formatProcessStatus(snapshot.workflow.status)}.`);
+    blockers.push(
+      `Nenhuma ação foi liberada pelo workflow para o status ${formatProcessStatus(snapshot.workflow.status)}.`,
+    );
   }
 
   if (snapshot.history.length === 0) {
