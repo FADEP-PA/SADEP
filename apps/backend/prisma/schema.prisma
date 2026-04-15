@@ -254,7 +254,6 @@ model CesadStageOpinion {
   processStage      ProcessStage            @relation(fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   authorUser        User                    @relation("CesadStageOpinionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  @@unique([processId, processStageId])
   @@index([processId])
   @@index([authorUserId])
   @@index([status])
