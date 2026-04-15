@@ -17,10 +17,17 @@ import { AuthGuard } from '@/shared/auth/auth-guard';
 import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InfoCard } from '@/shared/ui/info-card';
+import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { PageSection } from '@/shared/ui/page-section';
-import { ProcessNotFoundState, ReadNotReleasedState } from '@/shared/ui/operational-states';
+import { ProcessRequestFeedback } from '@/shared/ui/process-request-feedback';
+import { ReadNotReleasedState } from '@/shared/ui/operational-states';
 
 const ALLOWED_ROLES = [UserRole.INTERN_SERVER, UserRole.ADMIN];
+
+type OperationFeedback = {
+  title: string;
+  description: string;
+};
 
 function getInitialProcessId() {
   return process.env.NEXT_PUBLIC_TECHNICAL_PROCESS_ID?.trim() || '';
@@ -55,7 +62,7 @@ export function InternServerWorkspace() {
   const [signatureComment, setSignatureComment] = useState('');
   const [signatureErrorMessage, setSignatureErrorMessage] = useState<string | null>(null);
   const [signatureErrorDetails, setSignatureErrorDetails] = useState<string[]>([]);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successFeedback, setSuccessFeedback] = useState<OperationFeedback | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
 
@@ -64,7 +71,7 @@ export function InternServerWorkspace() {
       snapshot.supervisorEvaluation?.documentContext?.internSignaturePending,
   );
 
-  async function reloadProcessSnapshot(activeProcessId: string, success?: string) {
+  async function reloadProcessSnapshot(activeProcessId: string, success?: OperationFeedback) {
     if (!session?.accessToken) {
       return;
     }
@@ -77,7 +84,7 @@ export function InternServerWorkspace() {
 
     setSnapshot(nextSnapshot);
     setConsultedProcesses((currentItems) => upsertConsultedProcess(currentItems, nextSnapshot));
-    setSuccessMessage(success ?? null);
+    setSuccessFeedback(success ?? null);
   }
 
   async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
@@ -87,6 +94,7 @@ export function InternServerWorkspace() {
       setErrorMessage('Informe um identificador de processo para consultar seu painel.');
       setErrorDetails([]);
       setErrorStatus(null);
+      setSuccessFeedback(null);
       return;
     }
 
@@ -96,20 +104,25 @@ export function InternServerWorkspace() {
     setErrorStatus(null);
     setSignatureErrorMessage(null);
     setSignatureErrorDetails([]);
-    setSuccessMessage(null);
+    setSuccessFeedback(null);
 
     try {
-      await reloadProcessSnapshot(processId.trim());
+      await reloadProcessSnapshot(processId.trim(), {
+        title: 'Processo adicionado ao painel',
+        description:
+          'O painel do servidor foi atualizado com o status atual, o historico e o contexto documental liberados pelo backend.',
+      });
     } catch (error) {
       const payload =
         typeof error === 'object' && error && 'payload' in error
           ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
           : undefined;
 
-      setErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar os dados do processo.'));
+      setErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar os dados do processo.'));
       setErrorDetails(getHttpErrorDetails(payload));
-      setErrorStatus(isHttpErrorStatus(error, 404) ? 404 : null);
+      setErrorStatus(isHttpErrorStatus(error, 404) ? 404 : isHttpErrorStatus(error, 403) ? 403 : null);
       setSnapshot(null);
+      setSuccessFeedback(null);
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +136,7 @@ export function InternServerWorkspace() {
     setIsSigning(true);
     setSignatureErrorMessage(null);
     setSignatureErrorDetails([]);
-    setSuccessMessage(null);
+    setSuccessFeedback(null);
 
     try {
       await transitionWorkflow(snapshot.workflow.id, session.accessToken, {
@@ -131,7 +144,11 @@ export function InternServerWorkspace() {
         ...(signatureComment.trim() ? { comment: signatureComment.trim() } : {}),
       });
 
-      await reloadProcessSnapshot(snapshot.workflow.id, 'Assinatura registrada com sucesso.');
+      await reloadProcessSnapshot(snapshot.workflow.id, {
+        title: 'Assinatura registrada',
+        description:
+          'A assinatura da avaliacao da chefia foi confirmada com sucesso e o painel ja exibe o estado atualizado do processo.',
+      });
       setSignatureComment('');
     } catch (error) {
       const payload =
@@ -140,7 +157,7 @@ export function InternServerWorkspace() {
           : undefined;
 
       setSignatureErrorMessage(
-        getRequestErrorMessage(error, 'Não foi possível assinar a avaliação da chefia.'),
+        getRequestErrorMessage(error, 'Nao foi possivel assinar a avaliacao da chefia.'),
       );
       setSignatureErrorDetails(getHttpErrorDetails(payload));
     } finally {
@@ -151,9 +168,9 @@ export function InternServerWorkspace() {
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
       <PageSection
-        eyebrow="Servidor estagiário"
+        eyebrow="Servidor estagiario"
         title="Painel de processos do servidor"
-        description="Consulte seus processos para visualizar status macro, etapa atual e a principal ação disponível em cada item carregado."
+        description="Consulte seus processos para visualizar status macro, etapa atual e a principal acao disponivel em cada item carregado."
       >
         <form className="inline-form" onSubmit={handleLoadProcess}>
           <label className="field-group" htmlFor="intern-process-id">
@@ -164,38 +181,46 @@ export function InternServerWorkspace() {
               placeholder="Informe o ID do processo"
               value={processId}
               onChange={(event) => setProcessId(event.target.value)}
-              disabled={isLoading}
+              disabled={isLoading || isSigning}
             />
           </label>
 
-          <button type="submit" disabled={isLoading}>
+          <button type="submit" disabled={isLoading || isSigning}>
             {isLoading ? 'Carregando processo...' : 'Adicionar ao painel'}
           </button>
         </form>
 
-        {errorMessage ? (
-          errorStatus === 404 ? (
-            <ProcessNotFoundState>
-              {errorDetails.length > 0 ? (
-                <ul className="content-list">
-                  {errorDetails.map((detail) => (
-                    <li key={detail}>{detail}</li>
-                  ))}
-                </ul>
-              ) : null}
-            </ProcessNotFoundState>
-          ) : (
-            <FeedbackAlert
-              title="Falha ao carregar processo"
-              tone="error"
-              description={errorMessage}
-              details={errorDetails}
-            />
-          )
+        {isLoading ? (
+          <InlineLoadingState
+            title="Atualizando painel do servidor"
+            description="Os dados do processo estao sendo consultados com o contexto documental disponivel para este perfil."
+          />
         ) : null}
 
-        {successMessage ? (
-          <FeedbackAlert title="Operação concluída" tone="success" description={successMessage} />
+        {isSigning ? (
+          <InlineLoadingState
+            title="Registrando assinatura"
+            description="A confirmacao formal da avaliacao da chefia esta sendo enviada e o painel sera atualizado em seguida."
+          />
+        ) : null}
+
+        {errorMessage ? (
+          <ProcessRequestFeedback
+            status={errorStatus}
+            message={errorMessage}
+            details={errorDetails}
+            genericTitle="Falha ao carregar processo"
+            notFoundTitle="Processo nao encontrado no painel"
+            blockedTitle="Acesso indisponivel para este processo"
+          />
+        ) : null}
+
+        {successFeedback ? (
+          <FeedbackAlert
+            title={successFeedback.title}
+            tone="success"
+            description={successFeedback.description}
+          />
         ) : null}
 
         <div className="metrics-grid">
@@ -206,12 +231,12 @@ export function InternServerWorkspace() {
         {snapshot ? (
           <InfoCard
             title="Assinatura do servidor"
-            description="Quando a etapa estiver pronta para assinatura, confirme o ato formal para concluir a avaliação da chefia."
+            description="Quando a etapa estiver pronta para assinatura, confirme o ato formal para concluir a avaliacao da chefia."
           >
             {canSignEvaluation ? (
               <>
                 <label className="field-group" htmlFor="intern-signature-comment">
-                  <span>Comentário da assinatura (opcional)</span>
+                  <span>Comentario da assinatura (opcional)</span>
                   <textarea
                     id="intern-signature-comment"
                     value={signatureComment}
@@ -222,19 +247,19 @@ export function InternServerWorkspace() {
                 </label>
 
                 <button type="button" onClick={() => void handleSignEvaluation()} disabled={isSigning || isLoading}>
-                  {isSigning ? 'Assinando...' : 'Assinar avaliação da chefia'}
+                  {isSigning ? 'Assinando...' : 'Assinar avaliacao da chefia'}
                 </button>
               </>
             ) : (
               <ReadNotReleasedState
-                title="Assinatura ainda indisponível"
-                description="A assinatura do servidor será liberada quando o backend indicar a ação SIGN_EVALUATION e houver pendência formal no contexto documental."
+                title="Assinatura ainda indisponivel"
+                description="A assinatura do servidor sera liberada quando o backend indicar a acao SIGN_EVALUATION e houver pendencia formal no contexto documental."
               />
             )}
 
             {signatureErrorMessage ? (
               <FeedbackAlert
-                title="Falha ao assinar"
+                title="Falha ao registrar assinatura"
                 tone="error"
                 description={signatureErrorMessage}
                 details={signatureErrorDetails}
@@ -246,14 +271,14 @@ export function InternServerWorkspace() {
         {!snapshot && !errorMessage ? (
           <ContentState
             title="Nenhum processo no painel"
-            description="Carregue um processo para iniciar o acompanhamento da etapa atual e das ações disponíveis."
+            description="Carregue um processo para iniciar o acompanhamento da etapa atual e das acoes disponiveis."
             tone="info"
           />
         ) : null}
 
         {snapshot?.supervisorEvaluationWarning ? (
           <FeedbackAlert
-            title="Avaliação da chefia indisponível"
+            title="Avaliacao da chefia indisponivel"
             tone="warning"
             description={snapshot.supervisorEvaluationWarning}
           />

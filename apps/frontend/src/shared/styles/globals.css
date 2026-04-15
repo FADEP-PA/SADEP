@@ -1057,6 +1057,36 @@ button {
   background: rgba(239, 68, 68, 0.08);
 }
 
+.inline-loading-state {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: center;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 1rem;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.inline-loading-state strong,
+.inline-loading-state p {
+  margin: 0;
+}
+
+.inline-loading-state p {
+  margin-top: 0.25rem;
+  color: var(--text-secondary);
+}
+
+.inline-loading-state__spinner {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 0.2rem solid rgba(37, 99, 235, 0.18);
+  border-top-color: var(--accent);
+  border-radius: 999px;
+  animation: spin 1s linear infinite;
+}
+
 .inline-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1412,6 +1442,12 @@ textarea:disabled {
   }
 
   .supervisor-evaluation-criterion__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .inline-loading-state {
     grid-template-columns: 1fr;
   }
 }

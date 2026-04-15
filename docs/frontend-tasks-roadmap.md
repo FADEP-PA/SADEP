@@ -61,7 +61,7 @@
 
 ---
 
-### [ ] FT-03 — Revisar loading, erro e sucesso nas telas operacionais atuais
+### [x] FT-03 — Revisar loading, erro e sucesso nas telas operacionais atuais
 **Objetivo:** melhorar consistência de UX nas telas já funcionais.
 
 **Escopo:**

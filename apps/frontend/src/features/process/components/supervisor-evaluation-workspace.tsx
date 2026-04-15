@@ -4,7 +4,7 @@ import { ProcessStatus, SupervisorEvaluationStatus, UserRole } from '@aep-pa/con
 import { useMemo, useState, type FormEvent } from 'react';
 
 import type { ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
-import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
+import { getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '@/shared/api/http-error';
 import {
   getTechnicalProcessSnapshot,
   rectifySupervisorEvaluation,
@@ -17,8 +17,10 @@ import { AuthGuard } from '@/shared/auth/auth-guard';
 import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InfoCard } from '@/shared/ui/info-card';
+import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { KeyValueList } from '@/shared/ui/key-value-list';
 import { PageSection } from '@/shared/ui/page-section';
+import { ProcessRequestFeedback } from '@/shared/ui/process-request-feedback';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
 import { ProcessActionsCard } from './process-actions-card';
@@ -45,6 +47,11 @@ type EvaluationFormState = {
   generalComments: string;
   comment: string;
   criteria: CriterionDraft[];
+};
+
+type OperationFeedback = {
+  title: string;
+  description: string;
 };
 
 function createEmptyCriterion(): CriterionDraft {
@@ -95,28 +102,28 @@ function normalizePayload(form: EvaluationFormState): UpsertSupervisorEvaluation
   }));
 
   if (!summary) {
-    throw new Error('Informe o resumo da avaliação antes de continuar.');
+    throw new Error('Informe o resumo da avaliacao antes de continuar.');
   }
 
   if (!generalComments) {
-    throw new Error('Informe os comentários gerais da avaliação.');
+    throw new Error('Informe os comentarios gerais da avaliacao.');
   }
 
   if (criteria.length === 0) {
-    throw new Error('Adicione pelo menos um critério para registrar a avaliação.');
+    throw new Error('Adicione pelo menos um criterio para registrar a avaliacao.');
   }
 
   criteria.forEach((criterion, index) => {
     if (!criterion.code) {
-      throw new Error(`Preencha o código do critério ${index + 1}.`);
+      throw new Error(`Preencha o codigo do criterio ${index + 1}.`);
     }
 
     if (!criterion.label) {
-      throw new Error(`Preencha o título do critério ${index + 1}.`);
+      throw new Error(`Preencha o titulo do criterio ${index + 1}.`);
     }
 
     if (!Number.isFinite(criterion.rating) || criterion.rating < 1 || criterion.rating > 5) {
-      throw new Error(`A nota do critério ${index + 1} deve estar entre 1 e 5.`);
+      throw new Error(`A nota do criterio ${index + 1} deve estar entre 1 e 5.`);
     }
   });
 
@@ -139,6 +146,52 @@ function renderEvaluationStatus(status: SupervisorEvaluationStatus | undefined) 
   );
 }
 
+function getMutationFeedback(kind: 'draft' | 'submit' | 'rectify'): {
+  loading: OperationFeedback;
+  success: OperationFeedback;
+  errorTitle: string;
+} {
+  if (kind === 'draft') {
+    return {
+      loading: {
+        title: 'Salvando rascunho',
+        description: 'Os campos da avaliacao estao sendo enviados para persistencia como rascunho.',
+      },
+      success: {
+        title: 'Rascunho salvo',
+        description: 'A avaliacao da chefia foi atualizada e segue disponivel para novos ajustes antes da submissao.',
+      },
+      errorTitle: 'Falha ao salvar rascunho',
+    };
+  }
+
+  if (kind === 'submit') {
+    return {
+      loading: {
+        title: 'Submetendo avaliacao',
+        description: 'O backend esta registrando a submissao e encaminhando a etapa para assinatura.',
+      },
+      success: {
+        title: 'Avaliacao submetida',
+        description: 'A avaliacao da chefia foi encaminhada com sucesso para a proxima etapa operacional.',
+      },
+      errorTitle: 'Falha ao submeter avaliacao',
+    };
+  }
+
+  return {
+    loading: {
+      title: 'Retificando avaliacao',
+      description: 'A nova versao da avaliacao esta sendo registrada enquanto a assinatura ainda nao ocorreu.',
+    },
+    success: {
+      title: 'Avaliacao retificada',
+      description: 'A retificacao foi registrada com sucesso e a ficha exibida abaixo ja reflete a versao atual.',
+    },
+    errorTitle: 'Falha ao retificar avaliacao',
+  };
+}
+
 export function SupervisorEvaluationWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState(getInitialProcessId);
@@ -146,41 +199,45 @@ export function SupervisorEvaluationWorkspace() {
   const [form, setForm] = useState<EvaluationFormState>(createEmptyFormState);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
+  const [loadErrorStatus, setLoadErrorStatus] = useState<number | null>(null);
+  const [submitErrorTitle, setSubmitErrorTitle] = useState('Falha ao persistir avaliacao');
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
   const [submitErrorDetails, setSubmitErrorDetails] = useState<string[]>([]);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successFeedback, setSuccessFeedback] = useState<OperationFeedback | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeMutation, setActiveMutation] = useState<'draft' | 'submit' | 'rectify' | null>(null);
 
   const canEditDraft = snapshot?.workflow.status === ProcessStatus.EM_AVALIACAO;
   const canRectify =
     snapshot?.workflow.status === ProcessStatus.AGUARDANDO_ASSINATURA &&
     snapshot.supervisorEvaluation?.status === SupervisorEvaluationStatus.SUBMITTED;
   const isLocked = Boolean(snapshot) && !canEditDraft && !canRectify;
+  const activeMutationFeedback = activeMutation ? getMutationFeedback(activeMutation) : null;
 
   const summaryItems = useMemo(
     () => [
       {
         label: 'Status do processo',
-        value: snapshot ? formatProcessStatus(snapshot.workflow.status) : 'Não carregado',
+        value: snapshot ? formatProcessStatus(snapshot.workflow.status) : 'Nao carregado',
       },
       {
-        label: 'Status da avaliação',
+        label: 'Status da avaliacao',
         value: renderEvaluationStatus(snapshot?.supervisorEvaluation?.status),
       },
       {
-        label: 'Última submissão',
+        label: 'Ultima submissao',
         value: formatDateTime(snapshot?.supervisorEvaluation?.submittedAt),
       },
       {
-        label: 'Critérios preenchidos',
+        label: 'Criterios preenchidos',
         value: String(form.criteria.length),
       },
     ],
     [form.criteria.length, snapshot],
   );
 
-  async function reloadProcessSnapshot(activeProcessId: string, success?: string) {
+  async function reloadProcessSnapshot(activeProcessId: string, success?: OperationFeedback) {
     if (!session?.accessToken) {
       return;
     }
@@ -192,27 +249,34 @@ export function SupervisorEvaluationWorkspace() {
     );
     setSnapshot(nextSnapshot);
     setForm(buildFormState(nextSnapshot));
-    setSuccessMessage(success ?? null);
+    setSuccessFeedback(success ?? null);
   }
 
   async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!session?.accessToken || processId.trim().length === 0) {
-      setLoadErrorMessage('Informe um identificador de processo para abrir a avaliação da chefia.');
+      setLoadErrorMessage('Informe um identificador de processo para abrir a avaliacao da chefia.');
       setLoadErrorDetails([]);
+      setLoadErrorStatus(null);
+      setSuccessFeedback(null);
       return;
     }
 
     setIsLoading(true);
     setLoadErrorMessage(null);
     setLoadErrorDetails([]);
+    setLoadErrorStatus(null);
     setSubmitErrorMessage(null);
     setSubmitErrorDetails([]);
-    setSuccessMessage(null);
+    setSuccessFeedback(null);
 
     try {
-      await reloadProcessSnapshot(processId.trim());
+      await reloadProcessSnapshot(processId.trim(), {
+        title: 'Processo carregado',
+        description:
+          'A ficha da chefia foi aberta com o contexto atual do workflow, do historico e da avaliacao vinculada ao processo.',
+      });
     } catch (error) {
       const payload =
         typeof error === 'object' && error && 'payload' in error
@@ -222,9 +286,11 @@ export function SupervisorEvaluationWorkspace() {
       setSnapshot(null);
       setForm(createEmptyFormState());
       setLoadErrorMessage(
-        getRequestErrorMessage(error, 'Não foi possível carregar os dados da avaliação da chefia.'),
+        getRequestErrorMessage(error, 'Nao foi possivel carregar os dados da avaliacao da chefia.'),
       );
       setLoadErrorDetails(getHttpErrorDetails(payload));
+      setLoadErrorStatus(isHttpErrorStatus(error, 404) ? 404 : isHttpErrorStatus(error, 403) ? 403 : null);
+      setSuccessFeedback(null);
     } finally {
       setIsLoading(false);
     }
@@ -235,10 +301,14 @@ export function SupervisorEvaluationWorkspace() {
       return;
     }
 
+    const feedback = getMutationFeedback(kind);
+
     setIsSaving(true);
+    setActiveMutation(kind);
+    setSubmitErrorTitle(feedback.errorTitle);
     setSubmitErrorMessage(null);
     setSubmitErrorDetails([]);
-    setSuccessMessage(null);
+    setSuccessFeedback(null);
 
     try {
       const payload = normalizePayload(form);
@@ -246,20 +316,17 @@ export function SupervisorEvaluationWorkspace() {
 
       if (kind === 'draft') {
         await saveSupervisorEvaluationDraft(normalizedProcessId, session.accessToken, payload);
-        await reloadProcessSnapshot(normalizedProcessId, 'Rascunho salvo com sucesso.');
+        await reloadProcessSnapshot(normalizedProcessId, feedback.success);
       }
 
       if (kind === 'submit') {
         await submitSupervisorEvaluation(normalizedProcessId, session.accessToken, payload);
-        await reloadProcessSnapshot(
-          normalizedProcessId,
-          'Avaliação submetida com sucesso e processo encaminhado para assinatura.',
-        );
+        await reloadProcessSnapshot(normalizedProcessId, feedback.success);
       }
 
       if (kind === 'rectify') {
         await rectifySupervisorEvaluation(normalizedProcessId, session.accessToken, payload);
-        await reloadProcessSnapshot(normalizedProcessId, 'Avaliação retificada com sucesso.');
+        await reloadProcessSnapshot(normalizedProcessId, feedback.success);
       }
     } catch (error) {
       const payload =
@@ -268,10 +335,11 @@ export function SupervisorEvaluationWorkspace() {
           : undefined;
 
       setSubmitErrorMessage(
-        getRequestErrorMessage(error, 'Não foi possível persistir a avaliação da chefia.'),
+        getRequestErrorMessage(error, 'Nao foi possivel persistir a avaliacao da chefia.'),
       );
       setSubmitErrorDetails(getHttpErrorDetails(payload));
     } finally {
+      setActiveMutation(null);
       setIsSaving(false);
     }
   }
@@ -280,8 +348,8 @@ export function SupervisorEvaluationWorkspace() {
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
       <PageSection
         eyebrow="Chefia imediata"
-        title="Avaliação funcional da chefia"
-        description="Tela funcional para carregar o processo, consultar o workflow e criar, editar, submeter ou retificar a avaliação antes da assinatura do servidor."
+        title="Avaliacao funcional da chefia"
+        description="Tela funcional para carregar o processo, consultar o workflow e criar, editar, submeter ou retificar a avaliacao antes da assinatura do servidor."
       >
         <form className="inline-form" onSubmit={handleLoadProcess}>
           <label className="field-group" htmlFor="supervisor-process-id">
@@ -297,23 +365,39 @@ export function SupervisorEvaluationWorkspace() {
           </label>
 
           <button type="submit" disabled={isLoading || isSaving}>
-            {isLoading ? 'Carregando processo...' : 'Abrir avaliação'}
+            {isLoading ? 'Carregando processo...' : 'Abrir avaliacao'}
           </button>
         </form>
 
+        {isLoading ? (
+          <InlineLoadingState
+            title="Abrindo avaliacao"
+            description="O workspace da chefia esta consultando workflow, historico e ficha avaliativa liberados para este processo."
+          />
+        ) : null}
+
+        {isSaving && activeMutationFeedback ? (
+          <InlineLoadingState
+            title={activeMutationFeedback.loading.title}
+            description={activeMutationFeedback.loading.description}
+          />
+        ) : null}
+
         {loadErrorMessage ? (
-          <FeedbackAlert
-            title="Falha ao abrir processo"
-            tone="error"
-            description={loadErrorMessage}
+          <ProcessRequestFeedback
+            status={loadErrorStatus}
+            message={loadErrorMessage}
             details={loadErrorDetails}
+            genericTitle="Falha ao abrir processo"
+            notFoundTitle="Processo nao encontrado para avaliacao"
+            blockedTitle="Acesso indisponivel para esta avaliacao"
           />
         ) : null}
 
         {!snapshot && !loadErrorMessage ? (
           <ContentState
             title="Tela pronta para uso real"
-            description="Informe um processo existente para consultar status, histórico, ações disponíveis e iniciar a avaliação da chefia com persistência no backend."
+            description="Informe um processo existente para consultar status, historico, acoes disponiveis e iniciar a avaliacao da chefia com persistencia no backend."
             tone="info"
           />
         ) : null}
@@ -328,8 +412,8 @@ export function SupervisorEvaluationWorkspace() {
               />
               <ProcessHistoryCard history={snapshot.history} />
               <InfoCard
-                title="Resumo da avaliação"
-                description="Estado atual da ficha da chefia e indicadores rápidos para preenchimento."
+                title="Resumo da avaliacao"
+                description="Estado atual da ficha da chefia e indicadores rapidos para preenchimento."
               >
                 <KeyValueList items={summaryItems} />
               </InfoCard>
@@ -337,32 +421,36 @@ export function SupervisorEvaluationWorkspace() {
 
             {!snapshot.supervisorEvaluation ? (
               <FeedbackAlert
-                title="Avaliação ainda não iniciada"
+                title="Avaliacao ainda nao iniciada"
                 tone="info"
-                description="Nenhuma avaliação foi registrada para este processo. O primeiro salvamento em rascunho cria a avaliação automaticamente."
+                description="Nenhuma avaliacao foi registrada para este processo. O primeiro salvamento em rascunho cria a avaliacao automaticamente."
               />
             ) : null}
 
             {snapshot.supervisorEvaluationWarning ? (
               <FeedbackAlert
-                title="Visualização parcial"
+                title="Visualizacao parcial"
                 tone="warning"
                 description={snapshot.supervisorEvaluationWarning}
               />
             ) : null}
 
             <div className="supervisor-evaluation-status-panel">
-              <span>Situação da ficha da chefia</span>
+              <span>Situacao da ficha da chefia</span>
               {renderEvaluationStatus(snapshot.supervisorEvaluation?.status)}
             </div>
 
-            {successMessage ? (
-              <FeedbackAlert title="Operação concluída" tone="success" description={successMessage} />
+            {successFeedback ? (
+              <FeedbackAlert
+                title={successFeedback.title}
+                tone="success"
+                description={successFeedback.description}
+              />
             ) : null}
 
             {submitErrorMessage ? (
               <FeedbackAlert
-                title="Falha ao persistir avaliação"
+                title={submitErrorTitle}
                 tone="error"
                 description={submitErrorMessage}
                 details={submitErrorDetails}
@@ -371,24 +459,24 @@ export function SupervisorEvaluationWorkspace() {
 
             {isLocked ? (
               <FeedbackAlert
-                title="Avaliação bloqueada para edição"
+                title="Avaliacao bloqueada para edicao"
                 tone="warning"
-                description={`O processo está em ${formatProcessStatus(snapshot.workflow.status)}. Após a assinatura, a avaliação permanece apenas para consulta.`}
+                description={`O processo esta em ${formatProcessStatus(snapshot.workflow.status)}. Apos a assinatura, a avaliacao permanece apenas para consulta.`}
               />
             ) : null}
 
             {canRectify ? (
               <FeedbackAlert
-                title="Retificação liberada"
+                title="Retificacao liberada"
                 tone="warning"
-                description="A avaliação já foi submetida e ainda aguarda assinatura. Ajuste os campos necessários e use o botão de retificação para registrar uma nova versão."
+                description="A avaliacao ja foi submetida e ainda aguarda assinatura. Ajuste os campos necessarios e use o botao de retificacao para registrar uma nova versao."
               />
             ) : null}
 
             <div className="supervisor-evaluation-layout">
               <InfoCard
-                title="Conteúdo da avaliação"
-                description="Preencha resumo, comentários gerais e critérios avaliativos conforme a ficha funcional da chefia imediata."
+                title="Conteudo da avaliacao"
+                description="Preencha resumo, comentarios gerais e criterios avaliativos conforme a ficha funcional da chefia imediata."
               >
                 <div className="supervisor-evaluation-form">
                   <label className="field-group" htmlFor="evaluation-summary">
@@ -405,7 +493,7 @@ export function SupervisorEvaluationWorkspace() {
                   </label>
 
                   <label className="field-group" htmlFor="evaluation-general-comments">
-                    <span>Comentários gerais</span>
+                    <span>Comentarios gerais</span>
                     <textarea
                       id="evaluation-general-comments"
                       value={form.generalComments}
@@ -420,8 +508,8 @@ export function SupervisorEvaluationWorkspace() {
                   <div className="supervisor-evaluation-criteria">
                     <div className="supervisor-evaluation-criteria__header">
                       <div>
-                        <strong>Lista de critérios</strong>
-                        <p>Cadastre os critérios avaliados, nota de 1 a 5 e comentário opcional.</p>
+                        <strong>Lista de criterios</strong>
+                        <p>Cadastre os criterios avaliados, nota de 1 a 5 e comentario opcional.</p>
                       </div>
 
                       <button
@@ -435,7 +523,7 @@ export function SupervisorEvaluationWorkspace() {
                         }
                         disabled={isLocked || isSaving}
                       >
-                        Adicionar critério
+                        Adicionar criterio
                       </button>
                     </div>
 
@@ -443,7 +531,7 @@ export function SupervisorEvaluationWorkspace() {
                       {form.criteria.map((criterion, index) => (
                         <div key={`${criterion.code}-${index}`} className="supervisor-evaluation-criterion">
                           <div className="supervisor-evaluation-criterion__header">
-                            <strong>Critério {index + 1}</strong>
+                            <strong>Criterio {index + 1}</strong>
                             <button
                               type="button"
                               className="ghost-button"
@@ -464,7 +552,7 @@ export function SupervisorEvaluationWorkspace() {
 
                           <div className="supervisor-evaluation-criterion__grid">
                             <label className="field-group" htmlFor={`criterion-code-${index}`}>
-                              <span>Código</span>
+                              <span>Codigo</span>
                               <input
                                 id={`criterion-code-${index}`}
                                 value={criterion.code}
@@ -481,7 +569,7 @@ export function SupervisorEvaluationWorkspace() {
                             </label>
 
                             <label className="field-group" htmlFor={`criterion-label-${index}`}>
-                              <span>Título</span>
+                              <span>Titulo</span>
                               <input
                                 id={`criterion-label-${index}`}
                                 value={criterion.label}
@@ -521,7 +609,7 @@ export function SupervisorEvaluationWorkspace() {
                           </div>
 
                           <label className="field-group" htmlFor={`criterion-comment-${index}`}>
-                            <span>Comentário do critério (opcional)</span>
+                            <span>Comentario do criterio (opcional)</span>
                             <textarea
                               id={`criterion-comment-${index}`}
                               value={criterion.comment}
@@ -545,11 +633,11 @@ export function SupervisorEvaluationWorkspace() {
               </InfoCard>
 
               <InfoCard
-                title="Movimentação da etapa"
-                description="Comentário opcional que acompanha o salvamento, submissão ou retificação no histórico auditável."
+                title="Movimentacao da etapa"
+                description="Comentario opcional que acompanha o salvamento, submissao ou retificacao no historico auditavel."
               >
                 <label className="field-group" htmlFor="evaluation-action-comment">
-                  <span>Comentário da movimentação</span>
+                  <span>Comentario da movimentacao</span>
                   <textarea
                     id="evaluation-action-comment"
                     value={form.comment}
@@ -566,7 +654,7 @@ export function SupervisorEvaluationWorkspace() {
                     onClick={() => void handleMutation('draft')}
                     disabled={!canEditDraft || isSaving}
                   >
-                    {isSaving ? 'Salvando...' : 'Salvar rascunho'}
+                    {isSaving && activeMutation === 'draft' ? 'Salvando...' : 'Salvar rascunho'}
                   </button>
 
                   <button
@@ -574,7 +662,7 @@ export function SupervisorEvaluationWorkspace() {
                     onClick={() => void handleMutation('submit')}
                     disabled={!canEditDraft || isSaving}
                   >
-                    {isSaving ? 'Enviando...' : 'Submeter avaliação'}
+                    {isSaving && activeMutation === 'submit' ? 'Enviando...' : 'Submeter avaliacao'}
                   </button>
 
                   <button
@@ -583,7 +671,7 @@ export function SupervisorEvaluationWorkspace() {
                     onClick={() => void handleMutation('rectify')}
                     disabled={!canRectify || isSaving}
                   >
-                    {isSaving ? 'Retificando...' : 'Retificar'}
+                    {isSaving && activeMutation === 'rectify' ? 'Retificando...' : 'Retificar'}
                   </button>
                 </div>
               </InfoCard>

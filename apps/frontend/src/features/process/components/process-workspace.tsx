@@ -8,8 +8,9 @@ import { getTechnicalProcessSnapshot } from '@/shared/api/services/processes-ser
 import { useAuth } from '@/shared/auth/auth-context';
 import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { PageSection } from '@/shared/ui/page-section';
-import { ProcessNotFoundState } from '@/shared/ui/operational-states';
+import { ProcessRequestFeedback } from '@/shared/ui/process-request-feedback';
 
 import { ProcessActionsCard } from './process-actions-card';
 import { ProcessBlockersCard } from './process-blockers-card';
@@ -18,6 +19,11 @@ import { ProcessHistoryCard } from './process-history-card';
 import { ProcessListCard } from './process-list-card';
 import { ProcessStatusCard } from './process-status-card';
 import { ProcessTechnicalDetailsCard } from './process-technical-details-card';
+
+type SuccessFeedback = {
+  title: string;
+  description: string;
+};
 
 function getInitialProcessId() {
   return process.env.NEXT_PUBLIC_TECHNICAL_PROCESS_ID?.trim() || '';
@@ -49,6 +55,7 @@ export function ProcessWorkspace() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
+  const [successFeedback, setSuccessFeedback] = useState<SuccessFeedback | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const blockers = useMemo(() => getProcessBlockers(snapshot), [snapshot]);
@@ -57,9 +64,10 @@ export function ProcessWorkspace() {
     event.preventDefault();
 
     if (!session?.accessToken || processId.trim().length === 0) {
-      setErrorMessage('Informe um identificador de processo para consultar os dados disponíveis.');
+      setErrorMessage('Informe um identificador de processo para consultar os dados disponiveis.');
       setErrorDetails([]);
       setErrorStatus(null);
+      setSuccessFeedback(null);
       return;
     }
 
@@ -67,6 +75,7 @@ export function ProcessWorkspace() {
     setErrorMessage(null);
     setErrorDetails([]);
     setErrorStatus(null);
+    setSuccessFeedback(null);
 
     try {
       const nextSnapshot = await getTechnicalProcessSnapshot(
@@ -76,15 +85,21 @@ export function ProcessWorkspace() {
       );
       setSnapshot(nextSnapshot);
       setConsultedProcesses((currentItems) => upsertConsultedProcess(currentItems, nextSnapshot));
+      setSuccessFeedback({
+        title: 'Processo carregado',
+        description:
+          'A consulta operacional foi atualizada com workflow, historico e dados complementares liberados para este processo.',
+      });
     } catch (error) {
       const payload =
         typeof error === 'object' && error && 'payload' in error
           ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
           : undefined;
-      setErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar os dados do processo.'));
+      setErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar os dados do processo.'));
       setErrorDetails(getHttpErrorDetails(payload));
-      setErrorStatus(isHttpErrorStatus(error, 404) ? 404 : null);
+      setErrorStatus(isHttpErrorStatus(error, 404) ? 404 : isHttpErrorStatus(error, 403) ? 403 : null);
       setSnapshot(null);
+      setSuccessFeedback(null);
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +110,7 @@ export function ProcessWorkspace() {
       <PageSection
         eyebrow="Processos"
         title="Consulta operacional de processos"
-        description="Informe um processo para visualizar o status atual, as ações permitidas, o histórico e os dados complementares disponíveis para o seu perfil."
+        description="Informe um processo para visualizar o status atual, as acoes permitidas, o historico e os dados complementares disponiveis para o seu perfil."
       >
         <form className="inline-form" onSubmit={handleLoadProcess}>
           <label className="field-group" htmlFor="process-workspace-id">
@@ -115,25 +130,30 @@ export function ProcessWorkspace() {
           </button>
         </form>
 
+        {isLoading ? (
+          <InlineLoadingState
+            title="Consultando processo"
+            description="O painel esta sincronizando workflow, historico e informacoes complementares liberadas para o seu perfil."
+          />
+        ) : null}
+
         {errorMessage ? (
-          errorStatus === 404 ? (
-            <ProcessNotFoundState>
-              {errorDetails.length > 0 ? (
-                <ul className="content-list">
-                  {errorDetails.map((detail) => (
-                    <li key={detail}>{detail}</li>
-                  ))}
-                </ul>
-              ) : null}
-            </ProcessNotFoundState>
-          ) : (
-            <FeedbackAlert
-              title="Falha ao carregar processo"
-              tone="error"
-              description={errorMessage}
-              details={errorDetails}
-            />
-          )
+          <ProcessRequestFeedback
+            status={errorStatus}
+            message={errorMessage}
+            details={errorDetails}
+            genericTitle="Falha ao carregar processo"
+            notFoundTitle="Processo nao encontrado"
+            blockedTitle="Acesso indisponivel para este processo"
+          />
+        ) : null}
+
+        {successFeedback ? (
+          <FeedbackAlert
+            title={successFeedback.title}
+            tone="success"
+            description={successFeedback.description}
+          />
         ) : null}
 
         <div className="metrics-grid">
@@ -143,7 +163,7 @@ export function ProcessWorkspace() {
         {!snapshot && !errorMessage ? (
           <ContentState
             title="Nenhum processo carregado"
-            description="Faça uma consulta para visualizar os dados operacionais disponíveis para este perfil."
+            description="Faca uma consulta para visualizar os dados operacionais disponiveis para este perfil."
             tone="info"
           />
         ) : null}
@@ -160,7 +180,7 @@ export function ProcessWorkspace() {
 
         {snapshot?.supervisorEvaluationWarning ? (
           <FeedbackAlert
-            title="Visualização parcial"
+            title="Visualizacao parcial"
             tone="warning"
             description={snapshot.supervisorEvaluationWarning}
           />
