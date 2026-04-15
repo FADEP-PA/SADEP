@@ -24,7 +24,7 @@
 
 ## Bloco 1 — Ajustes transversais e consolidação da base
 
-### [ ] FT-01 — Padronizar semântica visual dos status
+### [x] FT-01 — Padronizar semântica visual dos status
 **Objetivo:** revisar e consolidar o uso visual de status no frontend.
 
 **Escopo:**

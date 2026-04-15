@@ -4,7 +4,7 @@ import { ContentState } from '@/shared/ui/content-state';
 
 import type { ProcessDashboardListItem } from '@/features/dashboard/types/process-dashboard-types';
 
-import { formatDateTime, formatProcessAction, formatProcessStatus, getStatusTone } from './process-formatters';
+import { formatDateTime, formatProcessAction, formatProcessStatus, getProcessStatusTone } from './process-formatters';
 
 type ProcessListCardProps = {
   items: ProcessDashboardListItem[];
@@ -34,7 +34,10 @@ export function ProcessListCard({ items, activeProcessId }: ProcessListCardProps
                   {item.availableActionsCount} ações liberadas · {item.historyCount} eventos auditáveis · última leitura {formatDateTime(item.lastViewedAt)}.
                 </p>
               </div>
-              <StatusBadge label={formatProcessStatus(item.status)} tone={getStatusTone(item.status)} />
+              <StatusBadge
+                label={formatProcessStatus(item.status)}
+                tone={getProcessStatusTone(item.status)}
+              />
             </div>
           ))}
         </div>

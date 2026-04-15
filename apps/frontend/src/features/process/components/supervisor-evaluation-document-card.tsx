@@ -1,80 +1,23 @@
 'use client';
 
-import { DocumentStatus, SignatureStatus, type SupervisorEvaluationWithDocumentContextRef } from '@aep-pa/contracts';
+import type { SupervisorEvaluationWithDocumentContextRef } from '@aep-pa/contracts';
 
 import { InfoCard } from '@/shared/ui/info-card';
 import { KeyValueList } from '@/shared/ui/key-value-list';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
-import { formatDateTime } from './process-formatters';
+import {
+  formatDateTime,
+  formatDocumentStatus,
+  formatRole,
+  formatSignatureStatus,
+  getDocumentStatusTone,
+  getSignatureStatusTone,
+} from './process-formatters';
 
 type SupervisorEvaluationDocumentCardProps = {
   evaluation: SupervisorEvaluationWithDocumentContextRef | null;
 };
-
-function getDocumentStatusLabel(status: DocumentStatus) {
-  if (status === DocumentStatus.DRAFT) {
-    return 'Rascunho';
-  }
-
-  if (status === DocumentStatus.CONSOLIDATED) {
-    return 'Consolidado';
-  }
-
-  if (status === DocumentStatus.READY_FOR_SIGNATURE) {
-    return 'Pronto para assinatura';
-  }
-
-  if (status === DocumentStatus.SIGNED) {
-    return 'Assinado';
-  }
-
-  return 'Invalidado/Substituído';
-}
-
-function getDocumentStatusTone(status: DocumentStatus): 'neutral' | 'info' | 'warning' | 'success' {
-  if (status === DocumentStatus.SIGNED) {
-    return 'success';
-  }
-
-  if (status === DocumentStatus.READY_FOR_SIGNATURE) {
-    return 'warning';
-  }
-
-  if (status === DocumentStatus.INVALIDATED_OR_SUPERSEDED) {
-    return 'warning';
-  }
-
-  return 'info';
-}
-
-function getSignatureStatusLabel(status: SignatureStatus) {
-  if (status === SignatureStatus.COMPLETED) {
-    return 'Assinada';
-  }
-
-  if (status === SignatureStatus.PENDING) {
-    return 'Pendente';
-  }
-
-  if (status === SignatureStatus.FAILED) {
-    return 'Falhou';
-  }
-
-  return 'Cancelada';
-}
-
-function getSignatureTone(status: SignatureStatus): 'neutral' | 'info' | 'warning' | 'success' {
-  if (status === SignatureStatus.COMPLETED) {
-    return 'success';
-  }
-
-  if (status === SignatureStatus.PENDING) {
-    return 'warning';
-  }
-
-  return 'warning';
-}
 
 export function SupervisorEvaluationDocumentCard({ evaluation }: SupervisorEvaluationDocumentCardProps) {
   if (!evaluation) {
@@ -107,7 +50,7 @@ export function SupervisorEvaluationDocumentCard({ evaluation }: SupervisorEvalu
             label: 'Status documental',
             value: (
               <StatusBadge
-                label={getDocumentStatusLabel(evaluation.documentContext.documentStatus)}
+                label={formatDocumentStatus(evaluation.documentContext.documentStatus)}
                 tone={getDocumentStatusTone(evaluation.documentContext.documentStatus)}
               />
             ),
@@ -122,10 +65,10 @@ export function SupervisorEvaluationDocumentCard({ evaluation }: SupervisorEvalu
       <ul className="timeline-list">
         {evaluation.documentContext.signatures.map((signature) => (
           <li key={signature.signatoryRole} className="timeline-list__item">
-            <strong>{signature.signatoryRole}</strong>
+            <strong>{formatRole(signature.signatoryRole)}</strong>
             <StatusBadge
-              label={getSignatureStatusLabel(signature.status)}
-              tone={getSignatureTone(signature.status)}
+              label={formatSignatureStatus(signature.status)}
+              tone={getSignatureStatusTone(signature.status)}
             />
             <span>{formatDateTime(signature.signedAt)}</span>
           </li>

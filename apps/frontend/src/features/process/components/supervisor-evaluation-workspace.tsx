@@ -22,7 +22,12 @@ import { PageSection } from '@/shared/ui/page-section';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
 import { ProcessActionsCard } from './process-actions-card';
-import { formatDateTime, formatProcessStatus, getStatusTone } from './process-formatters';
+import {
+  formatDateTime,
+  formatProcessStatus,
+  formatSupervisorEvaluationStatus,
+  getSupervisorEvaluationStatusTone,
+} from './process-formatters';
 import { ProcessHistoryCard } from './process-history-card';
 import { ProcessStatusCard } from './process-status-card';
 
@@ -125,24 +130,11 @@ function normalizePayload(form: EvaluationFormState): UpsertSupervisorEvaluation
   };
 }
 
-function getEvaluationStatusLabel(status: SupervisorEvaluationStatus | undefined) {
-  if (status === SupervisorEvaluationStatus.DRAFT) {
-    return 'Rascunho';
-  }
-
-  if (status === SupervisorEvaluationStatus.SUBMITTED) {
-    return 'Submetida';
-  }
-
-  return 'Ainda não iniciada';
-}
-
-
 function renderEvaluationStatus(status: SupervisorEvaluationStatus | undefined) {
   return (
     <StatusBadge
-      label={getEvaluationStatusLabel(status)}
-      tone={status ? getStatusTone(status) : 'neutral'}
+      label={formatSupervisorEvaluationStatus(status)}
+      tone={getSupervisorEvaluationStatusTone(status)}
     />
   );
 }

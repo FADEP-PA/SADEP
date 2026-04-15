@@ -4,7 +4,7 @@ import { KeyValueList } from '@/shared/ui/key-value-list';
 
 import type { ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
 
-import { formatProcessStatus, getStatusTone } from './process-formatters';
+import { formatProcessStatus, getProcessStatusTone } from './process-formatters';
 
 type ProcessStatusCardProps = {
   snapshot: ProcessDashboardSnapshot;
@@ -25,7 +25,7 @@ export function ProcessStatusCard({ snapshot }: ProcessStatusCardProps) {
             value: (
               <StatusBadge
                 label={formatProcessStatus(snapshot.workflow.status)}
-                tone={getStatusTone(snapshot.workflow.status)}
+                tone={getProcessStatusTone(snapshot.workflow.status)}
               />
             ),
           },
