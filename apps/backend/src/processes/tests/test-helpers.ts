@@ -16,6 +16,7 @@ import {
 
 import { hashPassword } from '../../common/security/password-hasher';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
+import { CesadStageReadService } from '../cesad-stage-read.service';
 import { ProcessesService } from '../processes.service';
 import { SelfEvaluationsService } from '../self-evaluations/self-evaluations.service';
 import { SupervisorEvaluationsService } from '../supervisor-evaluations/supervisor-evaluations.service';
@@ -24,6 +25,7 @@ export type TestContext = {
   prisma: PrismaClient;
   service: ProcessesService;
   processDocumentsService: ProcessDocumentsService;
+  cesadStageReadService: CesadStageReadService;
   supervisorEvaluationsService: SupervisorEvaluationsService;
   selfEvaluationsService: SelfEvaluationsService;
   databaseFile: string;
@@ -75,6 +77,10 @@ export async function createTestContext(databaseName: string): Promise<TestConte
 
   const processesService = new ProcessesService(prisma as never);
   const processDocumentsService = new ProcessDocumentsService(prisma as never, processesService);
+  const cesadStageReadService = new CesadStageReadService(
+    prisma as never,
+    processDocumentsService,
+  );
   const selfEvaluationsService = new SelfEvaluationsService(
     prisma as never,
     processesService,
@@ -85,6 +91,7 @@ export async function createTestContext(databaseName: string): Promise<TestConte
     prisma,
     service: processesService,
     processDocumentsService,
+    cesadStageReadService,
     supervisorEvaluationsService: new SupervisorEvaluationsService(
       prisma as never,
       processesService,
@@ -123,10 +130,40 @@ export async function createProcess(
   status: ProcessStatus,
   evaluatedUserId: string,
 ) {
-  return prisma.evaluationProcess.create({
+  const process = await prisma.evaluationProcess.create({
     data: {
       evaluatedUserId,
       status: toDatabaseProcessStatus(status),
+    },
+  });
+
+  const defaultStage = await prisma.processStage.create({
+    data: {
+      evaluationProcessId: process.id,
+      sequence: 1,
+      stageCode: 'ETAPA_1',
+      startedAt: new Date(),
+    },
+  });
+
+  return {
+    ...process,
+    defaultStageId: defaultStage.id,
+  };
+}
+
+export async function createProcessStage(
+  prisma: PrismaClient,
+  processId: string,
+  sequence: number,
+  stageCode = `ETAPA_${sequence}`,
+) {
+  return prisma.processStage.create({
+    data: {
+      evaluationProcessId: processId,
+      sequence,
+      stageCode,
+      startedAt: new Date(),
     },
   });
 }

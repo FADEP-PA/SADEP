@@ -47,9 +47,10 @@ export class SupervisorEvaluationsService {
   ): Promise<SupervisorEvaluationResponseDto | null> {
     this.ensureAllowedRole(user.role, 'read');
     await this.processesService.ensureProcessExists(processId);
+    const currentStage = await this.processesService.resolveCurrentStageOrThrow(this.prismaService, processId);
 
     const evaluation = await this.prismaService.supervisorEvaluation.findUnique({
-      where: { processId },
+      where: { processStageId: currentStage.id },
     });
 
     if (!evaluation) {
@@ -69,6 +70,7 @@ export class SupervisorEvaluationsService {
       const documentContext = await this.processDocumentsService.getSupervisorEvaluationDocumentContext(
         this.prismaService,
         processId,
+        currentStage.id,
       );
       if (documentContext) {
         response.documentContext = documentContext;
@@ -88,6 +90,7 @@ export class SupervisorEvaluationsService {
 
     return this.prismaService.$transaction(async (transaction) => {
       const process = await this.processesService.findProcessOrThrow(transaction, processId);
+      const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
 
       if (this.toContractProcessStatus(process.status) !== ProcessStatus.EM_AVALIACAO) {
         throw new BadRequestException(
@@ -96,7 +99,7 @@ export class SupervisorEvaluationsService {
       }
 
       const existingEvaluation = await transaction.supervisorEvaluation.findUnique({
-        where: { processId },
+        where: { processStageId: currentStage.id },
       });
 
       const occurredAt = new Date().toISOString();
@@ -109,8 +112,9 @@ export class SupervisorEvaluationsService {
 
       const savedEvaluation = existingEvaluation
         ? await transaction.supervisorEvaluation.update({
-            where: { processId },
+            where: { processStageId: currentStage.id },
             data: {
+              processStageId: currentStage.id,
               evaluatorUserId: user.sub,
               status: PrismaSupervisorEvaluationStatus.DRAFT,
               summary: normalizedPayload.summary,
@@ -122,6 +126,7 @@ export class SupervisorEvaluationsService {
         : await transaction.supervisorEvaluation.create({
             data: {
               processId,
+              processStageId: currentStage.id,
               evaluatorUserId: user.sub,
               status: PrismaSupervisorEvaluationStatus.DRAFT,
               summary: normalizedPayload.summary,
@@ -133,6 +138,8 @@ export class SupervisorEvaluationsService {
       await transaction.auditEvent.create({
         data: this.buildAuditEvent({
           processId,
+          processStageId: currentStage.id,
+          stageSequence: currentStage.sequence,
           user,
           eventType,
           action,
@@ -160,6 +167,7 @@ export class SupervisorEvaluationsService {
 
     return this.prismaService.$transaction(async (transaction) => {
       const process = await this.processesService.findProcessOrThrow(transaction, processId);
+      const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
       const processStatus = this.toContractProcessStatus(process.status);
 
       if (processStatus !== ProcessStatus.EM_AVALIACAO) {
@@ -169,7 +177,7 @@ export class SupervisorEvaluationsService {
       }
 
       const existingEvaluation = await transaction.supervisorEvaluation.findUnique({
-        where: { processId },
+        where: { processStageId: currentStage.id },
       });
 
       const beforeState = existingEvaluation
@@ -179,8 +187,9 @@ export class SupervisorEvaluationsService {
       const submittedAt = new Date();
       const savedEvaluation = existingEvaluation
         ? await transaction.supervisorEvaluation.update({
-            where: { processId },
+            where: { processStageId: currentStage.id },
             data: {
+              processStageId: currentStage.id,
               evaluatorUserId: user.sub,
               summary: normalizedPayload.summary,
               generalComments: normalizedPayload.generalComments,
@@ -192,6 +201,7 @@ export class SupervisorEvaluationsService {
         : await transaction.supervisorEvaluation.create({
             data: {
               processId,
+              processStageId: currentStage.id,
               evaluatorUserId: user.sub,
               summary: normalizedPayload.summary,
               generalComments: normalizedPayload.generalComments,
@@ -207,6 +217,8 @@ export class SupervisorEvaluationsService {
         await transaction.auditEvent.create({
           data: this.buildAuditEvent({
             processId,
+            processStageId: currentStage.id,
+            stageSequence: currentStage.sequence,
             user,
             eventType: AuditEventType.EVALUATION_STARTED,
             action: ProcessAction.START_EVALUATION,
@@ -222,6 +234,8 @@ export class SupervisorEvaluationsService {
       await transaction.auditEvent.create({
         data: this.buildAuditEvent({
           processId,
+          processStageId: currentStage.id,
+          stageSequence: currentStage.sequence,
           user,
           eventType: AuditEventType.EVALUATION_COMPLETED,
           action: ProcessAction.COMPLETE_EVALUATION,
@@ -242,6 +256,7 @@ export class SupervisorEvaluationsService {
       const { documentId } = await this.processDocumentsService.ensureSupervisorEvaluationDocument(
         transaction,
         processId,
+        currentStage.id,
         user,
       );
 
@@ -259,6 +274,7 @@ export class SupervisorEvaluationsService {
       await this.processDocumentsService.createSupervisorEvaluationSignatures(
         transaction,
         processId,
+        currentStage.id,
         documentId,
         user.sub, // supervisor user ID
         processWithIntern.evaluatedUserId, // intern user ID
@@ -279,6 +295,7 @@ export class SupervisorEvaluationsService {
 
     return this.prismaService.$transaction(async (transaction) => {
       const process = await this.processesService.findProcessOrThrow(transaction, processId);
+      const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
       const processStatus = this.toContractProcessStatus(process.status);
 
       if (processStatus !== ProcessStatus.AGUARDANDO_ASSINATURA) {
@@ -288,7 +305,7 @@ export class SupervisorEvaluationsService {
       }
 
       const existingEvaluation = await transaction.supervisorEvaluation.findUnique({
-        where: { processId },
+        where: { processStageId: currentStage.id },
       });
 
       if (!existingEvaluation) {
@@ -303,6 +320,7 @@ export class SupervisorEvaluationsService {
       const canRectify = await this.processDocumentsService.canRectifySupervisorEvaluation(
         transaction,
         processId,
+        currentStage.id,
       );
 
       if (!canRectify) {
@@ -310,8 +328,9 @@ export class SupervisorEvaluationsService {
       }
 
       const rectifiedEvaluation = await transaction.supervisorEvaluation.update({
-        where: { processId },
+        where: { processStageId: currentStage.id },
         data: {
+          processStageId: currentStage.id,
           evaluatorUserId: user.sub,
           summary: normalizedPayload.summary,
           generalComments: normalizedPayload.generalComments,
@@ -324,6 +343,8 @@ export class SupervisorEvaluationsService {
       await transaction.auditEvent.create({
         data: this.buildAuditEvent({
           processId,
+          processStageId: currentStage.id,
+          stageSequence: currentStage.sequence,
           user,
           eventType: AuditEventType.EVALUATION_RECTIFIED,
           action: ProcessAction.RECTIFY_EVALUATION,
@@ -487,6 +508,8 @@ export class SupervisorEvaluationsService {
 
   private buildAuditEvent(params: {
     processId: string;
+    processStageId: string;
+    stageSequence: number;
     user: AuthenticatedUser;
     eventType: AuditEventType;
     action: ProcessAction;
@@ -512,6 +535,8 @@ export class SupervisorEvaluationsService {
         occurredAt: params.occurredAt,
         processStatus: params.processStatus,
         origin: 'SUPERVISOR_EVALUATION',
+        processStageId: params.processStageId,
+        stageSequence: params.stageSequence,
         ...(params.comment ? { comment: params.comment } : {}),
       },
     };
@@ -520,6 +545,7 @@ export class SupervisorEvaluationsService {
   private toResponseDto(evaluation: {
     id: string;
     processId: string;
+    processStageId: string;
     evaluatorUserId: string;
     status: PrismaSupervisorEvaluationStatus;
     summary: string;
@@ -532,6 +558,7 @@ export class SupervisorEvaluationsService {
     return {
       id: evaluation.id,
       processId: evaluation.processId,
+      processStageId: evaluation.processStageId,
       evaluatorUserId: evaluation.evaluatorUserId,
       status: this.toContractEvaluationStatus(evaluation.status),
       summary: evaluation.summary,

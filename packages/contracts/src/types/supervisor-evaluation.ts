@@ -20,6 +20,7 @@ export interface SupervisorEvaluationContentInput {
 export interface SupervisorEvaluationRef {
   id: string;
   processId: string;
+  processStageId: string;
   evaluatorUserId: string;
   status: SupervisorEvaluationStatus;
   summary: string;

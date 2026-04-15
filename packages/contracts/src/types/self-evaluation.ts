@@ -3,6 +3,7 @@ import type { SelfEvaluationStatus } from '../enums';
 export interface SelfEvaluationRef {
   id: string;
   processId: string;
+  processStageId: string;
   authorUserId: string;
   status: SelfEvaluationStatus;
   selfReflection: string;

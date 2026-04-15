@@ -7,6 +7,7 @@ import type {
   WorkflowResponse,
 } from '@/features/dashboard/types/process-dashboard-types';
 import {
+  CesadStageReadSnapshotRef,
   ProcessAction,
   SupervisorEvaluationContentInput,
   SupervisorEvaluationWithDocumentContextRef,
@@ -50,6 +51,20 @@ export async function getWorkflowHistory(processId: string, accessToken: string)
 export async function getSupervisorEvaluation(processId: string, accessToken: string) {
   return httpRequest<SupervisorEvaluationWithDocumentContextRef | null>(
     `/processes/${processId}/supervisor-evaluation`,
+    {
+      method: 'GET',
+      token: accessToken,
+    },
+  );
+}
+
+export async function getCesadStageReadSnapshot(
+  processId: string,
+  stageSequence: number,
+  accessToken: string,
+) {
+  return httpRequest<CesadStageReadSnapshotRef>(
+    `/processes/${processId}/stages/${stageSequence}/consolidated-read`,
     {
       method: 'GET',
       token: accessToken,

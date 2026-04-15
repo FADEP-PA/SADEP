@@ -104,6 +104,12 @@ export async function runSupervisorEvaluationsServiceTests() {
       auditEvents[5].occurredAt.toISOString(),
       (auditEvents[5].metadata as { occurredAt?: string }).occurredAt,
     );
+    assert(
+      auditEvents.every((event) => {
+        const metadata = event.metadata as { processStageId?: string; stageSequence?: number };
+        return metadata.processStageId === process.defaultStageId && metadata.stageSequence === 1;
+      }),
+    );
 
     const rectified = await context.supervisorEvaluationsService.rectify(
       process.id,
@@ -129,6 +135,10 @@ export async function runSupervisorEvaluationsServiceTests() {
       },
     });
     assert.equal((rectificationAudit.metadata as { comment?: string }).comment, 'Ajuste antes da assinatura.');
+    assert.equal(
+      (rectificationAudit.metadata as { processStageId?: string }).processStageId,
+      process.defaultStageId,
+    );
 
     await assert.rejects(
       () =>
@@ -154,6 +164,7 @@ export async function runSupervisorEvaluationsServiceTests() {
     await context.prisma.supervisorEvaluation.create({
       data: {
         processId: signedProcess.id,
+        processStageId: signedProcess.defaultStageId,
         evaluatorUserId: supervisor.id,
         status: SupervisorEvaluationStatus.SUBMITTED,
         summary: 'Avaliação já assinada pelo servidor.',

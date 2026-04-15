@@ -32,7 +32,7 @@ function getDocumentStatusLabel(status: DocumentStatus) {
   return 'Invalidado/Substituído';
 }
 
-function getDocumentStatusTone(status: DocumentStatus): 'neutral' | 'info' | 'warning' | 'success' | 'danger' {
+function getDocumentStatusTone(status: DocumentStatus): 'neutral' | 'info' | 'warning' | 'success' {
   if (status === DocumentStatus.SIGNED) {
     return 'success';
   }
@@ -42,7 +42,7 @@ function getDocumentStatusTone(status: DocumentStatus): 'neutral' | 'info' | 'wa
   }
 
   if (status === DocumentStatus.INVALIDATED_OR_SUPERSEDED) {
-    return 'danger';
+    return 'warning';
   }
 
   return 'info';
@@ -64,7 +64,7 @@ function getSignatureStatusLabel(status: SignatureStatus) {
   return 'Cancelada';
 }
 
-function getSignatureTone(status: SignatureStatus): 'neutral' | 'info' | 'warning' | 'success' | 'danger' {
+function getSignatureTone(status: SignatureStatus): 'neutral' | 'info' | 'warning' | 'success' {
   if (status === SignatureStatus.COMPLETED) {
     return 'success';
   }
@@ -73,7 +73,7 @@ function getSignatureTone(status: SignatureStatus): 'neutral' | 'info' | 'warnin
     return 'warning';
   }
 
-  return 'danger';
+  return 'warning';
 }
 
 export function SupervisorEvaluationDocumentCard({ evaluation }: SupervisorEvaluationDocumentCardProps) {

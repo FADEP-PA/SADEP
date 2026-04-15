@@ -85,6 +85,7 @@ export async function runProcessesServiceTests() {
     await context.prisma.supervisorEvaluation.create({
       data: {
         processId: completedProcess.id,
+        processStageId: completedProcess.defaultStageId,
         evaluatorUserId: completedSupervisor.id,
         status: 'SUBMITTED',
         summary: 'Avaliação concluída para liberar assinatura.',
@@ -105,8 +106,16 @@ export async function runProcessesServiceTests() {
     const transitionEvent = await context.prisma.auditEvent.findFirstOrThrow({
       where: { evaluationProcessId: completedProcess.id },
     });
-    const metadata = transitionEvent.metadata as { occurredAt?: string };
+    const metadata = transitionEvent.metadata as {
+      occurredAt?: string;
+      processStageId?: string;
+      stageSequence?: number;
+      stageCode?: string;
+    };
     assert.equal(transitionEvent.occurredAt.toISOString(), metadata.occurredAt);
+    assert.equal(metadata.processStageId, completedProcess.defaultStageId);
+    assert.equal(metadata.stageSequence, 1);
+    assert.equal(metadata.stageCode, 'ETAPA_1');
 
     const awaitingSignatureProcess = await createProcess(
       context.prisma,

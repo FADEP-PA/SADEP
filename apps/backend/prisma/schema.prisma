@@ -116,8 +116,8 @@ model EvaluationProcess {
   stages          ProcessStage[]
   auditEvents     AuditEvent[]
   documents       ProcessDocument[]
-  supervisorEvaluation SupervisorEvaluation?
-  selfEvaluation       SelfEvaluation?
+  supervisorEvaluations SupervisorEvaluation[]
+  selfEvaluations       SelfEvaluation[]
 
   @@index([evaluatedUserId])
   @@index([status])
@@ -134,6 +134,8 @@ model ProcessStage {
   updatedAt           DateTime          @updatedAt
   evaluationProcess   EvaluationProcess @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   documents           ProcessDocument[]
+  supervisorEvaluation SupervisorEvaluation?
+  selfEvaluation       SelfEvaluation?
 
   @@unique([evaluationProcessId, sequence])
   @@unique([evaluationProcessId, stageCode])
@@ -173,7 +175,7 @@ model ProcessDocument {
   processStage        ProcessStage?     @relation(fields: [processStageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   signatureRecords    SignatureRecord[]
 
-  @@unique([evaluationProcessId, documentType])
+  @@unique([evaluationProcessId, processStageId, documentType])
   @@index([evaluationProcessId])
   @@index([processStageId])
   @@index([documentType, documentStatus])
@@ -182,7 +184,8 @@ model ProcessDocument {
 
 model SupervisorEvaluation {
   id                String                     @id @default(cuid())
-  processId         String                     @unique
+  processId         String
+  processStageId    String                     @unique
   evaluatorUserId   String
   status            SupervisorEvaluationStatus @default(DRAFT)
   summary           String
@@ -192,15 +195,19 @@ model SupervisorEvaluation {
   createdAt         DateTime                   @default(now())
   updatedAt         DateTime                   @updatedAt
   evaluationProcess EvaluationProcess          @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  processStage      ProcessStage               @relation(fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   evaluatorUser     User                       @relation("SupervisorEvaluationEvaluator", fields: [evaluatorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
+  @@unique([processId, processStageId])
+  @@index([processId])
   @@index([evaluatorUserId])
   @@index([status])
 }
 
 model SelfEvaluation {
   id                String               @id @default(cuid())
-  processId         String               @unique
+  processId         String
+  processStageId    String               @unique
   authorUserId      String
   status            SelfEvaluationStatus @default(DRAFT)
   selfReflection    String
@@ -209,8 +216,11 @@ model SelfEvaluation {
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
   evaluationProcess EvaluationProcess    @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  processStage      ProcessStage         @relation(fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   authorUser        User                 @relation("SelfEvaluationAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
+  @@unique([processId, processStageId])
+  @@index([processId])
   @@index([authorUserId])
   @@index([status])
 }

@@ -125,6 +125,76 @@ export class ProcessesService {
     }
   }
 
+  async resolveCurrentStageOrThrow(
+    transaction: PrismaTransactionClient,
+    processId: string,
+  ): Promise<{
+    id: string;
+    sequence: number;
+    stageCode: string;
+    startedAt: Date | null;
+    endedAt: Date | null;
+  }> {
+    const stages = await transaction.processStage.findMany({
+      where: { evaluationProcessId: processId },
+      select: {
+        id: true,
+        sequence: true,
+        stageCode: true,
+        startedAt: true,
+        endedAt: true,
+      },
+      orderBy: { sequence: 'asc' },
+    });
+
+    if (stages.length === 0) {
+      throw new NotFoundException(`No process stage was found for evaluation process ${processId}`);
+    }
+
+    const openStages = stages.filter((stage) => stage.endedAt === null);
+    return (openStages.at(-1) ?? stages.at(-1)) as {
+      id: string;
+      sequence: number;
+      stageCode: string;
+      startedAt: Date | null;
+      endedAt: Date | null;
+    };
+  }
+
+  async findStageBySequenceOrThrow(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    sequence: number,
+  ): Promise<{
+    id: string;
+    sequence: number;
+    stageCode: string;
+    startedAt: Date | null;
+    endedAt: Date | null;
+  }> {
+    const stage = await transaction.processStage.findFirst({
+      where: {
+        evaluationProcessId: processId,
+        sequence,
+      },
+      select: {
+        id: true,
+        sequence: true,
+        stageCode: true,
+        startedAt: true,
+        endedAt: true,
+      },
+    });
+
+    if (!stage) {
+      throw new NotFoundException(
+        `Process stage ${sequence} was not found for evaluation process ${processId}`,
+      );
+    }
+
+    return stage;
+  }
+
   async transitionWorkflowInTransaction(
     transaction: PrismaTransactionClient,
     processId: string,
@@ -137,6 +207,7 @@ export class ProcessesService {
 
     const normalizedComment = this.normalizeComment(payload.comment);
     const process = await this.findProcessOrThrow(transaction, processId);
+    const currentStage = await this.resolveCurrentStageOrThrow(transaction, processId);
     const currentStatus = this.toContractProcessStatus(process.status);
     const transition = getWorkflowTransition(currentStatus, payload.action);
 
@@ -156,7 +227,7 @@ export class ProcessesService {
 
     if (payload.action === ProcessAction.RELEASE_FOR_SERVER_SIGNATURE) {
       const supervisorEvaluation = await transaction.supervisorEvaluation.findUnique({
-        where: { processId },
+        where: { processStageId: currentStage.id },
         select: { status: true },
       });
 
@@ -168,7 +239,11 @@ export class ProcessesService {
     }
 
     if (payload.action === ProcessAction.SEND_TO_CESAD) {
-      const documentsComplete = await this.areRequiredStageDocumentsComplete(transaction, processId);
+      const documentsComplete = await this.areRequiredStageDocumentsComplete(
+        transaction,
+        processId,
+        currentStage.id,
+      );
 
       if (!documentsComplete) {
         throw new BadRequestException(
@@ -190,6 +265,9 @@ export class ProcessesService {
       performedByRole: user.role,
       occurredAt,
       processStatus: transition.to,
+      processStageId: currentStage.id,
+      stageSequence: currentStage.sequence,
+      stageCode: currentStage.stageCode,
       ...(normalizedComment ? { comment: normalizedComment } : {}),
     };
 
@@ -225,10 +303,12 @@ export class ProcessesService {
   async areRequiredStageDocumentsComplete(
     transaction: PrismaTransactionClient,
     processId: string,
+    processStageId: string,
   ): Promise<boolean> {
     const documents = await transaction.processDocument.findMany({
       where: {
         evaluationProcessId: processId,
+        processStageId,
         documentType: {
           in: [PrismaDocumentType.SUPERVISOR_EVALUATION, PrismaDocumentType.SELF_EVALUATION],
         },

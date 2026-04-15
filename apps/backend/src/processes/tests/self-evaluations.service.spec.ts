@@ -73,7 +73,7 @@ export async function runSelfEvaluationsTests() {
 
     const initialFetch = await context.selfEvaluationsService.getByProcessId(process.id, ownInternUser);
     assert.equal(initialFetch, null);
-    assert.equal(await context.prisma.selfEvaluation.count({ where: { processId: process.id } }), 0);
+    assert.equal(await context.prisma.selfEvaluation.count({ where: { processStageId: process.defaultStageId } }), 0);
 
     const createdDraft = await context.selfEvaluationsService.saveDraft(
       process.id,
@@ -147,12 +147,11 @@ export async function runSelfEvaluationsTests() {
     });
     assert.equal(persistedProcess.status, ProcessStatus.AGUARDANDO_ASSINATURA);
 
-    const persistedDocument = await context.prisma.processDocument.findUniqueOrThrow({
+    const persistedDocument = await context.prisma.processDocument.findFirstOrThrow({
       where: {
-        evaluationProcessId_documentType: {
-          evaluationProcessId: process.id,
-          documentType: DocumentType.SELF_EVALUATION,
-        },
+        evaluationProcessId: process.id,
+        processStageId: process.defaultStageId,
+        documentType: DocumentType.SELF_EVALUATION,
       },
       include: {
         signatureRecords: true,
@@ -211,12 +210,11 @@ export async function runSelfEvaluationsTests() {
     assert.equal(signedBySupervisor.documentContext?.documentStatus, DocumentStatus.SIGNED);
     assert.equal(signedBySupervisor.documentContext?.supervisorSignaturePending, false);
 
-    const signedDocument = await context.prisma.processDocument.findUniqueOrThrow({
+    const signedDocument = await context.prisma.processDocument.findFirstOrThrow({
       where: {
-        evaluationProcessId_documentType: {
-          evaluationProcessId: process.id,
-          documentType: DocumentType.SELF_EVALUATION,
-        },
+        evaluationProcessId: process.id,
+        processStageId: process.defaultStageId,
+        documentType: DocumentType.SELF_EVALUATION,
       },
       include: {
         signatureRecords: true,
@@ -276,6 +274,12 @@ export async function runSelfEvaluationsTests() {
         AuditEventType.SELF_EVALUATION_SUBMITTED,
       ],
     );
+    assert(
+      selfEvaluationAuditEvents.every((event) => {
+        const metadata = event.metadata as { processStageId?: string; stageSequence?: number };
+        return metadata.processStageId === process.defaultStageId && metadata.stageSequence === 1;
+      }),
+    );
     assert.deepEqual(
       selfEvaluationDocumentAuditEvents.map((event) => event.eventType),
       [
@@ -284,6 +288,12 @@ export async function runSelfEvaluationsTests() {
         AuditEventType.SIGNATURE_REQUESTED,
         AuditEventType.DOCUMENT_SIGNED,
       ],
+    );
+    assert(
+      selfEvaluationDocumentAuditEvents.every((event) => {
+        const metadata = event.metadata as { processStageId?: string; stageSequence?: number };
+        return metadata.processStageId === process.defaultStageId && metadata.stageSequence === 1;
+      }),
     );
 
     const workflowAuditEvents = auditEvents.filter((event) => event.eventType === AuditEventType.SENT_TO_CESAD);
@@ -295,6 +305,10 @@ export async function runSelfEvaluationsTests() {
     assert.equal(
       (workflowAuditEvents[0].metadata as { action?: string }).action,
       ProcessAction.SEND_TO_CESAD,
+    );
+    assert.equal(
+      (workflowAuditEvents[0].metadata as { processStageId?: string }).processStageId,
+      process.defaultStageId,
     );
 
     const finalSelfDocumentSignedEvent = selfEvaluationDocumentAuditEvents.at(-1);
@@ -322,12 +336,11 @@ export async function runSelfEvaluationsTests() {
       ownInternUser,
       buildSelfEvaluationPayload({ selfReflection: 'Fluxo com assinatura pendente removida artificialmente.' }),
     );
-    const noPendingSelfDocument = await context.prisma.processDocument.findUniqueOrThrow({
+    const noPendingSelfDocument = await context.prisma.processDocument.findFirstOrThrow({
       where: {
-        evaluationProcessId_documentType: {
-          evaluationProcessId: noPendingSignatureProcess.id,
-          documentType: DocumentType.SELF_EVALUATION,
-        },
+        evaluationProcessId: noPendingSignatureProcess.id,
+        processStageId: noPendingSignatureProcess.defaultStageId,
+        documentType: DocumentType.SELF_EVALUATION,
       },
       include: {
         signatureRecords: true,
@@ -415,17 +428,20 @@ export async function runSelfEvaluationsTests() {
       where: {
         processDocument: {
           evaluationProcessId: missingDocumentProcess.id,
+          processStageId: missingDocumentProcess.defaultStageId,
           documentType: DocumentType.SELF_EVALUATION,
         },
       },
     });
-    await context.prisma.processDocument.delete({
+    const missingSelfDocument = await context.prisma.processDocument.findFirstOrThrow({
       where: {
-        evaluationProcessId_documentType: {
-          evaluationProcessId: missingDocumentProcess.id,
-          documentType: DocumentType.SELF_EVALUATION,
-        },
+        evaluationProcessId: missingDocumentProcess.id,
+        processStageId: missingDocumentProcess.defaultStageId,
+        documentType: DocumentType.SELF_EVALUATION,
       },
+    });
+    await context.prisma.processDocument.delete({
+      where: { id: missingSelfDocument.id },
     });
     await assert.rejects(
       () => context.selfEvaluationsService.sign(missingDocumentProcess.id, supervisorUser),
@@ -455,17 +471,20 @@ export async function runSelfEvaluationsTests() {
       where: {
         processDocument: {
           evaluationProcessId: incompleteStageProcess.id,
+          processStageId: incompleteStageProcess.defaultStageId,
           documentType: DocumentType.SUPERVISOR_EVALUATION,
         },
       },
     });
-    await context.prisma.processDocument.delete({
+    const incompleteSupervisorDocument = await context.prisma.processDocument.findFirstOrThrow({
       where: {
-        evaluationProcessId_documentType: {
-          evaluationProcessId: incompleteStageProcess.id,
-          documentType: DocumentType.SUPERVISOR_EVALUATION,
-        },
+        evaluationProcessId: incompleteStageProcess.id,
+        processStageId: incompleteStageProcess.defaultStageId,
+        documentType: DocumentType.SUPERVISOR_EVALUATION,
       },
+    });
+    await context.prisma.processDocument.delete({
+      where: { id: incompleteSupervisorDocument.id },
     });
     const signedWithoutStageCompletion = await context.selfEvaluationsService.sign(
       incompleteStageProcess.id,

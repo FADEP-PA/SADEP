@@ -1,0 +1,500 @@
+'use client';
+
+import { useState, type FormEvent } from 'react';
+import { DocumentType, UserRole, type CesadStageReadSnapshotRef } from '@aep-pa/contracts';
+
+import { getCesadStageReadSnapshot } from '@/shared/api/services/processes-service';
+import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
+import { AuthGuard } from '@/shared/auth/auth-guard';
+import { useAuth } from '@/shared/auth/auth-context';
+import { ContentState } from '@/shared/ui/content-state';
+import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { InfoCard } from '@/shared/ui/info-card';
+import { KeyValueList } from '@/shared/ui/key-value-list';
+import { PageSection } from '@/shared/ui/page-section';
+import { StatusBadge } from '@/shared/ui/status-badge';
+import {
+  formatDateTime,
+  formatDocumentStatus,
+  formatDocumentType,
+  formatProcessAction,
+  formatProcessStatus,
+  formatRole,
+  formatSignatureStatus,
+  getStatusTone,
+} from '@/features/process/components/process-formatters';
+
+function getInitialStageSequence() {
+  return '1';
+}
+
+function getStageReadBadgeTone(document: { exists: boolean; documentStatus: string | null }) {
+  if (!document.exists) {
+    return 'warning' as const;
+  }
+
+  if (document.documentStatus === 'SIGNED') {
+    return 'success' as const;
+  }
+
+  if (document.documentStatus === 'READY_FOR_SIGNATURE') {
+    return 'warning' as const;
+  }
+
+  return 'info' as const;
+}
+
+function getHistoryDescription(item: CesadStageReadSnapshotRef['history'][number]) {
+  if (item.action) {
+    return formatProcessAction(item.action);
+  }
+
+  return item.eventType;
+}
+
+function getMissingStageDocumentDescription(documentType: DocumentType) {
+  if (documentType === DocumentType.CESAD_OPINION) {
+    return 'Parecer da etapa ainda não emitido.';
+  }
+
+  return 'Documento ainda não formalizado para a etapa.';
+}
+
+function getStageInstructionSummary(
+  documentationStatus: CesadStageReadSnapshotRef['documentationStatus'],
+) {
+  switch (documentationStatus.stageInstructionStatus) {
+    case 'COMPLETE':
+      return {
+        label: 'Etapa documentalmente completa',
+        tone: 'success' as const,
+      };
+    case 'PRESENT_WITH_PENDING_SIGNATURES':
+      return {
+        label: 'Documentos presentes com assinaturas pendentes',
+        tone: 'warning' as const,
+      };
+    default:
+      return {
+        label: 'Documentos obrigatórios ausentes',
+        tone: 'warning' as const,
+      };
+  }
+}
+
+export function CesadStageReadWorkspace() {
+  const { session } = useAuth();
+  const [processId, setProcessId] = useState('');
+  const [stageSequenceInput, setStageSequenceInput] = useState(getInitialStageSequence);
+  const [snapshot, setSnapshot] = useState<CesadStageReadSnapshotRef | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const stageInstructionSummary = snapshot
+    ? getStageInstructionSummary(snapshot.documentationStatus)
+    : null;
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const normalizedProcessId = processId.trim();
+    const parsedStageSequence = Number.parseInt(stageSequenceInput, 10);
+
+    if (!session?.accessToken || normalizedProcessId.length === 0) {
+      setErrorMessage('Informe um identificador de processo para consultar a etapa.');
+      setErrorDetails([]);
+      return;
+    }
+
+    if (!Number.isInteger(parsedStageSequence) || parsedStageSequence <= 0) {
+      setErrorMessage('Informe um número de etapa válido.');
+      setErrorDetails([]);
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage(null);
+    setErrorDetails([]);
+
+    try {
+      const nextSnapshot = await getCesadStageReadSnapshot(
+        normalizedProcessId,
+        parsedStageSequence,
+        session.accessToken,
+      );
+      setSnapshot(nextSnapshot);
+    } catch (error) {
+      const payload =
+        typeof error === 'object' && error && 'payload' in error
+          ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
+          : undefined;
+      setErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar a leitura consolidada da etapa.'));
+      setErrorDetails(getHttpErrorDetails(payload));
+      setSnapshot(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER]}>
+      <div className="cesad-stage-read">
+        <PageSection
+          eyebrow="CESAD"
+          title="Leitura consolidada da etapa"
+          description="Consulta somente leitura, focada em uma etapa específica, com processo, servidor, avaliações, documentos, assinaturas e histórico resumido relevante."
+        >
+          <form className="inline-form cesad-stage-read__form" onSubmit={handleSubmit}>
+            <label className="field-group" htmlFor="cesad-stage-process-id">
+              <span>Identificador do processo</span>
+              <input
+                id="cesad-stage-process-id"
+                name="processId"
+                placeholder="Informe o ID do processo"
+                value={processId}
+                onChange={(event) => setProcessId(event.target.value)}
+                disabled={isLoading}
+              />
+            </label>
+
+            <label className="field-group" htmlFor="cesad-stage-sequence">
+              <span>Etapa</span>
+              <input
+                id="cesad-stage-sequence"
+                name="stageSequence"
+                inputMode="numeric"
+                placeholder="1"
+                value={stageSequenceInput}
+                onChange={(event) => setStageSequenceInput(event.target.value)}
+                disabled={isLoading}
+              />
+            </label>
+
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? 'Carregando etapa...' : 'Abrir etapa'}
+            </button>
+          </form>
+
+          {errorMessage ? (
+            <FeedbackAlert
+              title="Falha ao carregar leitura consolidada"
+              tone="error"
+              description={errorMessage}
+              details={errorDetails}
+            />
+          ) : null}
+
+          {!snapshot && !errorMessage ? (
+            <ContentState
+              title="Nenhuma etapa carregada"
+              description="Informe o processo e o número da etapa para abrir a visão consolidada da CESAD em modo somente leitura."
+              tone="info"
+            />
+          ) : null}
+
+          {snapshot ? (
+            <>
+              <div className="cesad-stage-read__hero">
+                <div className="surface-card">
+                  <span className="section-chip">Modo somente leitura</span>
+                  <h3>Etapa {snapshot.stage.sequence}</h3>
+                  <p>
+                    Processo <code>{snapshot.process.id}</code> em{' '}
+                    {formatProcessStatus(snapshot.process.status)} com foco documental na etapa{' '}
+                    <strong>{snapshot.stage.stageCode}</strong>.
+                  </p>
+                  <div className="cesad-stage-read__badges">
+                    <StatusBadge
+                      label={formatProcessStatus(snapshot.process.status)}
+                      tone={getStatusTone(snapshot.process.status)}
+                    />
+                    <StatusBadge
+                      label={stageInstructionSummary?.label ?? 'Situação documental indisponível'}
+                      tone={stageInstructionSummary?.tone ?? 'neutral'}
+                    />
+                  </div>
+                </div>
+
+                <div className="surface-card">
+                  <h3>Status documental</h3>
+                  <KeyValueList
+                    items={[
+                      {
+                        label: 'Situação da etapa',
+                        value: stageInstructionSummary?.label ?? 'Não informado',
+                      },
+                      {
+                        label: 'Documentos obrigatórios',
+                        value: snapshot.documentationStatus.requiredDocumentTypes
+                          .map((documentType) => formatDocumentType(documentType))
+                          .join(', '),
+                      },
+                      {
+                        label: 'Pendências',
+                        value:
+                          snapshot.documentationStatus.missingRequiredDocumentTypes.length > 0
+                            ? snapshot.documentationStatus.missingRequiredDocumentTypes
+                                .map((documentType) => formatDocumentType(documentType))
+                                .join(', ')
+                            : 'Nenhuma pendência obrigatória',
+                      },
+                      {
+                        label: 'Assinaturas pendentes',
+                        value:
+                          snapshot.documentationStatus.pendingSignatureDocumentTypes.length > 0
+                            ? snapshot.documentationStatus.pendingSignatureDocumentTypes
+                                .map((documentType) => formatDocumentType(documentType))
+                                .join(', ')
+                            : 'Nenhuma assinatura pendente',
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {snapshot.warnings.length > 0 ? (
+                <FeedbackAlert
+                  title="Avisos da leitura"
+                  tone="warning"
+                  description="A resposta consolidada foi montada sem alterar workflow e sinaliza apenas compatibilidades residuais ou limitações de histórico ainda presentes no modelo."
+                  details={snapshot.warnings}
+                />
+              ) : null}
+
+              <div className="metrics-grid">
+                <InfoCard title="Processo" eyebrow="Dados consolidados">
+                  <KeyValueList
+                    items={[
+                      { label: 'ID', value: snapshot.process.id },
+                      { label: 'Status macro', value: formatProcessStatus(snapshot.process.status) },
+                      { label: 'Criado em', value: formatDateTime(snapshot.process.createdAt) },
+                      { label: 'Atualizado em', value: formatDateTime(snapshot.process.updatedAt) },
+                    ]}
+                  />
+                </InfoCard>
+
+                <InfoCard title="Servidor" eyebrow="Cadastro disponível">
+                  <KeyValueList
+                    items={[
+                      { label: 'Usuário', value: snapshot.server.userId },
+                      { label: 'E-mail', value: snapshot.server.email },
+                      { label: 'Perfil', value: formatRole(snapshot.server.role) },
+                      {
+                        label: 'Nome / cargo / matrícula',
+                        value:
+                          snapshot.server.displayName ?? snapshot.server.positionName ?? snapshot.server.registrationNumber
+                            ? [
+                                snapshot.server.displayName ?? 'Nome não cadastrado',
+                                snapshot.server.positionName ?? 'Cargo não cadastrado',
+                                snapshot.server.registrationNumber ?? 'Matrícula não cadastrada',
+                              ].join(' / ')
+                            : 'Dados cadastrais indisponíveis',
+                      },
+                    ]}
+                  />
+                </InfoCard>
+
+                <InfoCard title="Etapa" eyebrow="Foco da consulta">
+                  <KeyValueList
+                    items={[
+                      { label: 'Sequência', value: snapshot.stage.sequence },
+                      { label: 'Código', value: snapshot.stage.stageCode },
+                      { label: 'ID interno', value: snapshot.stage.stageId },
+                      { label: 'Início', value: formatDateTime(snapshot.stage.startedAt) },
+                      { label: 'Fim', value: formatDateTime(snapshot.stage.endedAt) },
+                    ]}
+                  />
+                </InfoCard>
+              </div>
+
+              <div className="metrics-grid">
+                <InfoCard title="Avaliação da chefia" eyebrow="Conteúdo funcional">
+                  {snapshot.supervisorEvaluation ? (
+                    <div className="cesad-stage-read__stack">
+                      <StatusBadge
+                        label={snapshot.supervisorEvaluation.status}
+                        tone={getStatusTone(snapshot.supervisorEvaluation.status)}
+                      />
+                      <KeyValueList
+                        items={[
+                          { label: 'Resumo', value: snapshot.supervisorEvaluation.summary },
+                          {
+                            label: 'Comentários gerais',
+                            value: snapshot.supervisorEvaluation.generalComments,
+                          },
+                          {
+                            label: 'Submetida em',
+                            value: formatDateTime(snapshot.supervisorEvaluation.submittedAt),
+                          },
+                        ]}
+                      />
+                      <div>
+                        <strong>Critérios</strong>
+                        <ul className="content-list cesad-stage-read__criteria">
+                          {snapshot.supervisorEvaluation.content.criteria.map((criterion) => (
+                            <li key={criterion.code}>
+                              <strong>{criterion.label}</strong>: nota {criterion.rating}
+                              {criterion.comment ? ` - ${criterion.comment}` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    <ContentState
+                      title="Avaliação indisponível"
+                      description="A avaliação da chefia ainda não foi localizada para esta leitura consolidada."
+                      tone="warning"
+                    />
+                  )}
+                </InfoCard>
+
+                <InfoCard title="Autoavaliação" eyebrow="Conteúdo funcional">
+                  {snapshot.selfEvaluation ? (
+                    <div className="cesad-stage-read__stack">
+                      <StatusBadge
+                        label={snapshot.selfEvaluation.status}
+                        tone={getStatusTone(snapshot.selfEvaluation.status)}
+                      />
+                      <KeyValueList
+                        items={[
+                          { label: 'Reflexão principal', value: snapshot.selfEvaluation.selfReflection },
+                          {
+                            label: 'Observações adicionais',
+                            value: snapshot.selfEvaluation.additionalNotes ?? 'Não informadas',
+                          },
+                          {
+                            label: 'Submetida em',
+                            value: formatDateTime(snapshot.selfEvaluation.submittedAt),
+                          },
+                        ]}
+                      />
+                    </div>
+                  ) : (
+                    <ContentState
+                      title="Autoavaliação indisponível"
+                      description="A autoavaliação ainda não foi localizada para esta leitura consolidada."
+                      tone="warning"
+                    />
+                  )}
+                </InfoCard>
+              </div>
+
+              <PageSection
+                eyebrow="Documentos"
+                title="Documentos e assinaturas da etapa"
+                description="A lista abaixo explicita os documentos esperados da etapa, inclusive quando ainda não existem ou não possuem vínculo explícito."
+              >
+                <div className="metrics-grid">
+                  {snapshot.documents.map((document) => (
+                    <InfoCard
+                      key={document.documentType}
+                      title={formatDocumentType(document.documentType)}
+                      eyebrow={document.exists ? 'Documento localizado' : 'Documento ausente'}
+                    >
+                      <div className="cesad-stage-read__stack">
+                        <StatusBadge
+                          label={
+                            document.exists
+                              ? formatDocumentStatus(document.documentStatus)
+                              : getMissingStageDocumentDescription(document.documentType)
+                          }
+                          tone={getStageReadBadgeTone(document)}
+                        />
+                        <KeyValueList
+                          items={[
+                            { label: 'ID', value: document.documentId ?? 'Não gerado' },
+                            {
+                              label: 'Vínculo com etapa',
+                              value:
+                                document.stageLinkMode === 'STAGE_BOUND'
+                                  ? 'Documento vinculado diretamente à etapa'
+                                  : document.stageLinkMode === 'PROCESS_SINGLE_STAGE_FALLBACK'
+                                    ? 'Documento inferido a partir de processo com etapa única'
+                                    : 'Sem vínculo explícito com a etapa',
+                            },
+                            {
+                              label: 'Arquivo lógico',
+                              value: document.artifactPath ?? 'Sem artefato físico informado',
+                            },
+                            {
+                              label: 'Atualizado em',
+                              value: formatDateTime(document.updatedAt),
+                            },
+                          ]}
+                        />
+
+                        {document.exists ? (
+                          document.signatures.length > 0 ? (
+                            <div>
+                              <strong>Assinaturas</strong>
+                              <ul className="content-list cesad-stage-read__signatures">
+                                {document.signatures.map((signature) => (
+                                  <li key={signature.signatureId}>
+                                    <strong>{formatRole(signature.signatoryRole)}</strong>:&nbsp;
+                                    {formatSignatureStatus(signature.status)}
+                                    {signature.signedAt
+                                      ? ` em ${formatDateTime(signature.signedAt)}`
+                                      : ' sem data de conclusão'}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : (
+                            <ContentState
+                              title="Sem trilha de assinatura"
+                              description="O documento existe, mas ainda não há registros de assinatura associados."
+                              tone="warning"
+                            />
+                          )
+                        ) : (
+                          <ContentState
+                            title="Documento não localizado"
+                            description={
+                              document.missingReason ?? 'O backend sinalizou ausência deste documento no escopo da etapa.'
+                            }
+                            tone="warning"
+                          />
+                        )}
+                      </div>
+                    </InfoCard>
+                  ))}
+                </div>
+              </PageSection>
+
+              <PageSection
+                eyebrow="Histórico"
+                title="Histórico resumido relevante"
+                description="Eventos auditáveis que ajudam a CESAD a reconstituir a instrução da etapa, sem introduzir novas regras na interface."
+              >
+                {snapshot.history.length > 0 ? (
+                  <div className="surface-card">
+                    <ul className="content-list cesad-stage-read__history">
+                      {snapshot.history.map((item) => (
+                        <li key={item.id}>
+                          <strong>{getHistoryDescription(item)}</strong>
+                          <span>
+                            {' '}
+                            por {item.actorRole ? formatRole(item.actorRole) : 'Perfil não identificado'} em{' '}
+                            {formatDateTime(item.occurredAt)}
+                          </span>
+                          {item.comment ? <div>{item.comment}</div> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <ContentState
+                    title="Histórico resumido indisponível"
+                    description="Nenhum evento relevante foi encontrado para o escopo atual da etapa."
+                    tone="warning"
+                  />
+                )}
+              </PageSection>
+            </>
+          ) : null}
+        </PageSection>
+      </div>
+    </AuthGuard>
+  );
+}

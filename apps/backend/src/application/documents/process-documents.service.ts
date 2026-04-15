@@ -16,10 +16,12 @@ import {
 } from '@prisma/client';
 import {
   AuditEventType,
+  type CesadStageDocumentRef,
   ProcessAction,
   ProcessStatus,
   DocumentType,
   DocumentStatus,
+  SignatureProvider,
   SignatureStatus,
   UserRole,
 } from '@aep-pa/contracts';
@@ -38,12 +40,16 @@ export class ProcessDocumentsService {
   async ensureSupervisorEvaluationDocument(
     transaction: Prisma.TransactionClient,
     processId: string,
+    processStageId: string,
     user: AuthenticatedUser,
   ): Promise<{ documentId: string }> {
+    const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
+
     // Check if document already exists
     const existingDocument = await transaction.processDocument.findFirst({
       where: {
         evaluationProcessId: processId,
+        processStageId,
         documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
       },
     });
@@ -58,6 +64,7 @@ export class ProcessDocumentsService {
       document = await transaction.processDocument.create({
         data: {
           evaluationProcessId: processId,
+          processStageId,
           documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
           documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
           artifactPath: '', // TODO: generate actual document path
@@ -71,6 +78,7 @@ export class ProcessDocumentsService {
         const existingAfterConflict = await transaction.processDocument.findFirst({
           where: {
             evaluationProcessId: processId,
+            processStageId,
             documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
           },
         });
@@ -92,6 +100,7 @@ export class ProcessDocumentsService {
         action: ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
         processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
         occurredAt: new Date().toISOString(),
+        stageMetadata,
         metadata: {
           documentId: document.id,
           documentType: DocumentType.SUPERVISOR_EVALUATION,
@@ -105,12 +114,14 @@ export class ProcessDocumentsService {
   async createSupervisorEvaluationSignatures(
     transaction: Prisma.TransactionClient,
     processId: string,
+    processStageId: string,
     documentId: string,
     supervisorUserId: string,
     internUserId: string,
     user: AuthenticatedUser,
   ): Promise<void> {
     const now = new Date();
+    const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
 
     // Ensure signature records exist without duplicating
     const existingSignatures = await transaction.signatureRecord.findMany({
@@ -149,6 +160,7 @@ export class ProcessDocumentsService {
           action: ProcessAction.SIGN_EVALUATION,
           processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
           occurredAt: now.toISOString(),
+          stageMetadata,
           metadata: {
             documentId,
             signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
@@ -177,6 +189,7 @@ export class ProcessDocumentsService {
           action: ProcessAction.SIGN_EVALUATION,
           processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
           occurredAt: now.toISOString(),
+          stageMetadata,
           metadata: {
             documentId,
             signatoryRole: UserRole.INTERN_SERVER,
@@ -191,11 +204,13 @@ export class ProcessDocumentsService {
   async hasCompletedSupervisorEvaluationSignatures(
     transaction: Prisma.TransactionClient,
     processId: string,
+    processStageId: string,
     internUserId: string,
   ): Promise<boolean> {
     const document = await transaction.processDocument.findFirst({
       where: {
         evaluationProcessId: processId,
+        processStageId,
         documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
       },
       include: {
@@ -225,11 +240,15 @@ export class ProcessDocumentsService {
   async ensureSelfEvaluationDocument(
     transaction: Prisma.TransactionClient,
     processId: string,
+    processStageId: string,
     user: AuthenticatedUser,
   ): Promise<{ documentId: string }> {
+    const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
+
     const existingDocument = await transaction.processDocument.findFirst({
       where: {
         evaluationProcessId: processId,
+        processStageId,
         documentType: PrismaDocumentType.SELF_EVALUATION,
       },
     });
@@ -243,6 +262,7 @@ export class ProcessDocumentsService {
       document = await transaction.processDocument.create({
         data: {
           evaluationProcessId: processId,
+          processStageId,
           documentType: PrismaDocumentType.SELF_EVALUATION,
           documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
           artifactPath: '',
@@ -256,6 +276,7 @@ export class ProcessDocumentsService {
         const existingAfterConflict = await transaction.processDocument.findFirst({
           where: {
             evaluationProcessId: processId,
+            processStageId,
             documentType: PrismaDocumentType.SELF_EVALUATION,
           },
         });
@@ -275,6 +296,7 @@ export class ProcessDocumentsService {
         action: ProcessAction.SUBMIT_SELF_EVALUATION,
         processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
         occurredAt: new Date().toISOString(),
+        stageMetadata,
         metadata: {
           documentId: document.id,
           documentType: DocumentType.SELF_EVALUATION,
@@ -288,12 +310,14 @@ export class ProcessDocumentsService {
   async createSelfEvaluationSignatures(
     transaction: Prisma.TransactionClient,
     processId: string,
+    processStageId: string,
     documentId: string,
     internUserId: string,
     supervisorUserId: string,
     user: AuthenticatedUser,
   ): Promise<void> {
     const now = new Date();
+    const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
     const existingSignatures = await transaction.signatureRecord.findMany({
       where: {
         processDocumentId: documentId,
@@ -330,6 +354,7 @@ export class ProcessDocumentsService {
           action: ProcessAction.SUBMIT_SELF_EVALUATION,
           processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
           occurredAt: now.toISOString(),
+          stageMetadata,
           metadata: {
             documentId,
             signatoryRole: UserRole.INTERN_SERVER,
@@ -358,6 +383,7 @@ export class ProcessDocumentsService {
           action: ProcessAction.SUBMIT_SELF_EVALUATION,
           processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
           occurredAt: now.toISOString(),
+          stageMetadata,
           metadata: {
             documentId,
             signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
@@ -371,12 +397,15 @@ export class ProcessDocumentsService {
   async signSelfEvaluationDocument(
     transaction: Prisma.TransactionClient,
     processId: string,
+    processStageId: string,
     expectedSupervisorUserId: string,
     user: AuthenticatedUser,
   ): Promise<{ documentId: string }> {
+    const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
     const document = await transaction.processDocument.findFirst({
       where: {
         evaluationProcessId: processId,
+        processStageId,
         documentType: PrismaDocumentType.SELF_EVALUATION,
       },
       include: {
@@ -431,6 +460,7 @@ export class ProcessDocumentsService {
         action: ProcessAction.SIGN_EVALUATION,
         processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
         occurredAt: now.toISOString(),
+        stageMetadata,
         metadata: {
           documentId: document.id,
           documentType: DocumentType.SELF_EVALUATION,
@@ -449,6 +479,12 @@ export class ProcessDocumentsService {
     user: AuthenticatedUser,
   ): Promise<void> {
     return this.prismaService.$transaction(async (transaction) => {
+      const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
+      const stageMetadata = {
+        processStageId: currentStage.id,
+        stageSequence: currentStage.sequence,
+        stageCode: currentStage.stageCode,
+      };
       // Find the process
       const process = await this.processesService.findProcessOrThrow(transaction, processId);
       if (this.toContractProcessStatus(process.status) !== ProcessStatus.AGUARDANDO_ASSINATURA) {
@@ -469,6 +505,7 @@ export class ProcessDocumentsService {
       const document = await transaction.processDocument.findFirst({
         where: {
           evaluationProcessId: processId,
+          processStageId: currentStage.id,
           documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
         },
         include: {
@@ -527,6 +564,7 @@ export class ProcessDocumentsService {
           action: ProcessAction.SIGN_EVALUATION,
           processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
           occurredAt: now.toISOString(),
+          stageMetadata,
           metadata: {
             documentId: document.id,
             signatoryRole: UserRole.INTERN_SERVER,
@@ -540,6 +578,7 @@ export class ProcessDocumentsService {
   async getSupervisorEvaluationDocumentContext(
     transaction: Prisma.TransactionClient,
     processId: string,
+    processStageId: string,
   ): Promise<{
     documentId: string;
     documentType: DocumentType;
@@ -554,6 +593,7 @@ export class ProcessDocumentsService {
     const document = await transaction.processDocument.findFirst({
       where: {
         evaluationProcessId: processId,
+        processStageId,
         documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
       },
       include: {
@@ -587,6 +627,7 @@ export class ProcessDocumentsService {
   async getSelfEvaluationDocumentContext(
     transaction: Prisma.TransactionClient,
     processId: string,
+    processStageId: string,
   ): Promise<{
     documentId: string;
     documentType: DocumentType;
@@ -601,6 +642,7 @@ export class ProcessDocumentsService {
     const document = await transaction.processDocument.findFirst({
       where: {
         evaluationProcessId: processId,
+        processStageId,
         documentType: PrismaDocumentType.SELF_EVALUATION,
       },
       include: {
@@ -636,10 +678,12 @@ export class ProcessDocumentsService {
   async canRectifySupervisorEvaluation(
     transaction: Prisma.TransactionClient,
     processId: string,
+    processStageId: string,
   ): Promise<boolean> {
     const document = await transaction.processDocument.findFirst({
       where: {
         evaluationProcessId: processId,
+        processStageId,
         documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
       },
       include: {
@@ -660,6 +704,96 @@ export class ProcessDocumentsService {
     return !internSignature || internSignature.status !== PrismaSignatureStatus.COMPLETED;
   }
 
+  async getCesadStageDocumentReadModel(
+    transaction: Prisma.TransactionClient,
+    params: {
+      processId: string;
+      processStageId: string;
+      totalStages: number;
+    },
+  ): Promise<CesadStageDocumentRef[]> {
+    const expectedDocumentTypes = [
+      DocumentType.SUPERVISOR_EVALUATION,
+      DocumentType.SELF_EVALUATION,
+      DocumentType.CESAD_OPINION,
+    ] as const;
+
+    const documents = await transaction.processDocument.findMany({
+      where: {
+        evaluationProcessId: params.processId,
+        documentType: {
+          in: expectedDocumentTypes.map((documentType) => this.toDatabaseDocumentType(documentType)),
+        },
+      },
+      include: {
+        signatureRecords: true,
+      },
+      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    return expectedDocumentTypes.map((documentType) => {
+      const stageBoundDocument = documents.find(
+        (document) =>
+          document.documentType === this.toDatabaseDocumentType(documentType) &&
+          document.processStageId === params.processStageId,
+      );
+
+      const singleStageFallbackDocument =
+        params.totalStages === 1
+          ? documents.find(
+              (document) =>
+                document.documentType === this.toDatabaseDocumentType(documentType) &&
+                document.processStageId === null,
+            )
+          : undefined;
+
+      const selectedDocument = stageBoundDocument ?? singleStageFallbackDocument;
+      const stageLinkMode = stageBoundDocument
+        ? 'STAGE_BOUND'
+        : singleStageFallbackDocument
+          ? 'PROCESS_SINGLE_STAGE_FALLBACK'
+          : 'MISSING';
+
+      if (!selectedDocument) {
+        return {
+          documentType,
+          exists: false,
+          documentId: null,
+          documentStatus: null,
+          artifactPath: null,
+          createdAt: null,
+          updatedAt: null,
+          stageLinkMode,
+          signatures: [],
+          missingReason:
+            params.totalStages === 1
+              ? 'Documento ainda não foi formalizado para a etapa.'
+              : 'Documento não possui vínculo explícito com a etapa solicitada.',
+        } satisfies CesadStageDocumentRef;
+      }
+
+      return {
+        documentType,
+        exists: true,
+        documentId: selectedDocument.id,
+        documentStatus: this.toContractDocumentStatus(selectedDocument.documentStatus),
+        artifactPath: selectedDocument.artifactPath,
+        createdAt: selectedDocument.createdAt.toISOString(),
+        updatedAt: selectedDocument.updatedAt.toISOString(),
+        stageLinkMode,
+        signatures: selectedDocument.signatureRecords.map((signature) => ({
+          signatureId: signature.id,
+          signatoryUserId: signature.signatoryUserId,
+          signatoryRole: this.toContractUserRole(signature.signatoryRole),
+          provider: this.toContractSignatureProvider(signature.provider),
+          status: this.toContractSignatureStatus(signature.status),
+          signedAt: signature.signedAt?.toISOString() ?? null,
+        })),
+        missingReason: null,
+      } satisfies CesadStageDocumentRef;
+    });
+  }
+
   private buildAuditEvent(params: {
     processId: string;
     user: AuthenticatedUser;
@@ -667,6 +801,11 @@ export class ProcessDocumentsService {
     action: ProcessAction;
     processStatus: ProcessStatus;
     occurredAt: string;
+    stageMetadata?: {
+      processStageId: string;
+      stageSequence: number;
+      stageCode: string;
+    };
     metadata?: Record<string, unknown>;
   }): Prisma.AuditEventUncheckedCreateInput {
     return {
@@ -685,8 +824,37 @@ export class ProcessDocumentsService {
         occurredAt: params.occurredAt,
         processStatus: params.processStatus,
         origin: 'PROCESS_DOCUMENT',
+        ...(params.stageMetadata ?? {}),
         ...params.metadata,
       },
+    };
+  }
+
+  private async getStageMetadataOrThrow(
+    transaction: Prisma.TransactionClient,
+    processStageId: string,
+  ): Promise<{
+    processStageId: string;
+    stageSequence: number;
+    stageCode: string;
+  }> {
+    const stage = await transaction.processStage.findUnique({
+      where: { id: processStageId },
+      select: {
+        id: true,
+        sequence: true,
+        stageCode: true,
+      },
+    });
+
+    if (!stage) {
+      throw new NotFoundException(`Process stage ${processStageId} was not found`);
+    }
+
+    return {
+      processStageId: stage.id,
+      stageSequence: stage.sequence,
+      stageCode: stage.stageCode,
     };
   }
 
@@ -718,6 +886,13 @@ export class ProcessDocumentsService {
     return status as SignatureStatus;
   }
 
+  private toContractSignatureProvider(provider: PrismaSignatureProvider): SignatureProvider {
+    if (!Object.values(SignatureProvider).includes(provider as SignatureProvider)) {
+      throw new BadRequestException(`Unsupported signature provider ${provider}`);
+    }
+    return provider as SignatureProvider;
+  }
+
   private toContractUserRole(role: PrismaUserRole): UserRole {
     if (!Object.values(UserRole).includes(role as UserRole)) {
       throw new BadRequestException(`Unsupported user role ${role}`);
@@ -730,6 +905,13 @@ export class ProcessDocumentsService {
       throw new BadRequestException(`Unsupported user role ${role}`);
     }
     return role as PrismaUserRole;
+  }
+
+  private toDatabaseDocumentType(type: DocumentType): PrismaDocumentType {
+    if (!Object.values(PrismaDocumentType).includes(type as PrismaDocumentType)) {
+      throw new BadRequestException(`Unsupported document type ${type}`);
+    }
+    return type as PrismaDocumentType;
   }
 
   private toDatabaseAuditEventType(eventType: AuditEventType): PrismaAuditEventType {

@@ -41,14 +41,20 @@ export class SelfEvaluationsService {
     processId: string,
     user: AuthenticatedUser,
   ): Promise<SelfEvaluationResponseDto | null> {
+    const currentStage = await this.processesService.resolveCurrentStageOrThrow(this.prismaService, processId);
     const process = await this.prismaService.evaluationProcess.findUnique({
       where: { id: processId },
       select: {
         id: true,
         evaluatedUserId: true,
-        supervisorEvaluation: {
+        stages: {
+          where: { id: currentStage.id },
           select: {
-            evaluatorUserId: true,
+            supervisorEvaluation: {
+              select: {
+                evaluatorUserId: true,
+              },
+            },
           },
         },
       },
@@ -59,7 +65,7 @@ export class SelfEvaluationsService {
     }
 
     const evaluation = await this.prismaService.selfEvaluation.findUnique({
-      where: { processId },
+      where: { processStageId: currentStage.id },
     });
 
     if (!evaluation) {
@@ -76,6 +82,7 @@ export class SelfEvaluationsService {
           ? (await this.processDocumentsService.getSelfEvaluationDocumentContext(
               this.prismaService,
               processId,
+              currentStage.id,
             )) ?? undefined
           : undefined;
 
@@ -95,6 +102,7 @@ export class SelfEvaluationsService {
         (await this.processDocumentsService.getSelfEvaluationDocumentContext(
           this.prismaService,
           processId,
+          currentStage.id,
         )) ?? undefined,
       );
     }
@@ -103,7 +111,7 @@ export class SelfEvaluationsService {
       throw new ForbiddenException('Authenticated user cannot access this self evaluation');
     }
 
-    const expectedSupervisorUserId = process.supervisorEvaluation?.evaluatorUserId;
+    const expectedSupervisorUserId = process.stages[0]?.supervisorEvaluation?.evaluatorUserId;
     if (!expectedSupervisorUserId || expectedSupervisorUserId !== user.sub) {
       throw new ForbiddenException('Authenticated user is not the expected supervisor for this process');
     }
@@ -115,9 +123,10 @@ export class SelfEvaluationsService {
     return this.toResponseDto(
       evaluation,
       (await this.processDocumentsService.getSelfEvaluationDocumentContext(
-        this.prismaService,
-        processId,
-      )) ?? undefined,
+          this.prismaService,
+          processId,
+          currentStage.id,
+        )) ?? undefined,
     );
   }
 
@@ -130,8 +139,9 @@ export class SelfEvaluationsService {
 
     return this.prismaService.$transaction(async (transaction) => {
       const process = await this.assertOwnInternReadyForSelfEvaluation(transaction, processId, user);
+      const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
       const existingEvaluation = await transaction.selfEvaluation.findUnique({
-        where: { processId },
+        where: { processStageId: currentStage.id },
       });
 
       if (existingEvaluation?.status === PrismaSelfEvaluationStatus.SUBMITTED) {
@@ -148,8 +158,9 @@ export class SelfEvaluationsService {
 
       const savedEvaluation = existingEvaluation
         ? await transaction.selfEvaluation.update({
-            where: { processId },
+            where: { processStageId: currentStage.id },
             data: {
+              processStageId: currentStage.id,
               authorUserId: user.sub,
               status: PrismaSelfEvaluationStatus.DRAFT,
               selfReflection: normalizedPayload.selfReflection,
@@ -160,6 +171,7 @@ export class SelfEvaluationsService {
         : await transaction.selfEvaluation.create({
             data: {
               processId,
+              processStageId: currentStage.id,
               authorUserId: user.sub,
               status: PrismaSelfEvaluationStatus.DRAFT,
               selfReflection: normalizedPayload.selfReflection,
@@ -170,6 +182,8 @@ export class SelfEvaluationsService {
       await transaction.auditEvent.create({
         data: this.buildAuditEvent({
           processId: process.id,
+          processStageId: currentStage.id,
+          stageSequence: currentStage.sequence,
           user,
           eventType,
           action,
@@ -196,8 +210,9 @@ export class SelfEvaluationsService {
 
     return this.prismaService.$transaction(async (transaction) => {
       const process = await this.assertOwnInternReadyForSelfEvaluation(transaction, processId, user);
+      const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
       const existingEvaluation = await transaction.selfEvaluation.findUnique({
-        where: { processId },
+        where: { processStageId: currentStage.id },
       });
 
       if (existingEvaluation?.status === PrismaSelfEvaluationStatus.SUBMITTED) {
@@ -211,8 +226,9 @@ export class SelfEvaluationsService {
 
       const savedEvaluation = existingEvaluation
         ? await transaction.selfEvaluation.update({
-            where: { processId },
+            where: { processStageId: currentStage.id },
             data: {
+              processStageId: currentStage.id,
               authorUserId: user.sub,
               status: PrismaSelfEvaluationStatus.SUBMITTED,
               selfReflection: normalizedPayload.selfReflection,
@@ -223,6 +239,7 @@ export class SelfEvaluationsService {
         : await transaction.selfEvaluation.create({
             data: {
               processId,
+              processStageId: currentStage.id,
               authorUserId: user.sub,
               status: PrismaSelfEvaluationStatus.SUBMITTED,
               selfReflection: normalizedPayload.selfReflection,
@@ -234,6 +251,8 @@ export class SelfEvaluationsService {
       await transaction.auditEvent.create({
         data: this.buildAuditEvent({
           processId: process.id,
+          processStageId: currentStage.id,
+          stageSequence: currentStage.sequence,
           user,
           eventType: AuditEventType.SELF_EVALUATION_SUBMITTED,
           action: ProcessAction.SUBMIT_SELF_EVALUATION,
@@ -248,12 +267,14 @@ export class SelfEvaluationsService {
       const { documentId } = await this.processDocumentsService.ensureSelfEvaluationDocument(
         transaction,
         processId,
+        currentStage.id,
         user,
       );
 
       await this.processDocumentsService.createSelfEvaluationSignatures(
         transaction,
         processId,
+        currentStage.id,
         documentId,
         user.sub,
         process.immediateSupervisorUserId,
@@ -262,7 +283,11 @@ export class SelfEvaluationsService {
 
       return this.toResponseDto(
         savedEvaluation,
-        await this.processDocumentsService.getSelfEvaluationDocumentContext(transaction, processId) ?? undefined,
+        await this.processDocumentsService.getSelfEvaluationDocumentContext(
+          transaction,
+          processId,
+          currentStage.id,
+        ) ?? undefined,
       );
     });
   }
@@ -276,8 +301,9 @@ export class SelfEvaluationsService {
 
     return this.prismaService.$transaction(async (transaction) => {
       const process = await this.assertExpectedSupervisorCanSignSelfEvaluation(transaction, processId, user);
+      const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
       const evaluation = await transaction.selfEvaluation.findUnique({
-        where: { processId },
+        where: { processStageId: currentStage.id },
       });
 
       if (!evaluation) {
@@ -291,6 +317,7 @@ export class SelfEvaluationsService {
       await this.processDocumentsService.signSelfEvaluationDocument(
         transaction,
         processId,
+        currentStage.id,
         process.immediateSupervisorUserId,
         user,
       );
@@ -298,6 +325,7 @@ export class SelfEvaluationsService {
       const documentsComplete = await this.processesService.areRequiredStageDocumentsComplete(
         transaction,
         processId,
+        currentStage.id,
       );
 
       if (documentsComplete) {
@@ -309,7 +337,11 @@ export class SelfEvaluationsService {
 
       return this.toResponseDto(
         evaluation,
-        await this.processDocumentsService.getSelfEvaluationDocumentContext(transaction, processId) ?? undefined,
+        await this.processDocumentsService.getSelfEvaluationDocumentContext(
+          transaction,
+          processId,
+          currentStage.id,
+        ) ?? undefined,
       );
     });
   }
@@ -319,15 +351,21 @@ export class SelfEvaluationsService {
     processId: string,
     user: AuthenticatedUser,
   ): Promise<{ id: string; evaluatedUserId: string; immediateSupervisorUserId: string }> {
+    const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
     const process = await transaction.evaluationProcess.findUnique({
       where: { id: processId },
       select: {
         id: true,
         status: true,
         evaluatedUserId: true,
-        supervisorEvaluation: {
+        stages: {
+          where: { id: currentStage.id },
           select: {
-            evaluatorUserId: true,
+            supervisorEvaluation: {
+              select: {
+                evaluatorUserId: true,
+              },
+            },
           },
         },
       },
@@ -351,7 +389,9 @@ export class SelfEvaluationsService {
       );
     }
 
-    if (!process.supervisorEvaluation?.evaluatorUserId) {
+    const stage = process.stages[0];
+
+    if (!stage?.supervisorEvaluation?.evaluatorUserId) {
       throw new BadRequestException('Supervisor evaluation must be submitted before self evaluation starts');
     }
 
@@ -359,6 +399,7 @@ export class SelfEvaluationsService {
       await this.processDocumentsService.hasCompletedSupervisorEvaluationSignatures(
         transaction,
         processId,
+        currentStage.id,
         process.evaluatedUserId,
       );
 
@@ -371,7 +412,7 @@ export class SelfEvaluationsService {
     return {
       id: process.id,
       evaluatedUserId: process.evaluatedUserId,
-      immediateSupervisorUserId: process.supervisorEvaluation.evaluatorUserId,
+      immediateSupervisorUserId: stage.supervisorEvaluation.evaluatorUserId,
     };
   }
 
@@ -388,14 +429,20 @@ export class SelfEvaluationsService {
     processId: string,
     user: AuthenticatedUser,
   ): Promise<{ id: string; immediateSupervisorUserId: string }> {
+    const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
     const process = await transaction.evaluationProcess.findUnique({
       where: { id: processId },
       select: {
         id: true,
         status: true,
-        supervisorEvaluation: {
+        stages: {
+          where: { id: currentStage.id },
           select: {
-            evaluatorUserId: true,
+            supervisorEvaluation: {
+              select: {
+                evaluatorUserId: true,
+              },
+            },
           },
         },
       },
@@ -415,7 +462,7 @@ export class SelfEvaluationsService {
       );
     }
 
-    const expectedSupervisorUserId = process.supervisorEvaluation?.evaluatorUserId;
+    const expectedSupervisorUserId = process.stages[0]?.supervisorEvaluation?.evaluatorUserId;
     if (!expectedSupervisorUserId) {
       throw new BadRequestException('Supervisor evaluation must define the expected supervisor');
     }
@@ -479,6 +526,8 @@ export class SelfEvaluationsService {
 
   private buildAuditEvent(params: {
     processId: string;
+    processStageId: string;
+    stageSequence: number;
     user: AuthenticatedUser;
     eventType: AuditEventType;
     action: ProcessAction;
@@ -504,6 +553,8 @@ export class SelfEvaluationsService {
         occurredAt: params.occurredAt,
         processStatus: params.processStatus,
         origin: 'SELF_EVALUATION',
+        processStageId: params.processStageId,
+        stageSequence: params.stageSequence,
         ...(params.comment ? { comment: params.comment } : {}),
       },
     };
@@ -513,6 +564,7 @@ export class SelfEvaluationsService {
     evaluation: {
       id: string;
       processId: string;
+      processStageId: string;
       authorUserId: string;
       status: PrismaSelfEvaluationStatus;
       selfReflection: string;
@@ -526,6 +578,7 @@ export class SelfEvaluationsService {
     return {
       id: evaluation.id,
       processId: evaluation.processId,
+      processStageId: evaluation.processStageId,
       authorUserId: evaluation.authorUserId,
       status: this.toContractEvaluationStatus(evaluation.status),
       selfReflection: evaluation.selfReflection,

@@ -1111,8 +1111,49 @@ button {
   gap: 0.85rem;
 }
 
+.cesad-stage-read {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.cesad-stage-read__form {
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px) auto;
+}
+
+.cesad-stage-read__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+}
+
+.cesad-stage-read__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cesad-stage-read__stack {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.cesad-stage-read__criteria,
+.cesad-stage-read__signatures,
+.cesad-stage-read__history {
+  margin-top: 0.6rem;
+}
+
+.cesad-stage-read__history li {
+  display: grid;
+  gap: 0.25rem;
+}
+
 @media (max-width: 900px) {
   .inline-form {
+    grid-template-columns: 1fr;
+  }
+
+  .cesad-stage-read__hero {
     grid-template-columns: 1fr;
   }
 }
