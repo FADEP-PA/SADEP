@@ -4,6 +4,8 @@ import { ProcessDocumentsModule as ApiProcessDocumentsModule } from '../api/docu
 import { ProcessDocumentsService } from '../application/documents/process-documents.service';
 import { AuthModule } from '../auth/auth.module';
 import { PrismaService } from '../infrastructure/database/prisma.service';
+import { CesadStageOpinionsController } from './cesad-stage-opinions/cesad-stage-opinions.controller';
+import { CesadStageOpinionsService } from './cesad-stage-opinions/cesad-stage-opinions.service';
 import { CesadStageReadController } from './cesad-stage-read.controller';
 import { CesadStageReadService } from './cesad-stage-read.service';
 import { ProcessesController } from './processes.controller';
@@ -17,12 +19,14 @@ import { SupervisorEvaluationsService } from './supervisor-evaluations/superviso
   imports: [AuthModule, ApiProcessDocumentsModule],
   controllers: [
     ProcessesController,
+    CesadStageOpinionsController,
     CesadStageReadController,
     SupervisorEvaluationsController,
     SelfEvaluationsController,
   ],
   providers: [
     ProcessesService,
+    CesadStageOpinionsService,
     CesadStageReadService,
     SupervisorEvaluationsService,
     SelfEvaluationsService,

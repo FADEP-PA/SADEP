@@ -214,6 +214,196 @@ export async function runProcessesEndpointTests() {
     assert.equal(stageReadPayload.stage.sequence, 1);
     assert.equal(stageReadPayload.documents.length, 3);
 
+    const opinionDraftResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion/draft`,
+      {
+        method: 'PUT',
+        headers: {
+          authorization: `Bearer ${loginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportText: 'Relatório preliminar da CESAD para a etapa 1.',
+          legalBasis: 'Lei municipal X, art. 10.',
+          conclusion: '',
+          stageConcept: 'Em análise',
+          stageResult: 'Aguardando conclusão',
+          comment: 'Abertura do rascunho funcional.',
+        }),
+      },
+    );
+
+    assert.equal(opinionDraftResponse.status, 200);
+    const opinionDraftPayload = (await opinionDraftResponse.json()) as {
+      id: string;
+      scope: string;
+      processId: string;
+      processStageId: string;
+      status: string;
+      reportText: string;
+      legalBasis: string | null;
+      conclusion: string;
+      stageConcept: string | null;
+      stageResult: string | null;
+      completedAt: string | null;
+    };
+    assert.equal(opinionDraftPayload.scope, 'STAGE');
+    assert.equal(opinionDraftPayload.processId, processInCesadWindow.id);
+    assert.equal(opinionDraftPayload.status, 'DRAFT');
+    assert.equal(opinionDraftPayload.reportText, 'Relatório preliminar da CESAD para a etapa 1.');
+    assert.equal(opinionDraftPayload.legalBasis, 'Lei municipal X, art. 10.');
+    assert.equal(opinionDraftPayload.conclusion, '');
+    assert.equal(opinionDraftPayload.stageConcept, 'Em análise');
+    assert.equal(opinionDraftPayload.stageResult, 'Aguardando conclusão');
+    assert.equal(opinionDraftPayload.completedAt, null);
+
+    const opinionReadResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${loginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(opinionReadResponse.status, 200);
+    const opinionReadPayload = (await opinionReadResponse.json()) as {
+      id: string;
+      status: string;
+      reportText: string;
+      processStageId: string;
+    };
+    assert.equal(opinionReadPayload.id, opinionDraftPayload.id);
+    assert.equal(opinionReadPayload.status, 'DRAFT');
+    assert.equal(opinionReadPayload.reportText, 'Relatório preliminar da CESAD para a etapa 1.');
+    assert.equal(opinionReadPayload.processStageId, opinionDraftPayload.processStageId);
+
+    const opinionCompleteResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion/complete`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${loginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportText: 'Relatório final da CESAD para a etapa 1.',
+          legalBasis: 'Lei municipal X, art. 10 e art. 11.',
+          conclusion: 'Conclusão favorável da comissão para a etapa 1.',
+          stageConcept: 'Satisfatório',
+          stageResult: 'Etapa favorável',
+          comment: 'Conclusão lógica do parecer funcional.',
+        }),
+      },
+    );
+
+    assert.equal(opinionCompleteResponse.status, 201);
+    const opinionCompletePayload = (await opinionCompleteResponse.json()) as {
+      id: string;
+      status: string;
+      reportText: string;
+      conclusion: string;
+      stageConcept: string | null;
+      stageResult: string | null;
+      completedAt: string | null;
+    };
+    assert.equal(opinionCompletePayload.id, opinionDraftPayload.id);
+    assert.equal(opinionCompletePayload.status, 'COMPLETED');
+    assert.equal(opinionCompletePayload.reportText, 'Relatório final da CESAD para a etapa 1.');
+    assert.equal(
+      opinionCompletePayload.conclusion,
+      'Conclusão favorável da comissão para a etapa 1.',
+    );
+    assert.equal(opinionCompletePayload.stageConcept, 'Satisfatório');
+    assert.equal(opinionCompletePayload.stageResult, 'Etapa favorável');
+    assert.notEqual(opinionCompletePayload.completedAt, null);
+
+    const opinionReadCompletedResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${loginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(opinionReadCompletedResponse.status, 200);
+    const opinionReadCompletedPayload = (await opinionReadCompletedResponse.json()) as {
+      id: string;
+      status: string;
+      completedAt: string | null;
+    };
+    assert.equal(opinionReadCompletedPayload.id, opinionDraftPayload.id);
+    assert.equal(opinionReadCompletedPayload.status, 'COMPLETED');
+    assert.notEqual(opinionReadCompletedPayload.completedAt, null);
+
+    const incompatibleOpinionReadResponse = await fetch(
+      `${baseUrl}/processes/${processOutsideCesadWindow.id}/stages/1/cesad-stage-opinion`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${loginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(incompatibleOpinionReadResponse.status, 400);
+    const incompatibleOpinionReadPayload = (await incompatibleOpinionReadResponse.json()) as {
+      message: string;
+    };
+    assert.match(
+      incompatibleOpinionReadPayload.message,
+      /CESAD stage opinion read is only available while process is in EM_ANALISE_CESAD or PARECER_EMITIDO status/,
+    );
+
+    const incompatibleOpinionDraftResponse = await fetch(
+      `${baseUrl}/processes/${processOutsideCesadWindow.id}/stages/1/cesad-stage-opinion/draft`,
+      {
+        method: 'PUT',
+        headers: {
+          authorization: `Bearer ${loginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportText: 'Parecer fora da janela.',
+          conclusion: '',
+        }),
+      },
+    );
+
+    assert.equal(incompatibleOpinionDraftResponse.status, 400);
+    const incompatibleOpinionDraftPayload = (await incompatibleOpinionDraftResponse.json()) as {
+      message: string;
+    };
+    assert.match(
+      incompatibleOpinionDraftPayload.message,
+      /CESAD stage opinion artifact can only be manipulated while process is in EM_ANALISE_CESAD status/,
+    );
+
+    const forbiddenOpinionResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion/draft`,
+      {
+        method: 'PUT',
+        headers: {
+          authorization: `Bearer ${supervisorLoginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportText: 'Tentativa indevida do supervisor.',
+          conclusion: '',
+        }),
+      },
+    );
+
+    assert.equal(forbiddenOpinionResponse.status, 403);
+    const forbiddenOpinionPayload = (await forbiddenOpinionResponse.json()) as { message: string };
+    assert.match(
+      forbiddenOpinionPayload.message,
+      /Only CESAD_MEMBER can manipulate CESAD stage opinion artifacts/,
+    );
+
     const forbiddenStageReadResponse = await fetch(
       `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/consolidated-read`,
       {

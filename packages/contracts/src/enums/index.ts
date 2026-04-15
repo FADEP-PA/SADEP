@@ -1,4 +1,5 @@
 export * from './audit-event-type';
+export * from './cesad-stage-opinion-status';
 export * from './document-status';
 export * from './document-type';
 export * from './process-action';

@@ -16,6 +16,7 @@ import {
 
 import { hashPassword } from '../../common/security/password-hasher';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
+import { CesadStageOpinionsService } from '../cesad-stage-opinions/cesad-stage-opinions.service';
 import { CesadStageReadService } from '../cesad-stage-read.service';
 import { ProcessesService } from '../processes.service';
 import { SelfEvaluationsService } from '../self-evaluations/self-evaluations.service';
@@ -25,6 +26,7 @@ export type TestContext = {
   prisma: PrismaClient;
   service: ProcessesService;
   processDocumentsService: ProcessDocumentsService;
+  cesadStageOpinionsService: CesadStageOpinionsService;
   cesadStageReadService: CesadStageReadService;
   supervisorEvaluationsService: SupervisorEvaluationsService;
   selfEvaluationsService: SelfEvaluationsService;
@@ -77,6 +79,10 @@ export async function createTestContext(databaseName: string): Promise<TestConte
 
   const processesService = new ProcessesService(prisma as never);
   const processDocumentsService = new ProcessDocumentsService(prisma as never, processesService);
+  const cesadStageOpinionsService = new CesadStageOpinionsService(
+    prisma as never,
+    processesService,
+  );
   const cesadStageReadService = new CesadStageReadService(
     prisma as never,
     processDocumentsService,
@@ -91,6 +97,7 @@ export async function createTestContext(databaseName: string): Promise<TestConte
     prisma,
     service: processesService,
     processDocumentsService,
+    cesadStageOpinionsService,
     cesadStageReadService,
     supervisorEvaluationsService: new SupervisorEvaluationsService(
       prisma as never,
