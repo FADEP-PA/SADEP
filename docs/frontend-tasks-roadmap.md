@@ -44,7 +44,7 @@
 
 ---
 
-### [ ] FT-02 — Criar componentes reutilizáveis de estados visuais
+### [x] FT-02 — Criar componentes reutilizáveis de estados visuais
 **Objetivo:** padronizar feedback visual de empty state, blocked state e warning state.
 
 **Escopo:**

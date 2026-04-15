@@ -4,6 +4,10 @@ import type { SupervisorEvaluationWithDocumentContextRef } from '@aep-pa/contrac
 
 import { InfoCard } from '@/shared/ui/info-card';
 import { KeyValueList } from '@/shared/ui/key-value-list';
+import {
+  MissingDocumentState,
+  ReadNotReleasedState,
+} from '@/shared/ui/operational-states';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
 import {
@@ -22,19 +26,23 @@ type SupervisorEvaluationDocumentCardProps = {
 export function SupervisorEvaluationDocumentCard({ evaluation }: SupervisorEvaluationDocumentCardProps) {
   if (!evaluation) {
     return (
-      <InfoCard
-        title="Avaliação da chefia"
-        description="Ainda não há avaliação registrada para este processo."
-      />
+      <InfoCard title="Avaliação da chefia" description="Contexto documental exibido ao servidor estagiário.">
+        <MissingDocumentState
+          title="Avaliação da chefia ausente"
+          description="Ainda não há avaliação registrada para este processo."
+        />
+      </InfoCard>
     );
   }
 
   if (!evaluation.documentContext) {
     return (
-      <InfoCard
-        title="Avaliação da chefia"
-        description="A avaliação existe, mas ainda não foi formalizada em documento assinado."
-      />
+      <InfoCard title="Avaliação da chefia" description="Contexto documental exibido ao servidor estagiário.">
+        <ReadNotReleasedState
+          title="Leitura documental ainda não liberada"
+          description="A avaliação existe, mas ainda não foi formalizada em documento assinado."
+        />
+      </InfoCard>
     );
   }
 

@@ -63,3 +63,7 @@ export function getHttpErrorDetails(payload?: HttpErrorPayload) {
 
   return details;
 }
+
+export function isHttpErrorStatus(error: unknown, status: number) {
+  return error instanceof HttpError && error.status === status;
+}

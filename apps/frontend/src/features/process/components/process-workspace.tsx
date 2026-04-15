@@ -2,14 +2,14 @@
 
 import { useMemo, useState, type FormEvent } from 'react';
 
+import type { ProcessDashboardListItem, ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
+import { getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '@/shared/api/http-error';
 import { getTechnicalProcessSnapshot } from '@/shared/api/services/processes-service';
-import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import { useAuth } from '@/shared/auth/auth-context';
 import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { PageSection } from '@/shared/ui/page-section';
-
-import type { ProcessDashboardListItem, ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
+import { ProcessNotFoundState } from '@/shared/ui/operational-states';
 
 import { ProcessActionsCard } from './process-actions-card';
 import { ProcessBlockersCard } from './process-blockers-card';
@@ -48,6 +48,7 @@ export function ProcessWorkspace() {
   const [consultedProcesses, setConsultedProcesses] = useState<ProcessDashboardListItem[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const blockers = useMemo(() => getProcessBlockers(snapshot), [snapshot]);
@@ -58,12 +59,14 @@ export function ProcessWorkspace() {
     if (!session?.accessToken || processId.trim().length === 0) {
       setErrorMessage('Informe um identificador de processo para consultar os dados disponíveis.');
       setErrorDetails([]);
+      setErrorStatus(null);
       return;
     }
 
     setIsLoading(true);
     setErrorMessage(null);
     setErrorDetails([]);
+    setErrorStatus(null);
 
     try {
       const nextSnapshot = await getTechnicalProcessSnapshot(
@@ -80,6 +83,7 @@ export function ProcessWorkspace() {
           : undefined;
       setErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar os dados do processo.'));
       setErrorDetails(getHttpErrorDetails(payload));
+      setErrorStatus(isHttpErrorStatus(error, 404) ? 404 : null);
       setSnapshot(null);
     } finally {
       setIsLoading(false);
@@ -112,12 +116,24 @@ export function ProcessWorkspace() {
         </form>
 
         {errorMessage ? (
-          <FeedbackAlert
-            title="Falha ao carregar processo"
-            tone="error"
-            description={errorMessage}
-            details={errorDetails}
-          />
+          errorStatus === 404 ? (
+            <ProcessNotFoundState>
+              {errorDetails.length > 0 ? (
+                <ul className="content-list">
+                  {errorDetails.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </ProcessNotFoundState>
+          ) : (
+            <FeedbackAlert
+              title="Falha ao carregar processo"
+              tone="error"
+              description={errorMessage}
+              details={errorDetails}
+            />
+          )
         ) : null}
 
         <div className="metrics-grid">

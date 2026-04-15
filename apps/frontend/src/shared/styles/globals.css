@@ -1202,6 +1202,38 @@ button {
   margin-top: 0.25rem;
 }
 
+.operational-state {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.operational-state__badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.operational-state__badge--info {
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--accent-strong);
+}
+
+.operational-state__badge--warning {
+  background: var(--warning-soft);
+  color: #b45309;
+}
+
+.operational-state__badge--error {
+  background: var(--danger-soft);
+  color: #b91c1c;
+}
+
 .content-list--stacked li {
   padding: 0.7rem 0.85rem;
   border-radius: 0.9rem;

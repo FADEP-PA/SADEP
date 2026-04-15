@@ -19,7 +19,11 @@ import {
   getStageInstructionStatusTone,
   getSupervisorEvaluationStatusTone,
 } from '@/features/process/components/process-formatters';
-import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
+import {
+  getHttpErrorDetails,
+  getRequestErrorMessage,
+  isHttpErrorStatus,
+} from '@/shared/api/http-error';
 import { getCesadStageReadSnapshot } from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
@@ -27,6 +31,12 @@ import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InfoCard } from '@/shared/ui/info-card';
 import { KeyValueList } from '@/shared/ui/key-value-list';
+import {
+  AccessBlockedState,
+  InsufficientHistoryState,
+  MissingDocumentState,
+  StageUnavailableState,
+} from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
@@ -68,6 +78,7 @@ export function CesadStageReadWorkspace() {
   const [snapshot, setSnapshot] = useState<CesadStageReadSnapshotRef | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const stageInstructionStatus = snapshot?.documentationStatus.stageInstructionStatus;
 
@@ -80,18 +91,21 @@ export function CesadStageReadWorkspace() {
     if (!session?.accessToken || normalizedProcessId.length === 0) {
       setErrorMessage('Informe um identificador de processo para consultar a etapa.');
       setErrorDetails([]);
+      setErrorStatus(null);
       return;
     }
 
     if (!Number.isInteger(parsedStageSequence) || parsedStageSequence <= 0) {
       setErrorMessage('Informe um número de etapa válido.');
       setErrorDetails([]);
+      setErrorStatus(null);
       return;
     }
 
     setIsLoading(true);
     setErrorMessage(null);
     setErrorDetails([]);
+    setErrorStatus(null);
 
     try {
       const nextSnapshot = await getCesadStageReadSnapshot(
@@ -109,6 +123,13 @@ export function CesadStageReadWorkspace() {
         getRequestErrorMessage(error, 'Não foi possível carregar a leitura consolidada da etapa.'),
       );
       setErrorDetails(getHttpErrorDetails(payload));
+      if (isHttpErrorStatus(error, 404)) {
+        setErrorStatus(404);
+      } else if (isHttpErrorStatus(error, 403)) {
+        setErrorStatus(403);
+      } else {
+        setErrorStatus(null);
+      }
       setSnapshot(null);
     } finally {
       setIsLoading(false);
@@ -155,12 +176,34 @@ export function CesadStageReadWorkspace() {
           </form>
 
           {errorMessage ? (
-            <FeedbackAlert
-              title="Falha ao carregar leitura consolidada"
-              tone="error"
-              description={errorMessage}
-              details={errorDetails}
-            />
+            errorStatus === 404 ? (
+              <StageUnavailableState>
+                {errorDetails.length > 0 ? (
+                  <ul className="content-list">
+                    {errorDetails.map((detail) => (
+                      <li key={detail}>{detail}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </StageUnavailableState>
+            ) : errorStatus === 403 ? (
+              <AccessBlockedState>
+                {errorDetails.length > 0 ? (
+                  <ul className="content-list">
+                    {errorDetails.map((detail) => (
+                      <li key={detail}>{detail}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </AccessBlockedState>
+            ) : (
+              <FeedbackAlert
+                title="Falha ao carregar leitura consolidada"
+                tone="error"
+                description={errorMessage}
+                details={errorDetails}
+              />
+            )
           ) : null}
 
           {!snapshot && !errorMessage ? (
@@ -432,13 +475,12 @@ export function CesadStageReadWorkspace() {
                             />
                           )
                         ) : (
-                          <ContentState
-                            title="Documento não localizado"
+                          <MissingDocumentState
+                            title={`${formatDocumentType(document.documentType)} ausente`}
                             description={
                               document.missingReason ??
                               'O backend sinalizou ausência deste documento no escopo da etapa.'
                             }
-                            tone="warning"
                           />
                         )}
                       </div>
@@ -469,11 +511,7 @@ export function CesadStageReadWorkspace() {
                     </ul>
                   </div>
                 ) : (
-                  <ContentState
-                    title="Histórico resumido indisponível"
-                    description="Nenhum evento relevante foi encontrado para o escopo atual da etapa."
-                    tone="warning"
-                  />
+                  <InsufficientHistoryState />
                 )}
               </PageSection>
             </>
