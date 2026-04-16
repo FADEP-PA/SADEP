@@ -273,6 +273,7 @@ model SignatureRecord {
   processDocument   ProcessDocument   @relation(fields: [processDocumentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   signatoryUser     User              @relation("SignatureRecordSignatory", fields: [signatoryUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
+  @@unique([processDocumentId, signatoryRole])
   @@index([processDocumentId])
   @@index([signatoryUserId])
   @@index([status])

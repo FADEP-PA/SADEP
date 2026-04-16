@@ -123,34 +123,16 @@ export class ProcessDocumentsService {
     const now = new Date();
     const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
 
-    // Ensure signature records exist without duplicating
-    const existingSignatures = await transaction.signatureRecord.findMany({
-      where: {
-        processDocumentId: documentId,
-        signatoryRole: {
-          in: [PrismaUserRole.IMMEDIATE_SUPERVISOR, PrismaUserRole.INTERN_SERVER],
-        },
-      },
+    const supervisorSignature = await this.createSignatureRecordIfMissing(transaction, {
+      processDocumentId: documentId,
+      signatoryUserId: supervisorUserId,
+      signatoryRole: PrismaUserRole.IMMEDIATE_SUPERVISOR,
+      provider: PrismaSignatureProvider.INTERNAL,
+      status: PrismaSignatureStatus.COMPLETED,
+      signedAt: now,
     });
 
-    const supervisorSignature = existingSignatures.find(
-      (sig) => sig.signatoryRole === PrismaUserRole.IMMEDIATE_SUPERVISOR,
-    );
-    const internSignature = existingSignatures.find(
-      (sig) => sig.signatoryRole === PrismaUserRole.INTERN_SERVER,
-    );
-
-    if (!supervisorSignature) {
-      await transaction.signatureRecord.create({
-        data: {
-          processDocumentId: documentId,
-          signatoryUserId: supervisorUserId,
-          signatoryRole: PrismaUserRole.IMMEDIATE_SUPERVISOR,
-          provider: PrismaSignatureProvider.INTERNAL,
-          status: PrismaSignatureStatus.COMPLETED,
-          signedAt: now,
-        },
-      });
+    if (supervisorSignature.created) {
 
       await transaction.auditEvent.create({
         data: this.buildAuditEvent({
@@ -170,16 +152,15 @@ export class ProcessDocumentsService {
       });
     }
 
-    if (!internSignature) {
-      await transaction.signatureRecord.create({
-        data: {
-          processDocumentId: documentId,
-          signatoryUserId: internUserId,
-          signatoryRole: PrismaUserRole.INTERN_SERVER,
-          provider: PrismaSignatureProvider.INTERNAL,
-          status: PrismaSignatureStatus.PENDING,
-        },
-      });
+    const internSignature = await this.createSignatureRecordIfMissing(transaction, {
+      processDocumentId: documentId,
+      signatoryUserId: internUserId,
+      signatoryRole: PrismaUserRole.INTERN_SERVER,
+      provider: PrismaSignatureProvider.INTERNAL,
+      status: PrismaSignatureStatus.PENDING,
+    });
+
+    if (internSignature.created) {
 
       await transaction.auditEvent.create({
         data: this.buildAuditEvent({
@@ -318,33 +299,16 @@ export class ProcessDocumentsService {
   ): Promise<void> {
     const now = new Date();
     const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
-    const existingSignatures = await transaction.signatureRecord.findMany({
-      where: {
-        processDocumentId: documentId,
-        signatoryRole: {
-          in: [PrismaUserRole.INTERN_SERVER, PrismaUserRole.IMMEDIATE_SUPERVISOR],
-        },
-      },
+    const internSignature = await this.createSignatureRecordIfMissing(transaction, {
+      processDocumentId: documentId,
+      signatoryUserId: internUserId,
+      signatoryRole: PrismaUserRole.INTERN_SERVER,
+      provider: PrismaSignatureProvider.INTERNAL,
+      status: PrismaSignatureStatus.COMPLETED,
+      signedAt: now,
     });
 
-    const internSignature = existingSignatures.find(
-      (sig) => sig.signatoryRole === PrismaUserRole.INTERN_SERVER,
-    );
-    const supervisorSignature = existingSignatures.find(
-      (sig) => sig.signatoryRole === PrismaUserRole.IMMEDIATE_SUPERVISOR,
-    );
-
-    if (!internSignature) {
-      await transaction.signatureRecord.create({
-        data: {
-          processDocumentId: documentId,
-          signatoryUserId: internUserId,
-          signatoryRole: PrismaUserRole.INTERN_SERVER,
-          provider: PrismaSignatureProvider.INTERNAL,
-          status: PrismaSignatureStatus.COMPLETED,
-          signedAt: now,
-        },
-      });
+    if (internSignature.created) {
 
       await transaction.auditEvent.create({
         data: this.buildAuditEvent({
@@ -364,16 +328,15 @@ export class ProcessDocumentsService {
       });
     }
 
-    if (!supervisorSignature) {
-      await transaction.signatureRecord.create({
-        data: {
-          processDocumentId: documentId,
-          signatoryUserId: supervisorUserId,
-          signatoryRole: PrismaUserRole.IMMEDIATE_SUPERVISOR,
-          provider: PrismaSignatureProvider.INTERNAL,
-          status: PrismaSignatureStatus.PENDING,
-        },
-      });
+    const supervisorSignature = await this.createSignatureRecordIfMissing(transaction, {
+      processDocumentId: documentId,
+      signatoryUserId: supervisorUserId,
+      signatoryRole: PrismaUserRole.IMMEDIATE_SUPERVISOR,
+      provider: PrismaSignatureProvider.INTERNAL,
+      status: PrismaSignatureStatus.PENDING,
+    });
+
+    if (supervisorSignature.created) {
 
       await transaction.auditEvent.create({
         data: this.buildAuditEvent({
@@ -808,6 +771,59 @@ export class ProcessDocumentsService {
         missingReason: null,
       } satisfies CesadStageDocumentRef;
     });
+  }
+
+  private async createSignatureRecordIfMissing(
+    transaction: Prisma.TransactionClient,
+    params: {
+      processDocumentId: string;
+      signatoryUserId: string;
+      signatoryRole: PrismaUserRole;
+      provider: PrismaSignatureProvider;
+      status: PrismaSignatureStatus;
+      signedAt?: Date;
+    },
+  ): Promise<{ created: boolean }> {
+    try {
+      await transaction.signatureRecord.create({
+        data: {
+          processDocumentId: params.processDocumentId,
+          signatoryUserId: params.signatoryUserId,
+          signatoryRole: params.signatoryRole,
+          provider: params.provider,
+          status: params.status,
+          ...(params.signedAt ? { signedAt: params.signedAt } : {}),
+        },
+      });
+
+      return { created: true };
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const existingSignature = await transaction.signatureRecord.findFirst({
+          where: {
+            processDocumentId: params.processDocumentId,
+            signatoryRole: params.signatoryRole,
+          },
+        });
+
+        if (!existingSignature) {
+          throw error;
+        }
+
+        if (existingSignature.signatoryUserId !== params.signatoryUserId) {
+          throw new BadRequestException(
+            `Signature record for document ${params.processDocumentId} and role ${params.signatoryRole} already exists with a different signatory`,
+          );
+        }
+
+        return { created: false };
+      }
+
+      throw error;
+    }
   }
 
   private buildAuditEvent(params: {

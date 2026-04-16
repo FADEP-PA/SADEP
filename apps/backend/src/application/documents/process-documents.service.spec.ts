@@ -175,8 +175,8 @@ describe('ProcessDocumentsService', () => {
           findUnique: jest.fn().mockResolvedValue(stageMetadata),
         },
         signatureRecord: {
-          findMany: jest.fn().mockResolvedValue([]),
           create: jest.fn().mockResolvedValue({}),
+          findFirst: jest.fn(),
         },
         auditEvent: {
           create: jest.fn().mockResolvedValue({}),
@@ -193,15 +193,27 @@ describe('ProcessDocumentsService', () => {
         supervisorUser,
       );
 
-      expect(transaction.signatureRecord.findMany).toHaveBeenCalledWith({
-        where: {
+      expect(transaction.signatureRecord.create).toHaveBeenCalledTimes(2);
+      expect(transaction.signatureRecord.create).toHaveBeenNthCalledWith(1, {
+        data: {
           processDocumentId: 'doc-123',
-          signatoryRole: {
-            in: ['IMMEDIATE_SUPERVISOR', 'INTERN_SERVER'],
-          },
+          signatoryUserId: supervisorUser.sub,
+          signatoryRole: 'IMMEDIATE_SUPERVISOR',
+          provider: 'INTERNAL',
+          status: 'COMPLETED',
+          signedAt: expect.any(Date),
         },
       });
-      expect(transaction.signatureRecord.create).toHaveBeenCalledTimes(2);
+      expect(transaction.signatureRecord.create).toHaveBeenNthCalledWith(2, {
+        data: {
+          processDocumentId: 'doc-123',
+          signatoryUserId: internUser.sub,
+          signatoryRole: 'INTERN_SERVER',
+          provider: 'INTERNAL',
+          status: 'PENDING',
+        },
+      });
+      expect(transaction.signatureRecord.findFirst).not.toHaveBeenCalled();
       expect(transaction.auditEvent.create).toHaveBeenCalledTimes(2);
       expect(transaction.auditEvent.create).toHaveBeenNthCalledWith(
         1,
@@ -239,11 +251,30 @@ describe('ProcessDocumentsService', () => {
           findUnique: jest.fn().mockResolvedValue(stageMetadata),
         },
         signatureRecord: {
-          findMany: jest.fn().mockResolvedValue([
-            { signatoryRole: PrismaUserRole.IMMEDIATE_SUPERVISOR },
-            { signatoryRole: PrismaUserRole.INTERN_SERVER },
-          ]),
-          create: jest.fn(),
+          create: jest
+            .fn()
+            .mockRejectedValueOnce(
+              new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+                code: 'P2002',
+                clientVersion: '6.19.2',
+              }),
+            )
+            .mockRejectedValueOnce(
+              new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+                code: 'P2002',
+                clientVersion: '6.19.2',
+              }),
+            ),
+          findFirst: jest
+            .fn()
+            .mockResolvedValueOnce({
+              signatoryRole: PrismaUserRole.IMMEDIATE_SUPERVISOR,
+              signatoryUserId: supervisorUser.sub,
+            })
+            .mockResolvedValueOnce({
+              signatoryRole: PrismaUserRole.INTERN_SERVER,
+              signatoryUserId: internUser.sub,
+            }),
         },
         auditEvent: {
           create: jest.fn(),
@@ -260,8 +291,132 @@ describe('ProcessDocumentsService', () => {
         supervisorUser,
       );
 
-      expect(transaction.signatureRecord.create).not.toHaveBeenCalled();
+      expect(transaction.signatureRecord.create).toHaveBeenCalledTimes(2);
+      expect(transaction.signatureRecord.findFirst).toHaveBeenNthCalledWith(1, {
+        where: {
+          processDocumentId: 'doc-123',
+          signatoryRole: 'IMMEDIATE_SUPERVISOR',
+        },
+      });
+      expect(transaction.signatureRecord.findFirst).toHaveBeenNthCalledWith(2, {
+        where: {
+          processDocumentId: 'doc-123',
+          signatoryRole: 'INTERN_SERVER',
+        },
+      });
       expect(transaction.auditEvent.create).not.toHaveBeenCalled();
+    });
+
+    it('fails fast when the existing signature for the same document and role belongs to a different user', async () => {
+      const transaction = {
+        processStage: {
+          findUnique: jest.fn().mockResolvedValue(stageMetadata),
+        },
+        signatureRecord: {
+          create: jest.fn().mockRejectedValue(
+            new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+              code: 'P2002',
+              clientVersion: '6.19.2',
+            }),
+          ),
+          findFirst: jest.fn().mockResolvedValue({
+            signatoryRole: PrismaUserRole.IMMEDIATE_SUPERVISOR,
+            signatoryUserId: 'other-supervisor',
+          }),
+        },
+        auditEvent: {
+          create: jest.fn(),
+        },
+      } as any;
+
+      await expect(
+        service.createSupervisorEvaluationSignatures(
+          transaction,
+          'process-123',
+          stageId,
+          'doc-123',
+          supervisorUser.sub,
+          internUser.sub,
+          supervisorUser,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(transaction.auditEvent.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createSelfEvaluationSignatures', () => {
+    it('creates the missing self evaluation signatures with the expected states', async () => {
+      const transaction = {
+        processStage: {
+          findUnique: jest.fn().mockResolvedValue(stageMetadata),
+        },
+        signatureRecord: {
+          create: jest.fn().mockResolvedValue({}),
+          findFirst: jest.fn(),
+        },
+        auditEvent: {
+          create: jest.fn().mockResolvedValue({}),
+        },
+      } as any;
+
+      await service.createSelfEvaluationSignatures(
+        transaction,
+        'process-123',
+        stageId,
+        'doc-self-123',
+        internUser.sub,
+        supervisorUser.sub,
+        internUser,
+      );
+
+      expect(transaction.signatureRecord.create).toHaveBeenCalledTimes(2);
+      expect(transaction.signatureRecord.create).toHaveBeenNthCalledWith(1, {
+        data: {
+          processDocumentId: 'doc-self-123',
+          signatoryUserId: internUser.sub,
+          signatoryRole: 'INTERN_SERVER',
+          provider: 'INTERNAL',
+          status: 'COMPLETED',
+          signedAt: expect.any(Date),
+        },
+      });
+      expect(transaction.signatureRecord.create).toHaveBeenNthCalledWith(2, {
+        data: {
+          processDocumentId: 'doc-self-123',
+          signatoryUserId: supervisorUser.sub,
+          signatoryRole: 'IMMEDIATE_SUPERVISOR',
+          provider: 'INTERNAL',
+          status: 'PENDING',
+        },
+      });
+      expect(transaction.auditEvent.create).toHaveBeenCalledTimes(2);
+      expect(transaction.auditEvent.create).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          data: expect.objectContaining({
+            eventType: 'DOCUMENT_SIGNED',
+            metadata: expect.objectContaining({
+              documentId: 'doc-self-123',
+              signatoryRole: 'INTERN_SERVER',
+              signatoryUserId: internUser.sub,
+            }),
+          }),
+        }),
+      );
+      expect(transaction.auditEvent.create).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          data: expect.objectContaining({
+            eventType: 'SIGNATURE_REQUESTED',
+            metadata: expect.objectContaining({
+              documentId: 'doc-self-123',
+              signatoryRole: 'IMMEDIATE_SUPERVISOR',
+              signatoryUserId: supervisorUser.sub,
+            }),
+          }),
+        }),
+      );
     });
   });
 

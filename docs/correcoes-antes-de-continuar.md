@@ -58,7 +58,8 @@ Checklist priorizado das correcoes que precisam ser feitas antes de continuar co
     - Rodar testes de backend do fluxo documental.
     - Testar manualmente a criacao de documento no fluxo real.
 
-- [ ] Proteger a integridade de assinaturas no banco e na aplicacao
+- [x] Proteger a integridade de assinaturas no banco e na aplicacao
+  - Observacao: foi definida unicidade por `processDocumentId + signatoryRole`; a criacao de assinatura no backend passou a ser idempotente; conflito semantico com mesmo documento + papel e usuario diferente agora falha explicitamente.
   - Problema: `SignatureRecord` nao tem restricao unica suficiente e a aplicacao depende de leitura seguida de `create`, o que pode gerar duplicidade.
   - Arquivos principais:
     - `apps/backend/prisma/schema.prisma`

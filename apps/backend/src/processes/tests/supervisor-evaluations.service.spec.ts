@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 
+import { Prisma } from '@prisma/client';
 import {
   AuditEventType,
+  DocumentType,
   ProcessStatus,
   SupervisorEvaluationStatus,
   UserRole,
@@ -22,6 +24,11 @@ export async function runSupervisorEvaluationsServiceTests() {
   try {
     const evaluatedUser = await createUser(context.prisma, UserRole.INTERN_SERVER, 'sevaluated@test.local');
     const supervisor = await createUser(context.prisma, UserRole.IMMEDIATE_SUPERVISOR, 'ssupervisor@test.local');
+    const otherSupervisor = await createUser(
+      context.prisma,
+      UserRole.IMMEDIATE_SUPERVISOR,
+      'other-ssupervisor@test.local',
+    );
     const admin = await createUser(context.prisma, UserRole.ADMIN, 'sadmin@test.local');
     const cesad = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'scesad@test.local');
 
@@ -62,6 +69,36 @@ export async function runSupervisorEvaluationsServiceTests() {
 
     const persistedProcess = await context.prisma.evaluationProcess.findUniqueOrThrow({ where: { id: process.id } });
     assert.equal(persistedProcess.status, ProcessStatus.AGUARDANDO_ASSINATURA);
+
+    const persistedDocument = await context.prisma.processDocument.findFirstOrThrow({
+      where: {
+        evaluationProcessId: process.id,
+        processStageId: process.defaultStageId,
+        documentType: DocumentType.SUPERVISOR_EVALUATION,
+      },
+      include: {
+        signatureRecords: true,
+      },
+    });
+    assert.equal(persistedDocument.signatureRecords.length, 2);
+
+    await assert.rejects(
+      () =>
+        context.prisma.signatureRecord.create({
+          data: {
+            processDocumentId: persistedDocument.id,
+            signatoryUserId: otherSupervisor.id,
+            signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
+            provider: 'INTERNAL',
+            status: 'PENDING',
+          },
+        }),
+      (error: unknown) => {
+        assert(error instanceof Prisma.PrismaClientKnownRequestError);
+        assert.equal(error.code, 'P2002');
+        return true;
+      },
+    );
 
     const auditEvents = await context.prisma.auditEvent.findMany({
       where: { evaluationProcessId: process.id },
