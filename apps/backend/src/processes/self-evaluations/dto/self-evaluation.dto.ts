@@ -21,6 +21,8 @@ export interface SelfEvaluationDocumentContext {
   documentId: string;
   documentType: DocumentType;
   documentStatus: DocumentStatus;
+  hasArtifact: boolean;
+  artifactPath: string | null;
   signatures: Array<{
     signatoryRole: UserRole;
     status: SignatureStatus;

@@ -43,7 +43,8 @@ Checklist priorizado das correcoes que precisam ser feitas antes de continuar co
     - Rodar o script oficial de teste do backend.
     - Confirmar cobertura dos fluxos principais: workflow, CESAD, supervisor evaluation e self evaluation.
 
-- [ ] Corrigir o fluxo de geracao de documentos e o uso de `artifactPath`
+- [x] Corrigir o fluxo de geracao de documentos e o uso de `artifactPath`
+  - Observacao: `ProcessDocument` pode existir como documento logico antes do artefato fisico; `artifactPath` representa apenas o artefato fisico materializado; ausencia de artefato deve ser `null`, nunca string vazia.
   - Problema: documentos estao sendo criados com `artifactPath` vazio, embora o schema trate o campo como obrigatorio.
   - Arquivos principais:
     - `apps/backend/src/application/documents/process-documents.service.ts`

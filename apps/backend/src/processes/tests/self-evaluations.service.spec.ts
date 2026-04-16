@@ -140,6 +140,8 @@ export async function runSelfEvaluationsTests() {
     assert.ok(submitted.submittedAt);
     assert.equal(submitted.documentContext?.documentType, DocumentType.SELF_EVALUATION);
     assert.equal(submitted.documentContext?.documentStatus, DocumentStatus.READY_FOR_SIGNATURE);
+    assert.equal(submitted.documentContext?.hasArtifact, false);
+    assert.equal(submitted.documentContext?.artifactPath, null);
     assert.equal(submitted.documentContext?.supervisorSignaturePending, true);
 
     const persistedProcess = await context.prisma.evaluationProcess.findUniqueOrThrow({
@@ -159,6 +161,7 @@ export async function runSelfEvaluationsTests() {
     });
 
     assert.equal(persistedDocument.documentStatus, DocumentStatus.READY_FOR_SIGNATURE);
+    assert.equal(persistedDocument.artifactPath, null);
     assert.equal(persistedDocument.signatureRecords.length, 2);
 
     const internSignature = persistedDocument.signatureRecords.find(
@@ -208,6 +211,8 @@ export async function runSelfEvaluationsTests() {
     });
     assert.equal(signedBySupervisor.status, SelfEvaluationStatus.SUBMITTED);
     assert.equal(signedBySupervisor.documentContext?.documentStatus, DocumentStatus.SIGNED);
+    assert.equal(signedBySupervisor.documentContext?.hasArtifact, false);
+    assert.equal(signedBySupervisor.documentContext?.artifactPath, null);
     assert.equal(signedBySupervisor.documentContext?.supervisorSignaturePending, false);
 
     const signedDocument = await context.prisma.processDocument.findFirstOrThrow({
@@ -221,6 +226,7 @@ export async function runSelfEvaluationsTests() {
       },
     });
     assert.equal(signedDocument.documentStatus, DocumentStatus.SIGNED);
+    assert.equal(signedDocument.artifactPath, null);
 
     const signedSupervisorSignature = signedDocument.signatureRecords.find(
       (signature) => signature.signatoryRole === UserRole.IMMEDIATE_SUPERVISOR,

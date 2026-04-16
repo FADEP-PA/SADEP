@@ -138,7 +138,7 @@ export async function runCesadStageReadServiceTests() {
             processStageId: stageTwo.id,
             documentType: PrismaDocumentType.SELF_EVALUATION,
             documentStatus: PrismaDocumentStatus.SIGNED,
-            artifactPath: 'documents/self-evaluation-stage-2.pdf',
+            artifactPath: null,
           },
         }),
       ]);
@@ -328,6 +328,7 @@ export async function runCesadStageReadServiceTests() {
     assert.equal(supervisorDocumentSnapshot?.exists, true);
     assert.equal(supervisorDocumentSnapshot?.documentId, stageTwoSupervisorDocument.id);
     assert.equal(supervisorDocumentSnapshot?.stageLinkMode, 'STAGE_BOUND');
+    assert.equal(supervisorDocumentSnapshot?.hasArtifact, true);
     assert.equal(supervisorDocumentSnapshot?.signatures.length, 2);
     assert.equal(supervisorDocumentSnapshot?.artifactPath, 'documents/supervisor-evaluation-stage-2.pdf');
 
@@ -337,6 +338,8 @@ export async function runCesadStageReadServiceTests() {
     assert.equal(selfDocumentSnapshot?.exists, true);
     assert.equal(selfDocumentSnapshot?.documentId, stageTwoSelfDocument.id);
     assert.equal(selfDocumentSnapshot?.stageLinkMode, 'STAGE_BOUND');
+    assert.equal(selfDocumentSnapshot?.hasArtifact, false);
+    assert.equal(selfDocumentSnapshot?.artifactPath, null);
     assert.equal(selfDocumentSnapshot?.signatures.length, 2);
 
     const opinionDocumentSnapshot = snapshot.documents.find(

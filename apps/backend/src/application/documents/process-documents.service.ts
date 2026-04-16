@@ -67,7 +67,7 @@ export class ProcessDocumentsService {
           processStageId,
           documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
           documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
-          artifactPath: '', // TODO: generate actual document path
+          artifactPath: null,
         },
       });
     } catch (error: unknown) {
@@ -265,7 +265,7 @@ export class ProcessDocumentsService {
           processStageId,
           documentType: PrismaDocumentType.SELF_EVALUATION,
           documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
-          artifactPath: '',
+          artifactPath: null,
         },
       });
     } catch (error: unknown) {
@@ -583,6 +583,8 @@ export class ProcessDocumentsService {
     documentId: string;
     documentType: DocumentType;
     documentStatus: DocumentStatus;
+    hasArtifact: boolean;
+    artifactPath: string | null;
     signatures: Array<{
       signatoryRole: UserRole;
       status: SignatureStatus;
@@ -605,6 +607,8 @@ export class ProcessDocumentsService {
       return null;
     }
 
+    const artifactPath = this.normalizeArtifactPath(document.artifactPath);
+
     const signatures = document.signatureRecords.map((sig) => ({
       signatoryRole: this.toContractUserRole(sig.signatoryRole),
       status: this.toContractSignatureStatus(sig.status),
@@ -619,6 +623,8 @@ export class ProcessDocumentsService {
       documentId: document.id,
       documentType: this.toContractDocumentType(document.documentType),
       documentStatus: this.toContractDocumentStatus(document.documentStatus),
+      hasArtifact: artifactPath !== null,
+      artifactPath,
       signatures,
       internSignaturePending,
     };
@@ -632,6 +638,8 @@ export class ProcessDocumentsService {
     documentId: string;
     documentType: DocumentType;
     documentStatus: DocumentStatus;
+    hasArtifact: boolean;
+    artifactPath: string | null;
     signatures: Array<{
       signatoryRole: UserRole;
       status: SignatureStatus;
@@ -654,6 +662,8 @@ export class ProcessDocumentsService {
       return null;
     }
 
+    const artifactPath = this.normalizeArtifactPath(document.artifactPath);
+
     const signatures = document.signatureRecords.map((sig) => ({
       signatoryRole: this.toContractUserRole(sig.signatoryRole),
       status: this.toContractSignatureStatus(sig.status),
@@ -670,6 +680,8 @@ export class ProcessDocumentsService {
       documentId: document.id,
       documentType: this.toContractDocumentType(document.documentType),
       documentStatus: this.toContractDocumentStatus(document.documentStatus),
+      hasArtifact: artifactPath !== null,
+      artifactPath,
       signatures,
       supervisorSignaturePending,
     };
@@ -760,6 +772,7 @@ export class ProcessDocumentsService {
           exists: false,
           documentId: null,
           documentStatus: null,
+          hasArtifact: false,
           artifactPath: null,
           createdAt: null,
           updatedAt: null,
@@ -772,12 +785,15 @@ export class ProcessDocumentsService {
         } satisfies CesadStageDocumentRef;
       }
 
+      const artifactPath = this.normalizeArtifactPath(selectedDocument.artifactPath);
+
       return {
         documentType,
         exists: true,
         documentId: selectedDocument.id,
         documentStatus: this.toContractDocumentStatus(selectedDocument.documentStatus),
-        artifactPath: selectedDocument.artifactPath,
+        hasArtifact: artifactPath !== null,
+        artifactPath,
         createdAt: selectedDocument.createdAt.toISOString(),
         updatedAt: selectedDocument.updatedAt.toISOString(),
         stageLinkMode,
@@ -919,5 +935,14 @@ export class ProcessDocumentsService {
       throw new BadRequestException(`Unsupported audit event type ${eventType}`);
     }
     return eventType as PrismaAuditEventType;
+  }
+
+  private normalizeArtifactPath(artifactPath: string | null): string | null {
+    if (typeof artifactPath !== 'string') {
+      return null;
+    }
+
+    const normalizedArtifactPath = artifactPath.trim();
+    return normalizedArtifactPath.length > 0 ? normalizedArtifactPath : null;
   }
 }

@@ -84,7 +84,7 @@ describe('ProcessDocumentsService', () => {
           processStageId: stageId,
           documentType: 'SUPERVISOR_EVALUATION',
           documentStatus: 'READY_FOR_SIGNATURE',
-          artifactPath: '',
+          artifactPath: null,
         },
       });
       expect(transaction.auditEvent.create).toHaveBeenCalledTimes(1);
@@ -433,6 +433,7 @@ describe('ProcessDocumentsService', () => {
             id: 'doc-123',
             documentType: 'SUPERVISOR_EVALUATION',
             documentStatus: 'READY_FOR_SIGNATURE',
+            artifactPath: '',
             signatureRecords: [
               {
                 signatoryRole: 'IMMEDIATE_SUPERVISOR',
@@ -469,6 +470,8 @@ describe('ProcessDocumentsService', () => {
         documentId: 'doc-123',
         documentType: DocumentType.SUPERVISOR_EVALUATION,
         documentStatus: DocumentStatus.READY_FOR_SIGNATURE,
+        hasArtifact: false,
+        artifactPath: null,
         signatures: [
           {
             signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,

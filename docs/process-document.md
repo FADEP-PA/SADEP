@@ -41,6 +41,15 @@ Somente depois esse documento pode gerar sua representação física em PDF.
 
 A fonte principal deve ser o documento lógico/processual estruturado no sistema.
 
+### Regra de `artifactPath`
+`artifactPath` representa apenas a materialização física do documento, como PDF oficial ou artefato equivalente em storage.
+
+Regras:
+- o `ProcessDocument` pode existir antes do artefato físico
+- `artifactPath` só deve ser preenchido quando esse artefato realmente existir
+- ausência de artefato deve ser representada por `null`
+- string vazia não é valor válido para `artifactPath`
+
 ---
 
 ## Regra estrutural do Caso 2

@@ -41,6 +41,8 @@ export interface SupervisorEvaluationDocumentContextRef {
   documentId: string;
   documentType: DocumentType;
   documentStatus: DocumentStatus;
+  hasArtifact: boolean;
+  artifactPath: string | null;
   signatures: SupervisorEvaluationDocumentSignatureRef[];
   internSignaturePending: boolean;
 }

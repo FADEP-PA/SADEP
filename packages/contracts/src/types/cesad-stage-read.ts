@@ -50,6 +50,7 @@ export interface CesadStageDocumentRef {
   exists: boolean;
   documentId: string | null;
   documentStatus: DocumentStatus | null;
+  hasArtifact: boolean;
   artifactPath: string | null;
   createdAt: string | null;
   updatedAt: string | null;

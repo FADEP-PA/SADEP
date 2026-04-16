@@ -119,6 +119,8 @@ describe('SupervisorEvaluationsService', () => {
         documentId: 'doc-123',
         documentType: DocumentType.SUPERVISOR_EVALUATION,
         documentStatus: DocumentStatus.READY_FOR_SIGNATURE,
+        hasArtifact: false,
+        artifactPath: null,
         signatures: [
           {
             signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
@@ -159,6 +161,8 @@ describe('SupervisorEvaluationsService', () => {
           documentId: 'doc-123',
           documentType: DocumentType.SUPERVISOR_EVALUATION,
           documentStatus: DocumentStatus.READY_FOR_SIGNATURE,
+          hasArtifact: false,
+          artifactPath: null,
           signatures: [
             {
               signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
@@ -225,6 +229,8 @@ describe('SupervisorEvaluationsService', () => {
         documentId: 'doc-123',
         documentType: DocumentType.SUPERVISOR_EVALUATION,
         documentStatus: DocumentStatus.READY_FOR_SIGNATURE,
+        hasArtifact: false,
+        artifactPath: null,
         signatures: [],
         internSignaturePending: true,
       });

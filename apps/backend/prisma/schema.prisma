@@ -179,7 +179,7 @@ model ProcessDocument {
   documentType        DocumentType
   documentStatus      DocumentStatus    @default(DRAFT)
   version             Int               @default(1)
-  artifactPath        String
+  artifactPath        String?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   evaluationProcess   EvaluationProcess @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
