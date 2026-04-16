@@ -12,6 +12,22 @@ describe('SupervisorEvaluationsService', () => {
   let prismaService: jest.Mocked<PrismaService>;
   let processesService: jest.Mocked<ProcessesService>;
   let processDocumentsService: jest.Mocked<ProcessDocumentsService>;
+  let supervisorEvaluationRepo: {
+    findUnique: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+  };
+  let auditEventRepo: {
+    create: jest.Mock;
+  };
+
+  const currentStage = {
+    id: 'stage-123',
+    sequence: 1,
+    stageCode: 'ETAPA_1',
+    startedAt: null,
+    endedAt: null,
+  };
 
   const mockUser = {
     sub: 'user-123',
@@ -34,6 +50,15 @@ describe('SupervisorEvaluationsService', () => {
   };
 
   beforeEach(async () => {
+    supervisorEvaluationRepo = {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    };
+    auditEventRepo = {
+      create: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SupervisorEvaluationsService,
@@ -41,14 +66,8 @@ describe('SupervisorEvaluationsService', () => {
           provide: PrismaService,
           useValue: {
             $transaction: jest.fn(),
-            supervisorEvaluation: {
-              findUnique: jest.fn(),
-              create: jest.fn(),
-              update: jest.fn(),
-            },
-            auditEvent: {
-              create: jest.fn(),
-            },
+            supervisorEvaluation: supervisorEvaluationRepo,
+            auditEvent: auditEventRepo,
           },
         },
         {
@@ -56,6 +75,7 @@ describe('SupervisorEvaluationsService', () => {
           useValue: {
             ensureProcessExists: jest.fn(),
             findProcessOrThrow: jest.fn(),
+            resolveCurrentStageOrThrow: jest.fn(),
             transitionWorkflowInTransaction: jest.fn(),
           },
         },
@@ -75,15 +95,17 @@ describe('SupervisorEvaluationsService', () => {
     prismaService = module.get(PrismaService);
     processesService = module.get(ProcessesService);
     processDocumentsService = module.get(ProcessDocumentsService);
+    processesService.resolveCurrentStageOrThrow.mockResolvedValue(currentStage as any);
   });
 
   describe('getByProcessId', () => {
     it('returns documentContext with the stable shape when the evaluation is submitted', async () => {
       const processId = 'process-123';
       const now = new Date('2024-01-01T12:00:00.000Z');
-      prismaService.supervisorEvaluation.findUnique.mockResolvedValue({
+      supervisorEvaluationRepo.findUnique.mockResolvedValue({
         id: 'eval-123',
         processId,
+        processStageId: currentStage.id,
         evaluatorUserId: mockUser.sub,
         status: 'SUBMITTED',
         summary: validPayload.summary,
@@ -115,13 +137,16 @@ describe('SupervisorEvaluationsService', () => {
       const result = await service.getByProcessId(processId, mockUser);
 
       expect(processesService.ensureProcessExists).toHaveBeenCalledWith(processId);
+      expect(processesService.resolveCurrentStageOrThrow).toHaveBeenCalledWith(prismaService, processId);
       expect(processDocumentsService.getSupervisorEvaluationDocumentContext).toHaveBeenCalledWith(
         prismaService,
         processId,
+        currentStage.id,
       );
       expect(result).toEqual({
         id: 'eval-123',
         processId,
+        processStageId: currentStage.id,
         evaluatorUserId: mockUser.sub,
         status: 'SUBMITTED',
         summary: validPayload.summary,
@@ -154,9 +179,10 @@ describe('SupervisorEvaluationsService', () => {
     it('does not ask for documentContext while the evaluation is still a draft', async () => {
       const processId = 'process-123';
       const now = new Date('2024-01-01T12:00:00.000Z');
-      prismaService.supervisorEvaluation.findUnique.mockResolvedValue({
+      supervisorEvaluationRepo.findUnique.mockResolvedValue({
         id: 'eval-123',
         processId,
+        processStageId: currentStage.id,
         evaluatorUserId: mockUser.sub,
         status: 'DRAFT',
         summary: validPayload.summary,
@@ -182,9 +208,10 @@ describe('SupervisorEvaluationsService', () => {
         role: UserRole.INTERN_SERVER,
       };
 
-      prismaService.supervisorEvaluation.findUnique.mockResolvedValue({
+      supervisorEvaluationRepo.findUnique.mockResolvedValue({
         id: 'eval-123',
         processId,
+        processStageId: currentStage.id,
         evaluatorUserId: mockUser.sub,
         status: 'SUBMITTED',
         summary: validPayload.summary,
@@ -205,9 +232,10 @@ describe('SupervisorEvaluationsService', () => {
       const submitted = await service.getByProcessId(processId, internUser);
       expect(submitted?.status).toBe('SUBMITTED');
 
-      prismaService.supervisorEvaluation.findUnique.mockResolvedValue({
+      supervisorEvaluationRepo.findUnique.mockResolvedValue({
         id: 'eval-123',
         processId,
+        processStageId: currentStage.id,
         evaluatorUserId: mockUser.sub,
         status: 'DRAFT',
         summary: validPayload.summary,
@@ -231,10 +259,11 @@ describe('SupervisorEvaluationsService', () => {
         status: 'EM_AVALIACAO',
         evaluatedUserId: 'intern-123',
       };
-      prismaService.supervisorEvaluation.findUnique.mockResolvedValue(null);
-      prismaService.supervisorEvaluation.create.mockResolvedValue({
+      supervisorEvaluationRepo.findUnique.mockResolvedValue(null);
+      supervisorEvaluationRepo.create.mockResolvedValue({
         id: 'eval-123',
         processId,
+        processStageId: currentStage.id,
         evaluatorUserId: mockUser.sub,
         status: 'SUBMITTED',
         summary: validPayload.summary,
@@ -245,15 +274,15 @@ describe('SupervisorEvaluationsService', () => {
         updatedAt: submittedAt,
       } as any);
       processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
-      processesService.transitionWorkflowInTransaction.mockResolvedValue(undefined);
+      processesService.transitionWorkflowInTransaction.mockResolvedValue('AGUARDANDO_ASSINATURA' as any);
       processDocumentsService.ensureSupervisorEvaluationDocument.mockResolvedValue({
         documentId: 'doc-123',
       });
       processDocumentsService.createSupervisorEvaluationSignatures.mockResolvedValue(undefined);
       prismaService.$transaction.mockImplementation(async (callback) =>
         callback({
-          supervisorEvaluation: prismaService.supervisorEvaluation,
-          auditEvent: prismaService.auditEvent,
+          supervisorEvaluation: supervisorEvaluationRepo,
+          auditEvent: auditEventRepo,
           evaluationProcess: {
             findUnique: jest.fn().mockResolvedValue({
               evaluatedUserId: 'intern-123',
@@ -276,11 +305,13 @@ describe('SupervisorEvaluationsService', () => {
       expect(processDocumentsService.ensureSupervisorEvaluationDocument).toHaveBeenCalledWith(
         expect.any(Object),
         processId,
+        currentStage.id,
         mockUser,
       );
       expect(processDocumentsService.createSupervisorEvaluationSignatures).toHaveBeenCalledWith(
         expect.any(Object),
         processId,
+        currentStage.id,
         'doc-123',
         mockUser.sub,
         'intern-123',
@@ -301,6 +332,7 @@ describe('SupervisorEvaluationsService', () => {
       const existingEvaluation = {
         id: 'eval-123',
         processId,
+        processStageId: currentStage.id,
         evaluatorUserId: mockUser.sub,
         status: 'SUBMITTED',
         summary: validPayload.summary,
@@ -336,6 +368,7 @@ describe('SupervisorEvaluationsService', () => {
       const existingEvaluation = {
         id: 'eval-123',
         processId,
+        processStageId: currentStage.id,
         evaluatorUserId: mockUser.sub,
         status: 'SUBMITTED',
         summary: validPayload.summary,

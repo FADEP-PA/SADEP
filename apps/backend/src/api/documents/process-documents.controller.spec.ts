@@ -1,5 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { UserRole } from '@aep-pa/contracts';
 
 import { ProcessDocumentsController } from './process-documents.controller';
@@ -7,30 +6,20 @@ import { ProcessDocumentsService } from '../../application/documents/process-doc
 
 describe('ProcessDocumentsController', () => {
   let controller: ProcessDocumentsController;
-  let service: jest.Mocked<ProcessDocumentsService>;
+  let service: jest.Mocked<Pick<ProcessDocumentsService, 'signSupervisorEvaluationDocument'>>;
 
   const mockUser = {
     sub: 'user-123',
+    email: 'intern@test.local',
     role: UserRole.INTERN_SERVER,
   };
 
-  beforeEach(async () => {
-    const mockService = {
+  beforeEach(() => {
+    service = {
       signSupervisorEvaluationDocument: jest.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [ProcessDocumentsController],
-      providers: [
-        {
-          provide: ProcessDocumentsService,
-          useValue: mockService,
-        },
-      ],
-    }).compile();
-
-    controller = module.get<ProcessDocumentsController>(ProcessDocumentsController);
-    service = module.get(ProcessDocumentsService);
+    controller = new ProcessDocumentsController(service as unknown as ProcessDocumentsService);
   });
 
   describe('signDocument', () => {
@@ -48,7 +37,9 @@ describe('ProcessDocumentsController', () => {
     it('should throw UnauthorizedException when user not authenticated', async () => {
       const processId = 'process-123';
 
-      await expect(controller.signDocument(processId, undefined)).rejects.toThrow(UnauthorizedException);
+      await expect(controller.signDocument(processId, undefined)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });
