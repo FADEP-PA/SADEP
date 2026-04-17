@@ -38,6 +38,22 @@ import {
   isWorkflowAuditEventType,
 } from './workflow-catalog';
 
+const CESAD_PROCESS_ACCESS_ALLOWED_STATUSES = new Set<ProcessStatus>([
+  ProcessStatus.EM_ANALISE_CESAD,
+  ProcessStatus.PARECER_EMITIDO,
+]);
+
+type ProcessAccessContext = {
+  id: string;
+  status: ProcessStatus;
+  evaluatedUserId: string;
+  currentStage: {
+    id: string;
+    sequence: number;
+    stageCode: string;
+  };
+};
+
 export type PrismaTransactionClient = Omit<
   PrismaClient,
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
@@ -48,26 +64,20 @@ export class ProcessesService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async getWorkflow(processId: string, user: AuthenticatedUser): Promise<WorkflowResponseDto> {
-    const process = await this.prismaService.evaluationProcess.findUnique({
-      where: { id: processId },
-      select: { id: true, status: true },
-    });
-
-    if (!process) {
-      throw new NotFoundException(`Evaluation process ${processId} was not found`);
-    }
-
-    const status = this.toContractProcessStatus(process.status);
+    const process = await this.ensureUserHasProcessAccess(this.prismaService, processId, user);
 
     return {
       id: process.id,
-      status,
-      availableActions: this.getAllowedActions(status, user.role),
+      status: process.status,
+      availableActions: this.getAllowedActions(process.status, user.role),
     };
   }
 
-  async getWorkflowHistory(processId: string): Promise<WorkflowHistoryItemDto[]> {
-    await this.ensureProcessExists(processId);
+  async getWorkflowHistory(
+    processId: string,
+    user: AuthenticatedUser,
+  ): Promise<WorkflowHistoryItemDto[]> {
+    await this.ensureUserHasProcessAccess(this.prismaService, processId, user);
 
     const events = await this.prismaService.auditEvent.findMany({
       where: { evaluationProcessId: processId },
@@ -206,10 +216,8 @@ export class ProcessesService {
     }
 
     const normalizedComment = this.normalizeComment(payload.comment);
-    const process = await this.findProcessOrThrow(transaction, processId);
-    const currentStage = await this.resolveCurrentStageOrThrow(transaction, processId);
-    const currentStatus = this.toContractProcessStatus(process.status);
-    const transition = getWorkflowTransition(currentStatus, payload.action);
+    const process = await this.ensureUserHasProcessAccess(transaction, processId, user);
+    const transition = getWorkflowTransition(process.status, payload.action);
 
     if (!transition) {
       throw new BadRequestException(
@@ -227,7 +235,7 @@ export class ProcessesService {
 
     if (payload.action === ProcessAction.RELEASE_FOR_SERVER_SIGNATURE) {
       const supervisorEvaluation = await transaction.supervisorEvaluation.findUnique({
-        where: { processStageId: currentStage.id },
+        where: { processStageId: process.currentStage.id },
         select: { status: true },
       });
 
@@ -242,7 +250,7 @@ export class ProcessesService {
       const documentsComplete = await this.areRequiredStageDocumentsComplete(
         transaction,
         processId,
-        currentStage.id,
+        process.currentStage.id,
       );
 
       if (!documentsComplete) {
@@ -265,9 +273,9 @@ export class ProcessesService {
       performedByRole: user.role,
       occurredAt,
       processStatus: transition.to,
-      processStageId: currentStage.id,
-      stageSequence: currentStage.sequence,
-      stageCode: currentStage.stageCode,
+      processStageId: process.currentStage.id,
+      stageSequence: process.currentStage.sequence,
+      stageCode: process.currentStage.stageCode,
       ...(normalizedComment ? { comment: normalizedComment } : {}),
     };
 
@@ -277,7 +285,7 @@ export class ProcessesService {
         actorUserId: user.sub,
         actorRole: this.toDatabaseRole(user.role),
         eventType: this.toDatabaseAuditEventType(transition.eventType),
-        beforeState: { status: currentStatus },
+        beforeState: { status: process.status },
         afterState: { status: transition.to },
         metadata,
         occurredAt: new Date(occurredAt),
@@ -331,10 +339,91 @@ export class ProcessesService {
     );
   }
 
+  async ensureUserHasProcessAccess(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    user: AuthenticatedUser,
+  ): Promise<ProcessAccessContext> {
+    const process = await this.getProcessAccessContextOrThrow(transaction, processId);
+
+    switch (user.role) {
+      case UserRole.INTERN_SERVER:
+        if (process.evaluatedUserId !== user.sub) {
+          throw new ForbiddenException('Authenticated user is not the evaluated server for this process');
+        }
+        return process;
+      case UserRole.IMMEDIATE_SUPERVISOR:
+        // BE-SEC-01 must not infer supervisor linkage from
+        // supervisorEvaluation.evaluatorUserId, and the current process model
+        // has no authoritative binding for the responsible supervisor.
+        throw new ForbiddenException(
+          'Authenticated supervisor cannot access this process without a secure process-stage binding',
+        );
+      case UserRole.CESAD_MEMBER:
+        if (!CESAD_PROCESS_ACCESS_ALLOWED_STATUSES.has(process.status)) {
+          throw new ForbiddenException(
+            'Authenticated CESAD member does not have an active link to this process',
+          );
+        }
+        return process;
+      default:
+        throw new ForbiddenException('Authenticated user does not have a legitimate link to this process');
+    }
+  }
+
   private getAllowedActions(status: ProcessStatus, role: UserRole): ProcessAction[] {
     return getAvailableWorkflowTransitions(status)
       .filter((transition) => transition.allowedRoles.includes(role))
       .map((transition) => transition.action);
+  }
+
+  private async getProcessAccessContextOrThrow(
+    transaction: PrismaTransactionClient,
+    processId: string,
+  ): Promise<ProcessAccessContext> {
+    const process = await transaction.evaluationProcess.findUnique({
+      where: { id: processId },
+      select: {
+        id: true,
+        status: true,
+        evaluatedUserId: true,
+        stages: {
+          select: {
+            id: true,
+            sequence: true,
+            stageCode: true,
+            endedAt: true,
+          },
+          orderBy: { sequence: 'asc' },
+        },
+      },
+    });
+
+    if (!process) {
+      throw new NotFoundException(`Evaluation process ${processId} was not found`);
+    }
+
+    if (process.stages.length === 0) {
+      throw new NotFoundException(`No process stage was found for evaluation process ${processId}`);
+    }
+
+    const openStages = process.stages.filter((stage) => stage.endedAt === null);
+    const currentStage = openStages.at(-1) ?? process.stages.at(-1);
+
+    if (!currentStage) {
+      throw new NotFoundException(`No process stage was found for evaluation process ${processId}`);
+    }
+
+    return {
+      id: process.id,
+      status: this.toContractProcessStatus(process.status),
+      evaluatedUserId: process.evaluatedUserId,
+      currentStage: {
+        id: currentStage.id,
+        sequence: currentStage.sequence,
+        stageCode: currentStage.stageCode,
+      },
+    };
   }
 
   private normalizeComment(comment?: string): string | null {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 
 import { NestFactory } from '@nestjs/core';
-import { ProcessStatus, UserRole } from '@aep-pa/contracts';
+import { ProcessAction, ProcessStatus, UserRole } from '@aep-pa/contracts';
 
 import { AppModule } from '../../app/app.module';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
@@ -46,6 +46,36 @@ export async function runProcessesEndpointTests() {
       UserRole.IMMEDIATE_SUPERVISOR,
       'endpoint-supervisor@test.local',
     );
+    const adminUser = await createUser(context.prisma, UserRole.ADMIN, 'endpoint-admin@test.local');
+    const otherSupervisorUser = await createUser(
+      context.prisma,
+      UserRole.IMMEDIATE_SUPERVISOR,
+      'endpoint-other-supervisor@test.local',
+    );
+
+    await context.prisma.auditEvent.create({
+      data: {
+        evaluationProcessId: processOutsideCesadWindow.id,
+        actorUserId: supervisorUser.id,
+        actorRole: 'IMMEDIATE_SUPERVISOR',
+        eventType: 'SIGNATURE_REQUESTED',
+        beforeState: { status: ProcessStatus.EM_AVALIACAO },
+        afterState: { status: ProcessStatus.AGUARDANDO_ASSINATURA },
+        metadata: {
+          eventType: 'SIGNATURE_REQUESTED',
+          action: ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
+          performedByUserId: supervisorUser.id,
+          performedByRole: supervisorUser.role,
+          occurredAt: new Date('2026-04-17T12:00:00.000Z').toISOString(),
+          processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
+          processStageId: processOutsideCesadWindow.defaultStageId,
+          stageSequence: 1,
+          stageCode: 'ETAPA_1',
+          comment: 'Evento disponível para histórico autorizado.',
+        },
+        occurredAt: new Date('2026-04-17T12:00:00.000Z'),
+      },
+    });
 
     const loginResponse = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
@@ -62,20 +92,20 @@ export async function runProcessesEndpointTests() {
     const transitionResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow/transition`,
       {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${loginPayload.accessToken}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: workflowActions.issueOpinion,
-      }),
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${loginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: workflowActions.issueOpinion,
+        }),
       },
     );
 
-    assert.equal(transitionResponse.status, 400);
+    assert.equal(transitionResponse.status, 403);
     const payload = (await transitionResponse.json()) as { message: string };
-    assert.match(payload.message, /not allowed when process is in status EM_AVALIACAO/);
+    assert.match(payload.message, /does not have an active link to this process/);
 
     const blockedCesadShortcutResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow/transition`,
@@ -91,9 +121,9 @@ export async function runProcessesEndpointTests() {
       },
     );
 
-    assert.equal(blockedCesadShortcutResponse.status, 400);
+    assert.equal(blockedCesadShortcutResponse.status, 403);
     const blockedShortcutPayload = (await blockedCesadShortcutResponse.json()) as { message: string };
-    assert.match(blockedShortcutPayload.message, /not allowed when process is in status EM_AVALIACAO/);
+    assert.match(blockedShortcutPayload.message, /does not have an active link to this process/);
 
     const forbiddenDraftResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/supervisor-evaluation/draft`,
@@ -122,6 +152,125 @@ export async function runProcessesEndpointTests() {
 
     assert.equal(supervisorLoginResponse.status, 200);
     const supervisorLoginPayload = (await supervisorLoginResponse.json()) as { accessToken: string };
+
+    const otherSupervisorLoginResponse = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: otherSupervisorUser.email,
+        password: 'Test123456!',
+      }),
+    });
+
+    assert.equal(otherSupervisorLoginResponse.status, 200);
+    const otherSupervisorLoginPayload = (await otherSupervisorLoginResponse.json()) as {
+      accessToken: string;
+    };
+
+    const adminLoginResponse = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: adminUser.email,
+        password: 'Test123456!',
+      }),
+    });
+
+    assert.equal(adminLoginResponse.status, 200);
+    const adminLoginPayload = (await adminLoginResponse.json()) as { accessToken: string };
+
+    const workflowResponse = await fetch(
+      `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${supervisorLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(workflowResponse.status, 403);
+    const workflowPayload = (await workflowResponse.json()) as { message: string };
+    assert.match(workflowPayload.message, /secure process-stage binding/);
+
+    const workflowWithoutEvaluationLinkResponse = await fetch(
+      `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${otherSupervisorLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(workflowWithoutEvaluationLinkResponse.status, 403);
+    const workflowWithoutEvaluationLinkPayload =
+      (await workflowWithoutEvaluationLinkResponse.json()) as { message: string };
+    assert.match(workflowWithoutEvaluationLinkPayload.message, /secure process-stage binding/);
+
+    const forbiddenAdminWorkflowResponse = await fetch(
+      `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${adminLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(forbiddenAdminWorkflowResponse.status, 403);
+    const forbiddenAdminWorkflowPayload = (await forbiddenAdminWorkflowResponse.json()) as {
+      message: string;
+    };
+    assert.match(forbiddenAdminWorkflowPayload.message, /legitimate link to this process/);
+
+    const historyResponse = await fetch(
+      `${baseUrl}/processes/${processOutsideCesadWindow.id}/history`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${supervisorLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(historyResponse.status, 403);
+    const historyPayload = (await historyResponse.json()) as { message: string };
+    assert.match(historyPayload.message, /secure process-stage binding/);
+
+    const historyWithoutEvaluationLinkResponse = await fetch(
+      `${baseUrl}/processes/${processOutsideCesadWindow.id}/history`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${otherSupervisorLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(historyWithoutEvaluationLinkResponse.status, 403);
+    const historyWithoutEvaluationLinkPayload =
+      (await historyWithoutEvaluationLinkResponse.json()) as { message: string };
+    assert.match(historyWithoutEvaluationLinkPayload.message, /secure process-stage binding/);
+
+    const supervisorTransitionWithoutEvaluationResponse = await fetch(
+      `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow/transition`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${supervisorLoginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: workflowActions.releaseForSignature,
+        }),
+      },
+    );
+
+    assert.equal(supervisorTransitionWithoutEvaluationResponse.status, 403);
+    const supervisorTransitionWithoutEvaluationPayload =
+      (await supervisorTransitionWithoutEvaluationResponse.json()) as { message: string };
+    assert.match(supervisorTransitionWithoutEvaluationPayload.message, /secure process-stage binding/);
 
     const validationResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/supervisor-evaluation/draft`,

@@ -21,7 +21,8 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 
 ### Crítico
 
-- [ ] Corrigir autorização por vínculo de processo no workflow e histórico
+- [x] Corrigir autorização por vínculo de processo no workflow e histórico
+  - Observação: workflow, history e transition agora exigem autorização contextual por processo; `ADMIN` não possui bypass automático; `IMMEDIATE_SUPERVISOR` foi bloqueado nesses endpoints por ausência de fonte autoritativa segura no módulo de processos; a resolução completa do vínculo legítimo da chefia segue pendente para a continuidade do roadmap.
   - Problema: as rotas e services de processos/workflow ainda aceitam decisão baseada principalmente em role, sem validar de forma consistente se o usuário pertence ao processo consultado ou movimentado.
   - Impacto:
     - acesso indevido ao histórico de processos;

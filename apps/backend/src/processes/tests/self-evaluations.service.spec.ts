@@ -46,6 +46,51 @@ export async function runSelfEvaluationsTests() {
     const otherSupervisorUser = authenticatedUser(otherSupervisor.id, otherSupervisor.role);
     const adminUser = authenticatedUser(admin.id, admin.role);
 
+    context.service.transitionWorkflowInTransaction = async (transaction, processId, user, payload) => {
+      const process = await context.service.findProcessOrThrow(transaction, processId);
+      const currentStage = await context.service.resolveCurrentStageOrThrow(transaction, processId);
+      const occurredAt = new Date().toISOString();
+      const transitionTo =
+        payload.action === ProcessAction.SEND_TO_CESAD
+          ? ProcessStatus.EM_ANALISE_CESAD
+          : ProcessStatus.AGUARDANDO_ASSINATURA;
+      const eventType =
+        payload.action === ProcessAction.SEND_TO_CESAD
+          ? AuditEventType.SENT_TO_CESAD
+          : AuditEventType.SIGNATURE_REQUESTED;
+
+      await transaction.evaluationProcess.update({
+        where: { id: processId },
+        data: { status: transitionTo },
+      });
+
+      await transaction.auditEvent.create({
+        data: {
+          evaluationProcessId: processId,
+          actorUserId: user.sub,
+          actorRole: user.role,
+          eventType,
+          beforeState: { status: process.status },
+          afterState: { status: transitionTo },
+          metadata: {
+            eventType,
+            action: payload.action,
+            performedByUserId: user.sub,
+            performedByRole: user.role,
+            occurredAt,
+            processStatus: transitionTo,
+            processStageId: currentStage.id,
+            stageSequence: currentStage.sequence,
+            stageCode: currentStage.stageCode,
+            ...(payload.comment ? { comment: payload.comment } : {}),
+          },
+          occurredAt: new Date(occurredAt),
+        },
+      });
+
+      return transitionTo;
+    };
+
     await context.supervisorEvaluationsService.submit(
       process.id,
       supervisorUser,

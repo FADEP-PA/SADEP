@@ -29,8 +29,44 @@ export async function runSupervisorEvaluationsServiceTests() {
       UserRole.IMMEDIATE_SUPERVISOR,
       'other-ssupervisor@test.local',
     );
-    const admin = await createUser(context.prisma, UserRole.ADMIN, 'sadmin@test.local');
     const cesad = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'scesad@test.local');
+
+    context.service.transitionWorkflowInTransaction = async (transaction, processId, user, payload) => {
+      const process = await context.service.findProcessOrThrow(transaction, processId);
+      const currentStage = await context.service.resolveCurrentStageOrThrow(transaction, processId);
+      const occurredAt = new Date().toISOString();
+
+      await transaction.evaluationProcess.update({
+        where: { id: processId },
+        data: { status: ProcessStatus.AGUARDANDO_ASSINATURA },
+      });
+
+      await transaction.auditEvent.create({
+        data: {
+          evaluationProcessId: processId,
+          actorUserId: user.sub,
+          actorRole: user.role,
+          eventType: AuditEventType.SIGNATURE_REQUESTED,
+          beforeState: { status: process.status },
+          afterState: { status: ProcessStatus.AGUARDANDO_ASSINATURA },
+          metadata: {
+            eventType: AuditEventType.SIGNATURE_REQUESTED,
+            action: payload.action,
+            performedByUserId: user.sub,
+            performedByRole: user.role,
+            occurredAt,
+            processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
+            processStageId: currentStage.id,
+            stageSequence: currentStage.sequence,
+            stageCode: currentStage.stageCode,
+            ...(payload.comment ? { comment: payload.comment } : {}),
+          },
+          occurredAt: new Date(occurredAt),
+        },
+      });
+
+      return ProcessStatus.AGUARDANDO_ASSINATURA;
+    };
 
     const process = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id);
 
@@ -60,7 +96,7 @@ export async function runSupervisorEvaluationsServiceTests() {
     });
     const submitted = await context.supervisorEvaluationsService.submit(
       process.id,
-      authenticatedUser(admin.id, admin.role),
+      authenticatedUser(supervisor.id, supervisor.role),
       submitPayload,
     );
 

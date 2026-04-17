@@ -93,7 +93,7 @@ Essa ordem reduz risco de regressão e evita construir novas regras sobre uma ba
 **BLOCO 1 — Segurança e Autorização**
 
 ## Task ativa
-**BE-SEC-01 — Corrigir autorização por vínculo de processo no workflow e histórico**
+**BE-SEC-02 — Corrigir autorização por vínculo na avaliação da chefia**
 
 ## Contexto atual
 Antes de retomar os incrementos funcionais da CESAD e da formalização documental, o backend precisa estabilizar:
@@ -120,11 +120,11 @@ Essas tasks devem ser executadas antes de qualquer nova evolução funcional.
 
 ## BE-SEC-01 — Corrigir autorização por vínculo de processo no workflow e histórico
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Crítica
 - **Responsável atual:** A definir
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `fix(backend): harden workflow process access and block unsafe supervisor access`
 - **Dependências:** Nenhuma
 
 **Problema**  
@@ -170,12 +170,15 @@ As rotas de workflow aceitam qualquer usuário autenticado e a service decide a�
 
 **Observações**
 - usar como referência o padrão seguro já existente em `self-evaluations.service.ts`
+- concluída com postura conservadora para `IMMEDIATE_SUPERVISOR`, bloqueado em workflow/history/transition por ausência de fonte autoritativa segura de vínculo no módulo de processos
+- a fonte autoritativa de vínculo da chefia ainda não existe no módulo de processos
+- a resolução completa do vínculo legítimo da chefia permanece pendente para a continuidade do roadmap
 
 ---
 
 ## BE-SEC-02 — Corrigir autorização por vínculo na avaliação da chefia
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim

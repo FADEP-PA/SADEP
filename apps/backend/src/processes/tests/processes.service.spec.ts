@@ -17,16 +17,100 @@ export async function runProcessesServiceTests() {
   try {
     const evaluatedUser = await createUser(context.prisma, UserRole.INTERN_SERVER, 'evaluated@test.local');
     const supervisor = await createUser(context.prisma, UserRole.IMMEDIATE_SUPERVISOR, 'supervisor@test.local');
+    const otherSupervisor = await createUser(
+      context.prisma,
+      UserRole.IMMEDIATE_SUPERVISOR,
+      'other-supervisor@test.local',
+    );
     const cesad = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'cesad@test.local');
     const intern = await createUser(context.prisma, UserRole.INTERN_SERVER, 'intern@test.local');
+    const admin = await createUser(context.prisma, UserRole.ADMIN, 'workflow-admin@test.local');
 
     const process = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id);
 
-    const workflow = await context.service.getWorkflow(
-      process.id,
-      authenticatedUser(supervisor.id, supervisor.role),
+    await assert.rejects(
+      () =>
+        context.service.getWorkflow(
+          process.id,
+          authenticatedUser(supervisor.id, supervisor.role),
+        ),
+      /secure process-stage binding/,
     );
-    assert.deepEqual(workflow.availableActions, [ProcessAction.RELEASE_FOR_SERVER_SIGNATURE]);
+
+    const ownWorkflow = await context.service.getWorkflow(
+      process.id,
+      authenticatedUser(evaluatedUser.id, evaluatedUser.role),
+    );
+    assert.deepEqual(ownWorkflow.availableActions, []);
+
+    await assert.rejects(
+      () =>
+        context.service.getWorkflow(
+          process.id,
+          authenticatedUser(otherSupervisor.id, otherSupervisor.role),
+        ),
+      /secure process-stage binding/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.getWorkflow(
+          process.id,
+          authenticatedUser(cesad.id, cesad.role),
+        ),
+      /does not have an active link to this process/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.getWorkflow(
+          process.id,
+          authenticatedUser(admin.id, admin.role),
+        ),
+      /legitimate link to this process/,
+    );
+
+    await context.prisma.auditEvent.create({
+      data: {
+        evaluationProcessId: process.id,
+        actorUserId: supervisor.id,
+        actorRole: 'IMMEDIATE_SUPERVISOR',
+        eventType: 'SIGNATURE_REQUESTED',
+        beforeState: { status: ProcessStatus.EM_AVALIACAO },
+        afterState: { status: ProcessStatus.AGUARDANDO_ASSINATURA },
+        metadata: {
+          eventType: 'SIGNATURE_REQUESTED',
+          action: ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
+          performedByUserId: supervisor.id,
+          performedByRole: supervisor.role,
+          occurredAt: new Date('2026-04-17T12:00:00.000Z').toISOString(),
+          processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
+          processStageId: process.defaultStageId,
+          stageSequence: 1,
+          stageCode: 'ETAPA_1',
+          comment: 'Liberação válida do workflow.',
+        },
+        occurredAt: new Date('2026-04-17T12:00:00.000Z'),
+      },
+    });
+
+    await assert.rejects(
+      () =>
+        context.service.getWorkflowHistory(
+          process.id,
+          authenticatedUser(supervisor.id, supervisor.role),
+        ),
+      /secure process-stage binding/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.getWorkflowHistory(
+          process.id,
+          authenticatedUser(otherSupervisor.id, otherSupervisor.role),
+        ),
+      /secure process-stage binding/,
+    );
 
     await assert.rejects(
       () =>
@@ -35,7 +119,7 @@ export async function runProcessesServiceTests() {
           authenticatedUser(cesad.id, cesad.role),
           { action: workflowActions.issueOpinion },
         ),
-      /not allowed when process is in status EM_AVALIACAO/,
+      /does not have an active link to this process/,
     );
 
     await assert.rejects(
@@ -45,14 +129,14 @@ export async function runProcessesServiceTests() {
           authenticatedUser(supervisor.id, supervisor.role),
           { action: workflowActions.releaseForSignature },
         ),
-      /submitted supervisor evaluation exists/,
+      /secure process-stage binding/,
     );
 
     await assert.rejects(
       () =>
         context.service.transitionWorkflow(
           process.id,
-          authenticatedUser(intern.id, intern.role),
+          authenticatedUser(evaluatedUser.id, evaluatedUser.role),
           { action: workflowActions.releaseForSignature },
         ),
       /cannot execute action RELEASE_FOR_SERVER_SIGNATURE/,
@@ -62,10 +146,30 @@ export async function runProcessesServiceTests() {
       () =>
         context.service.transitionWorkflow(
           process.id,
+          authenticatedUser(intern.id, intern.role),
+          { action: workflowActions.releaseForSignature },
+        ),
+      /evaluated server for this process/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          process.id,
+          authenticatedUser(otherSupervisor.id, otherSupervisor.role),
+          { action: workflowActions.releaseForSignature },
+        ),
+      /secure process-stage binding/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          process.id,
           authenticatedUser(supervisor.id, supervisor.role),
           { action: workflowActions.sendToCesad },
         ),
-      /not allowed when process is in status EM_AVALIACAO/,
+      /secure process-stage binding/,
     );
 
     const events = await context.prisma.auditEvent.findMany({
@@ -73,55 +177,26 @@ export async function runProcessesServiceTests() {
       orderBy: { occurredAt: 'asc' },
     });
 
-    assert.equal(events.length, 0);
-
-    const completedProcess = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id);
-    const completedSupervisor = await createUser(
-      context.prisma,
-      UserRole.IMMEDIATE_SUPERVISOR,
-      'supervisor-complete@test.local',
-    );
-
-    await context.prisma.supervisorEvaluation.create({
-      data: {
-        processId: completedProcess.id,
-        processStageId: completedProcess.defaultStageId,
-        evaluatorUserId: completedSupervisor.id,
-        status: 'SUBMITTED',
-        summary: 'Avaliação concluída para liberar assinatura.',
-        generalComments: 'Pronta para assinatura do servidor.',
-        content: { criteria: [{ code: 'ASSID', label: 'Assiduidade', rating: 5 }] },
-        submittedAt: new Date(),
-      },
-    });
-
-    const transitionedWorkflow = await context.service.transitionWorkflow(
-      completedProcess.id,
-      authenticatedUser(completedSupervisor.id, completedSupervisor.role),
-      { action: workflowActions.releaseForSignature },
-    );
-
-    assert.equal(transitionedWorkflow.status, ProcessStatus.AGUARDANDO_ASSINATURA);
-
-    const transitionEvent = await context.prisma.auditEvent.findFirstOrThrow({
-      where: { evaluationProcessId: completedProcess.id },
-    });
-    const metadata = transitionEvent.metadata as {
-      occurredAt?: string;
-      processStageId?: string;
-      stageSequence?: number;
-      stageCode?: string;
-    };
-    assert.equal(transitionEvent.occurredAt.toISOString(), metadata.occurredAt);
-    assert.equal(metadata.processStageId, completedProcess.defaultStageId);
-    assert.equal(metadata.stageSequence, 1);
-    assert.equal(metadata.stageCode, 'ETAPA_1');
+    assert.equal(events.length, 1);
+    assert.equal(events[0]?.eventType, 'SIGNATURE_REQUESTED');
 
     const awaitingSignatureProcess = await createProcess(
       context.prisma,
       ProcessStatus.AGUARDANDO_ASSINATURA,
       evaluatedUser.id,
     );
+    await context.prisma.supervisorEvaluation.create({
+      data: {
+        processId: awaitingSignatureProcess.id,
+        processStageId: awaitingSignatureProcess.defaultStageId,
+        evaluatorUserId: supervisor.id,
+        status: 'SUBMITTED',
+        summary: 'Chefia vinculada para envio à CESAD.',
+        generalComments: 'Processo pronto para validação de documentos.',
+        content: { criteria: [{ code: 'RESP', label: 'Responsabilidade', rating: 5 }] },
+        submittedAt: new Date(),
+      },
+    });
 
     await assert.rejects(
       () =>
@@ -130,8 +205,23 @@ export async function runProcessesServiceTests() {
           authenticatedUser(supervisor.id, supervisor.role),
           { action: workflowActions.sendToCesad },
         ),
-      /both required stage documents are fully signed/,
+      /secure process-stage binding/,
     );
+
+    const cesadProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+    );
+
+    const cesadWorkflow = await context.service.getWorkflow(
+      cesadProcess.id,
+      authenticatedUser(cesad.id, cesad.role),
+    );
+    assert.deepEqual(cesadWorkflow.availableActions, [
+      ProcessAction.ISSUE_CESAD_OPINION,
+      ProcessAction.REQUEST_ADJUSTMENT,
+    ]);
   } finally {
     await disposeTestContext(context);
   }

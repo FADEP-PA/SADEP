@@ -37,7 +37,7 @@ export class ProcessesController {
       throw new UnauthorizedException('Authenticated user not found');
     }
 
-    return this.processesService.getWorkflowHistory(id);
+    return this.processesService.getWorkflowHistory(id, user);
   }
 
   @Post(':id/workflow/transition')
