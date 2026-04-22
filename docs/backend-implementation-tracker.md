@@ -94,14 +94,13 @@ Essa ordem reduz risco de regressão e evita construir novas regras sobre uma ba
 **BLOCO 2A — Alinhamento Frontend/Backend**
 
 ## Task ativa
-**ALIGN-02 — Alinhar snapshot/tela da chefia com a política real de acesso do backend**
+**ALIGN-03 — Alinhar matriz de permissões entre menu, guards e backend**
 
 ## Contexto atual
 Após o saneamento do bloco crítico de segurança e da estabilização técnica do backend, a prioridade operacional passou a ser o alinhamento entre frontend e backend nos fluxos reais de uso.
 
-Com a ALIGN-01 aprovada, os achados mais urgentes remanescentes indicam:
+Com a ALIGN-01 e a ALIGN-02 aprovadas, os achados mais urgentes remanescentes indicam:
 
-- tela da chefia consultando endpoints públicos que o backend bloqueia para supervisor;
 - inconsistência entre menu, guardas e backend para perfis administrativos;
 - histórico público de workflow contaminado por eventos documentais;
 - leitura consolidada da CESAD desalinhada dos eventos efetivamente persistidos. :contentReference[oaicite:2]{index=2}
@@ -425,11 +424,11 @@ O frontend do servidor estagiário depende de `availableActions` com `SIGN_EVALU
 
 ## ALIGN-02 — Alinhar snapshot/tela da chefia com a política real de acesso do backend
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `fix(processes): add supervisor workspace snapshot and stop using public workflow endpoints`
 - **Dependências:** ALIGN-01 recomendada antes
 
 **Problema**  
@@ -459,11 +458,17 @@ A tela principal da chefia consulta endpoints públicos (`/workflow` e `/history
 - a tela da chefia consegue abrir e operar sem depender de endpoints públicos bloqueados
 - não há regressão das garantias de autorização já implementadas
 
+**Observações**
+- a workspace da chefia passou a usar o endpoint seguro dedicado `GET /processes/:id/supervisor-evaluation/workspace`
+- supervisor permanece bloqueado nos endpoints públicos de workflow, histórico e transição
+- as flags operacionais da chefia passaram a ser calculadas no backend
+- os cards dependentes de histórico público e `availableActions` foram removidos/desativados nessa tela
+
 ---
 
 ## ALIGN-03 — Alinhar matriz de permissões entre menu, guards e backend
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim

@@ -165,7 +165,8 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - a rota correta é utilizada;
     - o fluxo funciona com o backend real.
 
-- [ ] Alinhar snapshot/tela da chefia com a política real de acesso do backend
+- [x] Alinhar snapshot/tela da chefia com a política real de acesso do backend
+  - Observação: a tela da chefia deixou de usar `/processes/:id/workflow` e `/processes/:id/history`; passou a usar `GET /processes/:id/supervisor-evaluation/workspace`; o backend passou a devolver snapshot seguro com `process.status`, `supervisorEvaluation`, `documentContext` e flags operacionais; supervisor continua bloqueado nos endpoints públicos; os cards dependentes de histórico público e de `availableActions` foram removidos/desativados nessa workspace.
   - Problema: a workspace da chefia consulta `/processes/:id/workflow` e `/processes/:id/history`, mas o backend bloqueia supervisor nesses endpoints públicos desde a BE-SEC-01.
   - Impacto:
     - a tela da chefia pode falhar antes de abrir a avaliação;
@@ -423,7 +424,7 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 - [x] Backend / Crítico / Alinhar a estratégia de testes do backend
 
 - [x] Alinhamento / Crítico / Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
-- [ ] Alinhamento / Crítico / Alinhar snapshot/tela da chefia com a política real de acesso do backend
+- [x] Alinhamento / Crítico / Alinhar snapshot/tela da chefia com a política real de acesso do backend
 - [ ] Alinhamento / Alta / Alinhar matriz de permissões entre menu, guards e backend
 - [ ] Alinhamento / Alta / Separar histórico processual público de eventos documentais
 - [ ] Alinhamento / Alta / Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
