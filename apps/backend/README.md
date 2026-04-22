@@ -34,6 +34,16 @@ No ambiente auditado anteriormente, a validação de instalação e compilação
 
 > Observação: para integração local com o frontend em `http://localhost:3001`, o backend agora usa `FRONTEND_ORIGIN` para responder corretamente ao preflight CORS (`OPTIONS`) em endpoints como `/auth/login`.
 
+## Estratégia de testes e typecheck
+
+- `npm run test --workspace @aep-pa/backend` é o agregador oficial e executa a suíte integrada seguida da suíte unitária.
+- `npm run test:integration --workspace @aep-pa/backend` executa o runner customizado de processos em `src/processes/tests/run.ts`, usado para cenários funcionais/integrados de workflow, CESAD e avaliações.
+- `npm run test:unit --workspace @aep-pa/backend` executa o Jest, usado para specs unitárias e com mocks.
+- `npm run typecheck --workspace @aep-pa/backend` valida o código de aplicação pelo `tsconfig.app.json`.
+- `npm run typecheck:spec --workspace @aep-pa/backend` valida specs e helpers de teste pelo `tsconfig.spec.json`.
+
+Os aliases `test:runner` e `test:jest` foram preservados por compatibilidade, apontando respectivamente para `test:integration` e `test:unit`.
+
 ## Endpoints técnicos para validação
 
 - `GET /health`

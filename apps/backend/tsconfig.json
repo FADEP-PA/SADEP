@@ -3,10 +3,6 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "../../",
-    "types": ["node", "jest"]
-  },
-  "include": [
-    "src/**/*.ts",
-    "../../packages/contracts/src/**/*.ts"
-  ]
+    "types": ["node"]
+  }
 }

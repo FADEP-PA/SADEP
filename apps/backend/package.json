@@ -5,10 +5,13 @@
   "scripts": {
     "start": "ts-node -r tsconfig-paths/register src/main.ts",
     "start:dev": "ts-node --transpile-only -r tsconfig-paths/register src/main.ts",
-    "test": "npm run test:runner && npm run test:jest",
-    "test:runner": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/processes/tests/run.ts",
-    "test:jest": "jest --config jest.config.js --runInBand",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run test:integration && npm run test:unit",
+    "test:integration": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/processes/tests/run.ts",
+    "test:unit": "jest --config jest.config.js --runInBand",
+    "test:runner": "npm run test:integration",
+    "test:jest": "npm run test:unit",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "typecheck:spec": "tsc --noEmit -p tsconfig.spec.json",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:seed": "ts-node --transpile-only -r tsconfig-paths/register prisma/seed.ts"
