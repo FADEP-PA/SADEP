@@ -8,7 +8,9 @@ import type {
 } from '@/features/dashboard/types/process-dashboard-types';
 import {
   CesadStageReadSnapshotRef,
+  ProcessStatus,
   ProcessAction,
+  SupervisorEvaluationDocumentContextRef,
   SupervisorEvaluationContentInput,
   SupervisorEvaluationWithDocumentContextRef,
   UserRole,
@@ -28,6 +30,18 @@ export type WorkflowTransitionInput = {
 
 export type DocumentSignatureResponse = {
   success: boolean;
+};
+
+export type SupervisorEvaluationWorkspaceSnapshot = {
+  process: {
+    id: string;
+    status: ProcessStatus;
+  };
+  supervisorEvaluation: SupervisorEvaluationWithDocumentContextRef | null;
+  documentContext: SupervisorEvaluationDocumentContextRef | null;
+  canEditDraft: boolean;
+  canSubmit: boolean;
+  canRectify: boolean;
 };
 
 export async function getWorkflow(processId: string, accessToken: string) {
@@ -54,6 +68,19 @@ export async function getWorkflowHistory(processId: string, accessToken: string)
 export async function getSupervisorEvaluation(processId: string, accessToken: string) {
   return httpRequest<SupervisorEvaluationWithDocumentContextRef | null>(
     `/processes/${processId}/supervisor-evaluation`,
+    {
+      method: 'GET',
+      token: accessToken,
+    },
+  );
+}
+
+export async function getSupervisorEvaluationWorkspaceSnapshot(
+  processId: string,
+  accessToken: string,
+) {
+  return httpRequest<SupervisorEvaluationWorkspaceSnapshot>(
+    `/processes/${processId}/supervisor-evaluation/workspace`,
     {
       method: 'GET',
       token: accessToken,

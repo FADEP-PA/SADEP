@@ -1,15 +1,15 @@
 'use client';
 
-import { ProcessStatus, SupervisorEvaluationStatus, UserRole } from '@aep-pa/contracts';
+import { SupervisorEvaluationStatus, UserRole } from '@aep-pa/contracts';
 import { useMemo, useState, type FormEvent } from 'react';
 
-import type { ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
 import { getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '@/shared/api/http-error';
 import {
-  getTechnicalProcessSnapshot,
+  getSupervisorEvaluationWorkspaceSnapshot,
   rectifySupervisorEvaluation,
   saveSupervisorEvaluationDraft,
   submitSupervisorEvaluation,
+  type SupervisorEvaluationWorkspaceSnapshot,
   type UpsertSupervisorEvaluationInput,
 } from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
@@ -23,15 +23,13 @@ import { PageSection } from '@/shared/ui/page-section';
 import { ProcessRequestFeedback } from '@/shared/ui/process-request-feedback';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
-import { ProcessActionsCard } from './process-actions-card';
 import {
   formatDateTime,
   formatProcessStatus,
   formatSupervisorEvaluationStatus,
+  getProcessStatusTone,
   getSupervisorEvaluationStatusTone,
 } from './process-formatters';
-import { ProcessHistoryCard } from './process-history-card';
-import { ProcessStatusCard } from './process-status-card';
 
 const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR, UserRole.ADMIN];
 
@@ -67,7 +65,7 @@ function createEmptyFormState(): EvaluationFormState {
   };
 }
 
-function buildFormState(snapshot: ProcessDashboardSnapshot | null): EvaluationFormState {
+function buildFormState(snapshot: SupervisorEvaluationWorkspaceSnapshot | null): EvaluationFormState {
   const evaluation = snapshot?.supervisorEvaluation;
 
   if (!evaluation) {
@@ -195,7 +193,7 @@ function getMutationFeedback(kind: 'draft' | 'submit' | 'rectify'): {
 export function SupervisorEvaluationWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState(getInitialProcessId);
-  const [snapshot, setSnapshot] = useState<ProcessDashboardSnapshot | null>(null);
+  const [snapshot, setSnapshot] = useState<SupervisorEvaluationWorkspaceSnapshot | null>(null);
   const [form, setForm] = useState<EvaluationFormState>(createEmptyFormState);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
@@ -208,10 +206,9 @@ export function SupervisorEvaluationWorkspace() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeMutation, setActiveMutation] = useState<'draft' | 'submit' | 'rectify' | null>(null);
 
-  const canEditDraft = snapshot?.workflow.status === ProcessStatus.EM_AVALIACAO;
-  const canRectify =
-    snapshot?.workflow.status === ProcessStatus.AGUARDANDO_ASSINATURA &&
-    snapshot.supervisorEvaluation?.status === SupervisorEvaluationStatus.SUBMITTED;
+  const canEditDraft = snapshot?.canEditDraft ?? false;
+  const canSubmit = snapshot?.canSubmit ?? false;
+  const canRectify = snapshot?.canRectify ?? false;
   const isLocked = Boolean(snapshot) && !canEditDraft && !canRectify;
   const activeMutationFeedback = activeMutation ? getMutationFeedback(activeMutation) : null;
 
@@ -219,7 +216,7 @@ export function SupervisorEvaluationWorkspace() {
     () => [
       {
         label: 'Status do processo',
-        value: snapshot ? formatProcessStatus(snapshot.workflow.status) : 'Nao carregado',
+        value: snapshot ? formatProcessStatus(snapshot.process.status) : 'Nao carregado',
       },
       {
         label: 'Status da avaliacao',
@@ -228,6 +225,10 @@ export function SupervisorEvaluationWorkspace() {
       {
         label: 'Ultima submissao',
         value: formatDateTime(snapshot?.supervisorEvaluation?.submittedAt),
+      },
+      {
+        label: 'Documento da avaliacao',
+        value: snapshot?.documentContext ? 'Formalizado' : 'Ainda nao formalizado',
       },
       {
         label: 'Criterios preenchidos',
@@ -242,11 +243,7 @@ export function SupervisorEvaluationWorkspace() {
       return;
     }
 
-    const nextSnapshot = await getTechnicalProcessSnapshot(
-      activeProcessId,
-      session.accessToken,
-      session.user.role,
-    );
+    const nextSnapshot = await getSupervisorEvaluationWorkspaceSnapshot(activeProcessId, session.accessToken);
     setSnapshot(nextSnapshot);
     setForm(buildFormState(nextSnapshot));
     setSuccessFeedback(success ?? null);
@@ -275,7 +272,7 @@ export function SupervisorEvaluationWorkspace() {
       await reloadProcessSnapshot(processId.trim(), {
         title: 'Processo carregado',
         description:
-          'A ficha da chefia foi aberta com o contexto atual do workflow, do historico e da avaliacao vinculada ao processo.',
+          'A ficha da chefia foi aberta com o snapshot seguro da avaliacao vinculada ao processo.',
       });
     } catch (error) {
       const payload =
@@ -312,7 +309,7 @@ export function SupervisorEvaluationWorkspace() {
 
     try {
       const payload = normalizePayload(form);
-      const normalizedProcessId = snapshot.workflow.id;
+      const normalizedProcessId = snapshot.process.id;
 
       if (kind === 'draft') {
         await saveSupervisorEvaluationDraft(normalizedProcessId, session.accessToken, payload);
@@ -349,7 +346,7 @@ export function SupervisorEvaluationWorkspace() {
       <PageSection
         eyebrow="Chefia imediata"
         title="Avaliacao funcional da chefia"
-        description="Tela funcional para carregar o processo, consultar o workflow e criar, editar, submeter ou retificar a avaliacao antes da assinatura do servidor."
+        description="Tela funcional para carregar o processo e criar, editar, submeter ou retificar a avaliacao antes da assinatura do servidor."
       >
         <form className="inline-form" onSubmit={handleLoadProcess}>
           <label className="field-group" htmlFor="supervisor-process-id">
@@ -372,7 +369,7 @@ export function SupervisorEvaluationWorkspace() {
         {isLoading ? (
           <InlineLoadingState
             title="Abrindo avaliacao"
-            description="O workspace da chefia esta consultando workflow, historico e ficha avaliativa liberados para este processo."
+            description="O workspace da chefia esta consultando o snapshot seguro da ficha avaliativa liberado para este processo."
           />
         ) : null}
 
@@ -397,7 +394,7 @@ export function SupervisorEvaluationWorkspace() {
         {!snapshot && !loadErrorMessage ? (
           <ContentState
             title="Tela pronta para uso real"
-            description="Informe um processo existente para consultar status, historico, acoes disponiveis e iniciar a avaliacao da chefia com persistencia no backend."
+            description="Informe um processo existente para consultar status e iniciar a avaliacao da chefia com persistencia no backend."
             tone="info"
           />
         ) : null}
@@ -405,12 +402,29 @@ export function SupervisorEvaluationWorkspace() {
         {snapshot ? (
           <>
             <div className="metrics-grid">
-              <ProcessStatusCard snapshot={snapshot} />
-              <ProcessActionsCard
-                actions={snapshot.workflow.availableActions}
-                status={snapshot.workflow.status}
-              />
-              <ProcessHistoryCard history={snapshot.history} />
+              <InfoCard
+                eyebrow="Status do processo"
+                title="Situacao atual"
+                description="Leitura do estado atual retornado pelo endpoint seguro da chefia."
+              >
+                <KeyValueList
+                  items={[
+                    { label: 'Processo', value: snapshot.process.id },
+                    {
+                      label: 'Status atual',
+                      value: (
+                        <StatusBadge
+                          label={formatProcessStatus(snapshot.process.status)}
+                          tone={getProcessStatusTone(snapshot.process.status)}
+                        />
+                      ),
+                    },
+                    { label: 'Pode salvar rascunho', value: snapshot.canEditDraft ? 'Sim' : 'Nao' },
+                    { label: 'Pode submeter', value: snapshot.canSubmit ? 'Sim' : 'Nao' },
+                    { label: 'Pode retificar', value: snapshot.canRectify ? 'Sim' : 'Nao' },
+                  ]}
+                />
+              </InfoCard>
               <InfoCard
                 title="Resumo da avaliacao"
                 description="Estado atual da ficha da chefia e indicadores rapidos para preenchimento."
@@ -424,14 +438,6 @@ export function SupervisorEvaluationWorkspace() {
                 title="Avaliacao ainda nao iniciada"
                 tone="info"
                 description="Nenhuma avaliacao foi registrada para este processo. O primeiro salvamento em rascunho cria a avaliacao automaticamente."
-              />
-            ) : null}
-
-            {snapshot.supervisorEvaluationWarning ? (
-              <FeedbackAlert
-                title="Visualizacao parcial"
-                tone="warning"
-                description={snapshot.supervisorEvaluationWarning}
               />
             ) : null}
 
@@ -461,7 +467,7 @@ export function SupervisorEvaluationWorkspace() {
               <FeedbackAlert
                 title="Avaliacao bloqueada para edicao"
                 tone="warning"
-                description={`O processo esta em ${formatProcessStatus(snapshot.workflow.status)}. Apos a assinatura, a avaliacao permanece apenas para consulta.`}
+                description={`O processo esta em ${formatProcessStatus(snapshot.process.status)}. Apos a assinatura, a avaliacao permanece apenas para consulta.`}
               />
             ) : null}
 
@@ -660,7 +666,7 @@ export function SupervisorEvaluationWorkspace() {
                   <button
                     type="button"
                     onClick={() => void handleMutation('submit')}
-                    disabled={!canEditDraft || isSaving}
+                    disabled={!canSubmit || isSaving}
                   >
                     {isSaving && activeMutation === 'submit' ? 'Enviando...' : 'Submeter avaliacao'}
                   </button>

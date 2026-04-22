@@ -40,11 +40,37 @@ export async function runSupervisorEvaluationsServiceTests() {
       supervisor.id,
     );
 
+    await assert.rejects(
+      () => context.service.getWorkflow(process.id, authenticatedUser(supervisor.id, supervisor.role)),
+      /public workflow endpoint directly/,
+    );
+
+    await assert.rejects(
+      () => context.service.getWorkflowHistory(process.id, authenticatedUser(supervisor.id, supervisor.role)),
+      /public workflow endpoint directly/,
+    );
+
     const initialFetch = await context.supervisorEvaluationsService.getByProcessId(
       process.id,
       authenticatedUser(supervisor.id, supervisor.role),
     );
     assert.equal(initialFetch, null);
+
+    const initialWorkspace = await context.supervisorEvaluationsService.getWorkspaceByProcessId(
+      process.id,
+      authenticatedUser(supervisor.id, supervisor.role),
+    );
+    assert.deepEqual(initialWorkspace, {
+      process: {
+        id: process.id,
+        status: ProcessStatus.EM_AVALIACAO,
+      },
+      supervisorEvaluation: null,
+      documentContext: null,
+      canEditDraft: true,
+      canSubmit: true,
+      canRectify: false,
+    });
 
     await assert.rejects(
       () =>
@@ -62,6 +88,15 @@ export async function runSupervisorEvaluationsServiceTests() {
           authenticatedUser(admin.id, admin.role),
         ),
       /cannot read supervisor evaluations/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.supervisorEvaluationsService.getWorkspaceByProcessId(
+          process.id,
+          authenticatedUser(admin.id, admin.role),
+        ),
+      /cannot manipulate supervisor evaluations/,
     );
 
     await assert.rejects(
@@ -131,6 +166,18 @@ export async function runSupervisorEvaluationsServiceTests() {
 
     assert.equal(submitted.status, SupervisorEvaluationStatus.SUBMITTED);
     assert.ok(submitted.submittedAt);
+
+    const submittedWorkspace = await context.supervisorEvaluationsService.getWorkspaceByProcessId(
+      process.id,
+      authenticatedUser(supervisor.id, supervisor.role),
+    );
+    assert.equal(submittedWorkspace.process.id, process.id);
+    assert.equal(submittedWorkspace.process.status, ProcessStatus.AGUARDANDO_ASSINATURA);
+    assert.equal(submittedWorkspace.supervisorEvaluation?.status, SupervisorEvaluationStatus.SUBMITTED);
+    assert.equal(submittedWorkspace.documentContext?.documentType, DocumentType.SUPERVISOR_EVALUATION);
+    assert.equal(submittedWorkspace.canEditDraft, false);
+    assert.equal(submittedWorkspace.canSubmit, false);
+    assert.equal(submittedWorkspace.canRectify, true);
 
     const internSubmittedRead = await context.supervisorEvaluationsService.getByProcessId(
       process.id,

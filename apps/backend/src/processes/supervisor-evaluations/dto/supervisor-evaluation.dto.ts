@@ -3,6 +3,7 @@ import {
   type SupervisorEvaluationContentInput,
   type SupervisorEvaluationCriterionInput,
   type SupervisorEvaluationRef,
+  ProcessStatus,
   DocumentType,
   DocumentStatus,
   SignatureStatus,
@@ -35,6 +36,18 @@ export interface SupervisorEvaluationDocumentContext {
 
 export interface SupervisorEvaluationResponseDto extends SupervisorEvaluationRef {
   documentContext?: SupervisorEvaluationDocumentContext;
+}
+
+export interface SupervisorEvaluationWorkspaceSnapshotDto {
+  process: {
+    id: string;
+    status: ProcessStatus;
+  };
+  supervisorEvaluation: SupervisorEvaluationResponseDto | null;
+  documentContext: SupervisorEvaluationDocumentContext | null;
+  canEditDraft: boolean;
+  canSubmit: boolean;
+  canRectify: boolean;
 }
 
 export function isSupervisorEvaluationStatus(value: string): value is SupervisorEvaluationStatus {

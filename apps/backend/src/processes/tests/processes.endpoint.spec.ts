@@ -52,6 +52,12 @@ export async function runProcessesEndpointTests() {
       UserRole.IMMEDIATE_SUPERVISOR,
       'endpoint-other-supervisor@test.local',
     );
+    const supervisorWorkspaceProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_AVALIACAO,
+      evaluatedUser.id,
+      supervisorUser.id,
+    );
 
     await context.prisma.auditEvent.create({
       data: {
@@ -178,6 +184,48 @@ export async function runProcessesEndpointTests() {
 
     assert.equal(adminLoginResponse.status, 200);
     const adminLoginPayload = (await adminLoginResponse.json()) as { accessToken: string };
+
+    const supervisorWorkspaceResponse = await fetch(
+      `${baseUrl}/processes/${supervisorWorkspaceProcess.id}/supervisor-evaluation/workspace`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${supervisorLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(supervisorWorkspaceResponse.status, 200);
+    const supervisorWorkspacePayload = (await supervisorWorkspaceResponse.json()) as {
+      process: { id: string; status: ProcessStatus };
+      supervisorEvaluation: null;
+      documentContext: null;
+      canEditDraft: boolean;
+      canSubmit: boolean;
+      canRectify: boolean;
+    };
+    assert.equal(supervisorWorkspacePayload.process.id, supervisorWorkspaceProcess.id);
+    assert.equal(supervisorWorkspacePayload.process.status, ProcessStatus.EM_AVALIACAO);
+    assert.equal(supervisorWorkspacePayload.supervisorEvaluation, null);
+    assert.equal(supervisorWorkspacePayload.documentContext, null);
+    assert.equal(supervisorWorkspacePayload.canEditDraft, true);
+    assert.equal(supervisorWorkspacePayload.canSubmit, true);
+    assert.equal(supervisorWorkspacePayload.canRectify, false);
+
+    const forbiddenSupervisorWorkspaceResponse = await fetch(
+      `${baseUrl}/processes/${supervisorWorkspaceProcess.id}/supervisor-evaluation/workspace`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${otherSupervisorLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(forbiddenSupervisorWorkspaceResponse.status, 403);
+    const forbiddenSupervisorWorkspacePayload =
+      (await forbiddenSupervisorWorkspaceResponse.json()) as { message: string };
+    assert.match(forbiddenSupervisorWorkspacePayload.message, /responsible supervisor/);
 
     const workflowResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow`,

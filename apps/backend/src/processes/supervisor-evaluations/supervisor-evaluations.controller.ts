@@ -30,6 +30,15 @@ export class SupervisorEvaluationsController {
     return this.supervisorEvaluationsService.getByProcessId(id, user);
   }
 
+  @Get('workspace')
+  async getWorkspace(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    if (!user) {
+      throw new UnauthorizedException('Authenticated user not found');
+    }
+
+    return this.supervisorEvaluationsService.getWorkspaceByProcessId(id, user);
+  }
+
   @Post('draft')
   async saveDraft(
     @Param('id') id: string,

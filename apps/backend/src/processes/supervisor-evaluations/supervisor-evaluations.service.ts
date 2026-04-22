@@ -26,6 +26,7 @@ import { ProcessDocumentsService } from '../../application/documents/process-doc
 import type {
   SupervisorEvaluationContentDto,
   SupervisorEvaluationResponseDto,
+  SupervisorEvaluationWorkspaceSnapshotDto,
   UpsertSupervisorEvaluationDto,
 } from './dto/supervisor-evaluation.dto';
 import { isSupervisorEvaluationContentDto } from './dto/supervisor-evaluation.dto';
@@ -80,6 +81,55 @@ export class SupervisorEvaluationsService {
     }
 
     return response;
+  }
+
+  async getWorkspaceByProcessId(
+    processId: string,
+    user: AuthenticatedUser,
+  ): Promise<SupervisorEvaluationWorkspaceSnapshotDto> {
+    const { process, currentStage } = await this.assertCanWriteSupervisorEvaluation(
+      this.prismaService,
+      processId,
+      user,
+    );
+
+    const processStatus = this.toContractProcessStatus(process.status);
+    const evaluation = await this.prismaService.supervisorEvaluation.findUnique({
+      where: { processStageId: currentStage.id },
+    });
+    const documentContext = await this.processDocumentsService.getSupervisorEvaluationDocumentContext(
+      this.prismaService,
+      processId,
+      currentStage.id,
+    );
+    const supervisorEvaluation = evaluation ? this.toResponseDto(evaluation) : null;
+
+    if (supervisorEvaluation && documentContext) {
+      supervisorEvaluation.documentContext = documentContext;
+    }
+
+    const canEditDraft = processStatus === ProcessStatus.EM_AVALIACAO;
+    const canSubmit = processStatus === ProcessStatus.EM_AVALIACAO;
+    const canRectify =
+      processStatus === ProcessStatus.AGUARDANDO_ASSINATURA &&
+      evaluation?.status === PrismaSupervisorEvaluationStatus.SUBMITTED &&
+      (await this.processDocumentsService.canRectifySupervisorEvaluation(
+        this.prismaService,
+        processId,
+        currentStage.id,
+      ));
+
+    return {
+      process: {
+        id: process.id,
+        status: processStatus,
+      },
+      supervisorEvaluation,
+      documentContext,
+      canEditDraft,
+      canSubmit,
+      canRectify,
+    };
   }
 
   async saveDraft(
