@@ -93,12 +93,13 @@ Essa ordem reduz risco de regressão e evita construir novas regras sobre uma ba
 **BLOCO 2 — Estabilização Técnica do Backend**
 
 ## Task ativa
-**BE-QUAL-01 — Corrigir typecheck do backend**
+**BE-QUAL-03 — Alinhar a estratégia de testes do backend**
 
 ## Contexto atual
-Após a conclusão das correções críticas de segurança por vínculo, o backend precisa estabilizar:
+Após o saneamento do typecheck e da execução da suíte de testes do backend, a task ativa passa a ser a organização da estratégia de testes:
 
-- typecheck e testes executáveis;
+- definição clara entre runner customizado e Jest;
+- alinhamento dos scripts e da documentação operacional;
 - rastreabilidade operacional mínima;
 - coerência entre tracker e checklist de correções.
 
@@ -231,7 +232,7 @@ Objetivo: garantir que o backend esteja testável e confiável para evolução.
 
 ## BE-QUAL-01 — Corrigir typecheck do backend
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Não obrigatória, salvo mudança ampla
@@ -266,15 +267,15 @@ O typecheck do backend falha por inconsistência de dependências e configuraç�
 
 ## BE-QUAL-02 — Restabelecer execução da suíte de testes do backend
 
-- **Status:** PLANNED
+- **Status:** DONE
 - **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `docs: atualiza checklist e tracker para registrar be-qual-02 como saneada`
 - **Dependências:** BE-QUAL-01 recomendada antes
 
 **Problema**  
-A suíte do backend falha por incompatibilidade entre fixtures/testes e o schema Prisma atual.
+Historicamente, a suíte do backend falhava por incompatibilidade entre fixtures/testes e o schema Prisma atual; a falha não é mais reproduzível na árvore atual.
 
 **Arquivos principais**
 - `apps/backend/src/processes/tests/cesad-stage-read.service.spec.ts`
@@ -299,11 +300,14 @@ A suíte do backend falha por incompatibilidade entre fixtures/testes e o schema
 - execução da suíte
 - confirmação de cenários críticos de workflow, CESAD, supervisor evaluation e self evaluation
 
+**Observações**
+- a suíte do backend não apresenta mais falha reproduzível na árvore atual; `npm run test --workspace @aep-pa/backend`, `npm run test:runner --workspace @aep-pa/backend` e `npm run test:jest --workspace @aep-pa/backend` passam; a pendência residual de organização foi deslocada para `BE-QUAL-03`
+
 ---
 
 ## BE-QUAL-03 — Alinhar a estratégia de testes do backend
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Não obrigatória, mas recomendada

@@ -72,8 +72,9 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
   - Validar:
     - `npm run typecheck --workspace @aep-pa/backend`
 
-- [ ] Restabelecer a execução da suíte de testes do backend
-  - Problema: `npm run test --workspace @aep-pa/backend` falha por incompatibilidade entre fixtures/testes e o schema Prisma atual.
+- [x] Restabelecer a execução da suíte de testes do backend
+  - Observação: a falha histórica da suíte não é mais reproduzível na árvore atual; `npm run test --workspace @aep-pa/backend`, `npm run test:runner --workspace @aep-pa/backend` e `npm run test:jest --workspace @aep-pa/backend` passam. As pendências restantes são de estratégia/organização de testes e devem ser tratadas em task específica.
+  - Problema: a falha histórica de `npm run test --workspace @aep-pa/backend` por incompatibilidade entre fixtures/testes e o schema Prisma atual não é mais reproduzível nesta árvore.
   - Arquivos principais:
     - `apps/backend/src/processes/tests/cesad-stage-read.service.spec.ts`
     - `apps/backend/prisma/schema.prisma`
