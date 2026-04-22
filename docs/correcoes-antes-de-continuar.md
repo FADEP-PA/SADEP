@@ -1,7 +1,7 @@
 # Correções Antes de Continuar
 
 Checklist priorizado das correções que precisam ser feitas antes de continuar com novas features.  
-O objetivo é permitir execução segura, um item por vez, sem misturar escopo e sem construir novas funcionalidades sobre uma base insegura ou instável.
+O objetivo é permitir execução segura, um item por vez, sem misturar escopo e sem construir novas funcionalidades sobre uma base insegura, instável ou desalinhada entre frontend e backend.
 
 ---
 
@@ -12,7 +12,7 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 - [ ] Rodar as validações obrigatórias do item antes de marcar como concluído.
 - [ ] Se surgir problema fora do escopo, registrar como observação e não corrigir no mesmo lote.
 - [ ] Preservar o comportamento dos fluxos que hoje já passam em teste e build.
-- [ ] Não iniciar novas features de domínio antes de concluir pelo menos os itens críticos de segurança e estabilidade do backend.
+- [ ] Não iniciar novas features de domínio antes de concluir pelo menos os itens críticos de segurança, estabilidade e alinhamento operacional.
 - [ ] Não marcar item como concluído sem implementação, validação e aprovação humana.
 
 ---
@@ -22,7 +22,7 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 ### Crítico
 
 - [x] Corrigir autorização por vínculo de processo no workflow e histórico
-  - Observação: workflow, history e transition agora exigem autorização contextual por processo; `ADMIN` não possui bypass automático; `IMMEDIATE_SUPERVISOR` foi bloqueado nesses endpoints por ausência de fonte autoritativa segura no módulo de processos; a resolução completa do vínculo legítimo da chefia segue pendente para a continuidade do roadmap.
+  - Observação: workflow, history e transition agora exigem autorização contextual por processo; `ADMIN` não possui bypass automático; `IMMEDIATE_SUPERVISOR` foi bloqueado nesses endpoints por ausência de fonte autoritativa segura no módulo de processos; a resolução completa do vínculo legítimo da chefia foi endereçada em task posterior.
   - Problema: as rotas e services de processos/workflow ainda aceitam decisão baseada principalmente em role, sem validar de forma consistente se o usuário pertence ao processo consultado ou movimentado.
   - Impacto:
     - acesso indevido ao histórico de processos;
@@ -59,8 +59,8 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - `ADMIN` só acessa se a regra permitir explicitamente.
 
 - [x] Corrigir o `typecheck` do backend
-  - Observação: o typecheck do backend não apresenta mais falha reproduzível na árvore atual; `npm run typecheck --workspace @aep-pa/backend` passou. A separação estrutural entre app, specs e helpers de teste permanece como melhoria residual a ser tratada na estratégia de testes.
-  - Problema: a falha descrita anteriormente no `typecheck` não é mais reproduzível; a pendência residual é estrutural, pois o `tsconfig` principal ainda mistura app, specs e helpers de teste, e foi deslocada para a discussão de estratégia de testes.
+  - Observação: o typecheck do backend não apresenta mais falha reproduzível na árvore atual; `npm run typecheck --workspace @aep-pa/backend` passou. A separação estrutural entre app, specs e helpers de teste foi tratada na task de estratégia de testes.
+  - Problema: a falha descrita anteriormente no `typecheck` não é mais reproduzível; a pendência remanescente era estrutural, e foi deslocada para a estratégia de testes.
   - Arquivos principais:
     - `apps/backend/tsconfig.json`
     - `apps/backend/package.json`
@@ -73,7 +73,7 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - `npm run typecheck --workspace @aep-pa/backend`
 
 - [x] Restabelecer a execução da suíte de testes do backend
-  - Observação: a falha histórica da suíte não é mais reproduzível na árvore atual; `npm run test --workspace @aep-pa/backend`, `npm run test:runner --workspace @aep-pa/backend` e `npm run test:jest --workspace @aep-pa/backend` passam. As pendências restantes são de estratégia/organização de testes e devem ser tratadas em task específica.
+  - Observação: a falha histórica da suíte não é mais reproduzível na árvore atual; `npm run test --workspace @aep-pa/backend`, `npm run test:runner --workspace @aep-pa/backend` e `npm run test:jest --workspace @aep-pa/backend` passam. As pendências restantes eram de estratégia/organização de testes e foram tratadas em task específica.
   - Problema: a falha histórica de `npm run test --workspace @aep-pa/backend` por incompatibilidade entre fixtures/testes e o schema Prisma atual não é mais reproduzível nesta árvore.
   - Arquivos principais:
     - `apps/backend/src/processes/tests/cesad-stage-read.service.spec.ts`
@@ -87,19 +87,26 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - `npm run test --workspace @aep-pa/backend`
     - confirmar execução dos fluxos principais de workflow, CESAD, supervisor evaluation e self evaluation.
 
-- [ ] Alinhar a estratégia de testes do backend
-  - Problema: a suíte customizada principal convive com specs tradicionais e configuração parcial de Jest, gerando manutenção confusa e cobertura ambígua.
+- [x] Alinhar a estratégia de testes do backend
+  - Observação: a estratégia híbrida agora está explícita; `test` agrega `test:integration` e `test:unit`; `typecheck` e `typecheck:spec` foram separados; os comandos passaram na validação manual.
+  - Problema: a suíte customizada principal convivia com specs tradicionais e configuração parcial de Jest, gerando manutenção confusa e cobertura ambígua.
   - Arquivos principais:
     - `apps/backend/src/processes/tests/run.ts`
     - `apps/backend/src/**/*.spec.ts`
     - `apps/backend/package.json`
+    - `apps/backend/tsconfig.json`
+    - `apps/backend/jest.config.js`
   - Fazer:
     - padronizar a estratégia de testes;
-    - remover duplicidade ou deixar a convivência explicitamente documentada;
-    - ajustar scripts de teste para refletir a estratégia oficial do projeto.
+    - remover ambiguidade entre runner e Jest;
+    - ajustar scripts e documentação mínima;
+    - separar typecheck de app e specs.
   - Validar:
-    - rodar o script oficial de teste do backend;
-    - confirmar cobertura mínima dos fluxos principais.
+    - `npm run typecheck --workspace @aep-pa/backend`
+    - `npm run typecheck:spec --workspace @aep-pa/backend`
+    - `npm run test --workspace @aep-pa/backend`
+    - `npm run test:unit --workspace @aep-pa/backend`
+    - `npm run test:integration --workspace @aep-pa/backend`
 
 - [x] Corrigir o fluxo de geração de documentos e o uso de `artifactPath`
   - Observação: `ProcessDocument` pode existir como documento lógico antes do artefato físico; `artifactPath` representa apenas o artefato físico materializado; ausência de artefato deve ser `null`, nunca string vazia.
@@ -130,6 +137,109 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - rodar testes de assinatura e fluxo documental;
     - confirmar que a mesma assinatura não pode ser criada duas vezes.
 
+---
+
+## Alinhamento Frontend/Backend
+
+### Crítico
+
+- [ ] Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
+  - Problema: o frontend do servidor só libera a ação se `availableActions` contiver `SIGN_EVALUATION`, mas essa transição não existe no catálogo público; além disso, a UI envia `POST /processes/:id/workflow/transition`, enquanto a assinatura real está em endpoint documental dedicado.
+  - Impacto:
+    - botão tende a nunca habilitar;
+    - se forçado, usa a rota errada;
+    - jornada do servidor estagiário fica quebrada.
+  - Arquivos principais:
+    - `apps/frontend/src/features/process/components/intern-server-workspace.tsx`
+    - `apps/frontend/src/shared/api/services/processes-service.ts`
+    - `apps/backend/src/processes/processes.service.ts`
+    - `apps/backend/src/processes/workflow-catalog.ts`
+    - `apps/backend/src/api/documents/process-documents.controller.ts`
+  - Fazer:
+    - alinhar a UI à rota real de assinatura documental;
+    - basear a liberação da ação no contexto documental correto, não em transição pública inexistente;
+    - preservar a política de autorização já implementada.
+  - Validar:
+    - a assinatura do servidor é habilitada quando de fato disponível;
+    - a rota correta é utilizada;
+    - o fluxo funciona com o backend real.
+
+- [ ] Alinhar snapshot/tela da chefia com a política real de acesso do backend
+  - Problema: a workspace da chefia consulta `/processes/:id/workflow` e `/processes/:id/history`, mas o backend bloqueia supervisor nesses endpoints públicos desde a BE-SEC-01.
+  - Impacto:
+    - a tela da chefia pode falhar antes de abrir a avaliação;
+    - a UI depende de endpoints que a política real do backend não permite.
+  - Arquivos principais:
+    - `apps/frontend/src/features/process/components/supervisor-evaluation-workspace.tsx`
+    - `apps/frontend/src/shared/api/services/processes-service.ts`
+    - `apps/backend/src/processes/processes.service.ts`
+  - Fazer:
+    - separar o snapshot da chefia dos endpoints públicos bloqueados;
+    - ou criar/adaptar um caminho compatível com a política real do backend;
+    - preservar as decisões de BE-SEC-01 e BE-SEC-02.
+  - Validar:
+    - a tela da chefia abre e opera sem depender de endpoints públicos bloqueados;
+    - não há regressão das garantias de autorização.
+
+### Alta
+
+- [ ] Alinhar matriz de permissões entre menu, guards e backend
+  - Problema: menu, guards locais e backend contam histórias diferentes sobre o que `ADMIN` e outros perfis podem realmente acessar.
+  - Impacto:
+    - navegação enganosa;
+    - rotas que prometem suporte e devolvem 403;
+    - experiência contraditória entre frontend e backend.
+  - Arquivos principais:
+    - `apps/frontend/src/shared/rbac/menu.ts`
+    - `apps/frontend/src/features/process/components/supervisor-evaluation-workspace.tsx`
+    - `apps/frontend/src/features/process/components/intern-server-workspace.tsx`
+    - `apps/frontend/src/features/cesad/components/cesad-stage-read-workspace.tsx`
+    - `apps/backend/src/processes/processes.service.ts`
+    - `apps/backend/src/processes/supervisor-evaluations/supervisor-evaluations.service.ts`
+  - Fazer:
+    - definir explicitamente a política de acesso por perfil nas áreas críticas;
+    - alinhar menu, guards e API à mesma matriz;
+    - evitar rotas visíveis mas inviáveis.
+  - Validar:
+    - o frontend não oferece navegação que a API rejeita sistematicamente;
+    - a política de acesso fica coerente entre UI e backend.
+
+- [ ] Separar histórico processual público de eventos documentais
+  - Problema: o histórico público de workflow filtra por `eventType` de forma ampla e incorpora eventos documentais que não representam passos processuais públicos.
+  - Impacto:
+    - histórico duplicado ou semanticamente incorreto;
+    - timeline pública contaminada;
+    - frontend recebe rastreabilidade confusa.
+  - Arquivos principais:
+    - `apps/backend/src/processes/processes.service.ts`
+    - `apps/backend/src/processes/workflow-catalog.ts`
+    - `apps/backend/src/application/documents/process-documents.service.ts`
+  - Fazer:
+    - separar eventos processuais públicos de eventos documentais internos;
+    - ajustar a leitura do histórico público com critério semântico mais preciso.
+  - Validar:
+    - `/processes/:id/history` deixa de exibir eventos documentais como se fossem passos públicos de workflow.
+
+- [ ] Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
+  - Problema: o read model consolidado da CESAD espera uma família de eventos, mas o serviço de parecer de etapa grava outra família, causando consolidado incompleto e warnings incorretos.
+  - Impacto:
+    - leitura consolidada parcial;
+    - rastreabilidade incompleta da etapa;
+    - inconsistência entre persistência e leitura.
+  - Arquivos principais:
+    - `apps/backend/src/processes/cesad-stage-read.service.ts`
+    - `apps/backend/src/processes/cesad-stage-opinions/cesad-stage-opinions.service.ts`
+    - enums/eventos relacionados
+  - Fazer:
+    - alinhar o read model aos eventos realmente persistidos;
+    - ou alinhar a persistência ao conjunto esperado, conforme a solução mínima mais segura.
+  - Validar:
+    - a leitura consolidada da CESAD reflete corretamente os eventos realmente emitidos pelo backend.
+
+---
+
+## Backend
+
 ### Médio
 
 - [ ] Corrigir a regra de retificação ligada ao estado das assinaturas
@@ -151,14 +261,19 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - `apps/backend/prisma/seed.ts`
     - `apps/backend/.env.example`
     - `docs/local-setup.md`
+    - `README.md`
+    - `apps/backend/src/config/env.validation.ts`
   - Fazer:
     - remover segredos previsíveis;
     - usar placeholders seguros;
-    - ajustar documentação para geração/configuração segura em ambiente local.
+    - ajustar documentação para geração/configuração segura em ambiente local;
+    - impedir fallback fraco de JWT;
+    - exigir senha local de seed via ambiente.
   - Validar:
     - revisar `.env.example`;
     - revisar seed;
-    - revisar documentação local.
+    - revisar documentação local;
+    - validar novo fluxo local de configuração.
 
 - [ ] Revisar a estratégia de autenticação web
   - Problema: o backend usa JWT manual e o frontend persiste token em storage do navegador, aumentando o risco arquitetural em cenários de XSS.
@@ -300,11 +415,18 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 
 ## Ordem recomendada de execução
 
-- [ ] Backend / Crítico / Corrigir autorização por vínculo de processo no workflow e histórico
-- [ ] Backend / Crítico / Corrigir autorização por vínculo na avaliação da chefia
-- [ ] Backend / Crítico / Corrigir o `typecheck`
-- [ ] Backend / Crítico / Restabelecer a execução da suíte de testes
-- [ ] Backend / Crítico / Alinhar a estratégia de testes
+- [x] Backend / Crítico / Corrigir autorização por vínculo de processo no workflow e histórico
+- [x] Backend / Crítico / Corrigir autorização por vínculo na avaliação da chefia
+- [x] Backend / Crítico / Corrigir o `typecheck`
+- [x] Backend / Crítico / Restabelecer a execução da suíte de testes
+- [x] Backend / Crítico / Alinhar a estratégia de testes do backend
+
+- [ ] Alinhamento / Crítico / Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
+- [ ] Alinhamento / Crítico / Alinhar snapshot/tela da chefia com a política real de acesso do backend
+- [ ] Alinhamento / Alta / Alinhar matriz de permissões entre menu, guards e backend
+- [ ] Alinhamento / Alta / Separar histórico processual público de eventos documentais
+- [ ] Alinhamento / Alta / Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
+
 - [ ] Frontend / Crítico / Corrigir sessão stale
 - [ ] Backend / Médio / Corrigir regra de retificação
 - [ ] Backend / Médio / Remover credenciais previsíveis de desenvolvimento
@@ -319,7 +441,7 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 
 ## Observações finais
 
-- [ ] Não iniciar novas features de domínio antes de concluir pelo menos os itens críticos de backend e frontend.
+- [ ] Não iniciar novas features de domínio antes de concluir pelo menos os itens críticos de backend, frontend e alinhamento operacional.
 - [ ] O item de retificação deve vir depois da integridade de assinaturas.
 - [ ] O item de vulnerabilidades deve ser feito com os testes e validações já estabilizados.
-- [ ] A modelagem institucional da CESAD e a evolução de assinatura colegiada devem entrar apenas após a estabilização mínima de segurança e qualidade do backend.
+- [ ] A modelagem institucional da CESAD e a evolução de assinatura colegiada devem entrar apenas após a estabilização mínima de segurança, qualidade e alinhamento entre frontend e backend.
