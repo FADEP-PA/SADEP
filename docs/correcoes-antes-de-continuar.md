@@ -42,7 +42,8 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - histórico respeita vínculo;
     - transições de workflow respeitam vínculo.
 
-- [ ] Corrigir autorização por vínculo na avaliação da chefia
+- [x] Corrigir autorização por vínculo na avaliação da chefia
+  - Observação: a autorização da avaliação da chefia agora usa `ProcessStage.responsibleSupervisorUserId` como fonte estrutural; `ADMIN` não possui bypass automático; leitura, draft, submit e retificação passaram a exigir chefia responsável vinculada estruturalmente à etapa; etapas legadas sem `responsibleSupervisorUserId` ficam bloqueadas por segurança até preenchimento adequado.
   - Problema: qualquer `ADMIN` ou `IMMEDIATE_SUPERVISOR` pode ler, criar rascunho, submeter e retificar avaliação de chefia de processo alheio, porque a validação atual não confirma a chefia responsável esperada para a etapa.
   - Arquivos principais:
     - `apps/backend/src/processes/supervisor-evaluations/supervisor-evaluations.service.ts`

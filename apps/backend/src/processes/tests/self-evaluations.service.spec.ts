@@ -39,7 +39,12 @@ export async function runSelfEvaluationsTests() {
     );
     const admin = await createUser(context.prisma, UserRole.ADMIN, 'self-admin@test.local');
 
-    const process = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id);
+    const process = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_AVALIACAO,
+      evaluatedUser.id,
+      supervisor.id,
+    );
     const ownInternUser = authenticatedUser(evaluatedUser.id, evaluatedUser.role);
     const otherInternUser = authenticatedUser(otherIntern.id, otherIntern.role);
     const supervisorUser = authenticatedUser(supervisor.id, supervisor.role);
@@ -372,6 +377,7 @@ export async function runSelfEvaluationsTests() {
       context.prisma,
       ProcessStatus.EM_AVALIACAO,
       evaluatedUser.id,
+      supervisor.id,
     );
     await context.supervisorEvaluationsService.submit(
       noPendingSignatureProcess.id,
@@ -424,6 +430,7 @@ export async function runSelfEvaluationsTests() {
       context.prisma,
       ProcessStatus.EM_AVALIACAO,
       evaluatedUser.id,
+      supervisor.id,
     );
     await context.supervisorEvaluationsService.submit(
       missingSelfEvaluationProcess.id,
@@ -439,7 +446,12 @@ export async function runSelfEvaluationsTests() {
       /Self evaluation not found/,
     );
 
-    const draftOnlyProcess = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id);
+    const draftOnlyProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_AVALIACAO,
+      evaluatedUser.id,
+      supervisor.id,
+    );
     await context.supervisorEvaluationsService.submit(
       draftOnlyProcess.id,
       supervisorUser,
@@ -460,6 +472,7 @@ export async function runSelfEvaluationsTests() {
       context.prisma,
       ProcessStatus.EM_AVALIACAO,
       evaluatedUser.id,
+      supervisor.id,
     );
     await context.supervisorEvaluationsService.submit(
       missingDocumentProcess.id,
@@ -503,6 +516,7 @@ export async function runSelfEvaluationsTests() {
       context.prisma,
       ProcessStatus.EM_AVALIACAO,
       evaluatedUser.id,
+      supervisor.id,
     );
     await context.supervisorEvaluationsService.submit(
       incompleteStageProcess.id,

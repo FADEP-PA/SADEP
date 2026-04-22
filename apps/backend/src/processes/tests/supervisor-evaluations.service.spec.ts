@@ -29,46 +29,16 @@ export async function runSupervisorEvaluationsServiceTests() {
       UserRole.IMMEDIATE_SUPERVISOR,
       'other-ssupervisor@test.local',
     );
+    const otherIntern = await createUser(context.prisma, UserRole.INTERN_SERVER, 'other-sintern@test.local');
+    const admin = await createUser(context.prisma, UserRole.ADMIN, 'sadmin@test.local');
     const cesad = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'scesad@test.local');
 
-    context.service.transitionWorkflowInTransaction = async (transaction, processId, user, payload) => {
-      const process = await context.service.findProcessOrThrow(transaction, processId);
-      const currentStage = await context.service.resolveCurrentStageOrThrow(transaction, processId);
-      const occurredAt = new Date().toISOString();
-
-      await transaction.evaluationProcess.update({
-        where: { id: processId },
-        data: { status: ProcessStatus.AGUARDANDO_ASSINATURA },
-      });
-
-      await transaction.auditEvent.create({
-        data: {
-          evaluationProcessId: processId,
-          actorUserId: user.sub,
-          actorRole: user.role,
-          eventType: AuditEventType.SIGNATURE_REQUESTED,
-          beforeState: { status: process.status },
-          afterState: { status: ProcessStatus.AGUARDANDO_ASSINATURA },
-          metadata: {
-            eventType: AuditEventType.SIGNATURE_REQUESTED,
-            action: payload.action,
-            performedByUserId: user.sub,
-            performedByRole: user.role,
-            occurredAt,
-            processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
-            processStageId: currentStage.id,
-            stageSequence: currentStage.sequence,
-            stageCode: currentStage.stageCode,
-            ...(payload.comment ? { comment: payload.comment } : {}),
-          },
-          occurredAt: new Date(occurredAt),
-        },
-      });
-
-      return ProcessStatus.AGUARDANDO_ASSINATURA;
-    };
-
-    const process = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id);
+    const process = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_AVALIACAO,
+      evaluatedUser.id,
+      supervisor.id,
+    );
 
     const initialFetch = await context.supervisorEvaluationsService.getByProcessId(
       process.id,
@@ -76,7 +46,55 @@ export async function runSupervisorEvaluationsServiceTests() {
     );
     assert.equal(initialFetch, null);
 
+    await assert.rejects(
+      () =>
+        context.supervisorEvaluationsService.getByProcessId(
+          process.id,
+          authenticatedUser(otherSupervisor.id, otherSupervisor.role),
+        ),
+      /responsible supervisor/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.supervisorEvaluationsService.getByProcessId(
+          process.id,
+          authenticatedUser(admin.id, admin.role),
+        ),
+      /cannot read supervisor evaluations/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.supervisorEvaluationsService.getByProcessId(
+          process.id,
+          authenticatedUser(otherIntern.id, otherIntern.role),
+        ),
+      /evaluated server/,
+    );
+
     const draftPayload = buildSupervisorEvaluationPayload({ comment: 'Primeiro salvamento em rascunho.' });
+
+    await assert.rejects(
+      () =>
+        context.supervisorEvaluationsService.saveDraft(
+          process.id,
+          authenticatedUser(otherSupervisor.id, otherSupervisor.role),
+          draftPayload,
+        ),
+      /responsible supervisor/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.supervisorEvaluationsService.saveDraft(
+          process.id,
+          authenticatedUser(admin.id, admin.role),
+          draftPayload,
+        ),
+      /cannot manipulate supervisor evaluations/,
+    );
+
     const draft = await context.supervisorEvaluationsService.saveDraft(
       process.id,
       authenticatedUser(supervisor.id, supervisor.role),
@@ -94,6 +112,17 @@ export async function runSupervisorEvaluationsServiceTests() {
       summary: 'Avaliação final concluída pela chefia.',
       comment: 'Encaminhando para assinatura do servidor.',
     });
+
+    await assert.rejects(
+      () =>
+        context.supervisorEvaluationsService.submit(
+          process.id,
+          authenticatedUser(otherSupervisor.id, otherSupervisor.role),
+          submitPayload,
+        ),
+      /responsible supervisor/,
+    );
+
     const submitted = await context.supervisorEvaluationsService.submit(
       process.id,
       authenticatedUser(supervisor.id, supervisor.role),
@@ -102,6 +131,12 @@ export async function runSupervisorEvaluationsServiceTests() {
 
     assert.equal(submitted.status, SupervisorEvaluationStatus.SUBMITTED);
     assert.ok(submitted.submittedAt);
+
+    const internSubmittedRead = await context.supervisorEvaluationsService.getByProcessId(
+      process.id,
+      authenticatedUser(evaluatedUser.id, evaluatedUser.role),
+    );
+    assert.equal(internSubmittedRead?.status, SupervisorEvaluationStatus.SUBMITTED);
 
     const persistedProcess = await context.prisma.evaluationProcess.findUniqueOrThrow({ where: { id: process.id } });
     assert.equal(persistedProcess.status, ProcessStatus.AGUARDANDO_ASSINATURA);
@@ -215,6 +250,26 @@ export async function runSupervisorEvaluationsServiceTests() {
 
     await assert.rejects(
       () =>
+        context.supervisorEvaluationsService.rectify(
+          process.id,
+          authenticatedUser(otherSupervisor.id, otherSupervisor.role),
+          buildSupervisorEvaluationPayload(),
+        ),
+      /responsible supervisor/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.supervisorEvaluationsService.rectify(
+          process.id,
+          authenticatedUser(admin.id, admin.role),
+          buildSupervisorEvaluationPayload(),
+        ),
+      /cannot manipulate supervisor evaluations/,
+    );
+
+    await assert.rejects(
+      () =>
         context.supervisorEvaluationsService.submit(
           process.id,
           authenticatedUser(supervisor.id, supervisor.role),
@@ -233,7 +288,12 @@ export async function runSupervisorEvaluationsServiceTests() {
       /cannot manipulate supervisor evaluations/,
     );
 
-    const signedProcess = await createProcess(context.prisma, ProcessStatus.ASSINADO, evaluatedUser.id);
+    const signedProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.ASSINADO,
+      evaluatedUser.id,
+      supervisor.id,
+    );
     await context.prisma.supervisorEvaluation.create({
       data: {
         processId: signedProcess.id,

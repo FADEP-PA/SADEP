@@ -25,6 +25,7 @@ describe('SupervisorEvaluationsService', () => {
     id: 'stage-123',
     sequence: 1,
     stageCode: 'ETAPA_1',
+    responsibleSupervisorUserId: 'user-123',
     startedAt: null,
     endedAt: null,
   };
@@ -77,6 +78,7 @@ describe('SupervisorEvaluationsService', () => {
             findProcessOrThrow: jest.fn(),
             resolveCurrentStageOrThrow: jest.fn(),
             transitionWorkflowInTransaction: jest.fn(),
+            transitionWorkflowAsResponsibleSupervisorInTransaction: jest.fn(),
           },
         },
         {
@@ -95,6 +97,11 @@ describe('SupervisorEvaluationsService', () => {
     prismaService = module.get(PrismaService);
     processesService = module.get(ProcessesService);
     processDocumentsService = module.get(ProcessDocumentsService);
+    processesService.findProcessOrThrow.mockResolvedValue({
+      id: 'process-123',
+      status: 'EM_AVALIACAO',
+      evaluatedUserId: 'intern-123',
+    } as any);
     processesService.resolveCurrentStageOrThrow.mockResolvedValue(currentStage as any);
   });
 
@@ -138,7 +145,7 @@ describe('SupervisorEvaluationsService', () => {
 
       const result = await service.getByProcessId(processId, mockUser);
 
-      expect(processesService.ensureProcessExists).toHaveBeenCalledWith(processId);
+      expect(processesService.findProcessOrThrow).toHaveBeenCalledWith(prismaService, processId);
       expect(processesService.resolveCurrentStageOrThrow).toHaveBeenCalledWith(prismaService, processId);
       expect(processDocumentsService.getSupervisorEvaluationDocumentContext).toHaveBeenCalledWith(
         prismaService,
@@ -280,7 +287,9 @@ describe('SupervisorEvaluationsService', () => {
         updatedAt: submittedAt,
       } as any);
       processesService.findProcessOrThrow.mockResolvedValue(mockProcess as any);
-      processesService.transitionWorkflowInTransaction.mockResolvedValue('AGUARDANDO_ASSINATURA' as any);
+      processesService.transitionWorkflowAsResponsibleSupervisorInTransaction.mockResolvedValue(
+        'AGUARDANDO_ASSINATURA' as any,
+      );
       processDocumentsService.ensureSupervisorEvaluationDocument.mockResolvedValue({
         documentId: 'doc-123',
       });
@@ -299,7 +308,7 @@ describe('SupervisorEvaluationsService', () => {
 
       const result = await service.submit(processId, mockUser, validPayload);
 
-      expect(processesService.transitionWorkflowInTransaction).toHaveBeenCalledWith(
+      expect(processesService.transitionWorkflowAsResponsibleSupervisorInTransaction).toHaveBeenCalledWith(
         expect.any(Object),
         processId,
         mockUser,

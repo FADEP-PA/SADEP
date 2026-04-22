@@ -100,31 +100,32 @@ enum CesadStageOpinionStatus {
 }
 
 model User {
-  id                       String              @id @default(cuid())
-  email                    String              @unique
+  id                       String                 @id @default(cuid())
+  email                    String                 @unique
   passwordHash             String
   role                     UserRole
-  isActive                 Boolean             @default(true)
-  createdAt                DateTime            @default(now())
-  updatedAt                DateTime            @updatedAt
-  evaluationProcesses      EvaluationProcess[] @relation("EvaluationProcessEvaluatedUser")
-  auditEvents              AuditEvent[]        @relation("AuditEventActor")
-  signatureRecords         SignatureRecord[]   @relation("SignatureRecordSignatory")
+  isActive                 Boolean                @default(true)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  evaluationProcesses      EvaluationProcess[]    @relation("EvaluationProcessEvaluatedUser")
+  auditEvents              AuditEvent[]           @relation("AuditEventActor")
+  signatureRecords         SignatureRecord[]      @relation("SignatureRecordSignatory")
   supervisorEvaluations    SupervisorEvaluation[] @relation("SupervisorEvaluationEvaluator")
-  selfEvaluations          SelfEvaluation[]    @relation("SelfEvaluationAuthor")
-  cesadStageOpinions       CesadStageOpinion[] @relation("CesadStageOpinionAuthor")
+  responsibleProcessStages ProcessStage[]         @relation("ProcessStageResponsibleSupervisor")
+  selfEvaluations          SelfEvaluation[]       @relation("SelfEvaluationAuthor")
+  cesadStageOpinions       CesadStageOpinion[]    @relation("CesadStageOpinionAuthor")
 }
 
 model EvaluationProcess {
-  id              String          @id @default(cuid())
-  evaluatedUserId String
-  status          ProcessStatus     @default(EM_AVALIACAO)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  evaluatedUser   User            @relation("EvaluationProcessEvaluatedUser", fields: [evaluatedUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  stages          ProcessStage[]
-  auditEvents     AuditEvent[]
-  documents       ProcessDocument[]
+  id                    String                 @id @default(cuid())
+  evaluatedUserId       String
+  status                ProcessStatus          @default(EM_AVALIACAO)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  evaluatedUser         User                   @relation("EvaluationProcessEvaluatedUser", fields: [evaluatedUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  stages                ProcessStage[]
+  auditEvents           AuditEvent[]
+  documents             ProcessDocument[]
   supervisorEvaluations SupervisorEvaluation[]
   selfEvaluations       SelfEvaluation[]
   cesadStageOpinions    CesadStageOpinion[]
@@ -134,23 +135,26 @@ model EvaluationProcess {
 }
 
 model ProcessStage {
-  id                  String            @id @default(cuid())
-  evaluationProcessId String
-  sequence            Int
-  stageCode           String
-  startedAt           DateTime?
-  endedAt             DateTime?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  evaluationProcess   EvaluationProcess @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  documents           ProcessDocument[]
-  supervisorEvaluation SupervisorEvaluation?
-  selfEvaluation       SelfEvaluation?
-  cesadStageOpinion    CesadStageOpinion?
+  id                          String                @id @default(cuid())
+  evaluationProcessId         String
+  responsibleSupervisorUserId String?
+  sequence                    Int
+  stageCode                   String
+  startedAt                   DateTime?
+  endedAt                     DateTime?
+  createdAt                   DateTime              @default(now())
+  updatedAt                   DateTime              @updatedAt
+  evaluationProcess           EvaluationProcess     @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  responsibleSupervisor       User?                 @relation("ProcessStageResponsibleSupervisor", fields: [responsibleSupervisorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  documents                   ProcessDocument[]
+  supervisorEvaluation        SupervisorEvaluation?
+  selfEvaluation              SelfEvaluation?
+  cesadStageOpinion           CesadStageOpinion?
 
   @@unique([evaluationProcessId, sequence])
   @@unique([evaluationProcessId, stageCode])
   @@index([evaluationProcessId])
+  @@index([responsibleSupervisorUserId])
   @@index([stageCode])
 }
 
@@ -191,7 +195,6 @@ model ProcessDocument {
   @@index([processStageId])
   @@index([documentType, documentStatus])
 }
-
 
 model SupervisorEvaluation {
   id                String                     @id @default(cuid())

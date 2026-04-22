@@ -90,16 +90,14 @@ Essa ordem reduz risco de regressão e evita construir novas regras sobre uma ba
 # Estado atual
 
 ## Bloco/feature ativa
-**BLOCO 1 — Segurança e Autorização**
+**BLOCO 2 — Estabilização Técnica do Backend**
 
 ## Task ativa
-**BE-SEC-02 — Corrigir autorização por vínculo na avaliação da chefia**
+**BE-QUAL-01 — Corrigir typecheck do backend**
 
 ## Contexto atual
-Antes de retomar os incrementos funcionais da CESAD e da formalização documental, o backend precisa estabilizar:
+Após a conclusão das correções críticas de segurança por vínculo, o backend precisa estabilizar:
 
-- autorização por vínculo de processo;
-- segurança da avaliação da chefia;
 - typecheck e testes executáveis;
 - rastreabilidade operacional mínima;
 - coerência entre tracker e checklist de correções.
@@ -178,11 +176,11 @@ As rotas de workflow aceitam qualquer usuário autenticado e a service decide a�
 
 ## BE-SEC-02 — Corrigir autorização por vínculo na avaliação da chefia
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `fix(backend): enforce supervisor stage binding in supervisor evaluations`
 - **Dependências:** BE-SEC-01 recomendada antes
 
 **Problema**  
@@ -220,6 +218,9 @@ Qualquer `ADMIN` ou `IMMEDIATE_SUPERVISOR` pode atuar em qualquer processo na av
 - chefia não vinculada é bloqueada
 - `ADMIN` segue somente a regra explicitamente permitida pelo sistema
 
+**Observações**
+- concluída com vínculo estrutural da chefia por etapa em `ProcessStage.responsibleSupervisorUserId`; a autorização da avaliação da chefia passou a usar essa fonte estrutural; `ADMIN` ficou sem bypass automático; processos/etapas legados sem `responsibleSupervisorUserId` permanecem bloqueados por segurança até preenchimento adequado
+
 ---
 
 # BLOCO 2 — Estabilização Técnica do Backend
@@ -230,7 +231,7 @@ Objetivo: garantir que o backend esteja testável e confiável para evolução.
 
 ## BE-QUAL-01 — Corrigir typecheck do backend
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Não obrigatória, salvo mudança ampla

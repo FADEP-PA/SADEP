@@ -9,6 +9,7 @@ import {
   Prisma,
   ProcessStatus as PrismaProcessStatus,
   SelfEvaluationStatus as PrismaSelfEvaluationStatus,
+  SupervisorEvaluationStatus as PrismaSupervisorEvaluationStatus,
   UserRole as PrismaUserRole,
 } from '@prisma/client';
 import {
@@ -50,9 +51,10 @@ export class SelfEvaluationsService {
         stages: {
           where: { id: currentStage.id },
           select: {
+            responsibleSupervisorUserId: true,
             supervisorEvaluation: {
               select: {
-                evaluatorUserId: true,
+                status: true,
               },
             },
           },
@@ -111,7 +113,7 @@ export class SelfEvaluationsService {
       throw new ForbiddenException('Authenticated user cannot access this self evaluation');
     }
 
-    const expectedSupervisorUserId = process.stages[0]?.supervisorEvaluation?.evaluatorUserId;
+    const expectedSupervisorUserId = process.stages[0]?.responsibleSupervisorUserId;
     if (!expectedSupervisorUserId || expectedSupervisorUserId !== user.sub) {
       throw new ForbiddenException('Authenticated user is not the expected supervisor for this process');
     }
@@ -329,10 +331,15 @@ export class SelfEvaluationsService {
       );
 
       if (documentsComplete) {
-        await this.processesService.transitionWorkflowInTransaction(transaction, processId, user, {
-          action: ProcessAction.SEND_TO_CESAD,
-          comment: comment ?? undefined,
-        });
+        await this.processesService.transitionWorkflowAsResponsibleSupervisorInTransaction(
+          transaction,
+          processId,
+          user,
+          {
+            action: ProcessAction.SEND_TO_CESAD,
+            comment: comment ?? undefined,
+          },
+        );
       }
 
       return this.toResponseDto(
@@ -361,9 +368,10 @@ export class SelfEvaluationsService {
         stages: {
           where: { id: currentStage.id },
           select: {
+            responsibleSupervisorUserId: true,
             supervisorEvaluation: {
               select: {
-                evaluatorUserId: true,
+                status: true,
               },
             },
           },
@@ -391,7 +399,11 @@ export class SelfEvaluationsService {
 
     const stage = process.stages[0];
 
-    if (!stage?.supervisorEvaluation?.evaluatorUserId) {
+    if (!stage?.responsibleSupervisorUserId) {
+      throw new BadRequestException('Process stage must define the responsible supervisor');
+    }
+
+    if (stage.supervisorEvaluation?.status !== PrismaSupervisorEvaluationStatus.SUBMITTED) {
       throw new BadRequestException('Supervisor evaluation must be submitted before self evaluation starts');
     }
 
@@ -412,7 +424,7 @@ export class SelfEvaluationsService {
     return {
       id: process.id,
       evaluatedUserId: process.evaluatedUserId,
-      immediateSupervisorUserId: stage.supervisorEvaluation.evaluatorUserId,
+      immediateSupervisorUserId: stage.responsibleSupervisorUserId,
     };
   }
 
@@ -438,11 +450,7 @@ export class SelfEvaluationsService {
         stages: {
           where: { id: currentStage.id },
           select: {
-            supervisorEvaluation: {
-              select: {
-                evaluatorUserId: true,
-              },
-            },
+            responsibleSupervisorUserId: true,
           },
         },
       },
@@ -462,9 +470,9 @@ export class SelfEvaluationsService {
       );
     }
 
-    const expectedSupervisorUserId = process.stages[0]?.supervisorEvaluation?.evaluatorUserId;
+    const expectedSupervisorUserId = process.stages[0]?.responsibleSupervisorUserId;
     if (!expectedSupervisorUserId) {
-      throw new BadRequestException('Supervisor evaluation must define the expected supervisor');
+      throw new BadRequestException('Process stage must define the responsible supervisor');
     }
 
     if (expectedSupervisorUserId !== user.sub) {

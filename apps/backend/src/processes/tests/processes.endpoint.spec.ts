@@ -191,7 +191,7 @@ export async function runProcessesEndpointTests() {
 
     assert.equal(workflowResponse.status, 403);
     const workflowPayload = (await workflowResponse.json()) as { message: string };
-    assert.match(workflowPayload.message, /secure process-stage binding/);
+    assert.match(workflowPayload.message, /public workflow endpoint/);
 
     const workflowWithoutEvaluationLinkResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow`,
@@ -206,7 +206,7 @@ export async function runProcessesEndpointTests() {
     assert.equal(workflowWithoutEvaluationLinkResponse.status, 403);
     const workflowWithoutEvaluationLinkPayload =
       (await workflowWithoutEvaluationLinkResponse.json()) as { message: string };
-    assert.match(workflowWithoutEvaluationLinkPayload.message, /secure process-stage binding/);
+    assert.match(workflowWithoutEvaluationLinkPayload.message, /public workflow endpoint/);
 
     const forbiddenAdminWorkflowResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow`,
@@ -236,7 +236,7 @@ export async function runProcessesEndpointTests() {
 
     assert.equal(historyResponse.status, 403);
     const historyPayload = (await historyResponse.json()) as { message: string };
-    assert.match(historyPayload.message, /secure process-stage binding/);
+    assert.match(historyPayload.message, /public workflow endpoint/);
 
     const historyWithoutEvaluationLinkResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/history`,
@@ -251,7 +251,7 @@ export async function runProcessesEndpointTests() {
     assert.equal(historyWithoutEvaluationLinkResponse.status, 403);
     const historyWithoutEvaluationLinkPayload =
       (await historyWithoutEvaluationLinkResponse.json()) as { message: string };
-    assert.match(historyWithoutEvaluationLinkPayload.message, /secure process-stage binding/);
+    assert.match(historyWithoutEvaluationLinkPayload.message, /public workflow endpoint/);
 
     const supervisorTransitionWithoutEvaluationResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow/transition`,
@@ -270,7 +270,7 @@ export async function runProcessesEndpointTests() {
     assert.equal(supervisorTransitionWithoutEvaluationResponse.status, 403);
     const supervisorTransitionWithoutEvaluationPayload =
       (await supervisorTransitionWithoutEvaluationResponse.json()) as { message: string };
-    assert.match(supervisorTransitionWithoutEvaluationPayload.message, /secure process-stage binding/);
+    assert.match(supervisorTransitionWithoutEvaluationPayload.message, /public workflow endpoint/);
 
     const validationResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/supervisor-evaluation/draft`,

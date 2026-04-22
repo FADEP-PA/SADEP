@@ -21,7 +21,7 @@ import {
 
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { ProcessesService } from '../processes.service';
+import { ProcessesService, type PrismaTransactionClient } from '../processes.service';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import type {
   SupervisorEvaluationContentDto,
@@ -30,8 +30,8 @@ import type {
 } from './dto/supervisor-evaluation.dto';
 import { isSupervisorEvaluationContentDto } from './dto/supervisor-evaluation.dto';
 
-const READ_ALLOWED_ROLES = [UserRole.ADMIN, UserRole.IMMEDIATE_SUPERVISOR, UserRole.INTERN_SERVER] as const;
-const WRITE_ALLOWED_ROLES = [UserRole.ADMIN, UserRole.IMMEDIATE_SUPERVISOR] as const;
+const READ_ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR, UserRole.INTERN_SERVER] as const;
+const WRITE_ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR] as const;
 
 @Injectable()
 export class SupervisorEvaluationsService {
@@ -45,9 +45,11 @@ export class SupervisorEvaluationsService {
     processId: string,
     user: AuthenticatedUser,
   ): Promise<SupervisorEvaluationResponseDto | null> {
-    this.ensureAllowedRole(user.role, 'read');
-    await this.processesService.ensureProcessExists(processId);
-    const currentStage = await this.processesService.resolveCurrentStageOrThrow(this.prismaService, processId);
+    const { currentStage } = await this.assertCanReadSupervisorEvaluation(
+      this.prismaService,
+      processId,
+      user,
+    );
 
     const evaluation = await this.prismaService.supervisorEvaluation.findUnique({
       where: { processStageId: currentStage.id },
@@ -85,12 +87,14 @@ export class SupervisorEvaluationsService {
     user: AuthenticatedUser,
     payload: UpsertSupervisorEvaluationDto,
   ): Promise<SupervisorEvaluationResponseDto> {
-    this.ensureAllowedRole(user.role, 'write');
     const normalizedPayload = this.normalizePayload(payload);
 
     return this.prismaService.$transaction(async (transaction) => {
-      const process = await this.processesService.findProcessOrThrow(transaction, processId);
-      const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
+      const { process, currentStage } = await this.assertCanWriteSupervisorEvaluation(
+        transaction,
+        processId,
+        user,
+      );
 
       if (this.toContractProcessStatus(process.status) !== ProcessStatus.EM_AVALIACAO) {
         throw new BadRequestException(
@@ -162,12 +166,14 @@ export class SupervisorEvaluationsService {
     user: AuthenticatedUser,
     payload: UpsertSupervisorEvaluationDto,
   ): Promise<SupervisorEvaluationResponseDto> {
-    this.ensureAllowedRole(user.role, 'write');
     const normalizedPayload = this.normalizePayload(payload);
 
     return this.prismaService.$transaction(async (transaction) => {
-      const process = await this.processesService.findProcessOrThrow(transaction, processId);
-      const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
+      const { process, currentStage } = await this.assertCanWriteSupervisorEvaluation(
+        transaction,
+        processId,
+        user,
+      );
       const processStatus = this.toContractProcessStatus(process.status);
 
       if (processStatus !== ProcessStatus.EM_AVALIACAO) {
@@ -247,10 +253,15 @@ export class SupervisorEvaluationsService {
         }),
       });
 
-      await this.processesService.transitionWorkflowInTransaction(transaction, processId, user, {
-        action: ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
-        comment: normalizedPayload.comment,
-      });
+      await this.processesService.transitionWorkflowAsResponsibleSupervisorInTransaction(
+        transaction,
+        processId,
+        user,
+        {
+          action: ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
+          comment: normalizedPayload.comment,
+        },
+      );
 
       // Create or ensure ProcessDocument for supervisor evaluation
       const { documentId } = await this.processDocumentsService.ensureSupervisorEvaluationDocument(
@@ -276,7 +287,7 @@ export class SupervisorEvaluationsService {
         processId,
         currentStage.id,
         documentId,
-        user.sub, // supervisor user ID
+        currentStage.responsibleSupervisorUserId,
         processWithIntern.evaluatedUserId, // intern user ID
         user,
       );
@@ -290,12 +301,14 @@ export class SupervisorEvaluationsService {
     user: AuthenticatedUser,
     payload: UpsertSupervisorEvaluationDto,
   ): Promise<SupervisorEvaluationResponseDto> {
-    this.ensureAllowedRole(user.role, 'write');
     const normalizedPayload = this.normalizePayload(payload);
 
     return this.prismaService.$transaction(async (transaction) => {
-      const process = await this.processesService.findProcessOrThrow(transaction, processId);
-      const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
+      const { process, currentStage } = await this.assertCanWriteSupervisorEvaluation(
+        transaction,
+        processId,
+        user,
+      );
       const processStatus = this.toContractProcessStatus(process.status);
 
       if (processStatus !== ProcessStatus.AGUARDANDO_ASSINATURA) {
@@ -358,6 +371,96 @@ export class SupervisorEvaluationsService {
 
       return this.toResponseDto(rectifiedEvaluation);
     });
+  }
+
+  private async assertCanReadSupervisorEvaluation(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    user: AuthenticatedUser,
+  ): Promise<{
+    process: { id: string; status: PrismaProcessStatus; evaluatedUserId: string };
+    currentStage: {
+      id: string;
+      sequence: number;
+      stageCode: string;
+      responsibleSupervisorUserId: string;
+      startedAt: Date | null;
+      endedAt: Date | null;
+    };
+  }> {
+    this.ensureAllowedRole(user.role, 'read');
+    const process = await this.processesService.findProcessOrThrow(transaction, processId);
+    const currentStage = await this.resolveCurrentStageWithResponsibleSupervisor(transaction, processId);
+
+    if (user.role === UserRole.INTERN_SERVER) {
+      if (process.evaluatedUserId !== user.sub) {
+        throw new ForbiddenException('Authenticated user is not the evaluated server for this process');
+      }
+
+      return { process, currentStage };
+    }
+
+    this.assertResponsibleSupervisor(currentStage, user);
+    return { process, currentStage };
+  }
+
+  private async assertCanWriteSupervisorEvaluation(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    user: AuthenticatedUser,
+  ): Promise<{
+    process: { id: string; status: PrismaProcessStatus; evaluatedUserId: string };
+    currentStage: {
+      id: string;
+      sequence: number;
+      stageCode: string;
+      responsibleSupervisorUserId: string;
+      startedAt: Date | null;
+      endedAt: Date | null;
+    };
+  }> {
+    this.ensureAllowedRole(user.role, 'write');
+    const process = await this.processesService.findProcessOrThrow(transaction, processId);
+    const currentStage = await this.resolveCurrentStageWithResponsibleSupervisor(transaction, processId);
+
+    this.assertResponsibleSupervisor(currentStage, user);
+    return { process, currentStage };
+  }
+
+  private async resolveCurrentStageWithResponsibleSupervisor(
+    transaction: PrismaTransactionClient,
+    processId: string,
+  ): Promise<{
+    id: string;
+    sequence: number;
+    stageCode: string;
+    responsibleSupervisorUserId: string;
+    startedAt: Date | null;
+    endedAt: Date | null;
+  }> {
+    const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
+
+    if (!currentStage.responsibleSupervisorUserId) {
+      throw new ForbiddenException('Process stage does not define a responsible supervisor');
+    }
+
+    return {
+      ...currentStage,
+      responsibleSupervisorUserId: currentStage.responsibleSupervisorUserId,
+    };
+  }
+
+  private assertResponsibleSupervisor(
+    currentStage: { responsibleSupervisorUserId: string },
+    user: AuthenticatedUser,
+  ): void {
+    if (user.role !== UserRole.IMMEDIATE_SUPERVISOR) {
+      throw new ForbiddenException(`Role ${user.role} cannot manipulate supervisor evaluations`);
+    }
+
+    if (currentStage.responsibleSupervisorUserId !== user.sub) {
+      throw new ForbiddenException('Authenticated user is not the responsible supervisor for this process stage');
+    }
   }
 
   private ensureAllowedRole(role: UserRole, mode: 'read' | 'write'): void {

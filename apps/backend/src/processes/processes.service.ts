@@ -51,6 +51,7 @@ type ProcessAccessContext = {
     id: string;
     sequence: number;
     stageCode: string;
+    responsibleSupervisorUserId: string | null;
   };
 };
 
@@ -142,6 +143,7 @@ export class ProcessesService {
     id: string;
     sequence: number;
     stageCode: string;
+    responsibleSupervisorUserId: string | null;
     startedAt: Date | null;
     endedAt: Date | null;
   }> {
@@ -151,6 +153,7 @@ export class ProcessesService {
         id: true,
         sequence: true,
         stageCode: true,
+        responsibleSupervisorUserId: true,
         startedAt: true,
         endedAt: true,
       },
@@ -166,6 +169,7 @@ export class ProcessesService {
       id: string;
       sequence: number;
       stageCode: string;
+      responsibleSupervisorUserId: string | null;
       startedAt: Date | null;
       endedAt: Date | null;
     };
@@ -179,6 +183,7 @@ export class ProcessesService {
     id: string;
     sequence: number;
     stageCode: string;
+    responsibleSupervisorUserId: string | null;
     startedAt: Date | null;
     endedAt: Date | null;
   }> {
@@ -191,6 +196,7 @@ export class ProcessesService {
         id: true,
         sequence: true,
         stageCode: true,
+        responsibleSupervisorUserId: true,
         startedAt: true,
         endedAt: true,
       },
@@ -217,6 +223,46 @@ export class ProcessesService {
 
     const normalizedComment = this.normalizeComment(payload.comment);
     const process = await this.ensureUserHasProcessAccess(transaction, processId, user);
+
+    return this.executeWorkflowTransition(transaction, process, user, payload, normalizedComment);
+  }
+
+  async transitionWorkflowAsResponsibleSupervisorInTransaction(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    user: AuthenticatedUser,
+    payload: WorkflowTransitionRequestDto,
+  ): Promise<ProcessStatus> {
+    if (!isWorkflowAction(payload.action)) {
+      throw new BadRequestException(`Unsupported workflow action: ${String(payload.action)}`);
+    }
+
+    if (user.role !== UserRole.IMMEDIATE_SUPERVISOR) {
+      throw new ForbiddenException(`Role ${user.role} cannot execute action ${payload.action}`);
+    }
+
+    const normalizedComment = this.normalizeComment(payload.comment);
+    const process = await this.getProcessAccessContextOrThrow(transaction, processId);
+    const expectedSupervisorUserId = process.currentStage.responsibleSupervisorUserId;
+
+    if (!expectedSupervisorUserId) {
+      throw new ForbiddenException('Process stage does not define a responsible supervisor');
+    }
+
+    if (expectedSupervisorUserId !== user.sub) {
+      throw new ForbiddenException('Authenticated user is not the responsible supervisor for this process stage');
+    }
+
+    return this.executeWorkflowTransition(transaction, process, user, payload, normalizedComment);
+  }
+
+  private async executeWorkflowTransition(
+    transaction: PrismaTransactionClient,
+    process: ProcessAccessContext,
+    user: AuthenticatedUser,
+    payload: WorkflowTransitionRequestDto,
+    normalizedComment: string | null,
+  ): Promise<ProcessStatus> {
     const transition = getWorkflowTransition(process.status, payload.action);
 
     if (!transition) {
@@ -249,7 +295,7 @@ export class ProcessesService {
     if (payload.action === ProcessAction.SEND_TO_CESAD) {
       const documentsComplete = await this.areRequiredStageDocumentsComplete(
         transaction,
-        processId,
+        process.id,
         process.currentStage.id,
       );
 
@@ -261,7 +307,7 @@ export class ProcessesService {
     }
 
     await transaction.evaluationProcess.update({
-      where: { id: processId },
+      where: { id: process.id },
       data: { status: this.toDatabaseProcessStatus(transition.to) },
     });
 
@@ -353,11 +399,8 @@ export class ProcessesService {
         }
         return process;
       case UserRole.IMMEDIATE_SUPERVISOR:
-        // BE-SEC-01 must not infer supervisor linkage from
-        // supervisorEvaluation.evaluatorUserId, and the current process model
-        // has no authoritative binding for the responsible supervisor.
         throw new ForbiddenException(
-          'Authenticated supervisor cannot access this process without a secure process-stage binding',
+          'Authenticated supervisor cannot access this public workflow endpoint directly',
         );
       case UserRole.CESAD_MEMBER:
         if (!CESAD_PROCESS_ACCESS_ALLOWED_STATUSES.has(process.status)) {
@@ -392,6 +435,7 @@ export class ProcessesService {
             id: true,
             sequence: true,
             stageCode: true,
+            responsibleSupervisorUserId: true,
             endedAt: true,
           },
           orderBy: { sequence: 'asc' },
@@ -422,6 +466,7 @@ export class ProcessesService {
         id: currentStage.id,
         sequence: currentStage.sequence,
         stageCode: currentStage.stageCode,
+        responsibleSupervisorUserId: currentStage.responsibleSupervisorUserId,
       },
     };
   }

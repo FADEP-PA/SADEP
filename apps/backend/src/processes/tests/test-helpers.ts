@@ -136,6 +136,7 @@ export async function createProcess(
   prisma: PrismaClient,
   status: ProcessStatus,
   evaluatedUserId: string,
+  responsibleSupervisorUserId?: string,
 ) {
   const process = await prisma.evaluationProcess.create({
     data: {
@@ -147,6 +148,7 @@ export async function createProcess(
   const defaultStage = await prisma.processStage.create({
     data: {
       evaluationProcessId: process.id,
+      ...(responsibleSupervisorUserId ? { responsibleSupervisorUserId } : {}),
       sequence: 1,
       stageCode: 'ETAPA_1',
       startedAt: new Date(),
@@ -164,10 +166,12 @@ export async function createProcessStage(
   processId: string,
   sequence: number,
   stageCode = `ETAPA_${sequence}`,
+  responsibleSupervisorUserId?: string,
 ) {
   return prisma.processStage.create({
     data: {
       evaluationProcessId: processId,
+      ...(responsibleSupervisorUserId ? { responsibleSupervisorUserId } : {}),
       sequence,
       stageCode,
       startedAt: new Date(),

@@ -26,7 +26,12 @@ export async function runProcessesServiceTests() {
     const intern = await createUser(context.prisma, UserRole.INTERN_SERVER, 'intern@test.local');
     const admin = await createUser(context.prisma, UserRole.ADMIN, 'workflow-admin@test.local');
 
-    const process = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id);
+    const process = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_AVALIACAO,
+      evaluatedUser.id,
+      supervisor.id,
+    );
 
     await assert.rejects(
       () =>
@@ -34,7 +39,7 @@ export async function runProcessesServiceTests() {
           process.id,
           authenticatedUser(supervisor.id, supervisor.role),
         ),
-      /secure process-stage binding/,
+      /public workflow endpoint/,
     );
 
     const ownWorkflow = await context.service.getWorkflow(
@@ -49,7 +54,7 @@ export async function runProcessesServiceTests() {
           process.id,
           authenticatedUser(otherSupervisor.id, otherSupervisor.role),
         ),
-      /secure process-stage binding/,
+      /public workflow endpoint/,
     );
 
     await assert.rejects(
@@ -100,7 +105,7 @@ export async function runProcessesServiceTests() {
           process.id,
           authenticatedUser(supervisor.id, supervisor.role),
         ),
-      /secure process-stage binding/,
+      /public workflow endpoint/,
     );
 
     await assert.rejects(
@@ -109,7 +114,7 @@ export async function runProcessesServiceTests() {
           process.id,
           authenticatedUser(otherSupervisor.id, otherSupervisor.role),
         ),
-      /secure process-stage binding/,
+      /public workflow endpoint/,
     );
 
     await assert.rejects(
@@ -129,7 +134,7 @@ export async function runProcessesServiceTests() {
           authenticatedUser(supervisor.id, supervisor.role),
           { action: workflowActions.releaseForSignature },
         ),
-      /secure process-stage binding/,
+      /public workflow endpoint/,
     );
 
     await assert.rejects(
@@ -159,7 +164,7 @@ export async function runProcessesServiceTests() {
           authenticatedUser(otherSupervisor.id, otherSupervisor.role),
           { action: workflowActions.releaseForSignature },
         ),
-      /secure process-stage binding/,
+      /public workflow endpoint/,
     );
 
     await assert.rejects(
@@ -169,7 +174,7 @@ export async function runProcessesServiceTests() {
           authenticatedUser(supervisor.id, supervisor.role),
           { action: workflowActions.sendToCesad },
         ),
-      /secure process-stage binding/,
+      /public workflow endpoint/,
     );
 
     const events = await context.prisma.auditEvent.findMany({
@@ -184,6 +189,7 @@ export async function runProcessesServiceTests() {
       context.prisma,
       ProcessStatus.AGUARDANDO_ASSINATURA,
       evaluatedUser.id,
+      supervisor.id,
     );
     await context.prisma.supervisorEvaluation.create({
       data: {
@@ -205,7 +211,7 @@ export async function runProcessesServiceTests() {
           authenticatedUser(supervisor.id, supervisor.role),
           { action: workflowActions.sendToCesad },
         ),
-      /secure process-stage binding/,
+      /public workflow endpoint/,
     );
 
     const cesadProcess = await createProcess(
