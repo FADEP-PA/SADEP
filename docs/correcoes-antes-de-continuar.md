@@ -58,8 +58,9 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - chefia não vinculada é bloqueada;
     - `ADMIN` só acessa se a regra permitir explicitamente.
 
-- [ ] Corrigir o `typecheck` do backend
-  - Problema: `npm run typecheck --workspace @aep-pa/backend` falha porque os arquivos de teste estão incluídos na compilação, faltam dependências de teste e várias specs estão defasadas.
+- [x] Corrigir o `typecheck` do backend
+  - Observação: o typecheck do backend não apresenta mais falha reproduzível na árvore atual; `npm run typecheck --workspace @aep-pa/backend` passou. A separação estrutural entre app, specs e helpers de teste permanece como melhoria residual a ser tratada na estratégia de testes.
+  - Problema: a falha descrita anteriormente no `typecheck` não é mais reproduzível; a pendência residual é estrutural, pois o `tsconfig` principal ainda mistura app, specs e helpers de teste, e foi deslocada para a discussão de estratégia de testes.
   - Arquivos principais:
     - `apps/backend/tsconfig.json`
     - `apps/backend/package.json`
