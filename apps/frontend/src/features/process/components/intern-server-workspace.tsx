@@ -22,7 +22,7 @@ import { PageSection } from '@/shared/ui/page-section';
 import { ProcessRequestFeedback } from '@/shared/ui/process-request-feedback';
 import { ReadNotReleasedState } from '@/shared/ui/operational-states';
 
-const ALLOWED_ROLES = [UserRole.INTERN_SERVER, UserRole.ADMIN];
+const ALLOWED_ROLES = [UserRole.INTERN_SERVER];
 
 type OperationFeedback = {
   title: string;

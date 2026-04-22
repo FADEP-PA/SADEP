@@ -1,11 +1,13 @@
 'use client';
 
+import { UserRole } from '@aep-pa/contracts';
 import { useMemo, useState, type FormEvent } from 'react';
 
 import type { ProcessDashboardListItem, ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
 import { getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '@/shared/api/http-error';
 import { getTechnicalProcessSnapshot } from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
+import { AuthGuard } from '@/shared/auth/auth-guard';
 import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
@@ -24,6 +26,8 @@ type SuccessFeedback = {
   title: string;
   description: string;
 };
+
+const ALLOWED_ROLES = [UserRole.INTERN_SERVER, UserRole.CESAD_MEMBER];
 
 function getInitialProcessId() {
   return process.env.NEXT_PUBLIC_TECHNICAL_PROCESS_ID?.trim() || '';
@@ -106,7 +110,8 @@ export function ProcessWorkspace() {
   }
 
   return (
-    <div className="process-workspace">
+    <AuthGuard allowedRoles={ALLOWED_ROLES}>
+      <div className="process-workspace">
       <PageSection
         eyebrow="Processos"
         title="Consulta operacional de processos"
@@ -186,6 +191,7 @@ export function ProcessWorkspace() {
           />
         ) : null}
       </PageSection>
-    </div>
+      </div>
+    </AuthGuard>
   );
 }

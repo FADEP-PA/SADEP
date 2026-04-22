@@ -29,6 +29,17 @@ const dashboardGroup: NavigationGroup = {
   ],
 };
 
+const overviewGroup: NavigationGroup = {
+  title: 'Painel principal',
+  items: [
+    {
+      label: 'Início',
+      href: '/inicio',
+      description: 'Visão geral do ambiente autenticado, do perfil em operação e dos acessos disponíveis.',
+    },
+  ],
+};
+
 const accountGroup: NavigationGroup = {
   title: 'Conta',
   items: [
@@ -56,7 +67,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
     accountGroup,
   ],
   [UserRole.IMMEDIATE_SUPERVISOR]: [
-    dashboardGroup,
+    overviewGroup,
     {
       title: 'Minha atuação',
       items: [
@@ -84,7 +95,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
     accountGroup,
   ],
   [UserRole.HOMOLOGATION_AUTHORITY]: [
-    dashboardGroup,
+    overviewGroup,
     {
       title: 'Minha atuação',
       items: [
@@ -98,7 +109,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
     accountGroup,
   ],
   [UserRole.ADMIN]: [
-    dashboardGroup,
+    overviewGroup,
     {
       title: 'Áreas operacionais',
       items: [
@@ -108,24 +119,9 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
           description: 'Suporte operacional, administração do ambiente e acompanhamento técnico.',
         },
         {
-          label: 'Avaliação da chefia',
-          href: '/chefia-imediata',
-          description: 'Acessar a área da chefia imediata para apoio operacional ou conferência.',
-        },
-        {
-          label: getRolePresentation(UserRole.CESAD_MEMBER).label,
-          href: '/cesad-comissao',
-          description: 'Abrir a área colegiada para análise, conferência e suporte ao fluxo.',
-        },
-        {
           label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
           href: '/homologacao-autoridade',
           description: 'Consultar a área de homologação e os marcos finais do processo.',
-        },
-        {
-          label: getRolePresentation(UserRole.INTERN_SERVER).label,
-          href: '/servidor-estagiario',
-          description: 'Visualizar a experiência do servidor para apoio e validação operacional.',
         },
       ],
     },
@@ -134,5 +130,5 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
 };
 
 export function getMenuByRole(role: UserRole) {
-  return menuByRole[role] ?? [dashboardGroup, accountGroup];
+  return menuByRole[role] ?? [overviewGroup, accountGroup];
 }

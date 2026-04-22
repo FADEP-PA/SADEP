@@ -31,7 +31,7 @@ import {
   getSupervisorEvaluationStatusTone,
 } from './process-formatters';
 
-const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR, UserRole.ADMIN];
+const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
 
 type CriterionDraft = {
   code: string;
