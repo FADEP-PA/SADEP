@@ -26,6 +26,9 @@ export type WorkflowTransitionInput = {
   comment?: string;
 };
 
+export type DocumentSignatureResponse = {
+  success: boolean;
+};
 
 export async function getWorkflow(processId: string, accessToken: string) {
   return httpRequest<WorkflowResponse>(`/processes/${processId}/workflow`, {
@@ -113,6 +116,16 @@ export async function rectifySupervisorEvaluation(
       method: 'POST',
       token: accessToken,
       body,
+    },
+  );
+}
+
+export async function signSupervisorEvaluation(processId: string, accessToken: string) {
+  return httpRequest<DocumentSignatureResponse>(
+    `/processes/${processId}/supervisor-evaluation/sign`,
+    {
+      method: 'POST',
+      token: accessToken,
     },
   );
 }

@@ -94,14 +94,13 @@ Essa ordem reduz risco de regressão e evita construir novas regras sobre uma ba
 **BLOCO 2A — Alinhamento Frontend/Backend**
 
 ## Task ativa
-**ALIGN-01 — Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend**
+**ALIGN-02 — Alinhar snapshot/tela da chefia com a política real de acesso do backend**
 
 ## Contexto atual
 Após o saneamento do bloco crítico de segurança e da estabilização técnica do backend, a prioridade operacional passou a ser o alinhamento entre frontend e backend nos fluxos reais de uso.
 
-Os achados mais urgentes indicam:
+Com a ALIGN-01 aprovada, os achados mais urgentes remanescentes indicam:
 
-- desalinhamento entre a assinatura do servidor e a API real de documentos;
 - tela da chefia consultando endpoints públicos que o backend bloqueia para supervisor;
 - inconsistência entre menu, guardas e backend para perfis administrativos;
 - histórico público de workflow contaminado por eventos documentais;
@@ -378,11 +377,11 @@ Objetivo: corrigir desalinhamentos reais de contrato entre frontend e backend qu
 
 ## ALIGN-01 — Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `fix(frontend): align intern signature flow with document signing endpoint`
 - **Dependências:** saneamento do bloco crítico de backend concluído
 
 **Problema**  
@@ -417,11 +416,16 @@ O frontend do servidor estagiário depende de `availableActions` com `SIGN_EVALU
 - não depende de `availableActions` inexistente no catálogo público
 - o fluxo funciona com o backend real
 
+**Observações**
+- a assinatura do servidor passou a usar o endpoint documental `POST /processes/:id/supervisor-evaluation/sign`
+- a UI passou a decidir disponibilidade com base em `documentContext.internSignaturePending` e `workflow.status === AGUARDANDO_ASSINATURA`
+- o fluxo não depende mais de `SIGN_EVALUATION` como transição pública
+
 ---
 
 ## ALIGN-02 — Alinhar snapshot/tela da chefia com a política real de acesso do backend
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim

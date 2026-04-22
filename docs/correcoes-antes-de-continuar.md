@@ -143,7 +143,8 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 
 ### Crítico
 
-- [ ] Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
+- [x] Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
+  - Observação: a assinatura do servidor deixou de depender de `availableActions` e de `SIGN_EVALUATION`; a UI passou a usar `documentContext.internSignaturePending` como fonte principal e a ação passou a chamar `POST /processes/:id/supervisor-evaluation/sign`, alinhando o fluxo ao contrato documental real do backend.
   - Problema: o frontend do servidor só libera a ação se `availableActions` contiver `SIGN_EVALUATION`, mas essa transição não existe no catálogo público; além disso, a UI envia `POST /processes/:id/workflow/transition`, enquanto a assinatura real está em endpoint documental dedicado.
   - Impacto:
     - botão tende a nunca habilitar;
@@ -421,7 +422,7 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 - [x] Backend / Crítico / Restabelecer a execução da suíte de testes
 - [x] Backend / Crítico / Alinhar a estratégia de testes do backend
 
-- [ ] Alinhamento / Crítico / Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
+- [x] Alinhamento / Crítico / Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
 - [ ] Alinhamento / Crítico / Alinhar snapshot/tela da chefia com a política real de acesso do backend
 - [ ] Alinhamento / Alta / Alinhar matriz de permissões entre menu, guards e backend
 - [ ] Alinhamento / Alta / Separar histórico processual público de eventos documentais
