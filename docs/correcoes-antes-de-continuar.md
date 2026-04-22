@@ -185,7 +185,8 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 
 ### Alta
 
-- [ ] Alinhar matriz de permissões entre menu, guards e backend
+- [x] Alinhar matriz de permissões entre menu, guards e backend
+  - Observação: menu e guards do frontend passaram a refletir a matriz real do backend; `ADMIN` deixou de ver áreas operacionais sem suporte backend real; workspaces do servidor e da chefia foram restringidas aos perfis efetivamente suportados; `/processos` foi removida dos perfis que a tela atual ainda não suporta com segurança.
   - Problema: menu, guards locais e backend contam histórias diferentes sobre o que `ADMIN` e outros perfis podem realmente acessar.
   - Impacto:
     - navegação enganosa;
@@ -425,7 +426,7 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 
 - [x] Alinhamento / Crítico / Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
 - [x] Alinhamento / Crítico / Alinhar snapshot/tela da chefia com a política real de acesso do backend
-- [ ] Alinhamento / Alta / Alinhar matriz de permissões entre menu, guards e backend
+- [x] Alinhamento / Alta / Alinhar matriz de permissões entre menu, guards e backend
 - [ ] Alinhamento / Alta / Separar histórico processual público de eventos documentais
 - [ ] Alinhamento / Alta / Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
 

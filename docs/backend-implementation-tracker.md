@@ -94,14 +94,13 @@ Essa ordem reduz risco de regressão e evita construir novas regras sobre uma ba
 **BLOCO 2A — Alinhamento Frontend/Backend**
 
 ## Task ativa
-**ALIGN-03 — Alinhar matriz de permissões entre menu, guards e backend**
+**AUDIT-01 — Separar histórico processual público de eventos documentais**
 
 ## Contexto atual
 Após o saneamento do bloco crítico de segurança e da estabilização técnica do backend, a prioridade operacional passou a ser o alinhamento entre frontend e backend nos fluxos reais de uso.
 
-Com a ALIGN-01 e a ALIGN-02 aprovadas, os achados mais urgentes remanescentes indicam:
+Com a ALIGN-01, a ALIGN-02 e a ALIGN-03 aprovadas, os achados mais urgentes remanescentes indicam:
 
-- inconsistência entre menu, guardas e backend para perfis administrativos;
 - histórico público de workflow contaminado por eventos documentais;
 - leitura consolidada da CESAD desalinhada dos eventos efetivamente persistidos. :contentReference[oaicite:2]{index=2}
 
@@ -468,11 +467,11 @@ A tela principal da chefia consulta endpoints públicos (`/workflow` e `/history
 
 ## ALIGN-03 — Alinhar matriz de permissões entre menu, guards e backend
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `fix(frontend): align operational navigation and guards with backend permissions`
 - **Dependências:** ALIGN-01 e ALIGN-02 recomendadas antes
 
 **Problema**  
@@ -505,11 +504,16 @@ Menu, guards locais e backend contam histórias diferentes sobre o que `ADMIN` e
 - o frontend não oferece navegação que a API rejeita sistematicamente
 - a política de acesso para `ADMIN` e demais perfis fica coerente entre UI e backend
 
+**Observações**
+- menu e guardas foram alinhados à matriz real do backend
+- `ADMIN` deixou de aparecer como operador de áreas sem suporte backend
+- `/processos` foi restringida aos perfis hoje compatíveis com a tela atual
+
 ---
 
 ## AUDIT-01 — Separar histórico processual público de eventos documentais
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
