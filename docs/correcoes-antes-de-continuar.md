@@ -223,7 +223,8 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - o frontend não oferece navegação que a API rejeita sistematicamente;
     - a política de acesso fica coerente entre UI e backend.
 
-- [ ] Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend
+- [x] Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend
+  - Observação: o servidor passou a preencher, salvar rascunho e submeter a autoavaliação pela interface; a chefia passou a visualizar e assinar a autoavaliação pela interface; o frontend agora usa os endpoints reais já existentes no backend; o fluxo deixou de travar antes da CESAD por ausência de UI.
   - Problema: o backend já possui fluxo de autoavaliação e assinatura da autoavaliação pela chefia, inclusive com regras que podem levar o processo à CESAD, mas o frontend ainda não expõe esse caminho de forma operacional.
   - Impacto:
     - o processo pode travar antes da CESAD;
@@ -454,7 +455,7 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 - [x] Alinhamento / Crítico / Alinhar snapshot/tela da chefia com a política real de acesso do backend
 - [x] Alinhamento / Alta / Alinhar matriz de permissões entre menu, guards e backend
 
-- [ ] Alinhamento / Alta / Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend
+- [x] Alinhamento / Alta / Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend
 - [ ] Alinhamento / Alta / Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
 - [ ] Alinhamento / Médio / Ajustar atalho global para `/processos` na home autenticada
 

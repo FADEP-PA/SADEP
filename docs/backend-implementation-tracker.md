@@ -97,16 +97,16 @@ A última varredura mostrou que o projeto está mais estável do que os document
 **BLOCO 2A — Alinhamento Frontend/Backend**
 
 ## Task ativa
-**ALIGN-04 — Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend**
+**CESAD-READ-01 — Alinhar leitura consolidada da CESAD aos eventos realmente persistidos**
 
 ## Contexto atual
-Após o saneamento do histórico público e o alinhamento das workspaces de servidor, chefia e permissões de navegação, a próxima prioridade prática passou a ser fechar o fluxo operacional até a CESAD.
+Após o saneamento do histórico público e o fechamento do fluxo operacional de autoavaliação nas workspaces de servidor e chefia, a próxima prioridade prática passou a ser alinhar a leitura consolidada da CESAD aos eventos realmente persistidos.
 
 A varredura mais recente indicou que:
 
-- o backend já possui fluxo de autoavaliação e assinatura da autoavaliação pela chefia;
-- o frontend ainda não expõe esse caminho de forma operacional;
-- isso pode travar o processo antes da CESAD, mesmo com os demais alinhamentos já concluídos;
+- o fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia já está exposto no frontend;
+- o ciclo operacional até a CESAD deixou de travar por ausência de UI;
+- a próxima pendência relevante está no read model consolidado da CESAD;
 - o item “sessão stale” perdeu urgência como crítico;
 - surgiu também um ajuste residual de UX/RBAC na home autenticada, que ainda promete `/processos` para perfis que a tela atual não suporta com segurança. :contentReference[oaicite:1]{index=1}
 
@@ -519,11 +519,11 @@ Menu, guards locais e backend contavam histórias diferentes sobre o que `ADMIN`
 
 ## ALIGN-04 — Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `feat(frontend): add self-evaluation flow and supervisor signature in process workspaces`
 - **Dependências:** ALIGN-01, ALIGN-02 e ALIGN-03 concluídas antes
 
 **Problema**  
@@ -563,6 +563,9 @@ O backend já expõe o fluxo de autoavaliação do servidor e de assinatura da a
 **Observações**
 - criada a partir da última varredura geral
 - tem prioridade superior a `CESAD-READ-01` porque fecha o ciclo operacional ponta a ponta antes do refinamento do consolidado CESAD
+- o frontend passou a expor o fluxo de autoavaliação do servidor
+- a chefia passou a visualizar e assinar a autoavaliação pela interface
+- o fluxo operacional ponta a ponta até a CESAD ficou fechado na UI
 
 ---
 
@@ -611,7 +614,7 @@ O histórico público de workflow estava sendo filtrado por `eventType` de forma
 
 ## CESAD-READ-01 — Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
