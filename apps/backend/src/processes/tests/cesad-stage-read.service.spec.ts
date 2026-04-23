@@ -4,11 +4,19 @@ import {
   AuditEventType as PrismaAuditEventType,
   DocumentStatus as PrismaDocumentStatus,
   DocumentType as PrismaDocumentType,
+  Prisma,
   ProcessStatus as PrismaProcessStatus,
   SignatureProvider as PrismaSignatureProvider,
   SignatureStatus as PrismaSignatureStatus,
 } from '@prisma/client';
-import { DocumentType, ProcessStatus, UserRole } from '@aep-pa/contracts';
+import {
+  AuditEventType,
+  CesadStageOpinionStatus,
+  DocumentType,
+  ProcessAction,
+  ProcessStatus,
+  UserRole,
+} from '@aep-pa/contracts';
 
 import {
   authenticatedUser,
@@ -212,6 +220,21 @@ export async function runCesadStageReadServiceTests() {
       ],
     });
 
+    const stageTwoCesadOpinion = await context.prisma.cesadStageOpinion.create({
+      data: {
+        processId: process.id,
+        processStageId: stageTwo.id,
+        authorUserId: cesad.id,
+        status: 'COMPLETED',
+        reportText: 'Relatório funcional da CESAD para a etapa 2.',
+        legalBasis: 'Lei municipal X, art. 10.',
+        conclusion: 'Conclusão funcional da CESAD para a etapa 2.',
+        stageConcept: 'Satisfatório',
+        stageResult: 'Etapa favorável',
+        completedAt: new Date('2026-05-05T09:00:00.000Z'),
+      },
+    });
+
     await context.prisma.auditEvent.createMany({
       data: [
         {
@@ -292,6 +315,63 @@ export async function runCesadStageReadServiceTests() {
           },
           occurredAt: new Date('2026-05-04T08:30:00.000Z'),
         },
+        {
+          evaluationProcessId: process.id,
+          actorUserId: cesad.id,
+          actorRole: 'CESAD_MEMBER',
+          eventType: PrismaAuditEventType.CESAD_STAGE_OPINION_STARTED,
+          beforeState: Prisma.JsonNull,
+          afterState: { cesadStageOpinionStatus: 'DRAFT' },
+          metadata: {
+            eventType: 'CESAD_STAGE_OPINION_STARTED',
+            action: 'START_CESAD_OPINION',
+            comment: 'Parecer funcional iniciado para a etapa 2.',
+            origin: 'CESAD_STAGE_OPINION',
+            processStageId: stageTwo.id,
+            stageSequence: stageTwo.sequence,
+            scope: 'STAGE',
+            cesadStageOpinionId: stageTwoCesadOpinion.id,
+          },
+          occurredAt: new Date('2026-05-05T08:00:00.000Z'),
+        },
+        {
+          evaluationProcessId: process.id,
+          actorUserId: cesad.id,
+          actorRole: 'CESAD_MEMBER',
+          eventType: PrismaAuditEventType.CESAD_STAGE_OPINION_DRAFT_SAVED,
+          beforeState: { cesadStageOpinionStatus: 'DRAFT' },
+          afterState: { cesadStageOpinionStatus: 'DRAFT' },
+          metadata: {
+            eventType: 'CESAD_STAGE_OPINION_DRAFT_SAVED',
+            action: 'SAVE_CESAD_OPINION_DRAFT',
+            comment: 'Rascunho funcional revisado para a etapa 2.',
+            origin: 'CESAD_STAGE_OPINION',
+            processStageId: stageTwo.id,
+            stageSequence: stageTwo.sequence,
+            scope: 'STAGE',
+            cesadStageOpinionId: stageTwoCesadOpinion.id,
+          },
+          occurredAt: new Date('2026-05-05T08:30:00.000Z'),
+        },
+        {
+          evaluationProcessId: process.id,
+          actorUserId: cesad.id,
+          actorRole: 'CESAD_MEMBER',
+          eventType: PrismaAuditEventType.CESAD_STAGE_OPINION_COMPLETED,
+          beforeState: { cesadStageOpinionStatus: 'DRAFT' },
+          afterState: { cesadStageOpinionStatus: 'COMPLETED' },
+          metadata: {
+            eventType: 'CESAD_STAGE_OPINION_COMPLETED',
+            action: 'COMPLETE_CESAD_STAGE_OPINION',
+            comment: 'Parecer funcional concluído para a etapa 2.',
+            origin: 'CESAD_STAGE_OPINION',
+            processStageId: stageTwo.id,
+            stageSequence: stageTwo.sequence,
+            scope: 'STAGE',
+            cesadStageOpinionId: stageTwoCesadOpinion.id,
+          },
+          occurredAt: new Date('2026-05-05T09:00:00.000Z'),
+        },
       ],
     });
 
@@ -317,6 +397,12 @@ export async function runCesadStageReadServiceTests() {
     assert.equal(snapshot.supervisorEvaluation?.summary, 'Síntese consolidada da avaliação da chefia da etapa 2.');
     assert.equal(snapshot.selfEvaluation?.processStageId, stageTwo.id);
     assert.equal(snapshot.selfEvaluation?.selfReflection, 'Reflexão do servidor sobre a etapa 2.');
+    assert.equal(snapshot.cesadStageOpinion?.id, stageTwoCesadOpinion.id);
+    assert.equal(snapshot.cesadStageOpinion?.processStageId, stageTwo.id);
+    assert.equal(snapshot.cesadStageOpinion?.status, CesadStageOpinionStatus.COMPLETED);
+    assert.equal(snapshot.cesadStageOpinion?.reportText, 'Relatório funcional da CESAD para a etapa 2.');
+    assert.equal(snapshot.cesadStageOpinion?.conclusion, 'Conclusão funcional da CESAD para a etapa 2.');
+    assert.equal(snapshot.cesadStageOpinion?.completedAt, '2026-05-05T09:00:00.000Z');
     assert.equal(snapshot.documentationStatus.allRequiredDocumentsPresent, true);
     assert.equal(snapshot.documentationStatus.allRequiredDocumentsSigned, true);
     assert.equal(snapshot.documentationStatus.stageInstructionStatus, 'COMPLETE');
@@ -349,11 +435,27 @@ export async function runCesadStageReadServiceTests() {
     assert.equal(opinionDocumentSnapshot?.stageLinkMode, 'MISSING');
     assert.match(opinionDocumentSnapshot?.missingReason ?? '', /não possui vínculo explícito|ainda não foi formalizado/i);
 
-    assert.equal(snapshot.history.length, 3);
+    assert.equal(snapshot.history.length, 6);
     assert.deepEqual(
       snapshot.history.map((item) => item.action),
-      ['COMPLETE_EVALUATION', 'SUBMIT_SELF_EVALUATION', 'SEND_TO_CESAD'],
+      [
+        ProcessAction.COMPLETE_EVALUATION,
+        ProcessAction.SUBMIT_SELF_EVALUATION,
+        ProcessAction.SEND_TO_CESAD,
+        ProcessAction.START_CESAD_OPINION,
+        ProcessAction.SAVE_CESAD_OPINION_DRAFT,
+        ProcessAction.COMPLETE_CESAD_STAGE_OPINION,
+      ],
     );
+    assert.deepEqual(
+      snapshot.history.slice(-3).map((item) => item.eventType),
+      [
+        AuditEventType.CESAD_STAGE_OPINION_STARTED,
+        AuditEventType.CESAD_STAGE_OPINION_DRAFT_SAVED,
+        AuditEventType.CESAD_STAGE_OPINION_COMPLETED,
+      ],
+    );
+    assert(snapshot.history.some((item) => item.comment === 'Parecer funcional concluído para a etapa 2.'));
     assert(snapshot.history.every((item) => !(item.comment ?? '').includes('etapa 1')));
     assert.equal(snapshot.warnings.length, 0);
 

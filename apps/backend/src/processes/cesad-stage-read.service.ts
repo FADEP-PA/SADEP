@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   AuditEventType as PrismaAuditEventType,
+  CesadStageOpinionStatus as PrismaCesadStageOpinionStatus,
   DocumentType as PrismaDocumentType,
   SelfEvaluationStatus as PrismaSelfEvaluationStatus,
   SupervisorEvaluationStatus as PrismaSupervisorEvaluationStatus,
@@ -13,6 +14,8 @@ import {
 } from '@prisma/client';
 import {
   AuditEventType,
+  CesadStageOpinionStatus,
+  type CesadStageOpinionRef,
   DocumentType,
   type CesadStageHistoryItemRef,
   type CesadStageReadSnapshotRef,
@@ -35,6 +38,9 @@ const RELEVANT_HISTORY_EVENT_TYPES = new Set<AuditEventType>([
   AuditEventType.EVALUATION_DRAFT_SAVED,
   AuditEventType.EVALUATION_COMPLETED,
   AuditEventType.EVALUATION_RECTIFIED,
+  AuditEventType.CESAD_STAGE_OPINION_STARTED,
+  AuditEventType.CESAD_STAGE_OPINION_DRAFT_SAVED,
+  AuditEventType.CESAD_STAGE_OPINION_COMPLETED,
   AuditEventType.DOCUMENT_GENERATED,
   AuditEventType.SIGNATURE_REQUESTED,
   AuditEventType.DOCUMENT_SIGNED,
@@ -139,6 +145,23 @@ export class CesadStageReadService {
             updatedAt: true,
           },
         },
+        cesadStageOpinion: {
+          select: {
+            id: true,
+            processId: true,
+            processStageId: true,
+            authorUserId: true,
+            status: true,
+            reportText: true,
+            legalBasis: true,
+            conclusion: true,
+            stageConcept: true,
+            stageResult: true,
+            completedAt: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
     });
 
@@ -189,6 +212,9 @@ export class CesadStageReadService {
         ? this.toSupervisorEvaluationRef(stage.supervisorEvaluation)
         : null,
       selfEvaluation: stage.selfEvaluation ? this.toSelfEvaluationRef(stage.selfEvaluation) : null,
+      cesadStageOpinion: stage.cesadStageOpinion
+        ? this.toCesadStageOpinionRef(stage.cesadStageOpinion)
+        : null,
       documents,
       history,
       warnings,
@@ -393,6 +419,39 @@ export class CesadStageReadService {
     };
   }
 
+  private toCesadStageOpinionRef(opinion: {
+    id: string;
+    processId: string;
+    processStageId: string;
+    authorUserId: string;
+    status: PrismaCesadStageOpinionStatus;
+    reportText: string;
+    legalBasis: string | null;
+    conclusion: string;
+    stageConcept: string | null;
+    stageResult: string | null;
+    completedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): CesadStageOpinionRef {
+    return {
+      id: opinion.id,
+      scope: 'STAGE',
+      processId: opinion.processId,
+      processStageId: opinion.processStageId,
+      authorUserId: opinion.authorUserId,
+      status: this.toContractCesadStageOpinionStatus(opinion.status),
+      reportText: opinion.reportText,
+      legalBasis: opinion.legalBasis,
+      conclusion: opinion.conclusion,
+      stageConcept: opinion.stageConcept,
+      stageResult: opinion.stageResult,
+      completedAt: opinion.completedAt?.toISOString() ?? null,
+      createdAt: opinion.createdAt.toISOString(),
+      updatedAt: opinion.updatedAt.toISOString(),
+    };
+  }
+
   private asMetadataRecord(metadata: unknown): Record<string, unknown> | null {
     if (!metadata || typeof metadata !== 'object') {
       return null;
@@ -461,5 +520,15 @@ export class CesadStageReadService {
     }
 
     return status as SelfEvaluationStatus;
+  }
+
+  private toContractCesadStageOpinionStatus(
+    status: PrismaCesadStageOpinionStatus,
+  ): CesadStageOpinionStatus {
+    if (!Object.values(CesadStageOpinionStatus).includes(status as CesadStageOpinionStatus)) {
+      throw new BadRequestException(`Unsupported CESAD stage opinion status ${status}`);
+    }
+
+    return status as CesadStageOpinionStatus;
   }
 }
