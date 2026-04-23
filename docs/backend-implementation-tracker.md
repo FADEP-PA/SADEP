@@ -97,10 +97,10 @@ O projeto já saiu da fase de desalinhamentos críticos de fluxo e entrou em um 
 **BLOCO 4 — Institucionalização da Comissão CESAD**
 
 ## Task ativa
-**CESAD-DOM-01C — Modelar composição formal da comissão**
+**CESAD-DOM-01D — Introduzir perfil Assistente da Comissão**
 
 ## Contexto atual
-Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD, alinhamento da leitura consolidada da etapa CESAD, criação da entidade institucional mínima da comissão e modelagem do ato normativo / portaria da Comissão CESAD, o próximo passo estrutural do projeto é modelar a composição formal da comissão.
+Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD, alinhamento da leitura consolidada da etapa CESAD, criação da entidade institucional mínima da comissão, modelagem do ato normativo / portaria da Comissão CESAD e modelagem da composição formal da comissão, o próximo passo estrutural do projeto é introduzir formalmente o perfil de assistente da comissão.
 
 A partir daqui, o sistema já reconhece a comissão como **entidade institucional própria** em sua fundação mínima, e deve avançar gradualmente para:
 
@@ -476,11 +476,11 @@ Registrar o instrumento formal que constitui, altera ou renova a comissão.
 
 ## CESAD-DOM-01C — Modelar composição formal da comissão
 
-- **Status:** PLANNED
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `feat(cesad): add formal commission membership domain model`
 - **Dependências:** CESAD-DOM-01A e CESAD-DOM-01B recomendadas antes
 
 **Objetivo**
@@ -500,8 +500,12 @@ Criar a composição formal da comissão, vinculando usuários à entidade insti
 - assinatura efetiva do parecer
 
 **Observações**
-- o padrão institucional atual é 3 titulares e 2 suplentes
-- essa regra deve ser tratada como padrão parametrizável/documentado, não hardcoded rígido
+- a composição formal passou a existir como entidade histórica própria por meio de `CesadCommissionMember`
+- `actId` ficou opcional para rastreabilidade e vínculo ao ato normativo quando aplicável
+- a leitura administrativa básica foi adicionada em `GET /cesad/commission-members` e `GET /cesad/commission-members/:id`, com filtro opcional por `commissionId` e `roleType`, restrita a `ADMIN`
+- não houve antecipação de assistente, signatários esperados, autorização funcional, assinatura colegiada ou regra rígida `3 titulares e 2 suplentes`
+- a integridade temporal foi reforçada por SQL manual/trigger para bloquear sobreposição temporal indevida e rejeitar `endDate < startDate`
+- o harness de testes reaproveita o bloco SQL da migration real para aplicar essas constraints extras no ambiente de teste
 
 ---
 
