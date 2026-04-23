@@ -1,14 +1,17 @@
 'use client';
 
-import { SupervisorEvaluationStatus, UserRole } from '@aep-pa/contracts';
+import { ProcessStatus, SelfEvaluationStatus, SupervisorEvaluationStatus, UserRole } from '@aep-pa/contracts';
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '@/shared/api/http-error';
 import {
+  getSelfEvaluation,
   getSupervisorEvaluationWorkspaceSnapshot,
   rectifySupervisorEvaluation,
   saveSupervisorEvaluationDraft,
+  signSelfEvaluation,
   submitSupervisorEvaluation,
+  type SelfEvaluationWithDocumentContextRef,
   type SupervisorEvaluationWorkspaceSnapshot,
   type UpsertSupervisorEvaluationInput,
 } from '@/shared/api/services/processes-service';
@@ -25,9 +28,14 @@ import { StatusBadge } from '@/shared/ui/status-badge';
 
 import {
   formatDateTime,
+  formatDocumentStatus,
   formatProcessStatus,
+  formatRole,
+  formatSignatureStatus,
   formatSupervisorEvaluationStatus,
+  getDocumentStatusTone,
   getProcessStatusTone,
+  getSignatureStatusTone,
   getSupervisorEvaluationStatusTone,
 } from './process-formatters';
 
@@ -194,6 +202,7 @@ export function SupervisorEvaluationWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState(getInitialProcessId);
   const [snapshot, setSnapshot] = useState<SupervisorEvaluationWorkspaceSnapshot | null>(null);
+  const [selfEvaluation, setSelfEvaluation] = useState<SelfEvaluationWithDocumentContextRef | null>(null);
   const [form, setForm] = useState<EvaluationFormState>(createEmptyFormState);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
@@ -201,15 +210,23 @@ export function SupervisorEvaluationWorkspace() {
   const [submitErrorTitle, setSubmitErrorTitle] = useState('Falha ao persistir avaliacao');
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
   const [submitErrorDetails, setSubmitErrorDetails] = useState<string[]>([]);
+  const [selfEvaluationErrorMessage, setSelfEvaluationErrorMessage] = useState<string | null>(null);
+  const [selfEvaluationErrorDetails, setSelfEvaluationErrorDetails] = useState<string[]>([]);
   const [successFeedback, setSuccessFeedback] = useState<OperationFeedback | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSigningSelfEvaluation, setIsSigningSelfEvaluation] = useState(false);
   const [activeMutation, setActiveMutation] = useState<'draft' | 'submit' | 'rectify' | null>(null);
 
   const canEditDraft = snapshot?.canEditDraft ?? false;
   const canSubmit = snapshot?.canSubmit ?? false;
   const canRectify = snapshot?.canRectify ?? false;
   const isLocked = Boolean(snapshot) && !canEditDraft && !canRectify;
+  const canSignSelfEvaluation = Boolean(
+    snapshot?.process.status === ProcessStatus.AGUARDANDO_ASSINATURA &&
+      selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED &&
+      selfEvaluation.documentContext?.supervisorSignaturePending === true,
+  );
   const activeMutationFeedback = activeMutation ? getMutationFeedback(activeMutation) : null;
 
   const summaryItems = useMemo(
@@ -240,13 +257,19 @@ export function SupervisorEvaluationWorkspace() {
 
   async function reloadProcessSnapshot(activeProcessId: string, success?: OperationFeedback) {
     if (!session?.accessToken) {
-      return;
+      return null;
     }
 
-    const nextSnapshot = await getSupervisorEvaluationWorkspaceSnapshot(activeProcessId, session.accessToken);
+    const [nextSnapshot, nextSelfEvaluation] = await Promise.all([
+      getSupervisorEvaluationWorkspaceSnapshot(activeProcessId, session.accessToken),
+      getSelfEvaluation(activeProcessId, session.accessToken),
+    ]);
     setSnapshot(nextSnapshot);
+    setSelfEvaluation(nextSelfEvaluation);
     setForm(buildFormState(nextSnapshot));
     setSuccessFeedback(success ?? null);
+
+    return nextSnapshot;
   }
 
   async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
@@ -266,6 +289,8 @@ export function SupervisorEvaluationWorkspace() {
     setLoadErrorStatus(null);
     setSubmitErrorMessage(null);
     setSubmitErrorDetails([]);
+    setSelfEvaluationErrorMessage(null);
+    setSelfEvaluationErrorDetails([]);
     setSuccessFeedback(null);
 
     try {
@@ -281,6 +306,7 @@ export function SupervisorEvaluationWorkspace() {
           : undefined;
 
       setSnapshot(null);
+      setSelfEvaluation(null);
       setForm(createEmptyFormState());
       setLoadErrorMessage(
         getRequestErrorMessage(error, 'Nao foi possivel carregar os dados da avaliacao da chefia.'),
@@ -341,6 +367,42 @@ export function SupervisorEvaluationWorkspace() {
     }
   }
 
+  async function handleSignSelfEvaluation() {
+    if (!session?.accessToken || !snapshot) {
+      return;
+    }
+
+    setIsSigningSelfEvaluation(true);
+    setSelfEvaluationErrorMessage(null);
+    setSelfEvaluationErrorDetails([]);
+    setSuccessFeedback(null);
+
+    try {
+      await signSelfEvaluation(snapshot.process.id, session.accessToken);
+      const nextSnapshot = await reloadProcessSnapshot(snapshot.process.id);
+      const sentToCesad = nextSnapshot?.process.status === ProcessStatus.EM_ANALISE_CESAD;
+
+      setSuccessFeedback({
+        title: sentToCesad ? 'Autoavaliacao assinada e encaminhada' : 'Autoavaliacao assinada',
+        description: sentToCesad
+          ? 'A assinatura da chefia concluiu a instrucao documental e o processo avancou para analise da CESAD.'
+          : 'A assinatura da chefia foi registrada e o estado atualizado do processo ja esta carregado.',
+      });
+    } catch (error) {
+      const payload =
+        typeof error === 'object' && error && 'payload' in error
+          ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
+          : undefined;
+
+      setSelfEvaluationErrorMessage(
+        getRequestErrorMessage(error, 'Nao foi possivel assinar a autoavaliacao.'),
+      );
+      setSelfEvaluationErrorDetails(getHttpErrorDetails(payload));
+    } finally {
+      setIsSigningSelfEvaluation(false);
+    }
+  }
+
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
       <PageSection
@@ -357,11 +419,11 @@ export function SupervisorEvaluationWorkspace() {
               placeholder="Informe o ID do processo"
               value={processId}
               onChange={(event) => setProcessId(event.target.value)}
-              disabled={isLoading || isSaving}
+              disabled={isLoading || isSaving || isSigningSelfEvaluation}
             />
           </label>
 
-          <button type="submit" disabled={isLoading || isSaving}>
+          <button type="submit" disabled={isLoading || isSaving || isSigningSelfEvaluation}>
             {isLoading ? 'Carregando processo...' : 'Abrir avaliacao'}
           </button>
         </form>
@@ -370,6 +432,13 @@ export function SupervisorEvaluationWorkspace() {
           <InlineLoadingState
             title="Abrindo avaliacao"
             description="O workspace da chefia esta consultando o snapshot seguro da ficha avaliativa liberado para este processo."
+          />
+        ) : null}
+
+        {isSigningSelfEvaluation ? (
+          <InlineLoadingState
+            title="Assinando autoavaliacao"
+            description="A assinatura da chefia esta sendo registrada e o processo sera recarregado em seguida."
           />
         ) : null}
 
@@ -422,6 +491,7 @@ export function SupervisorEvaluationWorkspace() {
                     { label: 'Pode salvar rascunho', value: snapshot.canEditDraft ? 'Sim' : 'Nao' },
                     { label: 'Pode submeter', value: snapshot.canSubmit ? 'Sim' : 'Nao' },
                     { label: 'Pode retificar', value: snapshot.canRectify ? 'Sim' : 'Nao' },
+                    { label: 'Assinar autoavaliacao', value: canSignSelfEvaluation ? 'Sim' : 'Nao' },
                   ]}
                 />
               </InfoCard>
@@ -478,6 +548,108 @@ export function SupervisorEvaluationWorkspace() {
                 description="A avaliacao ja foi submetida e ainda aguarda assinatura. Ajuste os campos necessarios e use o botao de retificacao para registrar uma nova versao."
               />
             ) : null}
+
+            <InfoCard
+              title="Autoavaliacao do servidor"
+              description="Leitura da autoavaliacao submetida pelo servidor e assinatura documental pendente da chefia imediata."
+            >
+              {selfEvaluation ? (
+                <div className="cesad-stage-read__stack">
+                  <StatusBadge
+                    label={formatSupervisorEvaluationStatus(selfEvaluation.status)}
+                    tone={getSupervisorEvaluationStatusTone(selfEvaluation.status)}
+                  />
+                  <KeyValueList
+                    items={[
+                      { label: 'Reflexao principal', value: selfEvaluation.selfReflection },
+                      {
+                        label: 'Observacoes adicionais',
+                        value: selfEvaluation.additionalNotes ?? 'Nao informadas',
+                      },
+                      {
+                        label: 'Submetida em',
+                        value: formatDateTime(selfEvaluation.submittedAt),
+                      },
+                    ]}
+                  />
+
+                  {selfEvaluation.documentContext ? (
+                    <>
+                      <KeyValueList
+                        items={[
+                          { label: 'Documento', value: selfEvaluation.documentContext.documentId },
+                          {
+                            label: 'Status documental',
+                            value: (
+                              <StatusBadge
+                                label={formatDocumentStatus(selfEvaluation.documentContext.documentStatus)}
+                                tone={getDocumentStatusTone(selfEvaluation.documentContext.documentStatus)}
+                              />
+                            ),
+                          },
+                          {
+                            label: 'Assinatura da chefia',
+                            value: selfEvaluation.documentContext.supervisorSignaturePending
+                              ? 'Pendente'
+                              : 'Concluida',
+                          },
+                        ]}
+                      />
+
+                      <ul className="timeline-list">
+                        {selfEvaluation.documentContext.signatures.map((signature) => (
+                          <li key={signature.signatoryRole} className="timeline-list__item">
+                            <strong>{formatRole(signature.signatoryRole)}</strong>
+                            <StatusBadge
+                              label={formatSignatureStatus(signature.status)}
+                              tone={getSignatureStatusTone(signature.status)}
+                            />
+                            <span>{formatDateTime(signature.signedAt)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <FeedbackAlert
+                      title="Documento ainda nao formalizado"
+                      tone="warning"
+                      description="A autoavaliacao foi localizada, mas ainda nao possui contexto documental de assinatura."
+                    />
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => void handleSignSelfEvaluation()}
+                    disabled={!canSignSelfEvaluation || isSigningSelfEvaluation || isSaving || isLoading}
+                  >
+                    {isSigningSelfEvaluation ? 'Assinando...' : 'Assinar autoavaliacao'}
+                  </button>
+                </div>
+              ) : (
+                <ContentState
+                  title="Autoavaliacao ainda nao submetida"
+                  description="A autoavaliacao ficara disponivel para leitura e assinatura da chefia apos a submissao pelo servidor."
+                  tone="info"
+                />
+              )}
+
+              {snapshot.process.status === ProcessStatus.EM_ANALISE_CESAD ? (
+                <FeedbackAlert
+                  title="Processo em analise CESAD"
+                  tone="success"
+                  description="O processo ja avancou para a etapa da CESAD apos a completude documental obrigatoria."
+                />
+              ) : null}
+
+              {selfEvaluationErrorMessage ? (
+                <FeedbackAlert
+                  title="Falha ao assinar autoavaliacao"
+                  tone="error"
+                  description={selfEvaluationErrorMessage}
+                  details={selfEvaluationErrorDetails}
+                />
+              ) : null}
+            </InfoCard>
 
             <div className="supervisor-evaluation-layout">
               <InfoCard

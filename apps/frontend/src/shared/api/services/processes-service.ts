@@ -8,8 +8,12 @@ import type {
 } from '@/features/dashboard/types/process-dashboard-types';
 import {
   CesadStageReadSnapshotRef,
+  DocumentStatus,
+  DocumentType,
   ProcessStatus,
   ProcessAction,
+  SelfEvaluationRef,
+  SignatureStatus,
   SupervisorEvaluationDocumentContextRef,
   SupervisorEvaluationContentInput,
   SupervisorEvaluationWithDocumentContextRef,
@@ -21,6 +25,30 @@ export type UpsertSupervisorEvaluationInput = {
   generalComments: string;
   content: SupervisorEvaluationContentInput;
   comment?: string;
+};
+
+export type UpsertSelfEvaluationInput = {
+  selfReflection: string;
+  additionalNotes?: string;
+  comment?: string;
+};
+
+export type SelfEvaluationDocumentContextRef = {
+  documentId: string;
+  documentType: DocumentType;
+  documentStatus: DocumentStatus;
+  hasArtifact: boolean;
+  artifactPath: string | null;
+  signatures: Array<{
+    signatoryRole: UserRole;
+    status: SignatureStatus;
+    signedAt: string | null;
+  }>;
+  supervisorSignaturePending: boolean;
+};
+
+export type SelfEvaluationWithDocumentContextRef = SelfEvaluationRef & {
+  documentContext?: SelfEvaluationDocumentContextRef;
 };
 
 export type WorkflowTransitionInput = {
@@ -68,6 +96,16 @@ export async function getWorkflowHistory(processId: string, accessToken: string)
 export async function getSupervisorEvaluation(processId: string, accessToken: string) {
   return httpRequest<SupervisorEvaluationWithDocumentContextRef | null>(
     `/processes/${processId}/supervisor-evaluation`,
+    {
+      method: 'GET',
+      token: accessToken,
+    },
+  );
+}
+
+export async function getSelfEvaluation(processId: string, accessToken: string) {
+  return httpRequest<SelfEvaluationWithDocumentContextRef | null>(
+    `/processes/${processId}/self-evaluation`,
     {
       method: 'GET',
       token: accessToken,
@@ -132,6 +170,36 @@ export async function submitSupervisorEvaluation(
   );
 }
 
+export async function saveSelfEvaluationDraft(
+  processId: string,
+  accessToken: string,
+  body: UpsertSelfEvaluationInput,
+) {
+  return httpRequest<SelfEvaluationWithDocumentContextRef>(
+    `/processes/${processId}/self-evaluation/draft`,
+    {
+      method: 'PUT',
+      token: accessToken,
+      body,
+    },
+  );
+}
+
+export async function submitSelfEvaluation(
+  processId: string,
+  accessToken: string,
+  body?: UpsertSelfEvaluationInput,
+) {
+  return httpRequest<SelfEvaluationWithDocumentContextRef>(
+    `/processes/${processId}/self-evaluation/submit`,
+    {
+      method: 'POST',
+      token: accessToken,
+      body,
+    },
+  );
+}
+
 export async function rectifySupervisorEvaluation(
   processId: string,
   accessToken: string,
@@ -150,6 +218,16 @@ export async function rectifySupervisorEvaluation(
 export async function signSupervisorEvaluation(processId: string, accessToken: string) {
   return httpRequest<DocumentSignatureResponse>(
     `/processes/${processId}/supervisor-evaluation/sign`,
+    {
+      method: 'POST',
+      token: accessToken,
+    },
+  );
+}
+
+export async function signSelfEvaluation(processId: string, accessToken: string) {
+  return httpRequest<SelfEvaluationWithDocumentContextRef>(
+    `/processes/${processId}/self-evaluation/sign`,
     {
       method: 'POST',
       token: accessToken,
