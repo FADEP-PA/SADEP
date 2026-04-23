@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from '../auth/auth.module';
+import { CesadModule } from '../cesad/cesad.module';
 import { AppLogger } from '../common/logging/app-logger.service';
 import { validateEnvironmentVariables } from '../config/env.validation';
 import { HealthModule } from '../health/health.module';
@@ -16,6 +17,7 @@ import { ProcessesModule } from '../processes/processes.module';
     }),
     HealthModule,
     AuthModule,
+    CesadModule,
     ProcessesModule,
   ],
   providers: [AppLogger],

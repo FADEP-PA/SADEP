@@ -99,6 +99,12 @@ enum CesadStageOpinionStatus {
   COMPLETED
 }
 
+enum CesadCommissionStatus {
+  ACTIVE
+  INACTIVE
+  SUPERSEDED
+}
+
 model User {
   id                       String                 @id @default(cuid())
   email                    String                 @unique
@@ -260,6 +266,20 @@ model CesadStageOpinion {
   @@index([processId])
   @@index([authorUserId])
   @@index([status])
+}
+
+model CesadCommission {
+  id                 String                 @id @default(cuid())
+  name               String
+  description        String?
+  status             CesadCommissionStatus  @default(ACTIVE)
+  effectiveStartDate DateTime
+  effectiveEndDate   DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@index([status])
+  @@index([effectiveStartDate])
 }
 
 model SignatureRecord {
