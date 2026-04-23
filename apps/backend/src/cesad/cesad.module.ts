@@ -8,15 +8,19 @@ import { CesadCommissionMembersController } from './cesad-commission-members.con
 import { CesadCommissionMembersService } from './cesad-commission-members.service';
 import { CesadCommissionsController } from './cesad-commissions.controller';
 import { CesadCommissionsService } from './cesad-commissions.service';
+import { CesadCurrentCommissionController } from './cesad-current-commission.controller';
+import { CesadCurrentCommissionService } from './cesad-current-commission.service';
 
 @Module({
   imports: [AuthModule],
   controllers: [
+    CesadCurrentCommissionController,
     CesadCommissionsController,
     CesadCommissionActsController,
     CesadCommissionMembersController,
   ],
   providers: [
+    CesadCurrentCommissionService,
     CesadCommissionsService,
     CesadCommissionActsService,
     CesadCommissionMembersService,

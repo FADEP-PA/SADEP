@@ -4,6 +4,8 @@ import { runCesadCommissionMembersEndpointTests } from '../../cesad/tests/cesad-
 import { runCesadCommissionMembersServiceTests } from '../../cesad/tests/cesad-commission-members.service.spec';
 import { runCesadCommissionsEndpointTests } from '../../cesad/tests/cesad-commissions.endpoint.spec';
 import { runCesadCommissionsServiceTests } from '../../cesad/tests/cesad-commissions.service.spec';
+import { runCesadCurrentCommissionEndpointTests } from '../../cesad/tests/cesad-current-commission.endpoint.spec';
+import { runCesadCurrentCommissionServiceTests } from '../../cesad/tests/cesad-current-commission.service.spec';
 import { runCesadStageOpinionsServiceTests } from './cesad-stage-opinions.service.spec';
 import { runCesadStageReadServiceTests } from './cesad-stage-read.service.spec';
 import { runWorkflowCatalogTests } from './workflow-catalog.spec';
@@ -21,13 +23,15 @@ async function main() {
   await runCesadCommissionMembersEndpointTests();
   await runCesadCommissionsServiceTests();
   await runCesadCommissionsEndpointTests();
+  await runCesadCurrentCommissionServiceTests();
+  await runCesadCurrentCommissionEndpointTests();
   await runCesadStageReadServiceTests();
   await runCesadStageOpinionsServiceTests();
   await runProcessesEndpointTests();
   await runSupervisorEvaluationsServiceTests();
   await runSelfEvaluationsTests();
   console.log(
-    'Workflow, CESAD commission acts, CESAD commission members, CESAD commissions, CESAD stage read, CESAD stage opinion, supervisor evaluation, and self evaluation tests passed.',
+    'Workflow, CESAD current commission, CESAD commission acts, CESAD commission members, CESAD commissions, CESAD stage read, CESAD stage opinion, supervisor evaluation, and self evaluation tests passed.',
   );
 }
 
