@@ -30,6 +30,13 @@ export const ROLE_CATALOG: Record<UserRole, RolePresentation> = {
     description: 'Analisa pareceres, histórico e rastreabilidade do processo administrativo.',
     homePath: '/cesad-comissao',
   },
+  [UserRole.COMMISSION_ASSISTANT]: {
+    role: UserRole.COMMISSION_ASSISTANT,
+    label: 'Assistente da comissão',
+    shortLabel: 'Assistente',
+    description: 'Apoia a comissão com leitura operacional, acompanhamento e instrução administrativa.',
+    homePath: '/cesad-comissao',
+  },
   [UserRole.HOMOLOGATION_AUTHORITY]: {
     role: UserRole.HOMOLOGATION_AUTHORITY,
     label: 'Autoridade homologadora',

@@ -57,6 +57,11 @@ const CESAD_STAGE_READ_ALLOWED_STATUSES = new Set<ProcessStatus>([
   ProcessStatus.PARECER_EMITIDO,
 ]);
 
+const CESAD_STAGE_READ_ALLOWED_ROLES = new Set<UserRole>([
+  UserRole.CESAD_MEMBER,
+  UserRole.COMMISSION_ASSISTANT,
+]);
+
 @Injectable()
 export class CesadStageReadService {
   constructor(
@@ -69,7 +74,7 @@ export class CesadStageReadService {
     stageSequence: number,
     user: AuthenticatedUser,
   ): Promise<CesadStageReadSnapshotRef> {
-    this.ensureCesadUser(user);
+    this.ensureCesadReadUser(user);
 
     const process = await this.prismaService.evaluationProcess.findUnique({
       where: { id: processId },
@@ -221,9 +226,11 @@ export class CesadStageReadService {
     };
   }
 
-  private ensureCesadUser(user: AuthenticatedUser): void {
-    if (user.role !== UserRole.CESAD_MEMBER) {
-      throw new ForbiddenException('Only CESAD_MEMBER can access the consolidated stage read view');
+  private ensureCesadReadUser(user: AuthenticatedUser): void {
+    if (!CESAD_STAGE_READ_ALLOWED_ROLES.has(user.role)) {
+      throw new ForbiddenException(
+        'Only CESAD_MEMBER or COMMISSION_ASSISTANT can access the consolidated stage read view',
+      );
     }
   }
 

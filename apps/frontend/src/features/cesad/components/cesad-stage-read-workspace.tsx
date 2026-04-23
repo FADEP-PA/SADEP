@@ -142,7 +142,7 @@ export function CesadStageReadWorkspace() {
   }
 
   return (
-    <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER]}>
+    <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]}>
       <div className="cesad-stage-read">
         <PageSection
           eyebrow="CESAD"

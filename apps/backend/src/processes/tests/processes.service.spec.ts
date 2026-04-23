@@ -23,6 +23,11 @@ export async function runProcessesServiceTests() {
       'other-supervisor@test.local',
     );
     const cesad = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'cesad@test.local');
+    const assistant = await createUser(
+      context.prisma,
+      UserRole.COMMISSION_ASSISTANT,
+      'assistant@test.local',
+    );
     const intern = await createUser(context.prisma, UserRole.INTERN_SERVER, 'intern@test.local');
     const admin = await createUser(context.prisma, UserRole.ADMIN, 'workflow-admin@test.local');
 
@@ -102,6 +107,12 @@ export async function runProcessesServiceTests() {
     const historyProcess = await createProcess(
       context.prisma,
       ProcessStatus.PARECER_EMITIDO,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    const cesadReadableProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
       evaluatedUser.id,
       supervisor.id,
     );
@@ -266,6 +277,26 @@ export async function runProcessesServiceTests() {
     assert(!publicHistory.some((item) => item.action === ProcessAction.SIGN_EVALUATION));
     assert(!publicHistory.some((item) => item.action === ProcessAction.SUBMIT_SELF_EVALUATION));
 
+    const assistantWorkflow = await context.service.getWorkflow(
+      cesadReadableProcess.id,
+      authenticatedUser(assistant.id, assistant.role),
+    );
+    assert.deepEqual(assistantWorkflow.availableActions, []);
+
+    const assistantHistory = await context.service.getWorkflowHistory(
+      historyProcess.id,
+      authenticatedUser(assistant.id, assistant.role),
+    );
+    assert.deepEqual(
+      assistantHistory.map((item) => item.action),
+      [
+        ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
+        ProcessAction.SEND_TO_CESAD,
+        ProcessAction.ISSUE_CESAD_OPINION,
+        ProcessAction.REQUEST_ADJUSTMENT,
+      ],
+    );
+
     await assert.rejects(
       () =>
         context.service.getWorkflowHistory(
@@ -282,6 +313,16 @@ export async function runProcessesServiceTests() {
           authenticatedUser(otherSupervisor.id, otherSupervisor.role),
         ),
       /public workflow endpoint/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          cesadReadableProcess.id,
+          authenticatedUser(assistant.id, assistant.role),
+          { action: workflowActions.issueOpinion },
+        ),
+      /Role COMMISSION_ASSISTANT cannot execute action ISSUE_CESAD_OPINION/,
     );
 
     await assert.rejects(

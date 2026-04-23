@@ -408,9 +408,10 @@ export class ProcessesService {
           'Authenticated supervisor cannot access this public workflow endpoint directly',
         );
       case UserRole.CESAD_MEMBER:
+      case UserRole.COMMISSION_ASSISTANT:
         if (!CESAD_PROCESS_ACCESS_ALLOWED_STATUSES.has(process.status)) {
           throw new ForbiddenException(
-            'Authenticated CESAD member does not have an active link to this process',
+            'Authenticated CESAD reader does not have an active link to this process',
           );
         }
         return process;

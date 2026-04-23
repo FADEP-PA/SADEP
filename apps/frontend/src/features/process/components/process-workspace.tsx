@@ -36,7 +36,11 @@ type SuccessFeedback = {
   description: string;
 };
 
-const ALLOWED_ROLES = [UserRole.INTERN_SERVER, UserRole.CESAD_MEMBER];
+const ALLOWED_ROLES = [
+  UserRole.INTERN_SERVER,
+  UserRole.CESAD_MEMBER,
+  UserRole.COMMISSION_ASSISTANT,
+];
 
 function getInitialProcessId() {
   return process.env.NEXT_PUBLIC_TECHNICAL_PROCESS_ID?.trim() || '';

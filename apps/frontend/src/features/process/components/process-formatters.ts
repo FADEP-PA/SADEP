@@ -57,6 +57,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.INTERN_SERVER]: 'Servidor estagiário',
   [UserRole.IMMEDIATE_SUPERVISOR]: 'Chefia imediata',
   [UserRole.CESAD_MEMBER]: 'CESAD / comissão',
+  [UserRole.COMMISSION_ASSISTANT]: 'Assistente da comissão',
   [UserRole.HOMOLOGATION_AUTHORITY]: 'Autoridade homologadora',
   [UserRole.ADMIN]: 'Administrador',
 };

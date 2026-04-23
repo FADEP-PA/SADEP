@@ -94,6 +94,20 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
     },
     accountGroup,
   ],
+  [UserRole.COMMISSION_ASSISTANT]: [
+    dashboardGroup,
+    {
+      title: 'Minha atuacao',
+      items: [
+        {
+          label: getRolePresentation(UserRole.COMMISSION_ASSISTANT).label,
+          href: '/cesad-comissao',
+          description: 'Consultar processos, histórico e leitura consolidada da etapa em modo de apoio.',
+        },
+      ],
+    },
+    accountGroup,
+  ],
   [UserRole.HOMOLOGATION_AUTHORITY]: [
     overviewGroup,
     {

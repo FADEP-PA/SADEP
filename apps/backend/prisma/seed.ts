@@ -9,6 +9,7 @@ const users = [
   { email: 'admin@aep-pa.local', password: 'Admin123!', role: UserRole.ADMIN },
   { email: 'supervisor@aep-pa.local', password: 'Supervisor123!', role: UserRole.IMMEDIATE_SUPERVISOR },
   { email: 'cesad@aep-pa.local', password: 'Cesad123!', role: UserRole.CESAD_MEMBER },
+  { email: 'assistant@aep-pa.local', password: 'Assistant123!', role: UserRole.COMMISSION_ASSISTANT },
   { email: 'authority@aep-pa.local', password: 'Authority123!', role: UserRole.HOMOLOGATION_AUTHORITY },
   { email: 'server@aep-pa.local', password: 'Server123!', role: UserRole.INTERN_SERVER },
 ];

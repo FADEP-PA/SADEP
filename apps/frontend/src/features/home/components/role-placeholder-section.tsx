@@ -15,6 +15,10 @@ const placeholderByRole: Record<UserRole, { title: string; items: string[] }> = 
     title: 'Entregas previstas para CESAD / comissão',
     items: ['Consultar processos em análise.', 'Preparar leitura de pareceres e instruções.', 'Acompanhar a trilha de auditoria do fluxo.'],
   },
+  [UserRole.COMMISSION_ASSISTANT]: {
+    title: 'Entregas previstas para assistente da comissão',
+    items: ['Consultar processos em análise na CESAD.', 'Apoiar leitura administrativa da etapa.', 'Acompanhar histórico e pendências sem deliberar.'],
+  },
   [UserRole.HOMOLOGATION_AUTHORITY]: {
     title: 'Entregas previstas para autoridade homologadora',
     items: ['Confirmar situação para homologação.', 'Revisar marcos processuais principais.', 'Consultar histórico essencial antes da decisão.'],

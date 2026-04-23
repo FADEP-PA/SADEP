@@ -7,6 +7,7 @@ const roleItems: Record<UserRole, string[]> = {
   [UserRole.INTERN_SERVER]: ['Acompanhar situação do processo', 'Consultar histórico recente', 'Verificar pendências de ciência'],
   [UserRole.IMMEDIATE_SUPERVISOR]: ['Acompanhar status da avaliação', 'Visualizar ações liberadas', 'Conferir resumo do histórico'],
   [UserRole.CESAD_MEMBER]: ['Identificar processos em análise', 'Conferir instrução do fluxo', 'Preparar emissão de parecer'],
+  [UserRole.COMMISSION_ASSISTANT]: ['Identificar processos em análise', 'Apoiar leitura administrativa', 'Conferir histórico e instrução sem deliberar'],
   [UserRole.HOMOLOGATION_AUTHORITY]: ['Consultar situação para homologação', 'Confirmar marcos do processo', 'Verificar histórico essencial'],
   [UserRole.ADMIN]: ['Acompanhar suporte operacional', 'Conferir integração entre camadas', 'Auditar leitura de dados críticos'],
 };
@@ -16,6 +17,7 @@ export function ProcessRolePlaceholdersCard() {
     UserRole.INTERN_SERVER,
     UserRole.IMMEDIATE_SUPERVISOR,
     UserRole.CESAD_MEMBER,
+    UserRole.COMMISSION_ASSISTANT,
     UserRole.HOMOLOGATION_AUTHORITY,
   ];
 

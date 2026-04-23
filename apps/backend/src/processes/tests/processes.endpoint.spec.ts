@@ -41,6 +41,11 @@ export async function runProcessesEndpointTests() {
       evaluatedUser.id,
     );
     const cesadUser = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'endpoint-cesad@test.local');
+    const assistantUser = await createUser(
+      context.prisma,
+      UserRole.COMMISSION_ASSISTANT,
+      'endpoint-assistant@test.local',
+    );
     const supervisorUser = await createUser(
       context.prisma,
       UserRole.IMMEDIATE_SUPERVISOR,
@@ -94,6 +99,30 @@ export async function runProcessesEndpointTests() {
 
     assert.equal(loginResponse.status, 200);
     const loginPayload = (await loginResponse.json()) as { accessToken: string };
+
+    const assistantLoginResponse = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: assistantUser.email,
+        password: 'Test123456!',
+      }),
+    });
+
+    assert.equal(assistantLoginResponse.status, 200);
+    const assistantLoginPayload = (await assistantLoginResponse.json()) as { accessToken: string };
+
+    const assistantMeResponse = await fetch(`${baseUrl}/auth/me`, {
+      method: 'GET',
+      headers: {
+        authorization: `Bearer ${assistantLoginPayload.accessToken}`,
+      },
+    });
+
+    assert.equal(assistantMeResponse.status, 200);
+    const assistantMePayload = (await assistantMeResponse.json()) as { role: UserRole; email: string };
+    assert.equal(assistantMePayload.role, UserRole.COMMISSION_ASSISTANT);
+    assert.equal(assistantMePayload.email, assistantUser.email);
 
     const transitionResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow/transition`,
@@ -272,6 +301,26 @@ export async function runProcessesEndpointTests() {
     };
     assert.match(forbiddenAdminWorkflowPayload.message, /legitimate link to this process/);
 
+    const assistantWorkflowResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/workflow`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${assistantLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(assistantWorkflowResponse.status, 200);
+    const assistantWorkflowPayload = (await assistantWorkflowResponse.json()) as {
+      id: string;
+      status: ProcessStatus;
+      availableActions: ProcessAction[];
+    };
+    assert.equal(assistantWorkflowPayload.id, processInCesadWindow.id);
+    assert.equal(assistantWorkflowPayload.status, ProcessStatus.EM_ANALISE_CESAD);
+    assert.deepEqual(assistantWorkflowPayload.availableActions, []);
+
     const historyResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/history`,
       {
@@ -300,6 +349,22 @@ export async function runProcessesEndpointTests() {
     const historyWithoutEvaluationLinkPayload =
       (await historyWithoutEvaluationLinkResponse.json()) as { message: string };
     assert.match(historyWithoutEvaluationLinkPayload.message, /public workflow endpoint/);
+
+    const assistantHistoryResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/history`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${assistantLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(assistantHistoryResponse.status, 200);
+    const assistantHistoryPayload = (await assistantHistoryResponse.json()) as Array<{
+      action: ProcessAction | null;
+    }>;
+    assert.deepEqual(assistantHistoryPayload, []);
 
     const supervisorTransitionWithoutEvaluationResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow/transition`,
@@ -410,6 +475,69 @@ export async function runProcessesEndpointTests() {
     assert.equal(stageReadPayload.server.registrationNumber, 'Matrícula não informada no cadastro');
     assert.equal(stageReadPayload.stage.sequence, 1);
     assert.equal(stageReadPayload.documents.length, 3);
+
+    const assistantStageReadResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/consolidated-read`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${assistantLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(assistantStageReadResponse.status, 200);
+    const assistantStageReadPayload = (await assistantStageReadResponse.json()) as {
+      readOnly: boolean;
+      stage: { sequence: number };
+    };
+    assert.equal(assistantStageReadPayload.readOnly, true);
+    assert.equal(assistantStageReadPayload.stage.sequence, 1);
+
+    const forbiddenAssistantOpinionResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion/draft`,
+      {
+        method: 'PUT',
+        headers: {
+          authorization: `Bearer ${assistantLoginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportText: 'Tentativa indevida da assistente.',
+          conclusion: '',
+        }),
+      },
+    );
+
+    assert.equal(forbiddenAssistantOpinionResponse.status, 403);
+    const forbiddenAssistantOpinionPayload =
+      (await forbiddenAssistantOpinionResponse.json()) as { message: string };
+    assert.match(
+      forbiddenAssistantOpinionPayload.message,
+      /Only CESAD_MEMBER can manipulate CESAD stage opinion artifacts/,
+    );
+
+    const forbiddenAssistantTransitionResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/workflow/transition`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${assistantLoginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: workflowActions.issueOpinion,
+        }),
+      },
+    );
+
+    assert.equal(forbiddenAssistantTransitionResponse.status, 403);
+    const forbiddenAssistantTransitionPayload =
+      (await forbiddenAssistantTransitionResponse.json()) as { message: string };
+    assert.match(
+      forbiddenAssistantTransitionPayload.message,
+      /Role COMMISSION_ASSISTANT cannot execute action ISSUE_CESAD_OPINION/,
+    );
 
     const opinionDraftResponse = await fetch(
       `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion/draft`,
@@ -613,7 +741,10 @@ export async function runProcessesEndpointTests() {
 
     assert.equal(forbiddenStageReadResponse.status, 403);
     const forbiddenStagePayload = (await forbiddenStageReadResponse.json()) as { message: string };
-    assert.match(forbiddenStagePayload.message, /Only CESAD_MEMBER can access/);
+    assert.match(
+      forbiddenStagePayload.message,
+      /Only CESAD_MEMBER or COMMISSION_ASSISTANT can access/,
+    );
   } finally {
     await app.close();
     await disposeTestContext(context);
