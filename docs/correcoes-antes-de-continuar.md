@@ -247,7 +247,8 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - a chefia consegue operar a assinatura da autoavaliação pela interface;
     - o fluxo deixa de travar antes da CESAD por ausência de UI.
 
-- [ ] Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
+- [x] Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
+  - Observação: a leitura consolidada da CESAD passou a refletir os eventos reais do fluxo funcional de parecer por etapa; o snapshot passou a expor `cesadStageOpinion`; a UI CESAD passou a exibir o parecer funcional em leitura; a solução não formalizou `ProcessDocument.CESAD_OPINION`, mantendo essa etapa para evolução futura.
   - Problema: o read model consolidado da CESAD espera uma família de eventos, mas o serviço de parecer de etapa grava outra família, causando consolidado incompleto e warnings incorretos.
   - Impacto:
     - leitura consolidada parcial;
@@ -456,7 +457,7 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 - [x] Alinhamento / Alta / Alinhar matriz de permissões entre menu, guards e backend
 
 - [x] Alinhamento / Alta / Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend
-- [ ] Alinhamento / Alta / Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
+- [x] Alinhamento / Alta / Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
 - [ ] Alinhamento / Médio / Ajustar atalho global para `/processos` na home autenticada
 
 - [ ] Backend / Médio / Corrigir regra de retificação

@@ -94,19 +94,20 @@ A última varredura mostrou que o projeto está mais estável do que os document
 # Estado atual
 
 ## Bloco/feature ativa
-**BLOCO 2A — Alinhamento Frontend/Backend**
+**BLOCO 3 — Hardening Operacional**
 
 ## Task ativa
-**CESAD-READ-01 — Alinhar leitura consolidada da CESAD aos eventos realmente persistidos**
+**BE-OPS-01 — Remover credenciais previsíveis de desenvolvimento**
 
 ## Contexto atual
-Após o saneamento do histórico público e o fechamento do fluxo operacional de autoavaliação nas workspaces de servidor e chefia, a próxima prioridade prática passou a ser alinhar a leitura consolidada da CESAD aos eventos realmente persistidos.
+Após o saneamento do histórico público, o fechamento do fluxo operacional de autoavaliação nas workspaces de servidor e chefia e o alinhamento da leitura consolidada da CESAD aos eventos realmente persistidos, a próxima prioridade prática passa a ser o hardening operacional inicial.
 
 A varredura mais recente indicou que:
 
 - o fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia já está exposto no frontend;
 - o ciclo operacional até a CESAD deixou de travar por ausência de UI;
-- a próxima pendência relevante está no read model consolidado da CESAD;
+- a leitura consolidada da CESAD já reflete o parecer funcional de etapa persistido no fluxo atual;
+- a próxima pendência relevante está na remoção de credenciais previsíveis de desenvolvimento;
 - o item “sessão stale” perdeu urgência como crítico;
 - surgiu também um ajuste residual de UX/RBAC na home autenticada, que ainda promete `/processos` para perfis que a tela atual não suporta com segurança. :contentReference[oaicite:1]{index=1}
 
@@ -614,11 +615,11 @@ O histórico público de workflow estava sendo filtrado por `eventType` de forma
 
 ## CESAD-READ-01 — Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `feat(cesad): align consolidated read with stage opinion events and functional snapshot`
 - **Dependências:** ALIGN-04 recomendada antes
 
 **Problema**  
@@ -645,6 +646,11 @@ O read model consolidado da CESAD espera uma família de eventos, mas o serviço
 
 **Critério de conclusão**
 - a leitura consolidada da CESAD reflete corretamente os eventos da etapa realmente emitidos pelo backend
+
+**Observações**
+- a leitura consolidada passou a reconhecer a família `CESAD_STAGE_OPINION_*`
+- o snapshot consolidado passou a expor `cesadStageOpinion`
+- o parecer funcional da etapa passou a ser visível sem depender de documento formal futuro
 
 ---
 
