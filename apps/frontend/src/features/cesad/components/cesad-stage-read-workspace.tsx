@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { DocumentType, UserRole, type CesadStageReadSnapshotRef } from '@aep-pa/contracts';
 
 import {
+  formatCesadStageOpinionStatus,
   formatDateTime,
   formatDocumentStatus,
   formatDocumentType,
@@ -13,6 +14,7 @@ import {
   formatSignatureStatus,
   formatStageInstructionStatus,
   formatSupervisorEvaluationStatus,
+  getCesadStageOpinionStatusTone,
   getDocumentStatusTone,
   getProcessStatusTone,
   getSignatureStatusTone,
@@ -492,6 +494,45 @@ export function CesadStageReadWorkspace() {
                     <ContentState
                       title="Autoavaliação indisponível"
                       description="A autoavaliação ainda não foi localizada para esta leitura consolidada."
+                      tone="warning"
+                    />
+                  )}
+                </InfoCard>
+
+                <InfoCard title="Parecer CESAD da etapa" eyebrow="Parecer funcional">
+                  {snapshot.cesadStageOpinion ? (
+                    <div className="cesad-stage-read__stack">
+                      <StatusBadge
+                        label={formatCesadStageOpinionStatus(snapshot.cesadStageOpinion.status)}
+                        tone={getCesadStageOpinionStatusTone(snapshot.cesadStageOpinion.status)}
+                      />
+                      <KeyValueList
+                        items={[
+                          { label: 'Relatório', value: snapshot.cesadStageOpinion.reportText },
+                          {
+                            label: 'Fundamento legal',
+                            value: snapshot.cesadStageOpinion.legalBasis ?? 'Não informado',
+                          },
+                          { label: 'Conclusão', value: snapshot.cesadStageOpinion.conclusion },
+                          {
+                            label: 'Conceito da etapa',
+                            value: snapshot.cesadStageOpinion.stageConcept ?? 'Não informado',
+                          },
+                          {
+                            label: 'Resultado da etapa',
+                            value: snapshot.cesadStageOpinion.stageResult ?? 'Não informado',
+                          },
+                          {
+                            label: 'Concluído em',
+                            value: formatDateTime(snapshot.cesadStageOpinion.completedAt),
+                          },
+                        ]}
+                      />
+                    </div>
+                  ) : (
+                    <ContentState
+                      title="Parecer funcional indisponível"
+                      description="Nenhum parecer funcional da CESAD foi localizado para esta etapa."
                       tone="warning"
                     />
                   )}

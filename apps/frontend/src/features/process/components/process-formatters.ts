@@ -1,4 +1,5 @@
 import {
+  CesadStageOpinionStatus,
   DocumentStatus,
   DocumentType,
   ProcessAction,
@@ -38,6 +39,7 @@ const ACTION_LABELS: Partial<Record<ProcessAction, string>> = {
   [ProcessAction.SEND_TO_CESAD]: 'Encaminhar à CESAD',
   [ProcessAction.START_CESAD_OPINION]: 'Iniciar parecer CESAD',
   [ProcessAction.SAVE_CESAD_OPINION_DRAFT]: 'Salvar parecer CESAD',
+  [ProcessAction.COMPLETE_CESAD_STAGE_OPINION]: 'Concluir parecer CESAD da etapa',
   [ProcessAction.ISSUE_CESAD_OPINION]: 'Emitir parecer CESAD',
   [ProcessAction.SIGN_CESAD_OPINION]: 'Assinar parecer CESAD',
   [ProcessAction.REQUEST_ADJUSTMENT]: 'Solicitar ajuste',
@@ -82,6 +84,11 @@ const SIGNATURE_STATUS_LABELS: Record<SignatureStatus, string> = {
   [SignatureStatus.COMPLETED]: 'Concluída',
   [SignatureStatus.FAILED]: 'Falhou',
   [SignatureStatus.CANCELED]: 'Cancelada',
+};
+
+const CESAD_STAGE_OPINION_STATUS_LABELS: Record<CesadStageOpinionStatus, string> = {
+  [CesadStageOpinionStatus.DRAFT]: 'Rascunho',
+  [CesadStageOpinionStatus.COMPLETED]: 'Concluído',
 };
 
 export function formatProcessStatus(status: string | undefined) {
@@ -218,6 +225,24 @@ export function getSupervisorEvaluationStatusTone(
   }
 
   return 'info';
+}
+
+export function formatCesadStageOpinionStatus(status: CesadStageOpinionStatus | undefined) {
+  if (!status) {
+    return 'Ainda não iniciado';
+  }
+
+  return CESAD_STAGE_OPINION_STATUS_LABELS[status] ?? status;
+}
+
+export function getCesadStageOpinionStatusTone(
+  status: CesadStageOpinionStatus | undefined,
+): StatusBadgeTone {
+  if (!status) {
+    return 'neutral';
+  }
+
+  return status === CesadStageOpinionStatus.COMPLETED ? 'success' : 'info';
 }
 
 export function formatStageInstructionStatus(

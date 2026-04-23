@@ -10,6 +10,7 @@ import type {
 } from '../enums';
 import type { SelfEvaluationRef } from './self-evaluation';
 import type { SupervisorEvaluationRef } from './supervisor-evaluation';
+import type { CesadStageOpinionRef } from './cesad-stage-opinion';
 
 export interface CesadStageProcessRef {
   id: string;
@@ -86,6 +87,7 @@ export interface CesadStageReadSnapshotRef {
   documentationStatus: CesadStageDocumentationStatusRef;
   supervisorEvaluation: SupervisorEvaluationRef | null;
   selfEvaluation: SelfEvaluationRef | null;
+  cesadStageOpinion: CesadStageOpinionRef | null;
   documents: CesadStageDocumentRef[];
   history: CesadStageHistoryItemRef[];
   warnings: string[];
