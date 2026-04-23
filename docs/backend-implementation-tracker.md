@@ -97,12 +97,12 @@ O projeto já saiu da fase de desalinhamentos críticos de fluxo e entrou em um 
 **BLOCO 4 — Institucionalização da Comissão CESAD**
 
 ## Task ativa
-**CESAD-DOM-01A — Modelar entidade Comissão CESAD**
+**CESAD-DOM-01B — Modelar ato normativo / portaria da comissão**
 
 ## Contexto atual
-Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD e alinhamento da leitura consolidada da etapa CESAD, o próximo passo estrutural do projeto é deixar de tratar a CESAD apenas como um conjunto difuso de usuários com role `CESAD_MEMBER`.
+Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD, alinhamento da leitura consolidada da etapa CESAD e criação da entidade institucional mínima da comissão, o próximo passo estrutural do projeto é modelar o ato normativo / portaria da Comissão CESAD.
 
-A partir daqui, o sistema deve passar a reconhecer a comissão como **entidade institucional própria**, com:
+A partir daqui, o sistema já reconhece a comissão como **entidade institucional própria** em sua fundação mínima, e deve avançar gradualmente para:
 
 - identidade explícita
 - ato normativo de constituição/alteração
@@ -359,6 +359,9 @@ Objetivo: reduzir riscos operacionais e débitos técnicos que continuam importa
 **Observações**
 - warnings continuam aparecendo nos testes
 - permanece como dívida técnica de baixa prioridade
+- `prisma migrate dev` permanece impedido por migration histórica anterior no shadow database SQLite: `20260415113000_increment_10b_cesad_stage_opinion_artifact`
+- a falha decorre do uso de `ALTER TABLE ... ADD CONSTRAINT` nessa migration histórica; a migration da `CESAD-DOM-01A` para `CesadCommission` foi validada isoladamente e não é a causadora
+- essa dívida deve ser corrigida em task técnica futura específica para restaurar o fluxo local de migrations
 
 ---
 
@@ -402,11 +405,11 @@ Esse bloco deve criar a base correta para:
 
 ## CESAD-DOM-01A — Modelar entidade Comissão CESAD
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `feat(cesad): add cesad commission domain foundation`
 - **Dependências:** estabilização mínima do fluxo CESAD concluída
 
 **Objetivo**
@@ -428,11 +431,16 @@ Introduzir a comissão CESAD como entidade própria do domínio.
 **Critério de conclusão**
 - o sistema passa a reconhecer uma comissão CESAD explícita, separada da mera role de usuário
 
+**Observações**
+- a Comissão CESAD passou a existir como entidade institucional explícita com status e vigência básica
+- a leitura administrativa básica foi adicionada em `GET /cesad/commissions` e `GET /cesad/commissions/:id`, restrita a `ADMIN`
+- não houve antecipação de composição, portaria, assistente, signatários ou assinatura colegiada
+
 ---
 
 ## CESAD-DOM-01B — Modelar ato normativo / portaria da comissão
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim

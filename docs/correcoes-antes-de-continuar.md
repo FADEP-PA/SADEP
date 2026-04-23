@@ -101,13 +101,14 @@ Ele deve passar a reconhecê-la como uma **entidade institucional explícita**, 
 
 ### Alta
 
-- [ ] CESAD-DOM-01A — Modelar entidade Comissão CESAD
+- [x] CESAD-DOM-01A — Modelar entidade Comissão CESAD
   - Objetivo: introduzir a comissão CESAD como entidade própria do domínio.
   - Fazer:
     - criar a entidade de comissão;
     - definir identidade institucional mínima;
     - permitir status/vigência básica;
     - preparar a base para vínculo com ato normativo e composição.
+  - Observação: a entidade `CesadCommission` foi criada, o enum `CesadCommissionStatus` foi introduzido e a leitura administrativa básica foi adicionada; a task ficou restrita à fundação de domínio, sem antecipar portaria, composição ou signatários.
   - Não entra agora:
     - signatários esperados;
     - assinatura colegiada;
@@ -234,6 +235,20 @@ Observação:
 - [ ] Migrar a configuração depreciada do Prisma
   - Problema: o projeto ainda usa `package.json#prisma`, que já emite warning e será removido no Prisma 7.
 
+- [ ] Corrigir bloqueio histórico de `prisma migrate dev` no shadow database SQLite
+  - Problema:
+    - `prisma migrate dev` segue falhando por migration histórica anterior;
+    - migration afetada: `20260415113000_increment_10b_cesad_stage_opinion_artifact`;
+    - uso de `ALTER TABLE ... ADD CONSTRAINT` incompatível com o fluxo atual do shadow database SQLite.
+  - Observação:
+    - a migration da `CESAD-DOM-01A` não é a causadora;
+    - a dívida foi apenas evidenciada/reconfirmada durante esta task.
+  - Fazer:
+    - diagnosticar correção segura da migration histórica;
+    - definir estratégia para manter compatibilidade do fluxo local de migrations.
+  - Validar:
+    - `prisma migrate dev` volta a executar com sucesso no ambiente local suportado.
+
 ---
 
 ## Frontend
@@ -296,7 +311,7 @@ Observação:
 - [x] Alinhamento / Alta / Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend
 - [x] Alinhamento / Alta / Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
 
-- [ ] Macrobloco / Alta / CESAD-DOM-01A — Modelar entidade Comissão CESAD
+- [x] Macrobloco / Alta / CESAD-DOM-01A — Modelar entidade Comissão CESAD
 - [ ] Macrobloco / Alta / CESAD-DOM-01B — Modelar ato normativo / portaria da comissão
 - [ ] Macrobloco / Alta / CESAD-DOM-01C — Modelar composição formal da comissão
 - [ ] Macrobloco / Média / CESAD-DOM-01D — Introduzir perfil Assistente da Comissão
@@ -318,6 +333,7 @@ Observação:
 
 - [ ] Infraestrutura / Crítico / Atualizar dependências vulneráveis
 - [ ] Backend / Baixo / Migrar configuração do Prisma
+- [ ] Backend / Baixo / Corrigir bloqueio histórico de `prisma migrate dev` no shadow database SQLite
 - [ ] Infraestrutura / Médio / Revisar estrutura do monorepo
 - [ ] Infraestrutura / Baixo / Atualizar documentação técnica
 
