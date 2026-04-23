@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-import { ProcessAction, ProcessStatus, UserRole } from '@aep-pa/contracts';
+import { AuditEventType, ProcessAction, ProcessStatus, UserRole } from '@aep-pa/contracts';
 
 import {
   authenticatedUser,
@@ -98,6 +98,173 @@ export async function runProcessesServiceTests() {
         occurredAt: new Date('2026-04-17T12:00:00.000Z'),
       },
     });
+
+    const historyProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.PARECER_EMITIDO,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+
+    await context.prisma.auditEvent.createMany({
+      data: [
+        {
+          evaluationProcessId: historyProcess.id,
+          actorUserId: supervisor.id,
+          actorRole: 'IMMEDIATE_SUPERVISOR',
+          eventType: AuditEventType.SIGNATURE_REQUESTED,
+          beforeState: { status: ProcessStatus.EM_AVALIACAO },
+          afterState: { status: ProcessStatus.AGUARDANDO_ASSINATURA },
+          metadata: {
+            eventType: AuditEventType.SIGNATURE_REQUESTED,
+            action: ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
+            performedByUserId: supervisor.id,
+            performedByRole: supervisor.role,
+            occurredAt: new Date('2026-04-18T10:00:00.000Z').toISOString(),
+            processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
+            processStageId: historyProcess.defaultStageId,
+            stageSequence: 1,
+            stageCode: 'ETAPA_1',
+          },
+          occurredAt: new Date('2026-04-18T10:00:00.000Z'),
+        },
+        {
+          evaluationProcessId: historyProcess.id,
+          actorUserId: supervisor.id,
+          actorRole: 'IMMEDIATE_SUPERVISOR',
+          eventType: AuditEventType.SIGNATURE_REQUESTED,
+          beforeState: {},
+          afterState: {},
+          metadata: {
+            eventType: AuditEventType.SIGNATURE_REQUESTED,
+            action: ProcessAction.SIGN_EVALUATION,
+            performedByUserId: supervisor.id,
+            performedByRole: supervisor.role,
+            occurredAt: new Date('2026-04-18T10:01:00.000Z').toISOString(),
+            processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
+            origin: 'PROCESS_DOCUMENT',
+            processStageId: historyProcess.defaultStageId,
+            stageSequence: 1,
+            stageCode: 'ETAPA_1',
+            documentId: 'document-supervisor-evaluation',
+            signatoryRole: UserRole.INTERN_SERVER,
+            signatoryUserId: evaluatedUser.id,
+          },
+          occurredAt: new Date('2026-04-18T10:01:00.000Z'),
+        },
+        {
+          evaluationProcessId: historyProcess.id,
+          actorUserId: evaluatedUser.id,
+          actorRole: 'INTERN_SERVER',
+          eventType: AuditEventType.SIGNATURE_REQUESTED,
+          beforeState: {},
+          afterState: {},
+          metadata: {
+            eventType: AuditEventType.SIGNATURE_REQUESTED,
+            action: ProcessAction.SUBMIT_SELF_EVALUATION,
+            performedByUserId: evaluatedUser.id,
+            performedByRole: evaluatedUser.role,
+            occurredAt: new Date('2026-04-18T10:02:00.000Z').toISOString(),
+            processStatus: ProcessStatus.AGUARDANDO_ASSINATURA,
+            origin: 'PROCESS_DOCUMENT',
+            processStageId: historyProcess.defaultStageId,
+            stageSequence: 1,
+            stageCode: 'ETAPA_1',
+            documentId: 'document-self-evaluation',
+            signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
+            signatoryUserId: supervisor.id,
+          },
+          occurredAt: new Date('2026-04-18T10:02:00.000Z'),
+        },
+        {
+          evaluationProcessId: historyProcess.id,
+          actorUserId: supervisor.id,
+          actorRole: 'IMMEDIATE_SUPERVISOR',
+          eventType: AuditEventType.SENT_TO_CESAD,
+          beforeState: { status: ProcessStatus.AGUARDANDO_ASSINATURA },
+          afterState: { status: ProcessStatus.EM_ANALISE_CESAD },
+          metadata: {
+            eventType: AuditEventType.SENT_TO_CESAD,
+            action: ProcessAction.SEND_TO_CESAD,
+            performedByUserId: supervisor.id,
+            performedByRole: supervisor.role,
+            occurredAt: new Date('2026-04-18T10:03:00.000Z').toISOString(),
+            processStatus: ProcessStatus.EM_ANALISE_CESAD,
+            processStageId: historyProcess.defaultStageId,
+            stageSequence: 1,
+            stageCode: 'ETAPA_1',
+          },
+          occurredAt: new Date('2026-04-18T10:03:00.000Z'),
+        },
+        {
+          evaluationProcessId: historyProcess.id,
+          actorUserId: cesad.id,
+          actorRole: 'CESAD_MEMBER',
+          eventType: AuditEventType.CESAD_OPINION_ISSUED,
+          beforeState: { status: ProcessStatus.EM_ANALISE_CESAD },
+          afterState: { status: ProcessStatus.PARECER_EMITIDO },
+          metadata: {
+            eventType: AuditEventType.CESAD_OPINION_ISSUED,
+            action: ProcessAction.ISSUE_CESAD_OPINION,
+            performedByUserId: cesad.id,
+            performedByRole: cesad.role,
+            occurredAt: new Date('2026-04-18T10:04:00.000Z').toISOString(),
+            processStatus: ProcessStatus.PARECER_EMITIDO,
+            processStageId: historyProcess.defaultStageId,
+            stageSequence: 1,
+            stageCode: 'ETAPA_1',
+          },
+          occurredAt: new Date('2026-04-18T10:04:00.000Z'),
+        },
+        {
+          evaluationProcessId: historyProcess.id,
+          actorUserId: cesad.id,
+          actorRole: 'CESAD_MEMBER',
+          eventType: AuditEventType.ADJUSTMENT_REQUESTED,
+          beforeState: { status: ProcessStatus.EM_ANALISE_CESAD },
+          afterState: { status: ProcessStatus.EM_AVALIACAO },
+          metadata: {
+            eventType: AuditEventType.ADJUSTMENT_REQUESTED,
+            action: ProcessAction.REQUEST_ADJUSTMENT,
+            performedByUserId: cesad.id,
+            performedByRole: cesad.role,
+            occurredAt: new Date('2026-04-18T10:05:00.000Z').toISOString(),
+            processStatus: ProcessStatus.EM_AVALIACAO,
+            processStageId: historyProcess.defaultStageId,
+            stageSequence: 1,
+            stageCode: 'ETAPA_1',
+            comment: 'Solicitação pública de ajuste.',
+          },
+          occurredAt: new Date('2026-04-18T10:05:00.000Z'),
+        },
+      ],
+    });
+
+    const publicHistory = await context.service.getWorkflowHistory(
+      historyProcess.id,
+      authenticatedUser(evaluatedUser.id, evaluatedUser.role),
+    );
+
+    assert.deepEqual(
+      publicHistory.map((item) => item.action),
+      [
+        ProcessAction.RELEASE_FOR_SERVER_SIGNATURE,
+        ProcessAction.SEND_TO_CESAD,
+        ProcessAction.ISSUE_CESAD_OPINION,
+        ProcessAction.REQUEST_ADJUSTMENT,
+      ],
+    );
+    assert.deepEqual(
+      publicHistory.map((item) => item.eventType),
+      [
+        AuditEventType.SIGNATURE_REQUESTED,
+        AuditEventType.SENT_TO_CESAD,
+        AuditEventType.CESAD_OPINION_ISSUED,
+        AuditEventType.ADJUSTMENT_REQUESTED,
+      ],
+    );
+    assert(!publicHistory.some((item) => item.action === ProcessAction.SIGN_EVALUATION));
+    assert(!publicHistory.some((item) => item.action === ProcessAction.SUBMIT_SELF_EVALUATION));
 
     await assert.rejects(
       () =>

@@ -71,3 +71,12 @@ export function isWorkflowAction(action: string): action is ProcessAction {
 export function isWorkflowAuditEventType(eventType: AuditEventType): boolean {
   return WORKFLOW_TRANSITIONS.some((transition) => transition.eventType === eventType);
 }
+
+export function isWorkflowAuditEventTypeForAction(
+  eventType: AuditEventType,
+  action: ProcessAction,
+): boolean {
+  return WORKFLOW_TRANSITIONS.some(
+    (transition) => transition.eventType === eventType && transition.action === action,
+  );
+}

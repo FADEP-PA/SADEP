@@ -35,7 +35,7 @@ import {
   getAvailableWorkflowTransitions,
   getWorkflowTransition,
   isWorkflowAction,
-  isWorkflowAuditEventType,
+  isWorkflowAuditEventTypeForAction,
 } from './workflow-catalog';
 
 const CESAD_PROCESS_ACCESS_ALLOWED_STATUSES = new Set<ProcessStatus>([
@@ -86,7 +86,12 @@ export class ProcessesService {
     });
 
     return events
-      .filter((event) => isWorkflowAuditEventType(this.toContractAuditEventType(event.eventType)))
+      .filter((event) =>
+        this.isPublicWorkflowHistoryEvent(
+          this.toContractAuditEventType(event.eventType),
+          event.metadata,
+        ),
+      )
       .map((event) => {
         const metadata = this.asAuditMetadata(event.metadata);
         const eventType = this.toContractAuditEventType(event.eventType);
@@ -469,6 +474,39 @@ export class ProcessesService {
         responsibleSupervisorUserId: currentStage.responsibleSupervisorUserId,
       },
     };
+  }
+
+  private isPublicWorkflowHistoryEvent(eventType: AuditEventType, metadata: unknown): boolean {
+    const metadataRecord = this.asMetadataRecord(metadata);
+
+    if (metadataRecord?.origin === 'PROCESS_DOCUMENT') {
+      return false;
+    }
+
+    const action = this.readProcessAction(metadataRecord);
+    if (!action) {
+      return false;
+    }
+
+    return isWorkflowAuditEventTypeForAction(eventType, action);
+  }
+
+  private asMetadataRecord(metadata: unknown): Record<string, unknown> | null {
+    if (!metadata || typeof metadata !== 'object') {
+      return null;
+    }
+
+    return metadata as Record<string, unknown>;
+  }
+
+  private readProcessAction(metadata: Record<string, unknown> | null): ProcessAction | null {
+    const action = metadata?.action;
+
+    if (typeof action !== 'string' || !Object.values(ProcessAction).includes(action as ProcessAction)) {
+      return null;
+    }
+
+    return action as ProcessAction;
   }
 
   private normalizeComment(comment?: string): string | null {
