@@ -28,6 +28,46 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function getSessionValidationErrorMessage(error: unknown) {
+  if (error instanceof HttpError && error.status === 401) {
+    return 'Sua sessao expirou. Faca login novamente para continuar.';
+  }
+
+  if (error instanceof HttpError && error.status >= 500) {
+    return 'Nao foi possivel validar sua sessao porque o backend esta indisponivel no momento.';
+  }
+
+  if (error instanceof Error && error.name === 'AbortError') {
+    return 'Nao foi possivel validar sua sessao porque a resposta do backend excedeu o tempo limite.';
+  }
+
+  if (error instanceof TypeError) {
+    return 'Nao foi possivel validar sua sessao porque o backend nao respondeu ou houve falha de rede.';
+  }
+
+  if (error instanceof HttpError) {
+    return error.message;
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return 'Nao foi possivel validar sua sessao. Faca login novamente para continuar.';
+}
+
+function getRedirectPathForValidationFailure(pathname: string, error: unknown) {
+  if (isPublicAuthRoute(pathname)) {
+    return null;
+  }
+
+  if (error instanceof HttpError && error.status === 401) {
+    return SESSION_EXPIRED_REDIRECT;
+  }
+
+  return DEFAULT_PUBLIC_REDIRECT;
+}
+
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
@@ -50,7 +90,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     setStatus('loading');
 
     try {
-      const user = await getAuthenticatedUser(storedSession.accessToken);
+      const user = await getAuthenticatedUser(storedSession.accessToken, {
+        redirectOnUnauthorized: false,
+      });
       const nextSession = { ...storedSession, user };
 
       persistSession(nextSession);
@@ -59,29 +101,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setBootstrapError(null);
       setAuthRedirectPath(null);
     } catch (error) {
-      const nextErrorMessage =
-        error instanceof Error ? error.message : 'Sessão inválida ou expirada.';
-
-      if (error instanceof HttpError && error.status === 401 && !isPublicAuthRoute(pathname)) {
-        clearSession();
-        setSession(null);
-        setStatus('anonymous');
-        setBootstrapError(nextErrorMessage);
-        setAuthRedirectPath(SESSION_EXPIRED_REDIRECT);
-        return;
-      }
-
-      if (error instanceof HttpError && error.status === 401) {
-        clearSession();
-        setSession(null);
-        setStatus('anonymous');
-      } else {
-        setSession(storedSession);
-        setStatus('authenticated');
-      }
-
-      setBootstrapError(nextErrorMessage);
-      setAuthRedirectPath(null);
+      clearSession();
+      setSession(null);
+      setStatus('anonymous');
+      setBootstrapError(getSessionValidationErrorMessage(error));
+      setAuthRedirectPath(getRedirectPathForValidationFailure(pathname, error));
     }
   }, [pathname]);
 
@@ -143,25 +167,23 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
 
     try {
-      const user = await getAuthenticatedUser(session.accessToken);
+      const user = await getAuthenticatedUser(session.accessToken, {
+        redirectOnUnauthorized: false,
+      });
       const nextSession = { ...session, user };
       persistSession(nextSession);
       setSession(nextSession);
       setStatus('authenticated');
       setBootstrapError(null);
+      setAuthRedirectPath(null);
     } catch (error) {
-      if (error instanceof HttpError && error.status === 401) {
-        setBootstrapError('Sua sessão expirou. Faça login novamente para continuar.');
-        clearSession();
-        setSession(null);
-        setStatus('anonymous');
-        setAuthRedirectPath(SESSION_EXPIRED_REDIRECT);
-        return;
-      }
-
-      throw error;
+      clearSession();
+      setSession(null);
+      setStatus('anonymous');
+      setBootstrapError(getSessionValidationErrorMessage(error));
+      setAuthRedirectPath(getRedirectPathForValidationFailure(pathname, error));
     }
-  }, [session]);
+  }, [pathname, session]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

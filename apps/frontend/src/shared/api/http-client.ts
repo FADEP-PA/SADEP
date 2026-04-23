@@ -9,6 +9,7 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
   params?: Record<string, Primitive | undefined>;
   token?: string;
+  redirectOnUnauthorized?: boolean;
 };
 
 const DEFAULT_API_BASE_URL = 'http://localhost:3000';
@@ -41,14 +42,21 @@ async function parseJsonSafely<T>(response: Response): Promise<T | undefined> {
   return (await response.json()) as T;
 }
 
-async function parseResponse<T>(response: Response, token?: string): Promise<T> {
+async function parseResponse<T>(
+  response: Response,
+  options?: Pick<RequestOptions, 'token' | 'redirectOnUnauthorized'>,
+): Promise<T> {
   const payload = await parseJsonSafely<T | ApiErrorResponse>(response);
+  const token = options?.token;
+  const redirectOnUnauthorized = options?.redirectOnUnauthorized ?? true;
 
   if (!response.ok) {
     const errorPayload = (payload ?? {}) as HttpErrorPayload;
     if (response.status === 401 && token && typeof window !== 'undefined') {
       clearSession();
-      window.location.assign('/sessao-expirada');
+      if (redirectOnUnauthorized) {
+        window.location.assign('/sessao-expirada');
+      }
     }
     throw new HttpError(response.status, getHttpErrorMessage(response.status, errorPayload), errorPayload);
   }
@@ -57,7 +65,7 @@ async function parseResponse<T>(response: Response, token?: string): Promise<T> 
 }
 
 export async function httpRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, headers, params, token, ...rest } = options;
+  const { body, headers, params, token, redirectOnUnauthorized, ...rest } = options;
 
   const response = await fetch(buildUrl(path, params), {
     ...rest,
@@ -70,5 +78,5 @@ export async function httpRequest<T>(path: string, options: RequestOptions = {})
     cache: 'no-store',
   });
 
-  return parseResponse<T>(response, token);
+  return parseResponse<T>(response, { token, redirectOnUnauthorized });
 }
