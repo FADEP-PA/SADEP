@@ -410,25 +410,6 @@ export function SupervisorEvaluationWorkspace() {
         title="Avaliacao funcional da chefia"
         description="Tela funcional para carregar o processo e criar, editar, submeter ou retificar a avaliacao antes da assinatura do servidor."
       >
-<<<<<<< Updated upstream
-        <form className="inline-form" onSubmit={handleLoadProcess}>
-          <label className="field-group" htmlFor="supervisor-process-id">
-            <span>Identificador do processo</span>
-            <input
-              id="supervisor-process-id"
-              name="processId"
-              placeholder="Informe o ID do processo"
-              value={processId}
-              onChange={(event) => setProcessId(event.target.value)}
-              disabled={isLoading || isSaving || isSigningSelfEvaluation}
-            />
-          </label>
-
-          <button type="submit" disabled={isLoading || isSaving || isSigningSelfEvaluation}>
-            {isLoading ? 'Carregando processo...' : 'Abrir avaliacao'}
-          </button>
-        </form>
-=======
         <div className="workspace-overview workspace-overview--accent">
           <div className="workspace-overview__copy">
             <span className="section-chip">Ficha da chefia</span>
@@ -511,7 +492,6 @@ export function SupervisorEvaluationWorkspace() {
             </div>
           </aside>
         </div>
->>>>>>> Stashed changes
 
         {isLoading ? (
           <InlineLoadingState

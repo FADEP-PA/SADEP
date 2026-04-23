@@ -1,29 +1,8 @@
 'use client';
 
-<<<<<<< Updated upstream
-import { ProcessStatus, SelfEvaluationStatus, UserRole } from '@aep-pa/contracts';
-import { useState, type FormEvent } from 'react';
-
-import type { ProcessDashboardListItem, ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';
-import { ProcessListCard } from '@/features/process/components/process-list-card';
-import { SupervisorEvaluationDocumentCard } from '@/features/process/components/supervisor-evaluation-document-card';
-import {
-  getHttpErrorDetails,
-  getRequestErrorMessage,
-  isHttpErrorStatus,
-} from '@/shared/api/http-error';
-import {
-  getSelfEvaluation,
-  getTechnicalProcessSnapshot,
-  saveSelfEvaluationDraft,
-  signSupervisorEvaluation,
-  submitSelfEvaluation,
-  type SelfEvaluationWithDocumentContextRef,
-=======
 import {
   ProcessStatus,
   SelfEvaluationStatus,
-  SignatureStatus,
   UserRole,
   type ProcessAction,
   type SupervisorEvaluationWithDocumentContextRef,
@@ -41,7 +20,6 @@ import {
   signSupervisorEvaluation,
   submitSelfEvaluation,
   type SelfEvaluationResponse,
->>>>>>> Stashed changes
   type UpsertSelfEvaluationInput,
 } from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
@@ -80,8 +58,6 @@ type SelfEvaluationFormState = {
   comment: string;
 };
 
-<<<<<<< Updated upstream
-=======
 type InternProcessSnapshot = {
   workflow: WorkflowResponse;
   history: WorkflowHistoryItem[];
@@ -93,7 +69,6 @@ type InternProcessSnapshot = {
 
 type ActionOperation = 'sign-supervisor' | 'save-self-draft' | 'submit-self-evaluation' | null;
 
->>>>>>> Stashed changes
 function createEmptySelfEvaluationForm(): SelfEvaluationFormState {
   return {
     selfReflection: '',
@@ -103,11 +78,7 @@ function createEmptySelfEvaluationForm(): SelfEvaluationFormState {
 }
 
 function buildSelfEvaluationForm(
-<<<<<<< Updated upstream
-  evaluation: SelfEvaluationWithDocumentContextRef | null,
-=======
   evaluation: SelfEvaluationResponse | null | undefined,
->>>>>>> Stashed changes
 ): SelfEvaluationFormState {
   if (!evaluation) {
     return createEmptySelfEvaluationForm();
@@ -269,27 +240,6 @@ function getActionOperationCopy(operation: ActionOperation) {
 export function InternServerWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState(getInitialProcessId);
-<<<<<<< Updated upstream
-  const [snapshot, setSnapshot] = useState<ProcessDashboardSnapshot | null>(null);
-  const [selfEvaluation, setSelfEvaluation] = useState<SelfEvaluationWithDocumentContextRef | null>(null);
-  const [selfEvaluationForm, setSelfEvaluationForm] = useState<SelfEvaluationFormState>(
-    createEmptySelfEvaluationForm,
-  );
-  const [consultedProcesses, setConsultedProcesses] = useState<ProcessDashboardListItem[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [errorDetails, setErrorDetails] = useState<string[]>([]);
-  const [errorStatus, setErrorStatus] = useState<number | null>(null);
-  const [signatureErrorMessage, setSignatureErrorMessage] = useState<string | null>(null);
-  const [signatureErrorDetails, setSignatureErrorDetails] = useState<string[]>([]);
-  const [selfEvaluationErrorTitle, setSelfEvaluationErrorTitle] = useState('Falha na autoavaliacao');
-  const [selfEvaluationErrorMessage, setSelfEvaluationErrorMessage] = useState<string | null>(null);
-  const [selfEvaluationErrorDetails, setSelfEvaluationErrorDetails] = useState<string[]>([]);
-  const [successFeedback, setSuccessFeedback] = useState<OperationFeedback | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSigning, setIsSigning] = useState(false);
-  const [isPersistingSelfEvaluation, setIsPersistingSelfEvaluation] = useState(false);
-  const [activeSelfEvaluationMutation, setActiveSelfEvaluationMutation] = useState<'draft' | 'submit' | null>(null);
-=======
   const [snapshot, setSnapshot] = useState<InternProcessSnapshot | null>(null);
   const [selfEvaluationForm, setSelfEvaluationForm] = useState<SelfEvaluationFormState>(
     createEmptySelfEvaluationForm,
@@ -305,7 +255,6 @@ export function InternServerWorkspace() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeOperation, setActiveOperation] = useState<ActionOperation>(null);
   const [isSelfEvaluationExpanded, setIsSelfEvaluationExpanded] = useState(false);
->>>>>>> Stashed changes
 
   const displayName = getDisplayNameFromEmail(session?.user.email);
   const supervisorDocumentContext = snapshot?.supervisorEvaluation?.documentContext;
@@ -318,7 +267,7 @@ export function InternServerWorkspace() {
       !supervisorDocumentContext.internSignaturePending &&
       snapshot.selfEvaluation?.status !== SelfEvaluationStatus.SUBMITTED,
   );
-  const canSubmitSelfEvaluation = canEditSelfEvaluation;
+  const canSubmitSelfEvaluation = canEditSelfEvaluation && selfEvaluationForm.selfReflection.trim().length > 0;
   const lastHistoryEntries = useMemo(
     () => (snapshot ? [...snapshot.history].slice(-4).reverse() : []),
     [snapshot],
@@ -364,14 +313,6 @@ export function InternServerWorkspace() {
       supervisorDocumentContext,
     ],
   );
-  const canEditSelfEvaluation = Boolean(
-    snapshot?.workflow.status === ProcessStatus.AGUARDANDO_ASSINATURA &&
-      snapshot.supervisorEvaluation?.documentContext?.internSignaturePending === false &&
-      selfEvaluation?.status !== SelfEvaluationStatus.SUBMITTED,
-  );
-  const canSubmitSelfEvaluation = canEditSelfEvaluation && selfEvaluationForm.selfReflection.trim().length > 0;
-  const selfEvaluationSubmitted = selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED;
-
   const processSummaryItems = useMemo(
     () => [
       { label: 'processo', value: snapshot?.workflow.id ?? 'Nenhum processo carregado' },
@@ -503,17 +444,6 @@ export function InternServerWorkspace() {
       return;
     }
 
-<<<<<<< Updated upstream
-    const [nextSnapshot, nextSelfEvaluation] = await Promise.all([
-      getTechnicalProcessSnapshot(activeProcessId, session.accessToken, session.user.role),
-      getSelfEvaluation(activeProcessId, session.accessToken),
-    ]);
-
-    setSnapshot(nextSnapshot);
-    setSelfEvaluation(nextSelfEvaluation);
-    setSelfEvaluationForm(buildSelfEvaluationForm(nextSelfEvaluation));
-    setConsultedProcesses((currentItems) => upsertConsultedProcess(currentItems, nextSnapshot));
-=======
     const normalizedProcessId = activeProcessId.trim();
     const [workflow, historyResponse, supervisorResult, selfResult] = await Promise.all([
       getWorkflow(normalizedProcessId, session.accessToken),
@@ -544,24 +474,7 @@ export function InternServerWorkspace() {
     setRecentProcessIds((current) =>
       [normalizedProcessId, ...current.filter((item) => item !== normalizedProcessId)].slice(0, 4),
     );
->>>>>>> Stashed changes
     setSuccessFeedback(success ?? null);
-  }
-
-  function buildSelfEvaluationPayload(requireReflection: boolean): UpsertSelfEvaluationInput {
-    const selfReflection = selfEvaluationForm.selfReflection.trim();
-    const additionalNotes = selfEvaluationForm.additionalNotes.trim();
-    const comment = selfEvaluationForm.comment.trim();
-
-    if (requireReflection && selfReflection.length === 0) {
-      throw new Error('Informe a reflexao principal antes de submeter a autoavaliacao.');
-    }
-
-    return {
-      selfReflection,
-      ...(additionalNotes ? { additionalNotes } : {}),
-      ...(comment ? { comment } : {}),
-    };
   }
 
   async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
@@ -576,21 +489,11 @@ export function InternServerWorkspace() {
     }
 
     setIsLoading(true);
-<<<<<<< Updated upstream
-    setErrorMessage(null);
-    setErrorDetails([]);
-    setErrorStatus(null);
-    setSignatureErrorMessage(null);
-    setSignatureErrorDetails([]);
-    setSelfEvaluationErrorMessage(null);
-    setSelfEvaluationErrorDetails([]);
-=======
     setLoadErrorMessage(null);
     setLoadErrorDetails([]);
     setLoadErrorStatus(null);
     setActionErrorMessage(null);
     setActionErrorDetails([]);
->>>>>>> Stashed changes
     setSuccessFeedback(null);
 
     try {
@@ -606,16 +509,11 @@ export function InternServerWorkspace() {
           : undefined;
 
       setSnapshot(null);
-<<<<<<< Updated upstream
-      setSelfEvaluation(null);
-      setSelfEvaluationForm(createEmptySelfEvaluationForm());
-=======
       setSelfEvaluationForm(createEmptySelfEvaluationForm());
       setIsSelfEvaluationExpanded(false);
       setLoadErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar o processo informado.'));
       setLoadErrorDetails(getHttpErrorDetails(payload));
       setLoadErrorStatus(isHttpErrorStatus(error, 404) ? 404 : isHttpErrorStatus(error, 403) ? 403 : null);
->>>>>>> Stashed changes
       setSuccessFeedback(null);
     } finally {
       setIsLoading(false);
@@ -700,77 +598,8 @@ export function InternServerWorkspace() {
     }
   }
 
-  async function handleSelfEvaluationMutation(kind: 'draft' | 'submit') {
-    if (!session?.accessToken || !snapshot) {
-      return;
-    }
-
-    const isSubmit = kind === 'submit';
-
-    setIsPersistingSelfEvaluation(true);
-    setActiveSelfEvaluationMutation(kind);
-    setSelfEvaluationErrorTitle(isSubmit ? 'Falha ao submeter autoavaliacao' : 'Falha ao salvar rascunho');
-    setSelfEvaluationErrorMessage(null);
-    setSelfEvaluationErrorDetails([]);
-    setSuccessFeedback(null);
-
-    try {
-      const payload = buildSelfEvaluationPayload(isSubmit);
-
-      if (isSubmit) {
-        await submitSelfEvaluation(snapshot.workflow.id, session.accessToken, payload);
-      } else {
-        await saveSelfEvaluationDraft(snapshot.workflow.id, session.accessToken, payload);
-      }
-
-      await reloadProcessSnapshot(snapshot.workflow.id, {
-        title: isSubmit ? 'Autoavaliacao submetida' : 'Rascunho salvo',
-        description: isSubmit
-          ? 'A autoavaliacao foi submetida e encaminhada para assinatura da chefia imediata.'
-          : 'A autoavaliacao foi salva como rascunho e segue disponivel para ajustes antes da submissao.',
-      });
-    } catch (error) {
-      const payload =
-        typeof error === 'object' && error && 'payload' in error
-          ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
-          : undefined;
-
-      setSelfEvaluationErrorMessage(
-        getRequestErrorMessage(error, 'Nao foi possivel persistir a autoavaliacao.'),
-      );
-      setSelfEvaluationErrorDetails(getHttpErrorDetails(payload));
-    } finally {
-      setActiveSelfEvaluationMutation(null);
-      setIsPersistingSelfEvaluation(false);
-    }
-  }
-
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
-<<<<<<< Updated upstream
-      <PageSection
-        eyebrow="Servidor estagiario"
-        title="Painel de processos do servidor"
-        description="Consulte seus processos para visualizar status macro, etapa atual e a principal acao disponivel em cada item carregado."
-      >
-        <form className="inline-form" onSubmit={handleLoadProcess}>
-          <label className="field-group" htmlFor="intern-process-id">
-            <span>Identificador do processo</span>
-            <input
-              id="intern-process-id"
-              name="processId"
-              placeholder="Informe o ID do processo"
-              value={processId}
-              onChange={(event) => setProcessId(event.target.value)}
-              disabled={isLoading || isSigning || isPersistingSelfEvaluation}
-            />
-          </label>
-
-          <button type="submit" disabled={isLoading || isSigning || isPersistingSelfEvaluation}>
-            {isLoading ? 'Carregando processo...' : 'Adicionar ao painel'}
-          </button>
-        </form>
-=======
       <section className="operations-page operations-page--server">
         <div className="operations-hero operations-hero--server">
           <div className="operations-hero__copy">
@@ -863,7 +692,6 @@ export function InternServerWorkspace() {
             <KeyValueList items={processSummaryItems} />
           </aside>
         </div>
->>>>>>> Stashed changes
 
         {isLoading ? (
           <InlineLoadingState
@@ -872,18 +700,7 @@ export function InternServerWorkspace() {
           />
         ) : null}
 
-<<<<<<< Updated upstream
-        {isPersistingSelfEvaluation ? (
-          <InlineLoadingState
-            title={activeSelfEvaluationMutation === 'submit' ? 'Submetendo autoavaliacao' : 'Salvando rascunho'}
-            description="A autoavaliacao esta sendo enviada ao backend e o painel sera recarregado em seguida."
-          />
-        ) : null}
-
-        {isSigning ? (
-=======
         {activeOperation ? (
->>>>>>> Stashed changes
           <InlineLoadingState
             title={getActionOperationCopy(activeOperation)?.title ?? 'Atualizando etapa'}
             description={
@@ -921,130 +738,7 @@ export function InternServerWorkspace() {
           />
         ) : null}
 
-<<<<<<< Updated upstream
-        {snapshot ? (
-          <InfoCard
-            title="Autoavaliacao do servidor"
-            description="Preencha sua autoavaliacao apos assinar a avaliacao da chefia. A submissao formal encaminha o documento para assinatura da chefia imediata."
-          >
-            {selfEvaluationSubmitted ? (
-              <FeedbackAlert
-                title="Autoavaliacao submetida"
-                tone="success"
-                description="A autoavaliacao foi submetida e permanece bloqueada para edicao enquanto aguarda os atos documentais seguintes."
-              />
-            ) : null}
-
-            {!canEditSelfEvaluation && !selfEvaluationSubmitted ? (
-              <ReadNotReleasedState
-                title="Autoavaliacao ainda indisponivel"
-                description="A autoavaliacao sera liberada depois que a avaliacao da chefia estiver submetida e assinada pelo servidor."
-              />
-            ) : null}
-
-            {selfEvaluation ? (
-              <div className="supervisor-evaluation-status-panel">
-                <span>Situacao da autoavaliacao</span>
-                <strong>{selfEvaluation.status === SelfEvaluationStatus.SUBMITTED ? 'Submetida' : 'Rascunho'}</strong>
-              </div>
-            ) : null}
-
-            <div className="supervisor-evaluation-form">
-              <label className="field-group" htmlFor="self-evaluation-reflection">
-                <span>Reflexao principal</span>
-                <textarea
-                  id="self-evaluation-reflection"
-                  value={selfEvaluationForm.selfReflection}
-                  onChange={(event) =>
-                    setSelfEvaluationForm((current) => ({
-                      ...current,
-                      selfReflection: event.target.value,
-                    }))
-                  }
-                  disabled={!canEditSelfEvaluation || isPersistingSelfEvaluation || isLoading || isSigning}
-                  rows={6}
-                />
-              </label>
-
-              <label className="field-group" htmlFor="self-evaluation-notes">
-                <span>Observacoes adicionais</span>
-                <textarea
-                  id="self-evaluation-notes"
-                  value={selfEvaluationForm.additionalNotes}
-                  onChange={(event) =>
-                    setSelfEvaluationForm((current) => ({
-                      ...current,
-                      additionalNotes: event.target.value,
-                    }))
-                  }
-                  disabled={!canEditSelfEvaluation || isPersistingSelfEvaluation || isLoading || isSigning}
-                  rows={4}
-                />
-              </label>
-
-              <label className="field-group" htmlFor="self-evaluation-comment">
-                <span>Comentario da movimentacao</span>
-                <textarea
-                  id="self-evaluation-comment"
-                  value={selfEvaluationForm.comment}
-                  onChange={(event) =>
-                    setSelfEvaluationForm((current) => ({
-                      ...current,
-                      comment: event.target.value,
-                    }))
-                  }
-                  disabled={!canEditSelfEvaluation || isPersistingSelfEvaluation || isLoading || isSigning}
-                  rows={3}
-                />
-              </label>
-            </div>
-
-            <div className="supervisor-evaluation-actions">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => void handleSelfEvaluationMutation('draft')}
-                disabled={!canEditSelfEvaluation || isPersistingSelfEvaluation || isLoading || isSigning}
-              >
-                {activeSelfEvaluationMutation === 'draft' ? 'Salvando...' : 'Salvar rascunho'}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => void handleSelfEvaluationMutation('submit')}
-                disabled={!canSubmitSelfEvaluation || isPersistingSelfEvaluation || isLoading || isSigning}
-              >
-                {activeSelfEvaluationMutation === 'submit' ? 'Submetendo...' : 'Submeter autoavaliacao'}
-              </button>
-            </div>
-
-            {selfEvaluation?.documentContext ? (
-              <FeedbackAlert
-                title="Documento de autoavaliacao formalizado"
-                tone={selfEvaluation.documentContext.supervisorSignaturePending ? 'warning' : 'success'}
-                description={
-                  selfEvaluation.documentContext.supervisorSignaturePending
-                    ? 'A assinatura da chefia imediata esta pendente para concluir a instrucao documental.'
-                    : 'A autoavaliacao ja nao possui assinatura pendente da chefia imediata.'
-                }
-              />
-            ) : null}
-
-            {selfEvaluationErrorMessage ? (
-              <FeedbackAlert
-                title={selfEvaluationErrorTitle}
-                tone="error"
-                description={selfEvaluationErrorMessage}
-                details={selfEvaluationErrorDetails}
-              />
-            ) : null}
-          </InfoCard>
-        ) : null}
-
-        {!snapshot && !errorMessage ? (
-=======
         {!snapshot && !loadErrorMessage ? (
->>>>>>> Stashed changes
           <ContentState
             title="Painel pronto para conectar ao processo"
             description="Informe um processo vinculado ao seu usuario para abrir a avaliacao da chefia, a autoavaliacao e o historico da etapa atual."
