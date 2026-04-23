@@ -145,7 +145,7 @@ Ele deve passar a reconhecê-la como uma **entidade institucional explícita**, 
   - Observação: a entidade `CesadCommissionMember` foi criada, o enum `CesadCommissionMemberRoleType` foi introduzido, a composição passou a se vincular à comissão, ao usuário e opcionalmente ao ato, e a leitura administrativa básica da composição foi adicionada; a task permaneceu restrita à fundação de domínio, sem antecipar assistente, signatários ou uso operacional.
   - Observação técnica: a integridade temporal depende de SQL manual/trigger para bloquear sobreposição temporal indevida e rejeitar `endDate < startDate`; a solução foi aprovada, mas essa característica técnica deve permanecer visível para manutenção futura.
 
-- [ ] CESAD-DOM-01D — Introduzir perfil Assistente da Comissão
+- [x] CESAD-DOM-01D — Introduzir perfil Assistente da Comissão
   - Objetivo: prever formalmente o papel administrativo-operacional da comissão.
   - Pode:
     - visualizar processos CESAD;
@@ -155,6 +155,7 @@ Ele deve passar a reconhecê-la como uma **entidade institucional explícita**, 
     - assinar parecer;
     - deliberar como membro;
     - homologar.
+  - Observação: o role global `COMMISSION_ASSISTANT` foi criado, o assistente ficou restrito à leitura operacional CESAD, não foi modelado como membro formal da comissão e a task não antecipou signatários, assinatura nem persistência institucional do assistente.
 
 - [ ] CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente
   - Objetivo: disponibilizar leitura operacional da comissão ativa e de sua composição válida.
@@ -318,7 +319,7 @@ Observação:
 - [x] Macrobloco / Alta / CESAD-DOM-01A — Modelar entidade Comissão CESAD
 - [x] Macrobloco / Alta / CESAD-DOM-01B — Modelar ato normativo / portaria da comissão
 - [x] Macrobloco / Alta / CESAD-DOM-01C — Modelar composição formal da comissão
-- [ ] Macrobloco / Média / CESAD-DOM-01D — Introduzir perfil Assistente da Comissão
+- [x] Macrobloco / Média / CESAD-DOM-01D — Introduzir perfil Assistente da Comissão
 - [ ] Macrobloco / Alta / CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente
 
 - [ ] Macrobloco / Alta / BE-STR-01 — Modelar signatários esperados do parecer CESAD

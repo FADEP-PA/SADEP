@@ -97,10 +97,10 @@ O projeto já saiu da fase de desalinhamentos críticos de fluxo e entrou em um 
 **BLOCO 4 — Institucionalização da Comissão CESAD**
 
 ## Task ativa
-**CESAD-DOM-01D — Introduzir perfil Assistente da Comissão**
+**CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente**
 
 ## Contexto atual
-Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD, alinhamento da leitura consolidada da etapa CESAD, criação da entidade institucional mínima da comissão, modelagem do ato normativo / portaria da Comissão CESAD e modelagem da composição formal da comissão, o próximo passo estrutural do projeto é introduzir formalmente o perfil de assistente da comissão.
+Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD, alinhamento da leitura consolidada da etapa CESAD, criação da entidade institucional mínima da comissão, modelagem do ato normativo / portaria da Comissão CESAD, modelagem da composição formal da comissão e introdução do perfil global de assistente da comissão, o próximo passo estrutural do projeto é expor a leitura da comissão vigente e de sua composição vigente.
 
 A partir daqui, o sistema já reconhece a comissão como **entidade institucional própria** em sua fundação mínima, e deve avançar gradualmente para:
 
@@ -511,11 +511,11 @@ Criar a composição formal da comissão, vinculando usuários à entidade insti
 
 ## CESAD-DOM-01D — Introduzir perfil Assistente da Comissão
 
-- **Status:** PLANNED
+- **Status:** DONE
 - **Prioridade:** Média
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `feat(rbac): add commission assistant read-only role for cesad workflows`
 - **Dependências:** CESAD-DOM-01A recomendada antes
 
 **Objetivo**
@@ -530,6 +530,12 @@ Prever formalmente o papel administrativo-operacional da comissão.
 - assinar parecer
 - deliberar como membro
 - homologar
+
+**Observações**
+- o assistente foi introduzido como role global `COMMISSION_ASSISTANT`
+- o assistente não foi incluído em `CesadCommissionMember`
+- o assistente ganhou apenas leitura operacional mínima no eixo CESAD em `GET /processes/:id/workflow`, `GET /processes/:id/history` e `GET /processes/:id/stages/:sequence/consolidated-read`
+- o assistente permaneceu fora de deliberação, assinatura e homologação
 
 ---
 
