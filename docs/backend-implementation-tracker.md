@@ -97,10 +97,10 @@ O projeto já saiu da fase de desalinhamentos críticos de fluxo e entrou em um 
 **BLOCO 4 — Institucionalização da Comissão CESAD**
 
 ## Task ativa
-**CESAD-DOM-01B — Modelar ato normativo / portaria da comissão**
+**CESAD-DOM-01C — Modelar composição formal da comissão**
 
 ## Contexto atual
-Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD, alinhamento da leitura consolidada da etapa CESAD e criação da entidade institucional mínima da comissão, o próximo passo estrutural do projeto é modelar o ato normativo / portaria da Comissão CESAD.
+Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD, alinhamento da leitura consolidada da etapa CESAD, criação da entidade institucional mínima da comissão e modelagem do ato normativo / portaria da Comissão CESAD, o próximo passo estrutural do projeto é modelar a composição formal da comissão.
 
 A partir daqui, o sistema já reconhece a comissão como **entidade institucional própria** em sua fundação mínima, e deve avançar gradualmente para:
 
@@ -361,6 +361,7 @@ Objetivo: reduzir riscos operacionais e débitos técnicos que continuam importa
 - permanece como dívida técnica de baixa prioridade
 - `prisma migrate dev` permanece impedido por migration histórica anterior no shadow database SQLite: `20260415113000_increment_10b_cesad_stage_opinion_artifact`
 - a falha decorre do uso de `ALTER TABLE ... ADD CONSTRAINT` nessa migration histórica; a migration da `CESAD-DOM-01A` para `CesadCommission` foi validada isoladamente e não é a causadora
+- a `CESAD-DOM-01B` também validou sua nova migration por execução controlada, sem alterar o diagnóstico dessa dívida histórica
 - essa dívida deve ser corrigida em task técnica futura específica para restaurar o fluxo local de migrations
 
 ---
@@ -440,11 +441,11 @@ Introduzir a comissão CESAD como entidade própria do domínio.
 
 ## CESAD-DOM-01B — Modelar ato normativo / portaria da comissão
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `feat(cesad): add commission normative act domain foundation`
 - **Dependências:** CESAD-DOM-01A
 
 **Objetivo**
@@ -464,6 +465,12 @@ Registrar o instrumento formal que constitui, altera ou renova a comissão.
 - PDF
 - publicação oficial
 - integração externa
+
+**Observações**
+- o ato normativo passou a existir como entidade histórica própria
+- a relação com a comissão foi modelada como `CesadCommission` 1:N `CesadCommissionAct`
+- a leitura administrativa básica foi adicionada em `GET /cesad/commission-acts` e `GET /cesad/commission-acts/:id`, com filtro opcional por `commissionId`, restrita a `ADMIN`
+- não houve ponteiro de ato vigente nem antecipação de composição, signatários ou uso operacional da comissão
 
 ---
 

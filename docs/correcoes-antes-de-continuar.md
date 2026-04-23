@@ -115,7 +115,7 @@ Ele deve passar a reconhecê-la como uma **entidade institucional explícita**, 
     - documento formal do parecer;
     - substituição de suplente.
 
-- [ ] CESAD-DOM-01B — Modelar ato normativo / portaria da comissão
+- [x] CESAD-DOM-01B — Modelar ato normativo / portaria da comissão
   - Objetivo: registrar o instrumento formal que constitui, altera ou renova a comissão.
   - Fazer:
     - número;
@@ -130,6 +130,7 @@ Ele deve passar a reconhecê-la como uma **entidade institucional explícita**, 
     - PDF;
     - publicação oficial;
     - integração externa.
+  - Observação: a entidade `CesadCommissionAct` foi criada, o enum `CesadCommissionActType` foi introduzido, a relação 1:N entre comissão e atos foi modelada e a leitura administrativa básica dos atos foi adicionada; a task permaneceu restrita à fundação de domínio, sem antecipar composição, signatários ou uso operacional.
 
 - [ ] CESAD-DOM-01C — Modelar composição formal da comissão
   - Objetivo: criar a composição formal da comissão, vinculando usuários à entidade institucional.
@@ -242,7 +243,8 @@ Observação:
     - uso de `ALTER TABLE ... ADD CONSTRAINT` incompatível com o fluxo atual do shadow database SQLite.
   - Observação:
     - a migration da `CESAD-DOM-01A` não é a causadora;
-    - a dívida foi apenas evidenciada/reconfirmada durante esta task.
+    - a dívida foi apenas evidenciada/reconfirmada durante esta task;
+    - a `CESAD-DOM-01B` validou sua nova migration por execução controlada, sem alterar esse diagnóstico.
   - Fazer:
     - diagnosticar correção segura da migration histórica;
     - definir estratégia para manter compatibilidade do fluxo local de migrations.
@@ -312,7 +314,7 @@ Observação:
 - [x] Alinhamento / Alta / Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
 
 - [x] Macrobloco / Alta / CESAD-DOM-01A — Modelar entidade Comissão CESAD
-- [ ] Macrobloco / Alta / CESAD-DOM-01B — Modelar ato normativo / portaria da comissão
+- [x] Macrobloco / Alta / CESAD-DOM-01B — Modelar ato normativo / portaria da comissão
 - [ ] Macrobloco / Alta / CESAD-DOM-01C — Modelar composição formal da comissão
 - [ ] Macrobloco / Média / CESAD-DOM-01D — Introduzir perfil Assistente da Comissão
 - [ ] Macrobloco / Alta / CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente
