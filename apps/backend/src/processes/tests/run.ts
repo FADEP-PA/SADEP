@@ -1,3 +1,5 @@
+import { runCesadCommissionActsEndpointTests } from '../../cesad/tests/cesad-commission-acts.endpoint.spec';
+import { runCesadCommissionActsServiceTests } from '../../cesad/tests/cesad-commission-acts.service.spec';
 import { runCesadCommissionsEndpointTests } from '../../cesad/tests/cesad-commissions.endpoint.spec';
 import { runCesadCommissionsServiceTests } from '../../cesad/tests/cesad-commissions.service.spec';
 import { runCesadStageOpinionsServiceTests } from './cesad-stage-opinions.service.spec';
@@ -11,6 +13,8 @@ import { runSupervisorEvaluationsServiceTests } from './supervisor-evaluations.s
 async function main() {
   runWorkflowCatalogTests();
   await runProcessesServiceTests();
+  await runCesadCommissionActsServiceTests();
+  await runCesadCommissionActsEndpointTests();
   await runCesadCommissionsServiceTests();
   await runCesadCommissionsEndpointTests();
   await runCesadStageReadServiceTests();
@@ -19,7 +23,7 @@ async function main() {
   await runSupervisorEvaluationsServiceTests();
   await runSelfEvaluationsTests();
   console.log(
-    'Workflow, CESAD commissions, CESAD stage read, CESAD stage opinion, supervisor evaluation, and self evaluation tests passed.',
+    'Workflow, CESAD commission acts, CESAD commissions, CESAD stage read, CESAD stage opinion, supervisor evaluation, and self evaluation tests passed.',
   );
 }
 

@@ -105,6 +105,12 @@ enum CesadCommissionStatus {
   SUPERSEDED
 }
 
+enum CesadCommissionActType {
+  CONSTITUTION
+  AMENDMENT
+  RENEWAL
+}
+
 model User {
   id                       String                 @id @default(cuid())
   email                    String                 @unique
@@ -275,11 +281,33 @@ model CesadCommission {
   status             CesadCommissionStatus  @default(ACTIVE)
   effectiveStartDate DateTime
   effectiveEndDate   DateTime?
+  acts               CesadCommissionAct[]
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
 
   @@index([status])
   @@index([effectiveStartDate])
+}
+
+model CesadCommissionAct {
+  id                String                  @id @default(cuid())
+  commissionId      String
+  actType           CesadCommissionActType
+  number            String
+  year              Int
+  signedAt          DateTime?
+  publishedAt       DateTime?
+  validityStartDate DateTime?
+  validityEndDate   DateTime?
+  summary           String?
+  referenceText     String?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  commission        CesadCommission         @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([commissionId])
+  @@index([actType])
+  @@index([year])
 }
 
 model SignatureRecord {
