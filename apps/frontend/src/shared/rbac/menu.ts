@@ -17,14 +17,14 @@ const dashboardGroup: NavigationGroup = {
   title: 'Painel principal',
   items: [
     {
-      label: 'Início',
+      label: 'Inicio',
       href: '/inicio',
-      description: 'Visão geral do ambiente autenticado, do perfil em operação e dos acessos disponíveis.',
+      description: 'Visao geral do ambiente autenticado, do perfil em operacao e dos acessos disponiveis.',
     },
     {
       label: 'Processos',
       href: '/processos',
-      description: 'Consultar status, ações disponíveis, histórico e dados operacionais do processo.',
+      description: 'Consultar status, acoes disponiveis, historico e dados operacionais do processo.',
     },
   ],
 };
@@ -33,9 +33,9 @@ const overviewGroup: NavigationGroup = {
   title: 'Painel principal',
   items: [
     {
-      label: 'Início',
+      label: 'Inicio',
       href: '/inicio',
-      description: 'Visão geral do ambiente autenticado, do perfil em operação e dos acessos disponíveis.',
+      description: 'Visao geral do ambiente autenticado, do perfil em operacao e dos acessos disponiveis.',
     },
   ],
 };
@@ -46,21 +46,21 @@ const accountGroup: NavigationGroup = {
     {
       label: 'Meu perfil',
       href: '/perfil',
-      description: 'Consultar dados da sessão autenticada, perfil de acesso e informações do usuário.',
+      description: 'Consultar dados da sessao autenticada, perfil de acesso e informacoes do usuario.',
     },
   ],
 };
 
 const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.INTERN_SERVER]: [
-    dashboardGroup,
+    overviewGroup,
     {
-      title: 'Minha atuação',
+      title: 'Avaliacoes',
       items: [
         {
-          label: getRolePresentation(UserRole.INTERN_SERVER).label,
+          label: 'Minhas avaliacoes',
           href: '/servidor-estagiario',
-          description: 'Acompanhar ciência, notificações e situação do processo do servidor em estágio.',
+          description: 'Acompanhar a etapa atual, assinar a avaliacao da chefia e registrar a autoavaliacao.',
         },
       ],
     },
@@ -69,12 +69,12 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.IMMEDIATE_SUPERVISOR]: [
     overviewGroup,
     {
-      title: 'Minha atuação',
+      title: 'Avaliacoes',
       items: [
         {
-          label: 'Avaliação da chefia',
+          label: 'Avaliacoes da chefia',
           href: '/chefia-imediata',
-          description: 'Criar, salvar, submeter e retificar a avaliação da chefia imediata.',
+          description: 'Criar, salvar, submeter e retificar a avaliacao da chefia imediata.',
         },
       ],
     },
@@ -83,12 +83,12 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.CESAD_MEMBER]: [
     dashboardGroup,
     {
-      title: 'Minha atuação',
+      title: 'Minha atuacao',
       items: [
         {
           label: getRolePresentation(UserRole.CESAD_MEMBER).label,
           href: '/cesad-comissao',
-          description: 'Analisar processos, consultar histórico e acompanhar a etapa colegiada.',
+          description: 'Analisar processos, consultar historico e acompanhar a etapa colegiada.',
         },
       ],
     },
@@ -97,12 +97,12 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.HOMOLOGATION_AUTHORITY]: [
     overviewGroup,
     {
-      title: 'Minha atuação',
+      title: 'Minha atuacao',
       items: [
         {
           label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
           href: '/homologacao-autoridade',
-          description: 'Conferir o processo e acompanhar os atos finais de homologação.',
+          description: 'Conferir o processo e acompanhar os atos finais de homologacao.',
         },
       ],
     },
@@ -111,17 +111,17 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.ADMIN]: [
     overviewGroup,
     {
-      title: 'Áreas operacionais',
+      title: 'Areas operacionais',
       items: [
         {
           label: getRolePresentation(UserRole.ADMIN).label,
           href: '/admin',
-          description: 'Suporte operacional, administração do ambiente e acompanhamento técnico.',
+          description: 'Suporte operacional, administracao do ambiente e acompanhamento tecnico.',
         },
         {
           label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
           href: '/homologacao-autoridade',
-          description: 'Consultar a área de homologação e os marcos finais do processo.',
+          description: 'Consultar a area de homologacao e os marcos finais do processo.',
         },
       ],
     },

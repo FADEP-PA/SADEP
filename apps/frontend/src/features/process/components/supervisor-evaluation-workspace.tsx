@@ -410,6 +410,7 @@ export function SupervisorEvaluationWorkspace() {
         title="Avaliacao funcional da chefia"
         description="Tela funcional para carregar o processo e criar, editar, submeter ou retificar a avaliacao antes da assinatura do servidor."
       >
+<<<<<<< Updated upstream
         <form className="inline-form" onSubmit={handleLoadProcess}>
           <label className="field-group" htmlFor="supervisor-process-id">
             <span>Identificador do processo</span>
@@ -427,6 +428,90 @@ export function SupervisorEvaluationWorkspace() {
             {isLoading ? 'Carregando processo...' : 'Abrir avaliacao'}
           </button>
         </form>
+=======
+        <div className="workspace-overview workspace-overview--accent">
+          <div className="workspace-overview__copy">
+            <span className="section-chip">Ficha da chefia</span>
+            <h3>
+              {snapshot
+                ? `Processo ${snapshot.process.id} pronto para acompanhamento da avaliacao`
+                : 'Abra um processo para preencher, submeter ou retificar a avaliacao'}
+            </h3>
+            <p>
+              O workspace da chefia agora segue a mesma leitura de portal institucional, com
+              formulario principal, status da ficha e contexto operacional reunidos em um unico
+              quadro.
+            </p>
+
+            <form className="inline-form inline-form--elevated" onSubmit={handleLoadProcess}>
+              <label className="field-group" htmlFor="supervisor-process-id">
+                <span>Identificador do processo</span>
+                <input
+                  id="supervisor-process-id"
+                  name="processId"
+                  placeholder="Informe o ID do processo"
+                  value={processId}
+                  onChange={(event) => setProcessId(event.target.value)}
+                  disabled={isLoading || isSaving}
+                />
+              </label>
+
+              <button type="submit" disabled={isLoading || isSaving}>
+                {isLoading ? 'Carregando processo...' : 'Abrir avaliacao'}
+              </button>
+            </form>
+          </div>
+
+          <aside className="workspace-overview__panel">
+            <KeyValueList
+              items={[
+                { label: 'processo em foco', value: snapshot?.process.id ?? 'Nenhum processo carregado' },
+                {
+                  label: 'status macro',
+                  value: snapshot ? formatProcessStatus(snapshot.process.status) : 'Aguardando consulta',
+                },
+                {
+                  label: 'status da avaliacao',
+                  value: formatSupervisorEvaluationStatus(snapshot?.supervisorEvaluation?.status),
+                },
+                {
+                  label: 'documento',
+                  value: snapshot?.documentContext ? 'Formalizado' : 'Ainda nao formalizado',
+                },
+                {
+                  label: 'ultima submissao',
+                  value: formatDateTime(snapshot?.supervisorEvaluation?.submittedAt),
+                },
+              ]}
+            />
+
+            {snapshot ? (
+              <div className="workspace-badge-row">
+                <StatusBadge
+                  label={formatProcessStatus(snapshot.process.status)}
+                  tone={getProcessStatusTone(snapshot.process.status)}
+                />
+                {renderEvaluationStatus(snapshot.supervisorEvaluation?.status)}
+              </div>
+            ) : null}
+
+            <div className="workspace-stat-grid">
+              <div className="workspace-stat">
+                <span>criterios preenchidos</span>
+                <strong>{form.criteria.length}</strong>
+              </div>
+              <div className="workspace-stat">
+                <span>salvar rascunho</span>
+                <strong>{canEditDraft ? 'Disponivel' : 'Bloqueado'}</strong>
+              </div>
+              <div className="workspace-stat">
+                <span>retificacao</span>
+                <strong>{canRectify ? 'Liberada' : 'Nao aplicavel'}</strong>
+              </div>
+            </div>
+          </aside>
+        </div>
+>>>>>>> Stashed changes
 
         {isLoading ? (
           <InlineLoadingState
@@ -470,6 +555,29 @@ export function SupervisorEvaluationWorkspace() {
 
         {snapshot ? (
           <>
+            <div className="workspace-service-strip">
+              <article className="workspace-service-card">
+                <span>Status da ficha</span>
+                <strong>{formatSupervisorEvaluationStatus(snapshot.supervisorEvaluation?.status)}</strong>
+                <p>Estado atual da avaliacao exibido pela leitura autenticada da chefia.</p>
+              </article>
+              <article className="workspace-service-card">
+                <span>Salvar rascunho</span>
+                <strong>{canEditDraft ? 'Disponivel' : 'Indisponivel'}</strong>
+                <p>Permissao calculada pelo backend para edicao incremental da ficha.</p>
+              </article>
+              <article className="workspace-service-card">
+                <span>Submissao</span>
+                <strong>{canSubmit ? 'Liberada' : 'Aguardando ajustes'}</strong>
+                <p>Encaminhamento da avaliacao para a proxima etapa operacional do fluxo.</p>
+              </article>
+              <article className="workspace-service-card">
+                <span>Documento</span>
+                <strong>{snapshot.documentContext ? 'Formalizado' : 'Ainda nao formalizado'}</strong>
+                <p>Indica se a avaliacao ja possui contexto documental associado no processo.</p>
+              </article>
+            </div>
+
             <div className="metrics-grid">
               <InfoCard
                 eyebrow="Status do processo"

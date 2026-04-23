@@ -9,23 +9,23 @@ import { KeyValueList } from '@/shared/ui/key-value-list';
 
 const overviewCards = [
   {
-    title: 'Consulta do processo',
-    description: 'Acesso direto à leitura do status, do histórico e das ações autorizadas no fluxo.',
+    title: 'Consulta de processos',
+    description: 'Painel tecnico e institucional para ler workflow, bloqueios, acoes e historico do processo.',
   },
   {
-    title: 'Áreas por perfil',
-    description: 'Cada papel institucional possui uma área própria disponível pela navegação lateral.',
+    title: 'Workspaces por perfil',
+    description: 'Cada papel institucional opera em uma tela propria, com linguagem visual unificada.',
   },
   {
-    title: 'Rastreabilidade',
-    description: 'As informações exibidas respeitam autenticação, perfil de acesso e dados do backend.',
+    title: 'Rastreabilidade processual',
+    description: 'Cards, estados e alertas priorizam leitura clara sem deslocar regra de negocio para a interface.',
   },
 ];
 
 const governanceHighlights = [
-  'Regras de negócio centralizadas no backend.',
-  'Consultas autenticadas com segregação por perfil.',
-  'Base preparada para evolução das telas por etapa do processo.',
+  'Contratos tipados e regras processuais vindas do backend.',
+  'Separacao de navegacao, leitura e operacao por perfil.',
+  'Base visual pronta para crescimento das etapas, pareceres e homologacao.',
 ];
 
 export default function TechnicalHomePage() {
@@ -33,78 +33,108 @@ export default function TechnicalHomePage() {
   const rolePresentation = session ? getRolePresentation(session.user.role) : null;
 
   return (
-    <section className="technical-home">
-      <div className="technical-home__hero technical-home__hero--institutional">
-        <article className="technical-home__hero-panel">
-          <span className="technical-home__badge">Painel central</span>
-          <h2>Ambiente organizado para navegação operacional</h2>
+    <section className="portal-dashboard">
+      <div className="portal-hero">
+        <article className="portal-hero__copy">
+          <span className="section-chip">Portal central</span>
+          <h2>Uma entrada unica para navegar pelas areas do AEP-PA</h2>
           <p>
-            Use a barra lateral para acessar diretamente a consulta de processos, sua área de atuação
-            e as demais telas liberadas para o seu perfil.
+            O ambiente autenticado foi reorganizado como um portal institucional: mais leve,
+            mais claro e com foco em leitura processual, servicos por perfil e continuidade do
+            frontend.
           </p>
 
-          <div className="technical-home__hero-actions">
-            <Link href="/processos" className="secondary-button technical-home__link-button">
+          <div className="portal-hero__actions">
+            <Link href="/processos" className="secondary-button portal-link-button">
               Abrir processos
             </Link>
-            <Link
-              href={rolePresentation?.homePath ?? '/perfil'}
-              className="ghost-button technical-home__link-button"
-            >
-              Ir para minha área
+            <Link href={rolePresentation?.homePath ?? '/perfil'} className="ghost-button portal-link-button">
+              Ir para minha area
             </Link>
           </div>
         </article>
 
-        <aside className="technical-home__panel technical-home__panel--institutional">
-          <span className="technical-home__section-label">Sessão autenticada</span>
-          <KeyValueList
-            items={[
-              { label: 'Usuário', value: session?.user.email ?? 'Não informado' },
-              { label: 'Perfil', value: rolePresentation?.label ?? session?.user.role ?? 'Não informado' },
-              { label: 'Área principal', value: rolePresentation?.homePath ?? 'Não informada' },
-            ]}
-          />
-          <p className="technical-home__paragraph">
-            Todos os acessos disponíveis para este perfil estão organizados na barra lateral.
-          </p>
+        <aside className="portal-hero__visual">
+          <div className="portal-stat-card">
+            <span>Perfil ativo</span>
+            <strong>{rolePresentation?.label ?? 'Nao identificado'}</strong>
+          </div>
+          <div className="portal-stat-card">
+            <span>Usuario autenticado</span>
+            <strong>{session?.user.email ?? 'Nao informado'}</strong>
+          </div>
+          <div className="portal-stat-card">
+            <span>Area inicial</span>
+            <strong>{rolePresentation?.homePath ?? '/inicio'}</strong>
+          </div>
         </aside>
       </div>
 
-      <div className="metrics-grid">
-        {overviewCards.map((card) => (
-          <InfoCard
-            key={card.title}
-            eyebrow="Navegação"
-            title={card.title}
-            description={card.description}
-          />
-        ))}
-      </div>
+      <section className="portal-spotlight">
+        <div className="portal-spotlight__media">
+          <div className="portal-spotlight__image portal-spotlight__image--workflow" />
+        </div>
 
-      <div className="technical-home__institutional-grid">
-        <InfoCard
-          eyebrow="Perfil em operação"
-          title={rolePresentation?.label ?? 'Perfil não identificado'}
-          description={rolePresentation?.description ?? 'A sessão atual não retornou um perfil catalogado.'}
-        >
-          <p className="muted-paragraph">
-            A navegação lateral mantém o acesso principal às telas disponíveis para este papel.
+        <div className="portal-spotlight__content">
+          <span className="section-chip">Leitura orientada</span>
+          <h2>Encontre sua proxima acao sem se perder no fluxo</h2>
+          <p>
+            O design agora usa blocos institucionais maiores, tipografia de destaque e agrupamento
+            claro de operacoes para reduzir friccao entre consulta, execucao e acompanhamento.
           </p>
-        </InfoCard>
 
-        <InfoCard
-          eyebrow="Como navegar"
-          title="Acesso direto pelas seções do menu"
-          description="A barra lateral concentra as entradas do sistema para reduzir dispersão e facilitar a operação diária."
-        >
+          <div className="portal-spotlight__actions">
+            <Link href="/processos" className="secondary-button portal-link-button">
+              Consultar processo
+            </Link>
+            <Link href="/perfil" className="ghost-button portal-link-button">
+              Ver sessao
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="page-section">
+        <header className="page-section__header">
+          <span className="section-chip">Destaques</span>
+          <div>
+            <h2>Areas em destaque</h2>
+            <p>Pontos centrais da operacao diaria disponiveis no frontend atual.</p>
+          </div>
+        </header>
+
+        <div className="metrics-grid">
+          {overviewCards.map((card) => (
+            <InfoCard key={card.title} eyebrow="Servico" title={card.title} description={card.description} />
+          ))}
+        </div>
+      </section>
+
+      <section className="portal-callout">
+        <div className="portal-callout__copy">
+          <span className="section-chip">Governanca visual</span>
+          <h2>Base pronta para as proximas evolucoes do frontend</h2>
+          <p>
+            O shell, os cards e os estados visuais foram preparados para sustentar a expansao das
+            jornadas da CESAD, da homologacao e das leituras por etapa sem perder unidade.
+          </p>
+        </div>
+
+        <div className="portal-callout__panel">
+          <KeyValueList
+            items={[
+              { label: 'usuario', value: session?.user.email ?? 'Nao informado' },
+              { label: 'perfil', value: rolePresentation?.label ?? 'Nao informado' },
+              { label: 'home', value: rolePresentation?.homePath ?? 'Nao informada' },
+            ]}
+          />
           <ul className="content-list">
-            <li>Abra “Processos” para consultar workflow, histórico e ações liberadas.</li>
-            <li>Use “Minha atuação” ou “Áreas operacionais” para entrar na área do seu perfil.</li>
-            <li>Consulte “Meu perfil” para validar os dados da sessão autenticada.</li>
+            {governanceHighlights.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
-        </InfoCard>
-      </div>
+        </div>
+      </section>
     </section>
   );
 }

@@ -12,7 +12,11 @@ import {
   DocumentType,
   ProcessStatus,
   ProcessAction,
+<<<<<<< Updated upstream
   SelfEvaluationRef,
+=======
+  SelfEvaluationStatus,
+>>>>>>> Stashed changes
   SignatureStatus,
   SupervisorEvaluationDocumentContextRef,
   SupervisorEvaluationContentInput,
@@ -56,8 +60,42 @@ export type WorkflowTransitionInput = {
   comment?: string;
 };
 
+export type UpsertSelfEvaluationInput = {
+  selfReflection: string;
+  additionalNotes?: string;
+  comment?: string;
+};
+
 export type DocumentSignatureResponse = {
   success: boolean;
+};
+
+export type SelfEvaluationDocumentContext = {
+  documentId: string;
+  documentType: DocumentType;
+  documentStatus: DocumentStatus;
+  hasArtifact: boolean;
+  artifactPath: string | null;
+  signatures: Array<{
+    signatoryRole: UserRole;
+    status: SignatureStatus;
+    signedAt: string | null;
+  }>;
+  supervisorSignaturePending: boolean;
+};
+
+export type SelfEvaluationResponse = {
+  id: string;
+  processId: string;
+  processStageId: string;
+  authorUserId: string;
+  status: SelfEvaluationStatus;
+  selfReflection: string;
+  additionalNotes: string | null;
+  submittedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  documentContext?: SelfEvaluationDocumentContext;
 };
 
 export type SupervisorEvaluationWorkspaceSnapshot = {
@@ -104,6 +142,7 @@ export async function getSupervisorEvaluation(processId: string, accessToken: st
 }
 
 export async function getSelfEvaluation(processId: string, accessToken: string) {
+<<<<<<< Updated upstream
   return httpRequest<SelfEvaluationWithDocumentContextRef | null>(
     `/processes/${processId}/self-evaluation`,
     {
@@ -111,6 +150,12 @@ export async function getSelfEvaluation(processId: string, accessToken: string) 
       token: accessToken,
     },
   );
+=======
+  return httpRequest<SelfEvaluationResponse | null>(`/processes/${processId}/self-evaluation`, {
+    method: 'GET',
+    token: accessToken,
+  });
+>>>>>>> Stashed changes
 }
 
 export async function getSupervisorEvaluationWorkspaceSnapshot(
@@ -138,6 +183,42 @@ export async function getCesadStageReadSnapshot(
       token: accessToken,
     },
   );
+}
+
+export async function saveSelfEvaluationDraft(
+  processId: string,
+  accessToken: string,
+  body: UpsertSelfEvaluationInput,
+) {
+  return httpRequest<SelfEvaluationResponse>(`/processes/${processId}/self-evaluation/draft`, {
+    method: 'PUT',
+    token: accessToken,
+    body,
+  });
+}
+
+export async function submitSelfEvaluation(
+  processId: string,
+  accessToken: string,
+  body: UpsertSelfEvaluationInput,
+) {
+  return httpRequest<SelfEvaluationResponse>(`/processes/${processId}/self-evaluation/submit`, {
+    method: 'POST',
+    token: accessToken,
+    body,
+  });
+}
+
+export async function signSelfEvaluation(
+  processId: string,
+  accessToken: string,
+  body?: Pick<UpsertSelfEvaluationInput, 'comment'>,
+) {
+  return httpRequest<SelfEvaluationResponse>(`/processes/${processId}/self-evaluation/sign`, {
+    method: 'POST',
+    token: accessToken,
+    body,
+  });
 }
 
 export async function saveSupervisorEvaluationDraft(

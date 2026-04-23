@@ -11,8 +11,8 @@ export default function AuthenticatedLayout({
   return (
     <AuthGuard>
       <AppShell
-        title="Ambiente autenticado"
-        subtitle="Painel interno para acompanhamento processual, consulta operacional e execução das áreas já disponíveis no AEP-PA."
+        title="Portal AEP-PA"
+        subtitle="Acompanhamento institucional do estagio probatorio."
       >
         {children}
       </AppShell>

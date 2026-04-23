@@ -81,6 +81,9 @@ export function CesadStageReadWorkspace() {
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const stageInstructionStatus = snapshot?.documentationStatus.stageInstructionStatus;
+  const locatedDocuments = snapshot?.documents.filter((document) => document.exists).length ?? 0;
+  const missingDocuments = snapshot?.documentationStatus.missingRequiredDocumentTypes.length ?? 0;
+  const pendingSignatures = snapshot?.documentationStatus.pendingSignatureDocumentTypes.length ?? 0;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -144,36 +147,104 @@ export function CesadStageReadWorkspace() {
           title="Leitura consolidada da etapa"
           description="Consulta somente leitura, focada em uma etapa específica, com processo, servidor, avaliações, documentos, assinaturas e histórico resumido relevante."
         >
-          <form className="inline-form cesad-stage-read__form" onSubmit={handleSubmit}>
-            <label className="field-group" htmlFor="cesad-stage-process-id">
-              <span>Identificador do processo</span>
-              <input
-                id="cesad-stage-process-id"
-                name="processId"
-                placeholder="Informe o ID do processo"
-                value={processId}
-                onChange={(event) => setProcessId(event.target.value)}
-                disabled={isLoading}
-              />
-            </label>
+          <div className="workspace-overview workspace-overview--lilac">
+            <div className="workspace-overview__copy">
+              <span className="section-chip">Leitura de etapa</span>
+              <h3>
+                {snapshot
+                  ? `Etapa ${snapshot.stage.sequence} aberta para leitura consolidada`
+                  : 'Abra uma etapa para revisar processo, documentos e assinaturas'}
+              </h3>
+              <p>
+                Esta visao da CESAD foi reorganizada como uma leitura institucional, com foco na
+                etapa, nos documentos obrigatorios e no historico resumido necessario para a
+                instrucao.
+              </p>
 
-            <label className="field-group" htmlFor="cesad-stage-sequence">
-              <span>Etapa</span>
-              <input
-                id="cesad-stage-sequence"
-                name="stageSequence"
-                inputMode="numeric"
-                placeholder="1"
-                value={stageSequenceInput}
-                onChange={(event) => setStageSequenceInput(event.target.value)}
-                disabled={isLoading}
-              />
-            </label>
+              <form className="inline-form cesad-stage-read__form inline-form--elevated" onSubmit={handleSubmit}>
+                <label className="field-group" htmlFor="cesad-stage-process-id">
+                  <span>Identificador do processo</span>
+                  <input
+                    id="cesad-stage-process-id"
+                    name="processId"
+                    placeholder="Informe o ID do processo"
+                    value={processId}
+                    onChange={(event) => setProcessId(event.target.value)}
+                    disabled={isLoading}
+                  />
+                </label>
 
-            <button type="submit" disabled={isLoading}>
-              {isLoading ? 'Carregando etapa...' : 'Abrir etapa'}
-            </button>
-          </form>
+                <label className="field-group" htmlFor="cesad-stage-sequence">
+                  <span>Etapa</span>
+                  <input
+                    id="cesad-stage-sequence"
+                    name="stageSequence"
+                    inputMode="numeric"
+                    placeholder="1"
+                    value={stageSequenceInput}
+                    onChange={(event) => setStageSequenceInput(event.target.value)}
+                    disabled={isLoading}
+                  />
+                </label>
+
+                <button type="submit" disabled={isLoading}>
+                  {isLoading ? 'Carregando etapa...' : 'Abrir etapa'}
+                </button>
+              </form>
+            </div>
+
+            <aside className="workspace-overview__panel">
+              <KeyValueList
+                items={[
+                  { label: 'processo em foco', value: snapshot?.process.id ?? 'Nenhum processo carregado' },
+                  {
+                    label: 'etapa',
+                    value: snapshot ? `Etapa ${snapshot.stage.sequence}` : 'Aguardando consulta',
+                  },
+                  {
+                    label: 'status macro',
+                    value: snapshot ? formatProcessStatus(snapshot.process.status) : 'Nao disponivel',
+                  },
+                  {
+                    label: 'status documental',
+                    value: formatStageInstructionStatus(stageInstructionStatus),
+                  },
+                  {
+                    label: 'servidor',
+                    value: snapshot?.server.displayName ?? snapshot?.server.email ?? 'Nao disponivel',
+                  },
+                ]}
+              />
+
+              {snapshot ? (
+                <div className="workspace-badge-row">
+                  <StatusBadge
+                    label={formatProcessStatus(snapshot.process.status)}
+                    tone={getProcessStatusTone(snapshot.process.status)}
+                  />
+                  <StatusBadge
+                    label={formatStageInstructionStatus(stageInstructionStatus)}
+                    tone={getStageInstructionStatusTone(stageInstructionStatus)}
+                  />
+                </div>
+              ) : null}
+
+              <div className="workspace-stat-grid">
+                <div className="workspace-stat">
+                  <span>documentos localizados</span>
+                  <strong>{locatedDocuments}</strong>
+                </div>
+                <div className="workspace-stat">
+                  <span>pendencias obrigatorias</span>
+                  <strong>{missingDocuments}</strong>
+                </div>
+                <div className="workspace-stat">
+                  <span>assinaturas pendentes</span>
+                  <strong>{pendingSignatures}</strong>
+                </div>
+              </div>
+            </aside>
+          </div>
 
           {errorMessage ? (
             errorStatus === 404 ? (
@@ -216,6 +287,29 @@ export function CesadStageReadWorkspace() {
 
           {snapshot ? (
             <>
+              <div className="workspace-service-strip">
+                <article className="workspace-service-card">
+                  <span>Etapa em foco</span>
+                  <strong>{snapshot.stage.stageCode}</strong>
+                  <p>Codigo institucional da etapa aberta para leitura da CESAD.</p>
+                </article>
+                <article className="workspace-service-card">
+                  <span>Documentos localizados</span>
+                  <strong>{locatedDocuments}</strong>
+                  <p>Total de documentos encontrados no snapshot consolidado da etapa.</p>
+                </article>
+                <article className="workspace-service-card">
+                  <span>Pendencias obrigatorias</span>
+                  <strong>{missingDocuments}</strong>
+                  <p>Quantidade de documentos obrigatorios ainda ausentes para a instrucao.</p>
+                </article>
+                <article className="workspace-service-card">
+                  <span>Historico resumido</span>
+                  <strong>{snapshot.history.length}</strong>
+                  <p>Eventos auditaveis retornados para apoiar a reconstrucao da etapa.</p>
+                </article>
+              </div>
+
               <div className="cesad-stage-read__hero">
                 <div className="surface-card">
                   <span className="section-chip">Modo somente leitura</span>
