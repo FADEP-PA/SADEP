@@ -111,6 +111,11 @@ enum CesadCommissionActType {
   RENEWAL
 }
 
+enum CesadCommissionMemberRoleType {
+  TITULAR
+  SUPLENTE
+}
+
 model User {
   id                       String                 @id @default(cuid())
   email                    String                 @unique
@@ -126,6 +131,7 @@ model User {
   responsibleProcessStages ProcessStage[]         @relation("ProcessStageResponsibleSupervisor")
   selfEvaluations          SelfEvaluation[]       @relation("SelfEvaluationAuthor")
   cesadStageOpinions       CesadStageOpinion[]    @relation("CesadStageOpinionAuthor")
+  cesadCommissionMembers   CesadCommissionMember[]
 }
 
 model EvaluationProcess {
@@ -282,6 +288,7 @@ model CesadCommission {
   effectiveStartDate DateTime
   effectiveEndDate   DateTime?
   acts               CesadCommissionAct[]
+  members            CesadCommissionMember[]
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
 
@@ -304,10 +311,32 @@ model CesadCommissionAct {
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
   commission        CesadCommission         @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  members           CesadCommissionMember[]
 
   @@index([commissionId])
   @@index([actType])
   @@index([year])
+}
+
+model CesadCommissionMember {
+  id         String                       @id @default(cuid())
+  commissionId String
+  userId     String
+  actId      String?
+  roleType   CesadCommissionMemberRoleType
+  startDate  DateTime
+  endDate    DateTime?
+  createdAt  DateTime                     @default(now())
+  updatedAt  DateTime                     @updatedAt
+  commission CesadCommission              @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user       User                         @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  act        CesadCommissionAct?          @relation(fields: [actId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([commissionId])
+  @@index([userId])
+  @@index([actId])
+  @@index([roleType])
+  @@index([startDate])
 }
 
 model SignatureRecord {

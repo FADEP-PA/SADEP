@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -115,6 +115,48 @@ export async function disposeTestContext(context: TestContext): Promise<void> {
   if (existsSync(context.databaseFile)) {
     rmSync(context.databaseFile);
   }
+}
+
+export function applyCesadCommissionMemberDatabaseConstraints(): void {
+  const backendRoot = path.resolve(__dirname, '../../..');
+  const migrationFile = path.join(
+    backendRoot,
+    'prisma',
+    'migrations',
+    '20260423153000_add_cesad_commission_member',
+    'migration.sql',
+  );
+  const migrationSql = readFileSync(migrationFile, 'utf-8');
+  const customConstraintsMatch = migrationSql.match(
+    /-- CESAD_COMMISSION_MEMBER_CONSTRAINTS_BEGIN([\s\S]*?)-- CESAD_COMMISSION_MEMBER_CONSTRAINTS_END/,
+  );
+
+  if (!customConstraintsMatch) {
+    throw new Error('CESAD commission member custom constraints block was not found in migration');
+  }
+
+  const customConstraintsSql = customConstraintsMatch[1]?.trim();
+  if (!customConstraintsSql) {
+    throw new Error('CESAD commission member custom constraints SQL is empty');
+  }
+
+  execFileSync(
+    process.execPath,
+    [
+      require.resolve('prisma/build/index.js'),
+      'db',
+      'execute',
+      '--stdin',
+      '--schema',
+      'prisma/schema.prisma',
+    ],
+    {
+      cwd: backendRoot,
+      env: process.env,
+      input: customConstraintsSql,
+      stdio: ['pipe', 'ignore', 'ignore'],
+    },
+  );
 }
 
 export async function createUser(
