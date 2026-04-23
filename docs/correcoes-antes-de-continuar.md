@@ -137,6 +137,22 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - rodar testes de assinatura e fluxo documental;
     - confirmar que a mesma assinatura não pode ser criada duas vezes.
 
+- [x] Separar histórico processual público de eventos documentais
+  - Observação: o histórico público passou a exigir correspondência semântica entre `eventType` e `metadata.action`, e eventos com `metadata.origin === 'PROCESS_DOCUMENT'` deixaram de entrar na timeline pública.
+  - Problema: o histórico público de workflow filtrava eventos de audit trail de forma ampla e incorporava eventos documentais que não representavam passos processuais públicos.
+  - Arquivos principais:
+    - `apps/backend/src/processes/processes.service.ts`
+    - `apps/backend/src/processes/workflow-catalog.ts`
+    - `apps/backend/src/application/documents/process-documents.service.ts`
+  - Fazer:
+    - separar eventos processuais públicos de eventos documentais internos na leitura pública;
+    - refinar o critério semântico do histórico;
+    - preservar o audit trail interno completo.
+  - Validar:
+    - `npm run typecheck --workspace @aep-pa/backend`
+    - `npm run test --workspace @aep-pa/backend`
+    - confirmar que `SIGNATURE_REQUESTED` documental não aparece mais no `/processes/:id/history`.
+
 ---
 
 ## Alinhamento Frontend/Backend
@@ -144,12 +160,12 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 ### Crítico
 
 - [x] Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
-  - Observação: a assinatura do servidor deixou de depender de `availableActions` e de `SIGN_EVALUATION`; a UI passou a usar `documentContext.internSignaturePending` como fonte principal e a ação passou a chamar `POST /processes/:id/supervisor-evaluation/sign`, alinhando o fluxo ao contrato documental real do backend.
-  - Problema: o frontend do servidor só libera a ação se `availableActions` contiver `SIGN_EVALUATION`, mas essa transição não existe no catálogo público; além disso, a UI envia `POST /processes/:id/workflow/transition`, enquanto a assinatura real está em endpoint documental dedicado.
+  - Observação: a assinatura do servidor deixou de depender de `availableActions` e de `SIGN_EVALUATION`; a UI passou a usar `documentContext.internSignaturePending` como fonte principal; a ação passou a chamar `POST /processes/:id/supervisor-evaluation/sign`; o fluxo foi alinhado ao contrato documental real do backend.
+  - Problema: o frontend do servidor só liberava a ação se `availableActions` contivesse `SIGN_EVALUATION`, mas essa transição não existe no catálogo público; além disso, a UI enviava `POST /processes/:id/workflow/transition`, enquanto a assinatura real estava em endpoint documental dedicado.
   - Impacto:
-    - botão tende a nunca habilitar;
-    - se forçado, usa a rota errada;
-    - jornada do servidor estagiário fica quebrada.
+    - botão tendia a nunca habilitar;
+    - se forçado, usava a rota errada;
+    - jornada do servidor estagiário ficava quebrada.
   - Arquivos principais:
     - `apps/frontend/src/features/process/components/intern-server-workspace.tsx`
     - `apps/frontend/src/shared/api/services/processes-service.ts`
@@ -166,11 +182,11 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - o fluxo funciona com o backend real.
 
 - [x] Alinhar snapshot/tela da chefia com a política real de acesso do backend
-  - Observação: a tela da chefia deixou de usar `/processes/:id/workflow` e `/processes/:id/history`; passou a usar `GET /processes/:id/supervisor-evaluation/workspace`; o backend passou a devolver snapshot seguro com `process.status`, `supervisorEvaluation`, `documentContext` e flags operacionais; supervisor continua bloqueado nos endpoints públicos; os cards dependentes de histórico público e de `availableActions` foram removidos/desativados nessa workspace.
-  - Problema: a workspace da chefia consulta `/processes/:id/workflow` e `/processes/:id/history`, mas o backend bloqueia supervisor nesses endpoints públicos desde a BE-SEC-01.
+  - Observação: a tela da chefia deixou de usar `/workflow` e `/history`; passou a usar `GET /processes/:id/supervisor-evaluation/workspace`; o backend passou a devolver snapshot seguro com `process.status`, `supervisorEvaluation`, `documentContext` e flags operacionais; supervisor continua bloqueado nos endpoints públicos; os cards dependentes de histórico público e de `availableActions` foram removidos/desativados nessa workspace.
+  - Problema: a workspace da chefia consultava `/processes/:id/workflow` e `/processes/:id/history`, mas o backend bloqueia supervisor nesses endpoints públicos desde a BE-SEC-01.
   - Impacto:
-    - a tela da chefia pode falhar antes de abrir a avaliação;
-    - a UI depende de endpoints que a política real do backend não permite.
+    - a tela da chefia podia falhar antes de abrir a avaliação;
+    - a UI dependia de endpoints que a política real do backend não permite.
   - Arquivos principais:
     - `apps/frontend/src/features/process/components/supervisor-evaluation-workspace.tsx`
     - `apps/frontend/src/shared/api/services/processes-service.ts`
@@ -187,10 +203,10 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 
 - [x] Alinhar matriz de permissões entre menu, guards e backend
   - Observação: menu e guards do frontend passaram a refletir a matriz real do backend; `ADMIN` deixou de ver áreas operacionais sem suporte backend real; workspaces do servidor e da chefia foram restringidas aos perfis efetivamente suportados; `/processos` foi removida dos perfis que a tela atual ainda não suporta com segurança.
-  - Problema: menu, guards locais e backend contam histórias diferentes sobre o que `ADMIN` e outros perfis podem realmente acessar.
+  - Problema: menu, guards locais e backend contavam histórias diferentes sobre o que `ADMIN` e outros perfis podem realmente acessar.
   - Impacto:
     - navegação enganosa;
-    - rotas que prometem suporte e devolvem 403;
+    - rotas que prometiam suporte e devolviam 403;
     - experiência contraditória entre frontend e backend.
   - Arquivos principais:
     - `apps/frontend/src/shared/rbac/menu.ts`
@@ -207,21 +223,28 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - o frontend não oferece navegação que a API rejeita sistematicamente;
     - a política de acesso fica coerente entre UI e backend.
 
-- [ ] Separar histórico processual público de eventos documentais
-  - Problema: o histórico público de workflow filtra por `eventType` de forma ampla e incorpora eventos documentais que não representam passos processuais públicos.
+- [ ] Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend
+  - Problema: o backend já possui fluxo de autoavaliação e assinatura da autoavaliação pela chefia, inclusive com regras que podem levar o processo à CESAD, mas o frontend ainda não expõe esse caminho de forma operacional.
   - Impacto:
-    - histórico duplicado ou semanticamente incorreto;
-    - timeline pública contaminada;
-    - frontend recebe rastreabilidade confusa.
+    - o processo pode travar antes da CESAD;
+    - o fluxo ponta a ponta não fica fechado na interface;
+    - as estabilizações anteriores não se convertem em uso operacional completo.
   - Arquivos principais:
-    - `apps/backend/src/processes/processes.service.ts`
-    - `apps/backend/src/processes/workflow-catalog.ts`
+    - `apps/backend/src/processes/self-evaluations.service.ts`
+    - `apps/backend/src/processes/self-evaluations.controller.ts`
     - `apps/backend/src/application/documents/process-documents.service.ts`
+    - `apps/frontend/src/shared/api/services/processes-service.ts`
+    - `apps/frontend/src/features/process/components/intern-server-workspace.tsx`
+    - `apps/frontend/src/features/process/components/supervisor-evaluation-workspace.tsx`
   - Fazer:
-    - separar eventos processuais públicos de eventos documentais internos;
-    - ajustar a leitura do histórico público com critério semântico mais preciso.
+    - expor no frontend o fluxo real de autoavaliação do servidor;
+    - expor no frontend a assinatura da autoavaliação pela chefia;
+    - alinhar a UI aos endpoints e regras reais já existentes no backend;
+    - garantir continuidade operacional até a CESAD.
   - Validar:
-    - `/processes/:id/history` deixa de exibir eventos documentais como se fossem passos públicos de workflow.
+    - o servidor consegue operar sua autoavaliação pela interface;
+    - a chefia consegue operar a assinatura da autoavaliação pela interface;
+    - o fluxo deixa de travar antes da CESAD por ausência de UI.
 
 - [ ] Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
   - Problema: o read model consolidado da CESAD espera uma família de eventos, mas o serviço de parecer de etapa grava outra família, causando consolidado incompleto e warnings incorretos.
@@ -231,13 +254,31 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - inconsistência entre persistência e leitura.
   - Arquivos principais:
     - `apps/backend/src/processes/cesad-stage-read.service.ts`
-    - `apps/backend/src/processes/cesad-stage-opinions/cesad-stage-opinions.service.ts`
+    - `apps/backend/src/processes/cesad-stage-opinions.service.ts`
     - enums/eventos relacionados
   - Fazer:
     - alinhar o read model aos eventos realmente persistidos;
     - ou alinhar a persistência ao conjunto esperado, conforme a solução mínima mais segura.
   - Validar:
     - a leitura consolidada da CESAD reflete corretamente os eventos realmente emitidos pelo backend.
+
+### Média
+
+- [ ] Ajustar atalho global para `/processos` na home autenticada
+  - Problema: a home autenticada ainda promete o atalho “Abrir processos” para perfis que não deveriam acessar a tela atual com segurança.
+  - Impacto:
+    - UX contraditória com a matriz já corrigida no menu/guards;
+    - possibilidade de cair em rota que o fluxo atual não suporta de forma consistente.
+  - Arquivos principais:
+    - `apps/frontend/src/app/(authenticated)/inicio/page.tsx`
+    - `apps/frontend/src/features/process/components/process-workspace.tsx`
+    - `apps/frontend/src/shared/rbac/menu.ts`
+  - Fazer:
+    - alinhar o atalho global da home à mesma matriz real do frontend/backend;
+    - evitar promessa residual de `/processos` fora dos perfis hoje compatíveis.
+  - Validar:
+    - checar visualmente os atalhos por perfil;
+    - confirmar coerência com menu e guards atuais.
 
 ---
 
@@ -310,27 +351,10 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 
 ## Frontend
 
-### Crítico
-
-- [ ] Corrigir sessão stale no frontend
-  - Problema: quando a revalidação falha com erro diferente de `401`, a aplicação pode continuar tratando a sessão como autenticada.
-  - Arquivos principais:
-    - `apps/frontend/src/shared/auth/auth-context.tsx`
-    - `apps/frontend/src/shared/api/http-client.ts`
-    - `apps/frontend/src/shared/auth/auth-guard.tsx`
-  - Fazer:
-    - definir comportamento correto para erro de rede, timeout e erro 5xx;
-    - não manter autenticação local sem validação real;
-    - exibir feedback coerente quando o backend estiver indisponível.
-  - Validar:
-    - testar manualmente com backend desligado;
-    - testar manualmente com token inválido;
-    - `npm run build --workspace @aep-pa/frontend`
-
-### Médio
+### Alta
 
 - [ ] Adicionar trilha mínima de qualidade no frontend
-  - Problema: o frontend só tem `dev`, `build` e `start`, sem `test`, `lint` ou `typecheck` explícito no pacote.
+  - Problema: o frontend ainda não possui `typecheck`, `lint` ou `test` expostos oficialmente no pacote, apesar de o typecheck manual já passar.
   - Arquivos principais:
     - `apps/frontend/package.json`
     - `apps/frontend/tsconfig.json`
@@ -343,17 +367,18 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
     - rodar os novos scripts;
     - `npm run build --workspace @aep-pa/frontend`
 
-### Baixo
+### Média
 
-- [ ] Revisar dependências de UX/autenticação do frontend após a correção de sessão
-  - Problema: depois de corrigir o bootstrap da sessão, pode ser necessário ajustar mensagens, redirecionamentos e estados visuais.
+- [ ] Revisar dependências de UX/autenticação do frontend após os ajustes de sessão
+  - Problema: embora a sessão stale tenha perdido urgência crítica, ainda pode ser necessário revisar mensagens, redirecionamentos e estados visuais.
   - Arquivos principais:
     - `apps/frontend/src/shared/auth/auth-context.tsx`
     - `apps/frontend/src/shared/ui/*`
     - `apps/frontend/src/features/auth/components/login-page.tsx`
   - Fazer:
     - revisar estados de erro e loading;
-    - garantir que não existam loops ou mensagens contraditórias.
+    - garantir que não existam loops ou mensagens contraditórias;
+    - avaliar se a home e os atalhos respeitam o estado real da sessão.
   - Validar:
     - teste manual completo do login, logout, expiração e indisponibilidade do backend.
 
@@ -364,7 +389,7 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 ### Crítico
 
 - [ ] Atualizar dependências com vulnerabilidades altas
-  - Problema: `npm audit` apontou vulnerabilidades `high` em dependências importantes, incluindo NestJS e dependências transitivas.
+  - Problema: `npm audit --audit-level=high` apontou vulnerabilidades relevantes, incluindo 1 crítica em `next` e 9 altas em dependências importantes.
   - Arquivos principais:
     - `package.json`
     - `package-lock.json`
@@ -423,18 +448,23 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 - [x] Backend / Crítico / Corrigir o `typecheck`
 - [x] Backend / Crítico / Restabelecer a execução da suíte de testes
 - [x] Backend / Crítico / Alinhar a estratégia de testes do backend
+- [x] Backend / Crítico / Separar histórico processual público de eventos documentais
 
 - [x] Alinhamento / Crítico / Alinhar fluxo de assinatura do servidor estagiário entre frontend e backend
 - [x] Alinhamento / Crítico / Alinhar snapshot/tela da chefia com a política real de acesso do backend
 - [x] Alinhamento / Alta / Alinhar matriz de permissões entre menu, guards e backend
-- [ ] Alinhamento / Alta / Separar histórico processual público de eventos documentais
-- [ ] Alinhamento / Alta / Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
 
-- [ ] Frontend / Crítico / Corrigir sessão stale
+- [ ] Alinhamento / Alta / Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend
+- [ ] Alinhamento / Alta / Alinhar leitura consolidada da CESAD aos eventos realmente persistidos
+- [ ] Alinhamento / Médio / Ajustar atalho global para `/processos` na home autenticada
+
 - [ ] Backend / Médio / Corrigir regra de retificação
 - [ ] Backend / Médio / Remover credenciais previsíveis de desenvolvimento
 - [ ] Backend / Médio / Revisar estratégia de autenticação web
-- [ ] Frontend / Médio / Adicionar trilha mínima de qualidade
+
+- [ ] Frontend / Alta / Adicionar trilha mínima de qualidade
+- [ ] Frontend / Média / Revisar dependências de UX/autenticação após os ajustes de sessão
+
 - [ ] Infraestrutura / Crítico / Atualizar dependências vulneráveis
 - [ ] Backend / Baixo / Migrar configuração do Prisma
 - [ ] Infraestrutura / Médio / Revisar estrutura do monorepo
@@ -447,4 +477,5 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 - [ ] Não iniciar novas features de domínio antes de concluir pelo menos os itens críticos de backend, frontend e alinhamento operacional.
 - [ ] O item de retificação deve vir depois da integridade de assinaturas.
 - [ ] O item de vulnerabilidades deve ser feito com os testes e validações já estabilizados.
-- [ ] A modelagem institucional da CESAD e a evolução de assinatura colegiada devem entrar apenas após a estabilização mínima de segurança, qualidade e alinhamento entre frontend e backend.
+- [ ] A modelagem institucional da CESAD e a evolução de assinatura colegiada devem entrar apenas após a estabilização mínima de segurança, qualidade e fluxo operacional ponta a ponta.
+- [ ] O item de sessão stale deixou de ser bloqueio crítico imediato, mas sua revisão de UX/autenticação ainda permanece útil em fase posterior.

@@ -1,7 +1,7 @@
 # AEP-PA Backend Implementation Tracker
 
 **Status:** Controle operacional das implementações do backend  
-**Versão:** 1.4.0  
+**Versão:** 1.5.0  
 **Data:** 2026-04-22  
 **Objetivo:** Registrar, controlar e acompanhar as implementações do backend do AEP-PA com suporte a execução por agente de IA, revisão técnica e aprovação humana.
 
@@ -80,11 +80,14 @@ A ordem de trabalho foi reorganizada segundo os seguintes princípios:
 1. **Segurança e autorização primeiro**
 2. **Backend testável antes de novas features**
 3. **Alinhamento real entre frontend e backend antes de expansões de domínio**
-4. **Hardening operacional antes de expansão maior**
-5. **Base institucional da CESAD antes da assinatura colegiada**
-6. **Evolução documental e de assinatura do parecer CESAD depois da base de domínio**
+4. **Fluxo ponta a ponta operacional antes do refinamento de read models secundários**
+5. **Hardening operacional antes de expansão maior**
+6. **Base institucional da CESAD antes da assinatura colegiada**
+7. **Evolução documental e de assinatura do parecer CESAD depois da base de domínio**
 
-Essa ordem reduz risco de regressão e evita construir novas regras sobre uma base insegura, inconsistente ou desalinhada entre interface e API. Os achados mais recentes apontaram que os bloqueios atuais mais urgentes estão em contratos frontend/backend e semântica operacional, não mais em typecheck ou suíte quebrada. 
+Essa ordem reduz risco de regressão e evita construir novas regras sobre uma base insegura, inconsistente ou desalinhada entre interface e API.
+
+A última varredura mostrou que o projeto está mais estável do que os documentos indicavam: typecheck e suíte continuam íntegros, o histórico público já foi saneado, e os principais desalinhamentos críticos recentes estão migrando do bloco “infra/saneamento” para o bloco “fluxo operacional ponta a ponta”. Por isso, a próxima prioridade deixou de ser apenas hardening técnico e passou a ser o fechamento do ciclo real até a CESAD. :contentReference[oaicite:0]{index=0}
 
 ---
 
@@ -94,15 +97,18 @@ Essa ordem reduz risco de regressão e evita construir novas regras sobre uma ba
 **BLOCO 2A — Alinhamento Frontend/Backend**
 
 ## Task ativa
-**AUDIT-01 — Separar histórico processual público de eventos documentais**
+**ALIGN-04 — Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend**
 
 ## Contexto atual
-Após o saneamento do bloco crítico de segurança e da estabilização técnica do backend, a prioridade operacional passou a ser o alinhamento entre frontend e backend nos fluxos reais de uso.
+Após o saneamento do histórico público e o alinhamento das workspaces de servidor, chefia e permissões de navegação, a próxima prioridade prática passou a ser fechar o fluxo operacional até a CESAD.
 
-Com a ALIGN-01, a ALIGN-02 e a ALIGN-03 aprovadas, os achados mais urgentes remanescentes indicam:
+A varredura mais recente indicou que:
 
-- histórico público de workflow contaminado por eventos documentais;
-- leitura consolidada da CESAD desalinhada dos eventos efetivamente persistidos. :contentReference[oaicite:2]{index=2}
+- o backend já possui fluxo de autoavaliação e assinatura da autoavaliação pela chefia;
+- o frontend ainda não expõe esse caminho de forma operacional;
+- isso pode travar o processo antes da CESAD, mesmo com os demais alinhamentos já concluídos;
+- o item “sessão stale” perdeu urgência como crítico;
+- surgiu também um ajuste residual de UX/RBAC na home autenticada, que ainda promete `/processos` para perfis que a tela atual não suporta com segurança. :contentReference[oaicite:1]{index=1}
 
 ---
 
@@ -383,12 +389,12 @@ Objetivo: corrigir desalinhamentos reais de contrato entre frontend e backend qu
 - **Dependências:** saneamento do bloco crítico de backend concluído
 
 **Problema**  
-O frontend do servidor estagiário depende de `availableActions` com `SIGN_EVALUATION` e tenta assinar via `POST /processes/:id/workflow/transition`, mas a assinatura real está exposta por endpoint documental dedicado. Isso indica contrato quebrado entre frontend e backend.
+O frontend do servidor estagiário dependia de `availableActions` com `SIGN_EVALUATION` e tentava assinar via `POST /processes/:id/workflow/transition`, mas a assinatura real está exposta por endpoint documental dedicado.
 
 **Impacto**
-- botão de assinatura tende a não habilitar
-- quando forçado, usa rota errada
-- jornada do servidor fica quebrada mesmo com autenticação e build funcionando
+- botão de assinatura tendia a não habilitar
+- quando forçado, usava rota errada
+- jornada do servidor ficava quebrada mesmo com autenticação e build funcionando
 
 **Arquivos principais**
 - `apps/frontend/src/features/process/components/intern-server-workspace.tsx`
@@ -415,7 +421,7 @@ O frontend do servidor estagiário depende de `availableActions` com `SIGN_EVALU
 - o fluxo funciona com o backend real
 
 **Observações**
-- a assinatura do servidor passou a usar o endpoint documental `POST /processes/:id/supervisor-evaluation/sign`
+- a assinatura do servidor passou a usar o endpoint documental correto
 - a UI passou a decidir disponibilidade com base em `documentContext.internSignaturePending` e `workflow.status === AGUARDANDO_ASSINATURA`
 - o fluxo não depende mais de `SIGN_EVALUATION` como transição pública
 
@@ -431,10 +437,10 @@ O frontend do servidor estagiário depende de `availableActions` com `SIGN_EVALU
 - **Dependências:** ALIGN-01 recomendada antes
 
 **Problema**  
-A tela principal da chefia consulta endpoints públicos (`/workflow` e `/history`) que o backend bloqueia intencionalmente para supervisor desde a BE-SEC-01.
+A tela principal da chefia consultava endpoints públicos (`/workflow` e `/history`) que o backend bloqueia intencionalmente para supervisor desde a BE-SEC-01.
 
 **Impacto**
-- a workspace da chefia pode falhar antes de abrir a avaliação
+- a workspace da chefia podia falhar antes de abrir a avaliação
 - desalinhamento entre UI e política real de segurança
 - risco de remendos incorretos no frontend
 
@@ -445,7 +451,7 @@ A tela principal da chefia consulta endpoints públicos (`/workflow` e `/history
 
 **Escopo**
 - separar o snapshot da chefia dos endpoints públicos bloqueados
-- ou criar/readaptar um caminho compatível com a política real do backend
+- criar/adaptar um caminho compatível com a política real do backend
 - preservar as decisões de BE-SEC-01 e BE-SEC-02
 
 **Fora do escopo**
@@ -458,9 +464,9 @@ A tela principal da chefia consulta endpoints públicos (`/workflow` e `/history
 - não há regressão das garantias de autorização já implementadas
 
 **Observações**
-- a workspace da chefia passou a usar o endpoint seguro dedicado `GET /processes/:id/supervisor-evaluation/workspace`
-- supervisor permanece bloqueado nos endpoints públicos de workflow, histórico e transição
-- as flags operacionais da chefia passaram a ser calculadas no backend
+- a workspace da chefia passou a usar endpoint seguro dedicado
+- supervisor permanece bloqueado nos endpoints públicos
+- as flags operacionais passaram a ser calculadas no backend
 - os cards dependentes de histórico público e `availableActions` foram removidos/desativados nessa tela
 
 ---
@@ -475,11 +481,11 @@ A tela principal da chefia consulta endpoints públicos (`/workflow` e `/history
 - **Dependências:** ALIGN-01 e ALIGN-02 recomendadas antes
 
 **Problema**  
-Menu, guards locais e backend contam histórias diferentes sobre o que `ADMIN` e outros perfis podem realmente acessar.
+Menu, guards locais e backend contavam histórias diferentes sobre o que `ADMIN` e outros perfis podiam realmente acessar.
 
 **Impacto**
 - navegação enganosa
-- rotas que prometem suporte e devolvem 403
+- rotas que prometiam suporte e devolviam 403
 - experiência contraditória para perfis administrativos
 
 **Arquivos principais**
@@ -505,28 +511,77 @@ Menu, guards locais e backend contam histórias diferentes sobre o que `ADMIN` e
 - a política de acesso para `ADMIN` e demais perfis fica coerente entre UI e backend
 
 **Observações**
-- menu e guardas foram alinhados à matriz real do backend
+- menu e guards foram alinhados à matriz real do backend
 - `ADMIN` deixou de aparecer como operador de áreas sem suporte backend
 - `/processos` foi restringida aos perfis hoje compatíveis com a tela atual
 
 ---
 
-## AUDIT-01 — Separar histórico processual público de eventos documentais
+## ALIGN-04 — Alinhar fluxo de autoavaliação do servidor e assinatura da autoavaliação pela chefia no frontend
 
 - **Status:** ACTIVE
-- **Prioridade:** Alta
+- **Prioridade:** Crítica
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
 - **Commit associado:** —
-- **Dependências:** ALIGN-01 a ALIGN-03 podem ocorrer antes, mas não são estritamente bloqueantes
+- **Dependências:** ALIGN-01, ALIGN-02 e ALIGN-03 concluídas antes
 
 **Problema**  
-O histórico público de workflow está sendo filtrado por `eventType` de forma ampla e acaba incorporando eventos documentais que não representam passos processuais públicos.
+O backend já expõe o fluxo de autoavaliação do servidor e de assinatura da autoavaliação pela chefia, inclusive com regras que podem levar o processo à CESAD, mas o frontend ainda não oferece esse caminho operacional.
+
+**Impacto**
+- o processo pode travar antes da CESAD
+- o fluxo ponta a ponta não fica fechado na interface
+- a estabilização anterior não se converte em uso operacional completo
+
+**Arquivos principais**
+- `apps/backend/src/processes/self-evaluations.service.ts`
+- `apps/backend/src/processes/self-evaluations.controller.ts`
+- `apps/backend/src/application/documents/process-documents.service.ts`
+- `apps/frontend/src/shared/api/services/processes-service.ts`
+- `apps/frontend/src/features/process/components/intern-server-workspace.tsx`
+- `apps/frontend/src/features/process/components/supervisor-evaluation-workspace.tsx`
+
+**Escopo**
+- expor no frontend o fluxo real de autoavaliação do servidor
+- expor no frontend a assinatura da autoavaliação pela chefia
+- alinhar a UI aos endpoints e regras reais já existentes no backend
+- garantir continuidade operacional até a CESAD
+
+**Fora do escopo**
+- redesign completo das workspaces
+- mudanças de modelagem CESAD
+- revisão ampla de autenticação
+- migrações de banco
+- refatoração geral do fluxo documental
+
+**Critério de conclusão**
+- o servidor consegue operar sua autoavaliação pela interface
+- a chefia consegue operar a assinatura da autoavaliação pela interface
+- o fluxo deixa de travar antes da CESAD por ausência de UI
+
+**Observações**
+- criada a partir da última varredura geral
+- tem prioridade superior a `CESAD-READ-01` porque fecha o ciclo operacional ponta a ponta antes do refinamento do consolidado CESAD
+
+---
+
+## AUDIT-01 — Separar histórico processual público de eventos documentais
+
+- **Status:** DONE
+- **Prioridade:** Alta
+- **Responsável atual:** —
+- **Auditoria necessária:** Sim
+- **Commit associado:** `fix(backend): filter public workflow history by semantic transition metadata`
+- **Dependências:** ALIGN-01 a ALIGN-03 podem ocorrer antes, mas não eram estritamente bloqueantes
+
+**Problema**  
+O histórico público de workflow estava sendo filtrado por `eventType` de forma ampla e incorporava eventos documentais que não representavam passos processuais públicos.
 
 **Impacto**
 - histórico duplicado ou semanticamente incorreto
 - rastreabilidade pública contaminada
-- frontend recebe timeline confusa
+- frontend recebia timeline confusa
 
 **Arquivos principais**
 - `apps/backend/src/processes/processes.service.ts`
@@ -541,9 +596,16 @@ O histórico público de workflow está sendo filtrado por `eventType` de forma 
 - refatoração completa do sistema de auditoria
 - redesign de todos os enums de evento, salvo o mínimo necessário
 - revisão de todo o catálogo de documentos
+- ajuste do read model CESAD
 
 **Critério de conclusão**
 - `/processes/:id/history` deixa de exibir eventos documentais como se fossem passos públicos de workflow
+
+**Observações**
+- o histórico público passou a exigir correspondência semântica entre `eventType` e `metadata.action`
+- eventos com `metadata.origin === 'PROCESS_DOCUMENT'` foram excluídos da timeline pública
+- o audit trail interno permaneceu intacto
+- não houve necessidade de schema, migration ou mudança de enum compartilhado
 
 ---
 
@@ -554,7 +616,7 @@ O histórico público de workflow está sendo filtrado por `eventType` de forma 
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
 - **Commit associado:** —
-- **Dependências:** nenhuma rígida
+- **Dependências:** ALIGN-04 recomendada antes
 
 **Problema**  
 O read model consolidado da CESAD espera uma família de eventos, mas o serviço de parecer de etapa grava outra família, causando consolidado incompleto e warnings incorretos.
@@ -596,7 +658,7 @@ Objetivo: reduzir riscos operacionais e evitar padrões inseguros se propagando.
 - **Responsável atual:** —
 - **Auditoria necessária:** Não obrigatória
 - **Commit associado:** —
-- **Dependências:** nenhuma rígida, mas priorização posterior ao alinhamento frontend/backend
+- **Dependências:** nenhuma rígida, mas priorização posterior ao fechamento do fluxo operacional principal
 
 **Problema**
 Credenciais e segredos previsíveis de desenvolvimento estão versionados e documentados.
@@ -650,6 +712,10 @@ A estratégia atual com JWT manual e armazenamento em `localStorage/sessionStora
 
 **Critério de conclusão**
 - decisão arquitetural documentada para evolução futura da sessão web
+
+**Observações**
+- a última varredura indicou que o item “sessão stale” perdeu urgência como crítico
+- ainda há mérito arquitetural na revisão da estratégia de autenticação, mas ela já não é o principal bloqueio operacional imediato
 
 ---
 
@@ -949,25 +1015,26 @@ Eles não devem ser reabertos sem motivo técnico real.
 7. `ALIGN-02`
 8. `ALIGN-03`
 9. `AUDIT-01`
-10. `CESAD-READ-01`
+10. `ALIGN-04`
+11. `CESAD-READ-01`
 
-11. `BE-OPS-01`
-12. `BE-ARCH-01`
+12. `BE-OPS-01`
+13. `BE-ARCH-01`
 
-13. `BE-DOM-01`
-14. `BE-DOM-02`
-15. `BE-DOM-03`
-16. `BE-DOM-04`
+14. `BE-DOM-01`
+15. `BE-DOM-02`
+16. `BE-DOM-03`
+17. `BE-DOM-04`
 
-17. `BE-STR-01`
+18. `BE-STR-01`
 
-18. `BE-FLOW-10A`
-19. `BE-FLOW-10B`
-20. `BE-FLOW-10C`
+19. `BE-FLOW-10A`
+20. `BE-FLOW-10B`
+21. `BE-FLOW-10C`
 
-21. `BE-TECH-01`
-22. `BE-TECH-02`
-23. `BE-TECH-03`
+22. `BE-TECH-01`
+23. `BE-TECH-02`
+24. `BE-TECH-03`
 
 ---
 
