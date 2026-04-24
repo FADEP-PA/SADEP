@@ -117,7 +117,7 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 **BLOCO 3 — Hardening Operacional e Dívida Técnica Imediata**
 
 ## Task ativa
-**BE-OPS-02 — Estabilizar `prisma generate` no ambiente Windows**
+**BE-OPS-04 — Definir build e start de produção do backend**
 
 ## Contexto atual
 A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
@@ -126,12 +126,14 @@ Com isso, o bloqueio estrutural de domínio para congelamento dos signatários e
 
 O bootstrap determinístico local do backend foi aprovado na `BE-OPS-03`, consolidando `npm run backend:bootstrap` como fluxo oficial de preparo local com `prisma generate`, `db:prepare:local`, `db push --skip-generate`, seed e `db:check`.
 
-O foco ativo do roadmap backend permanece na estabilização operacional. A próxima task autorizada é a estabilização do `prisma generate` no ambiente Windows, considerando problemas já registrados como:
-- instabilidade de `prisma generate` em ambiente Windows;
-- ausência de fluxo consolidado de build/start de produção;
-- fragilidades nos pacotes compartilhados do monorepo.  
+A `BE-OPS-02` foi aprovada e mitigou a instabilidade operacional do `prisma generate` no Windows com uma guarda prévia que detecta processos `node.exe` relacionados ao backend, testes ou Prisma antes da tentativa de atualização do engine nativo.
 
-Esses itens permanecem no backlog backend explícito e agora orientam a prioridade operacional da `BE-OPS-02`.
+O foco ativo do roadmap backend permanece na estabilização operacional. A próxima task autorizada é a definição de build e start de produção do backend, considerando problemas já registrados como:
+- ausência de fluxo consolidado de build/start de produção;
+- fragilidades nos pacotes compartilhados do monorepo;
+- configuração Prisma depreciada ainda pendente em task própria.
+
+Esses itens permanecem no backlog backend explícito e agora orientam a prioridade operacional da `BE-OPS-04`.
 
 ---
 
@@ -355,11 +357,11 @@ Objetivo: reduzir riscos operacionais e débitos técnicos importantes do backen
 
 ## BE-OPS-02 — Estabilizar `prisma generate` no ambiente Windows
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `chore(backend): guard prisma generate on windows`
 - **Dependências:** Nenhuma rígida
 
 **Objetivo**
@@ -378,6 +380,12 @@ Remover a fragilidade operacional observada no fluxo de geração do Prisma Clie
 **Observações**
 - o problema foi validado no documento transversal do projeto
 - esse item trata lock operacional do engine, não o problema histórico de migration
+- foi adicionada guarda operacional antes de `prisma generate` no Windows
+- o generate agora falha cedo com orientação útil quando há lock provável por processo `node.exe` relacionado ao backend, testes ou Prisma
+- `backend:bootstrap` permaneceu como fluxo oficial e continua chamando `prisma generate`
+- o guard lista PIDs e command lines relevantes, mas não mata processos automaticamente e não remove arquivos `.tmp`
+- a validação incluiu cenário normal de `prisma:generate`, `backend:bootstrap`, validação negativa com processo Node relacionado, typecheck e suíte de testes do backend
+- o typecheck padrão do backend não cobre automaticamente scripts operacionais; a validação do guard ficou apoiada no fluxo real e na simulação negativa guiada
 
 ---
 
@@ -415,7 +423,7 @@ Eliminar a dependência de preparo manual e implícito do banco para que o backe
 
 ## BE-OPS-04 — Definir build e start de produção do backend
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Média
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim

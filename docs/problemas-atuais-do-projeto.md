@@ -45,6 +45,8 @@ Este documento **não substitui** o tracker backend.
 
 - `npx prisma validate --schema prisma/schema.prisma` → passou
 - `npm run prisma:generate --workspace @aep-pa/backend` → passou
+- `npm run backend:bootstrap` → passou
+- validação negativa do guard do `prisma generate` no Windows com processo Node relacionado ao backend → bloqueou com exit code 1 e mensagem guiada
 - validação controlada da migration nova sobre esquema legado mínimo do `User` → passou
 - `npm run typecheck --workspace @aep-pa/backend` → passou
 - `npm run test --workspace @aep-pa/backend` → passou
@@ -61,30 +63,32 @@ Este documento **não substitui** o tracker backend.
 - a `BE-STR-01` foi aprovada e concluiu a modelagem de signatários esperados do parecer CESAD;
 - o bloqueio estrutural do snapshot de signatários do parecer foi removido;
 - o bootstrap determinístico local do backend foi aprovado e passou a ter fluxo oficial via `npm run backend:bootstrap`;
-- o principal problema operacional atual no backend passa a se concentrar na estabilização do `prisma generate` em ambiente Windows e nas demais frentes técnicas ainda abertas;
+- a `BE-OPS-02` foi aprovada e mitigou a instabilidade do `prisma generate` em ambiente Windows com guarda operacional específica;
+- o principal problema operacional atual no backend passa a se concentrar na ausência de fluxo consolidado de build/start de produção e nas demais frentes técnicas ainda abertas;
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
-- o roadmap backend segue corretamente com a task ativa `BE-OPS-02`, agora com foco no `prisma generate` em ambiente Windows.  
+- o roadmap backend segue corretamente com a task ativa `BE-OPS-04`, agora com foco em build e start de produção do backend.  
 
 ---
 
 # Frentes ativas e dependências estruturais
 
 ## Frente ativa do backend
-**BE-OPS-02 — Estabilizar `prisma generate` no ambiente Windows**
+**BE-OPS-04 — Definir build e start de produção do backend**
 
 ### Motivo
-A próxima frente do backend permanece operacional: estabilizar a geração do Prisma Client em ambiente Windows, reduzindo falhas por lock do engine nativo e falso positivo de ambiente quebrado.
+A próxima frente do backend permanece operacional: definir um fluxo claro de build compilada e start de produção, reduzindo a dependência atual de execução via `ts-node` para contextos fora do desenvolvimento local.
 
 ### Situação atual
 Hoje o sistema:
 - já possui identidade canônica e snapshot de signatários esperados do parecer CESAD resolvidos;
 - já possui bootstrap local oficial do backend via `npm run backend:bootstrap`;
 - já possui preflight guiado de banco via `db:check`;
-- ainda registra fragilidade operacional no `prisma generate` em ambiente Windows;
+- já possui guarda operacional antes de `prisma generate` em ambiente Windows;
+- ainda não possui fluxo explícito de build e start de produção do backend;
 - ainda mantém problemas técnicos de Prisma/migrations fora do escopo já aprovado da `BE-OPS-03`.
 
 ### Consequência
-O próximo foco backend deve ser a estabilização do `prisma generate` no Windows, sem reabrir o bootstrap já aprovado nem as frentes de domínio já concluídas.
+O próximo foco backend deve ser a definição do build/start de produção, sem reabrir o bootstrap já aprovado nem a mitigação operacional do `prisma generate` no Windows.
 
 ---
 
@@ -155,29 +159,34 @@ O backend deixou de depender de preparo manual implícito do banco para o fluxo 
 
 ---
 
-# Problemas atuais de maior prioridade
-
-## 1. Geração do Prisma instável no ambiente Windows
+## Geração do Prisma no Windows foi mitigada
 
 ### Descrição
-O comando de geração do client Prisma falha com erro de sistema operacional ao renomear o engine nativo em `node_modules/.prisma/client`. O erro é compatível com lock de arquivo por processo em execução.
+A instabilidade do `prisma generate` no Windows foi mitigada com uma guarda operacional antes da geração do Prisma Client. O problema era compatível com lock do engine nativo `query_engine-windows.dll.node` por processos Node relacionados ao backend, testes ou Prisma.
 
 ### Evidências
-- `npm run prisma:generate --workspace @aep-pa/backend` falhou com `EPERM`
-- `npx prisma db push --schema prisma/schema.prisma` sincronizou o banco, mas a etapa automatizada de generate falhou pelo mesmo motivo
-- havia processos `node` ativos executando backend/frontend no momento da tentativa
+- o fluxo `npm run prisma:generate --workspace @aep-pa/backend` passou a executar guard operacional específico para Windows antes do Prisma;
+- quando detecta processos `node.exe` com forte indício de backend, testes ou Prisma, o guard bloqueia cedo e informa PID, command line e orientação para fechar os processos relacionados;
+- o guard não encerra processos automaticamente e não remove arquivos temporários `.tmp`;
+- `backend:bootstrap` continuou chamando `prisma generate` dentro do fluxo oficial;
+- a documentação local passou a explicar o erro `EPERM` e o procedimento seguro no Windows.
 
 ### Impacto
-- setup local não determinístico
-- risco de client Prisma desatualizado em relação ao schema
-- aumento de falso positivo de “backend quebrado” em ambiente de desenvolvimento
+- redução de falso positivo de ambiente quebrado por `EPERM` cru;
+- orientação operacional mais clara antes da tentativa de overwrite do engine nativo;
+- preservação do bootstrap local oficial sem misturar escopo com schema, migrations ou configuração Prisma.
 
 ### Status no tracker
-- corresponde à task **`BE-OPS-02 — Estabilizar prisma generate no ambiente Windows`**
+- corresponde à task **`BE-OPS-02 — Estabilizar prisma generate no ambiente Windows`**, agora aprovada e concluída no `backend-implementation-tracker.md`
+
+### Observação de validação
+- o typecheck padrão do backend não cobre automaticamente scripts operacionais; a validação desta mitigação ficou apoiada no fluxo real de `prisma:generate`, no `backend:bootstrap` e em validação negativa guiada com processo Node relacionado ao backend.
 
 ---
 
-## 2. Configuração Prisma depreciada
+# Problemas atuais de maior prioridade
+
+## 1. Configuração Prisma depreciada
 
 ### Descrição
 O projeto ainda utiliza configuração em `package.json#prisma`. O Prisma atual já emite aviso de depreciação e indica migração para `prisma.config.ts`.
@@ -195,7 +204,7 @@ O projeto ainda utiliza configuração em `package.json#prisma`. O Prisma atual 
 
 ---
 
-## 3. Vulnerabilidades abertas em dependências
+## 2. Vulnerabilidades abertas em dependências
 
 ### Descrição
 O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda não foi feita classificação formal entre dependência de runtime, dev-only e transitiva.
@@ -378,12 +387,13 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
     - documentou a ordem de execução;
     - adicionou preflight guiado para evitar boot “cego” com banco ausente ou seed mínimo incompleto.
 
-- [ ] `{BACK}` **BE-OPS-02** — Estabilizar `prisma generate` no Windows
-  - Como corrigir:
-    - impedir generate com processo usando o engine ativo;
-    - revisar lock do `query_engine-windows.dll.node`;
-    - validar comportamento com backend/frontend parados;
-    - documentar procedimento local seguro.
+- [x] `{BACK}` **BE-OPS-02** — Estabilizar `prisma generate` no Windows
+  - Como foi corrigido:
+    - adicionou guard operacional específico para Windows antes de `prisma generate`;
+    - bloqueia cedo quando detecta processos `node.exe` relacionados ao backend, testes ou Prisma;
+    - exibe PID, command line e orientação para fechar processos relacionados;
+    - preservou `backend:bootstrap` como fluxo oficial com `prisma generate`;
+    - documentou o procedimento local seguro sem alterar schema, migrations ou configuração Prisma.
 
 - [ ] `{BACK}` **BE-OPS-04** — Definir build e start de produção do backend
   - Como corrigir:
@@ -451,10 +461,11 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 # Observações finais
 
 - o documento transversal não altera automaticamente a task ativa do backend;
-- a task ativa agora é `BE-OPS-02`, conforme o tracker backend;
+- a task ativa agora é `BE-OPS-04`, conforme o tracker backend;
 - a dependência estrutural de identidade canônica do `User` já foi removida pela conclusão da `BE-IDENT-01`;
 - a modelagem de signatários esperados do parecer CESAD já foi resolvida pela conclusão da `BE-STR-01`;
 - o nome oficial das pessoas deve ter `User` como fonte canônica;
 - comissão e composição não devem manter segunda fonte independente de nome para a mesma pessoa;
 - o bootstrap determinístico local do backend foi resolvido pela `BE-OPS-03`;
-- o problema operacional do `prisma generate` em Windows segue aberto e passa a orientar a frente ativa.
+- o problema operacional do `prisma generate` em Windows foi mitigado pela `BE-OPS-02`;
+- o próximo foco operacional do backend passa a ser a definição de build/start de produção pela `BE-OPS-04`.
