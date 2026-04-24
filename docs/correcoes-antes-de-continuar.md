@@ -82,109 +82,79 @@ O objetivo é permitir execução segura, um item por vez, sem misturar escopo e
 
 ---
 
-## Próxima Frente Estrutural Prioritária
+## Macrobloco — Institucionalização da Comissão CESAD
 
-### Macrobloco — Institucionalização da Comissão CESAD
+A institucionalização mínima da Comissão CESAD foi concluída com:
 
-A partir deste ponto, a maior necessidade do projeto deixa de ser correção de fluxo e passa a ser **modelagem estrutural correta do domínio da Comissão CESAD**.
+- [x] `CESAD-DOM-01A` — entidade da comissão
+- [x] `CESAD-DOM-01B` — ato normativo da comissão
+- [x] `CESAD-DOM-01C` — composição formal da comissão
+- [x] `CESAD-DOM-01D` — perfil Assistente da Comissão
+- [x] `CESAD-DOM-01E` — leitura da comissão vigente e da composição vigente
 
-O sistema não deve mais tratar a CESAD apenas como um conjunto difuso de usuários com role `CESAD_MEMBER`.  
-Ele deve passar a reconhecê-la como uma **entidade institucional explícita**, com:
-
-- comissão identificável
-- ato normativo de constituição/alteração
-- composição formal
-- titulares e suplentes
-- vigência
-- previsão do assistente da comissão
-- base futura para signatários esperados do parecer
-
-### Alta
-
-- [x] CESAD-DOM-01A — Modelar entidade Comissão CESAD
-  - Objetivo: introduzir a comissão CESAD como entidade própria do domínio.
-  - Fazer:
-    - criar a entidade de comissão;
-    - definir identidade institucional mínima;
-    - permitir status/vigência básica;
-    - preparar a base para vínculo com ato normativo e composição.
-  - Observação: a entidade `CesadCommission` foi criada, o enum `CesadCommissionStatus` foi introduzido e a leitura administrativa básica foi adicionada; a task ficou restrita à fundação de domínio, sem antecipar portaria, composição ou signatários.
-  - Não entra agora:
-    - signatários esperados;
-    - assinatura colegiada;
-    - documento formal do parecer;
-    - substituição de suplente.
-
-- [x] CESAD-DOM-01B — Modelar ato normativo / portaria da comissão
-  - Objetivo: registrar o instrumento formal que constitui, altera ou renova a comissão.
-  - Fazer:
-    - número;
-    - ano;
-    - tipo do ato;
-    - data de publicação/assinatura;
-    - vigência;
-    - resumo/referência textual;
-    - vínculo com a comissão.
-  - Não entra agora:
-    - geração automática de portaria;
-    - PDF;
-    - publicação oficial;
-    - integração externa.
-  - Observação: a entidade `CesadCommissionAct` foi criada, o enum `CesadCommissionActType` foi introduzido, a relação 1:N entre comissão e atos foi modelada e a leitura administrativa básica dos atos foi adicionada; a task permaneceu restrita à fundação de domínio, sem antecipar composição, signatários ou uso operacional.
-
-- [x] CESAD-DOM-01C — Modelar composição formal da comissão
-  - Objetivo: criar a composição formal da comissão, vinculando usuários à entidade institucional.
-  - Fazer:
-    - vínculo usuário-comissão;
-    - distinção entre titular e suplente;
-    - vigência;
-    - ativação/inativação;
-    - referência ao ato normativo correspondente, quando aplicável.
-  - Observação:
-    - o padrão institucional atual é **3 titulares e 2 suplentes**, mas essa regra deve ser tratada como padrão parametrizável/documentado, não hardcoded rígido.
-  - Observação: a entidade `CesadCommissionMember` foi criada, o enum `CesadCommissionMemberRoleType` foi introduzido, a composição passou a se vincular à comissão, ao usuário e opcionalmente ao ato, e a leitura administrativa básica da composição foi adicionada; a task permaneceu restrita à fundação de domínio, sem antecipar assistente, signatários ou uso operacional.
-  - Observação técnica: a integridade temporal depende de SQL manual/trigger para bloquear sobreposição temporal indevida e rejeitar `endDate < startDate`; a solução foi aprovada, mas essa característica técnica deve permanecer visível para manutenção futura.
-
-- [x] CESAD-DOM-01D — Introduzir perfil Assistente da Comissão
-  - Objetivo: prever formalmente o papel administrativo-operacional da comissão.
-  - Pode:
-    - visualizar processos CESAD;
-    - apoiar rotinas administrativas;
-    - apoiar preparação de minutas/portarias, quando permitido.
-  - Não pode:
-    - assinar parecer;
-    - deliberar como membro;
-    - homologar.
-  - Observação: o role global `COMMISSION_ASSISTANT` foi criado, o assistente ficou restrito à leitura operacional CESAD, não foi modelado como membro formal da comissão e a task não antecipou signatários, assinatura nem persistência institucional do assistente.
-
-- [x] CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente
-  - Objetivo: disponibilizar leitura operacional da comissão ativa e de sua composição válida.
-  - Fazer:
-    - consulta da comissão vigente;
-    - consulta da composição vigente;
-    - distinção entre titulares, suplentes e assistente;
-    - base para futuras regras de signatários esperados.
-  - Observação: o endpoint `GET /cesad/commissions/current` foi criado; a comissão vigente passou a ser definida pela própria `CesadCommission`, a composição vigente passou a ser derivada pela janela temporal dos membros, `relatedActs` entrou apenas como contexto documental e o assistente permaneceu fora da composição formal.
+### Observações do bloco concluído
+- a comissão passou a existir como entidade institucional explícita
+- a composição passou a ser formal e temporalmente controlada
+- o ato normativo passou a existir como contexto institucional próprio
+- o assistente foi introduzido como role global de leitura operacional, sem virar membro formal
+- a leitura da comissão vigente passou a existir em endpoint consolidado próprio
+- `relatedActs` entrou apenas como contexto documental
+- o assistente permaneceu fora da composição formal
 
 ---
 
-## Próxima Frente Após a Comissão
+## Próxima Frente Estrutural Prioritária
 
-Próxima task estrutural ativa: `BE-STR-01 — Modelar signatários esperados do parecer CESAD`.
+### Ponte entre identidade, comissão e parecer
+
+A próxima necessidade estrutural do projeto não é ainda a assinatura colegiada em si, mas sim garantir que o sistema tenha uma **fonte canônica de nome da pessoa** antes de congelar signatários esperados do parecer.
+
+Sem isso, a modelagem de signatários correria o risco de congelar:
+- email
+- ou nomes derivados sinteticamente do email
+
+o que seria inadequado para o parecer CESAD.
 
 ### Alta
 
+- [ ] BE-IDENT-01 — Introduzir nome canônico no User antes do snapshot de signatários
+  - Objetivo: criar fonte explícita, confiável e canônica de nome no `User`, apta para uso institucional e para congelamento em `nameSnapshot`.
+  - Problema atual:
+    - o modelo `User` não possui campo de nome explícito;
+    - backend e frontend ainda usam email ou display name derivado do email em vários pontos;
+    - isso inviabiliza a modelagem correta dos signatários esperados do parecer.
+  - Fazer:
+    - adicionar campo de nome ao `User`;
+    - ajustar schema e migration;
+    - ajustar seed;
+    - propagar o nome por login/auth/me/sessão;
+    - substituir, quando fizer sentido, exibições derivadas de email;
+    - manter `User` como fonte canônica do nome.
+  - Não fazer:
+    - criar segunda fonte de nome em `CesadCommissionMember`;
+    - iniciar ainda a modelagem dos signatários esperados;
+    - mexer em assinatura colegiada ou documento formal.
+  - Observação:
+    - a comissão/composição deve apenas referenciar a pessoa; o nome oficial deve vir do `User`.
+
 - [ ] BE-STR-01 — Modelar signatários esperados do parecer CESAD
   - Objetivo: separar quem integra a comissão de quem deve assinar um parecer específico.
+  - Regras de negócio já definidas:
+    - todos os titulares vigentes assinam todos os pareceres;
+    - suplente só assina por substituição explícita;
+    - assistente não assina;
+    - o snapshot deve ser congelado quando o parecer for colocado para assinatura.
   - Fazer:
-    - modelar signatários esperados do parecer;
-    - derivar inicialmente signatários ordinários a partir da composição vigente;
-    - manter explícita a separação entre signatário esperado e assinatura efetiva.
+    - modelar signatários esperados do parecer CESAD;
+    - derivar inicialmente signatários ordinários da composição vigente;
+    - congelar snapshot de signatários no momento operacional correto;
+    - preservar nome canônico vindo do `User`.
   - Não entra agora:
-    - assinatura final do parecer;
+    - assinatura efetiva;
     - PDF;
     - documento formal completo;
-    - suplência operacional automática.
+    - reformulação ampla de `SignatureRecord`;
+    - modelagem completa de afastamento/substituição.
 
 ---
 
@@ -197,7 +167,7 @@ Próxima task estrutural ativa: `BE-STR-01 — Modelar signatários esperados do
 - [ ] BE-FLOW-10C — Implementar substituição explícita por suplente
 
 Observação:
-- essas tasks só devem avançar depois que a base institucional da comissão e os signatários esperados estiverem estabilizados.
+- essas tasks só devem avançar depois que a base de identidade canônica e os signatários esperados estiverem estabilizados.
 
 ---
 
@@ -242,20 +212,11 @@ Observação:
 - [ ] Migrar a configuração depreciada do Prisma
   - Problema: o projeto ainda usa `package.json#prisma`, que já emite warning e será removido no Prisma 7.
 
-- [ ] Corrigir bloqueio histórico de `prisma migrate dev` no shadow database SQLite
-  - Problema:
-    - `prisma migrate dev` segue falhando por migration histórica anterior;
-    - migration afetada: `20260415113000_increment_10b_cesad_stage_opinion_artifact`;
-    - uso de `ALTER TABLE ... ADD CONSTRAINT` incompatível com o fluxo atual do shadow database SQLite.
+- [ ] Revisar estratégia para constraints temporais fora do Prisma schema
+  - Problema: algumas regras críticas de integridade temporal já dependem de SQL manual/trigger, pois não são expressáveis de forma suficiente no datamodel Prisma.
   - Observação:
-    - a migration da `CESAD-DOM-01A` não é a causadora;
-    - a dívida foi apenas evidenciada/reconfirmada durante esta task;
-    - a `CESAD-DOM-01B` validou sua nova migration por execução controlada, sem alterar esse diagnóstico.
-  - Fazer:
-    - diagnosticar correção segura da migration histórica;
-    - definir estratégia para manter compatibilidade do fluxo local de migrations.
-  - Validar:
-    - `prisma migrate dev` volta a executar com sucesso no ambiente local suportado.
+    - isso não bloqueia o roadmap atual;
+    - mas deve permanecer visível como dívida técnica futura.
 
 ---
 
@@ -325,11 +286,12 @@ Observação:
 - [x] Macrobloco / Média / CESAD-DOM-01D — Introduzir perfil Assistente da Comissão
 - [x] Macrobloco / Alta / CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente
 
-- [ ] Macrobloco / Alta / BE-STR-01 — Modelar signatários esperados do parecer CESAD
+- [ ] Ponte / Alta / BE-IDENT-01 — Introduzir nome canônico no User
+- [ ] Ponte / Alta / BE-STR-01 — Modelar signatários esperados do parecer CESAD
 
-- [ ] Macrobloco / Média / BE-FLOW-10A — Formalizar documento do parecer CESAD
-- [ ] Macrobloco / Média / BE-FLOW-10B — Implementar assinatura do parecer CESAD
-- [ ] Macrobloco / Média / BE-FLOW-10C — Implementar substituição explícita por suplente
+- [ ] Evolução documental / Média / BE-FLOW-10A — Formalizar documento do parecer CESAD
+- [ ] Evolução documental / Média / BE-FLOW-10B — Implementar assinatura do parecer CESAD
+- [ ] Evolução documental / Média / BE-FLOW-10C — Implementar substituição explícita por suplente
 
 - [ ] Backend / Médio / Corrigir regra de retificação
 - [ ] Backend / Médio / Remover credenciais previsíveis de desenvolvimento
@@ -341,7 +303,7 @@ Observação:
 
 - [ ] Infraestrutura / Crítico / Atualizar dependências vulneráveis
 - [ ] Backend / Baixo / Migrar configuração do Prisma
-- [ ] Backend / Baixo / Corrigir bloqueio histórico de `prisma migrate dev` no shadow database SQLite
+- [ ] Backend / Baixo / Revisar estratégia para constraints temporais fora do Prisma schema
 - [ ] Infraestrutura / Médio / Revisar estrutura do monorepo
 - [ ] Infraestrutura / Baixo / Atualizar documentação técnica
 
@@ -349,8 +311,9 @@ Observação:
 
 ## Observações finais
 
-- [ ] Não iniciar formalização documental do parecer CESAD nem assinatura colegiada antes de consolidar a base institucional da comissão.
+- [ ] Não iniciar formalização documental do parecer CESAD nem assinatura colegiada antes de consolidar a base institucional da comissão, a identidade canônica dos membros e os signatários esperados.
 - [ ] O item de retificação deve vir depois da integridade de assinaturas.
 - [ ] O item de vulnerabilidades deve ser feito com os testes e validações já estabilizados.
 - [ ] A regra “3 titulares e 2 suplentes” deve ser tratada como padrão institucional documentado, não como hardcode rígido.
 - [ ] O item de sessão stale deixou de ser bloqueio crítico imediato, mas sua revisão de UX/autenticação ainda permanece útil em fase posterior.
+- [ ] O nome oficial das pessoas deve ter `User` como fonte canônica, e não ser duplicado no cadastro da comissão.

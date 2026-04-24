@@ -1,8 +1,8 @@
 # AEP-PA Backend Implementation Tracker
 
 **Status:** Controle operacional das implementações do backend  
-**Versão:** 1.6.0  
-**Data:** 2026-04-23  
+**Versão:** 1.7.0  
+**Data:** 2026-04-24  
 **Objetivo:** Registrar, controlar e acompanhar as implementações do backend do AEP-PA com suporte a execução por agente de IA, revisão técnica e aprovação humana.
 
 ---
@@ -82,35 +82,30 @@ A ordem de trabalho foi reorganizada segundo os seguintes princípios:
 3. **Alinhamento real entre frontend e backend antes de expansões de domínio**
 4. **Fluxo ponta a ponta operacional antes de refinamentos institucionais**
 5. **Modelagem correta do domínio CESAD antes da assinatura colegiada**
-6. **Hardening operacional e dívida técnica seguem importantes, mas não devem impedir evolução estrutural do domínio**
-7. **Formalização documental e assinatura colegiada do parecer CESAD apenas depois da base institucional estabilizada**
+6. **Identidade canônica das pessoas antes do congelamento documental de signatários**
+7. **Hardening operacional e dívida técnica seguem importantes, mas não devem impedir evolução estrutural do domínio**
+8. **Formalização documental e assinatura colegiada do parecer CESAD apenas depois da base institucional estabilizada**
 
-Essa ordem reduz risco de regressão e evita construir regras institucionais sobre abstrações frágeis.
-
-O projeto já saiu da fase de desalinhamentos críticos de fluxo e entrou em um momento em que as próximas grandes entregas dependem mais da **modelagem correta do domínio da Comissão CESAD** do que de pequenos ajustes isolados. Por isso, o roadmap passa agora a priorizar a **institucionalização explícita da comissão**.
+Essa ordem reduz risco de regressão e evita construir regras institucionais ou documentais sobre abstrações frágeis.
 
 ---
 
 # Estado atual
 
-## Bloco/feature ativa
+## Bloco/feature ativo
 **BLOCO 5 — Ponte entre Comissão e Parecer**
 
 ## Task ativa
-**BE-STR-01 — Modelar signatários esperados do parecer CESAD**
+**BE-IDENT-01 — Introduzir nome canônico no User antes do snapshot de signatários**
 
 ## Contexto atual
-Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD, alinhamento da leitura consolidada da etapa CESAD, criação da entidade institucional mínima da comissão, modelagem do ato normativo / portaria da Comissão CESAD, modelagem da composição formal da comissão, introdução do perfil global de assistente da comissão e exposição da leitura consolidada da comissão vigente e da composição vigente, o próximo passo estrutural do projeto é modelar os signatários esperados do parecer CESAD.
+Após a conclusão do bloco de institucionalização da Comissão CESAD, o próximo passo natural do roadmap seria a modelagem de signatários esperados do parecer CESAD.
 
-A partir daqui, o sistema já reconhece a comissão como **entidade institucional própria** em sua fundação mínima, e deve avançar gradualmente para:
+Entretanto, a análise prévia identificou uma dependência estrutural importante: **o modelo atual de `User` não possui campo explícito de nome**, e o sistema ainda depende de `email` ou de nomes derivados do email para exibição em vários pontos.
 
-- identidade explícita
-- ato normativo de constituição/alteração
-- composição formal
-- titulares e suplentes
-- vigência
-- base futura para signatários esperados do parecer
-- previsão do papel de assistente da comissão
+Como o parecer CESAD deverá congelar um `nameSnapshot` dos signatários no momento em que for colocado para assinatura, isso exige uma **fonte canônica e confiável de nome** antes da implementação da `BE-STR-01`.
+
+Por isso, foi aberta uma task intermediária obrigatória para introduzir o nome canônico no `User` e propagá-lo com segurança por backend, auth, sessão e frontend.
 
 ---
 
@@ -360,8 +355,7 @@ Objetivo: reduzir riscos operacionais e débitos técnicos que continuam importa
 - warnings continuam aparecendo nos testes
 - permanece como dívida técnica de baixa prioridade
 - `prisma migrate dev` permanece impedido por migration histórica anterior no shadow database SQLite: `20260415113000_increment_10b_cesad_stage_opinion_artifact`
-- a falha decorre do uso de `ALTER TABLE ... ADD CONSTRAINT` nessa migration histórica; a migration da `CESAD-DOM-01A` para `CesadCommission` foi validada isoladamente e não é a causadora
-- a `CESAD-DOM-01B` também validou sua nova migration por execução controlada, sem alterar o diagnóstico dessa dívida histórica
+- a falha decorre do uso de `ALTER TABLE ... ADD CONSTRAINT` nessa migration histórica; as migrations recentes do macrobloco CESAD foram validadas isoladamente e não são as causadoras
 - essa dívida deve ser corrigida em task técnica futura específica para restaurar o fluxo local de migrations
 
 ---
@@ -392,7 +386,7 @@ Objetivo: reduzir riscos operacionais e débitos técnicos que continuam importa
 
 Objetivo: transformar a CESAD em entidade institucional explícita do sistema, deixando de tratá-la apenas como um conjunto de usuários com role `CESAD_MEMBER`.
 
-Esse bloco deve criar a base correta para:
+Esse bloco criou a base correta para:
 
 - governança da comissão
 - ato normativo de constituição/alteração
@@ -400,7 +394,7 @@ Esse bloco deve criar a base correta para:
 - titulares e suplentes
 - vigência
 - papel do assistente da comissão
-- signatários esperados do parecer em etapa posterior
+- leitura vigente institucional
 
 ---
 
@@ -468,9 +462,9 @@ Registrar o instrumento formal que constitui, altera ou renova a comissão.
 
 **Observações**
 - o ato normativo passou a existir como entidade histórica própria
-- a relação com a comissão foi modelada como `CesadCommission` 1:N `CesadCommissionAct`
-- a leitura administrativa básica foi adicionada em `GET /cesad/commission-acts` e `GET /cesad/commission-acts/:id`, com filtro opcional por `commissionId`, restrita a `ADMIN`
-- não houve ponteiro de ato vigente nem antecipação de composição, signatários ou uso operacional da comissão
+- a relação com a comissão foi modelada como 1:N
+- a leitura administrativa básica foi adicionada e restrita a `ADMIN`
+- não houve ponteiro de ato vigente nem antecipação de composição/signatários
 
 ---
 
@@ -491,7 +485,7 @@ Criar a composição formal da comissão, vinculando usuários à entidade insti
 - tipo de composição
 - titular / suplente
 - vigência
-- ativação/inativação
+- ativação/inativação derivada
 - referência ao ato normativo correspondente, quando aplicável
 
 **Fora do escopo**
@@ -500,12 +494,12 @@ Criar a composição formal da comissão, vinculando usuários à entidade insti
 - assinatura efetiva do parecer
 
 **Observações**
-- a composição formal passou a existir como entidade histórica própria por meio de `CesadCommissionMember`
-- `actId` ficou opcional para rastreabilidade e vínculo ao ato normativo quando aplicável
-- a leitura administrativa básica foi adicionada em `GET /cesad/commission-members` e `GET /cesad/commission-members/:id`, com filtro opcional por `commissionId` e `roleType`, restrita a `ADMIN`
-- não houve antecipação de assistente, signatários esperados, autorização funcional, assinatura colegiada ou regra rígida `3 titulares e 2 suplentes`
-- a integridade temporal foi reforçada por SQL manual/trigger para bloquear sobreposição temporal indevida e rejeitar `endDate < startDate`
-- o harness de testes reaproveita o bloco SQL da migration real para aplicar essas constraints extras no ambiente de teste
+- a composição formal passou a existir como entidade histórica própria
+- `actId` ficou opcional para rastreabilidade
+- a leitura administrativa básica foi adicionada e restrita a `ADMIN`
+- não houve antecipação de assistente, signatários ou autorização funcional
+- a integridade temporal foi reforçada por SQL manual/trigger
+- o harness de testes reaproveita o bloco SQL da migration real
 
 ---
 
@@ -524,7 +518,8 @@ Prever formalmente o papel administrativo-operacional da comissão.
 **Pode**
 - visualizar processos CESAD
 - apoiar rotinas administrativas
-- apoiar preparação de minutas/portarias, quando permitido
+- apoiar leitura operacional da etapa
+- apoiar preparação futura de minutas/portarias, quando permitido
 
 **Não pode**
 - assinar parecer
@@ -532,10 +527,10 @@ Prever formalmente o papel administrativo-operacional da comissão.
 - homologar
 
 **Observações**
-- o assistente foi introduzido como role global `COMMISSION_ASSISTANT`
-- o assistente não foi incluído em `CesadCommissionMember`
-- o assistente ganhou apenas leitura operacional mínima no eixo CESAD em `GET /processes/:id/workflow`, `GET /processes/:id/history` e `GET /processes/:id/stages/:sequence/consolidated-read`
-- o assistente permaneceu fora de deliberação, assinatura e homologação
+- o assistente foi introduzido como role global
+- não foi incluído em `CesadCommissionMember`
+- ganhou apenas leitura operacional mínima no eixo CESAD
+- permaneceu fora de deliberação, assinatura e homologação
 
 ---
 
@@ -546,27 +541,71 @@ Prever formalmente o papel administrativo-operacional da comissão.
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
 - **Commit associado:** `feat(cesad): add current commission consolidated read`
-- **Dependências:** CESAD-DOM-01A, 01B e 01C
+- **Dependências:** CESAD-DOM-01A, 01B, 01C e 01D
 
 **Objetivo**
-Disponibilizar leitura operacional da comissão vigente e de sua composição vigente.
+Disponibilizar leitura operacional consolidada da comissão vigente e de sua composição vigente.
 
 **Escopo**
-- consulta da comissão ativa
-- consulta da composição ativa
-- distinção entre titulares, suplentes e assistente
-- base para futuras regras de signatários esperados
+- consulta da comissão vigente por `referenceDate`
+- derivação da composição vigente pela janela temporal dos membros
+- `relatedActs` como contexto documental
+- `warnings` para anomalias não bloqueantes
+- leitura read-only para `ADMIN`, `CESAD_MEMBER` e `COMMISSION_ASSISTANT`
+
+**Fora do escopo**
+- eleição automática de ato vigente
+- signatários esperados
+- assinatura colegiada
+- persistência institucional do assistente
 
 **Observações**
-- a leitura consolidada da comissão vigente foi exposta em endpoint próprio `GET /cesad/commissions/current`, com `referenceDate` opcional
-- a vigência passou a ser resolvida principalmente pela própria `CesadCommission`, e a composição vigente passou a ser derivada pela janela temporal dos membros
-- `relatedActs` entrou apenas como contexto documental, sem eleição automática de ato vigente, e `COMMISSION_ASSISTANT` pode ler a consulta mas segue fora da composição formal
+- a leitura consolidada da comissão vigente foi exposta em endpoint próprio
+- a vigência passou a ser resolvida principalmente pela própria comissão
+- a composição vigente passou a ser derivada pela janela temporal dos membros
+- `relatedActs` entrou apenas como contexto documental
+- `COMMISSION_ASSISTANT` pode ler, mas segue fora da composição formal
 
 ---
 
-# BLOCO 5 — Ponte entre Comissão e Parecer
+# BLOCO 5 — Ponte entre Identidade, Comissão e Parecer
 
-Objetivo: conectar a base institucional da comissão ao parecer CESAD de etapa.
+Objetivo: preparar a camada de signatários esperados do parecer CESAD sobre uma base de identidade canônica e comissão vigente estável.
+
+---
+
+## BE-IDENT-01 — Introduzir nome canônico no User antes do snapshot de signatários
+
+- **Status:** ACTIVE
+- **Prioridade:** Alta
+- **Responsável atual:** —
+- **Auditoria necessária:** Sim
+- **Commit associado:** —
+- **Dependências:** CESAD-DOM-01E concluída antes
+
+**Objetivo**
+Introduzir um campo explícito, confiável e canônico de nome no `User`, para servir como fonte de verdade para exibição institucional e para futuro congelamento em `nameSnapshot` dos signatários esperados do parecer CESAD.
+
+**Escopo**
+- adicionar campo de nome ao `User`
+- ajustar persistência/migration
+- ajustar seed
+- propagar nome por auth/login/me
+- ajustar sessão/frontend
+- substituir, quando couber, exibições sintéticas derivadas de email
+
+**Fora do escopo**
+- modelagem de signatários esperados
+- assinatura colegiada
+- documento formal do parecer
+- nova fonte de nome dentro da comissão/composição
+- duplicação de nome em `CesadCommissionMember`
+
+**Observações**
+- o sistema hoje não possui campo explícito de nome no `User`
+- a UI e partes do backend ainda derivam display name a partir do email
+- isso bloqueia a `BE-STR-01`, pois o snapshot do parecer não deve congelar email nem nome sintético
+- `User` deve ser a fonte canônica do nome; a comissão apenas referencia a pessoa
 
 ---
 
@@ -577,7 +616,7 @@ Objetivo: conectar a base institucional da comissão ao parecer CESAD de etapa.
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
 - **Commit associado:** —
-- **Dependências:** CESAD-DOM-01A a CESAD-DOM-01E recomendadas antes
+- **Dependências:** BE-IDENT-01 concluída antes
 
 **Objetivo**
 Separar:
@@ -587,13 +626,21 @@ Separar:
 **Escopo**
 - modelar signatários esperados do parecer CESAD
 - derivar inicialmente signatários ordinários a partir da composição vigente
+- congelar snapshot no momento em que o parecer for colocado para assinatura
 - manter explícita a separação entre signatário esperado e assinatura efetiva
 
 **Fora do escopo**
 - assinatura final do parecer
 - PDF
 - documento formal completo
-- suplência operacional automática
+- suplência operacional completa
+- reformulação de `SignatureRecord` nesta etapa
+
+**Observações**
+- todos os titulares vigentes assinam todos os pareceres
+- suplente só assina por substituição explícita
+- assistente não assina
+- o snapshot deve preservar o nome canônico vindo do `User`
 
 ---
 
@@ -644,6 +691,8 @@ Esses itens foram tratados e aprovados anteriormente e não devem ser reabertos 
 - integridade de assinaturas no banco e na aplicação para documentos simples
 - fechamento do fluxo ponta a ponta até a CESAD
 - alinhamento da leitura consolidada da etapa CESAD ao fluxo funcional real
+- institucionalização mínima da Comissão CESAD
+- leitura consolidada da comissão vigente
 
 ---
 
@@ -669,17 +718,18 @@ Esses itens foram tratados e aprovados anteriormente e não devem ser reabertos 
 15. `CESAD-DOM-01D`
 16. `CESAD-DOM-01E`
 
-17. `BE-STR-01`
+17. `BE-IDENT-01`
+18. `BE-STR-01`
 
-18. `BE-FLOW-10A`
-19. `BE-FLOW-10B`
-20. `BE-FLOW-10C`
+19. `BE-FLOW-10A`
+20. `BE-FLOW-10B`
+21. `BE-FLOW-10C`
 
-21. `BE-OPS-01`
-22. `BE-ARCH-01`
-23. `BE-TECH-01`
-24. `BE-TECH-02`
-25. `BE-TECH-03`
+22. `BE-OPS-01`
+23. `BE-ARCH-01`
+24. `BE-TECH-01`
+25. `BE-TECH-02`
+26. `BE-TECH-03`
 
 ---
 
