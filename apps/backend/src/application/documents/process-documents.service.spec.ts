@@ -34,11 +34,13 @@ describe('ProcessDocumentsService', () => {
   const supervisorUser: AuthenticatedUser = {
     sub: 'supervisor-123',
     email: 'supervisor@test.local',
+    name: 'Supervisor Teste',
     role: UserRole.IMMEDIATE_SUPERVISOR,
   };
   const internUser: AuthenticatedUser = {
     sub: 'intern-123',
     email: 'intern@test.local',
+    name: 'Servidor Teste',
     role: UserRole.INTERN_SERVER,
   };
 

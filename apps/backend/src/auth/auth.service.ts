@@ -46,6 +46,7 @@ export class AuthService {
     const authenticatedUser: AuthenticatedUser = {
       sub: user.id,
       email: user.email,
+      name: user.name,
       role: this.toUserRole(user.role),
     };
 
@@ -93,6 +94,7 @@ export class AuthService {
     return {
       sub: payload.sub,
       email: payload.email,
+      name: payload.name,
       role: this.toUserRole(payload.role),
     };
   }
@@ -168,6 +170,7 @@ export class AuthService {
     return (
       typeof candidate.sub === 'string' &&
       typeof candidate.email === 'string' &&
+      typeof candidate.name === 'string' &&
       typeof candidate.role === 'string' &&
       typeof candidate.iat === 'number' &&
       typeof candidate.exp === 'number'

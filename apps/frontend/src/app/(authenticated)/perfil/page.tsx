@@ -11,7 +11,7 @@ import { PageSection } from '@/shared/ui/page-section';
 const integrationPoints = [
   {
     title: 'Identificacao da conta',
-    items: ['Email autenticado da sessao atual.', 'Perfil institucional aplicado ao ambiente.', 'Identificador interno do usuario autenticado.'],
+    items: ['Nome canônico da pessoa autenticada.', 'Perfil institucional aplicado ao ambiente.', 'Identificador interno do usuario autenticado.'],
   },
   {
     title: 'Persistencia da sessao',
@@ -52,6 +52,7 @@ export default function AuthenticatedProfilePage() {
             <KeyValueList
               items={[
                 { label: 'status', value: status },
+                { label: 'name', value: session?.user.name ?? 'Nao informado' },
                 { label: 'email', value: session?.user.email ?? 'Nao informado' },
                 { label: 'role', value: session?.user.role ?? 'Nao informado' },
                 { label: 'rememberMe', value: session?.rememberMe ? 'true' : 'false' },
@@ -69,6 +70,7 @@ export default function AuthenticatedProfilePage() {
             <KeyValueList
               items={[
                 { label: 'sub', value: session?.user.sub ?? 'Nao informado' },
+                { label: 'name', value: session?.user.name ?? 'Nao informado' },
                 { label: 'email', value: session?.user.email ?? 'Nao informado' },
                 { label: 'role', value: session?.user.role ?? 'Nao informado' },
                 { label: 'rememberMe', value: session?.rememberMe ? 'true' : 'false' },

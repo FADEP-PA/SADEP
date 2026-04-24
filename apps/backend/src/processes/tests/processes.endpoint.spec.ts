@@ -98,7 +98,13 @@ export async function runProcessesEndpointTests() {
     });
 
     assert.equal(loginResponse.status, 200);
-    const loginPayload = (await loginResponse.json()) as { accessToken: string };
+    const loginPayload = (await loginResponse.json()) as {
+      accessToken: string;
+      user: { email: string; name: string; role: UserRole };
+    };
+    assert.equal(loginPayload.user.email, cesadUser.email);
+    assert.equal(loginPayload.user.name, cesadUser.name);
+    assert.equal(loginPayload.user.role, UserRole.CESAD_MEMBER);
 
     const assistantLoginResponse = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
@@ -110,7 +116,11 @@ export async function runProcessesEndpointTests() {
     });
 
     assert.equal(assistantLoginResponse.status, 200);
-    const assistantLoginPayload = (await assistantLoginResponse.json()) as { accessToken: string };
+    const assistantLoginPayload = (await assistantLoginResponse.json()) as {
+      accessToken: string;
+      user: { email: string; name: string; role: UserRole };
+    };
+    assert.equal(assistantLoginPayload.user.name, assistantUser.name);
 
     const assistantMeResponse = await fetch(`${baseUrl}/auth/me`, {
       method: 'GET',
@@ -120,9 +130,14 @@ export async function runProcessesEndpointTests() {
     });
 
     assert.equal(assistantMeResponse.status, 200);
-    const assistantMePayload = (await assistantMeResponse.json()) as { role: UserRole; email: string };
+    const assistantMePayload = (await assistantMeResponse.json()) as {
+      role: UserRole;
+      email: string;
+      name: string;
+    };
     assert.equal(assistantMePayload.role, UserRole.COMMISSION_ASSISTANT);
     assert.equal(assistantMePayload.email, assistantUser.email);
+    assert.equal(assistantMePayload.name, assistantUser.name);
 
     const transitionResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow/transition`,
@@ -470,7 +485,7 @@ export async function runProcessesEndpointTests() {
       documents: Array<{ documentType: string; exists: boolean }>;
     };
     assert.equal(stageReadPayload.readOnly, true);
-    assert.equal(stageReadPayload.server.displayName, 'Joao Souza');
+    assert.equal(stageReadPayload.server.displayName, evaluatedUser.name);
     assert.equal(stageReadPayload.server.positionName, 'Cargo não informado no cadastro');
     assert.equal(stageReadPayload.server.registrationNumber, 'Matrícula não informada no cadastro');
     assert.equal(stageReadPayload.stage.sequence, 1);

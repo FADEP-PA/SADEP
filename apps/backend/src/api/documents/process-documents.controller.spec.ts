@@ -11,6 +11,7 @@ describe('ProcessDocumentsController', () => {
   const mockUser = {
     sub: 'user-123',
     email: 'intern@test.local',
+    name: 'Servidor Interno',
     role: UserRole.INTERN_SERVER,
   };
 

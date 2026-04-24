@@ -58,6 +58,7 @@ export function RolePlaceholderPage({
             <aside className="workspace-overview__panel">
               <KeyValueList
                 items={[
+                  { label: 'usuario', value: session?.user.name ?? 'Nao informado' },
                   { label: 'email', value: session?.user.email ?? 'Nao informado' },
                   { label: 'perfil', value: rolePresentation?.label ?? 'Nao informado' },
                   { label: 'rota principal', value: rolePresentation?.homePath ?? 'Nao informada' },

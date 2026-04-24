@@ -119,6 +119,7 @@ export async function runCesadCurrentCommissionServiceTests() {
     assert.equal(currentRead.members[1].id, currentTitular.id);
     assert.equal(currentRead.members[1].roleType, 'TITULAR');
     assert.equal(currentRead.members[1].user.email, titularUser.email);
+    assert.equal(currentRead.members[1].user.name, titularUser.name);
     assert(!currentRead.members.some((member) => member.id === previousMember.id));
     assert(!currentRead.members.some((member) => member.id === futureSuplente.id));
     assert.equal(currentRead.relatedActs.length, 2);

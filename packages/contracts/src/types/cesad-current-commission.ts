@@ -5,6 +5,7 @@ import type { CesadCommissionRef } from './cesad-commission';
 
 export interface CesadCurrentCommissionMemberUserRef {
   email: string;
+  name: string;
   role: UserRole;
   isActive: boolean;
 }

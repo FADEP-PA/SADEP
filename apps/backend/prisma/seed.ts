@@ -6,12 +6,27 @@ import { hashPassword } from '../src/common/security/password-hasher';
 const prisma = new PrismaClient();
 
 const users = [
-  { email: 'admin@aep-pa.local', password: 'Admin123!', role: UserRole.ADMIN },
-  { email: 'supervisor@aep-pa.local', password: 'Supervisor123!', role: UserRole.IMMEDIATE_SUPERVISOR },
-  { email: 'cesad@aep-pa.local', password: 'Cesad123!', role: UserRole.CESAD_MEMBER },
-  { email: 'assistant@aep-pa.local', password: 'Assistant123!', role: UserRole.COMMISSION_ASSISTANT },
-  { email: 'authority@aep-pa.local', password: 'Authority123!', role: UserRole.HOMOLOGATION_AUTHORITY },
-  { email: 'server@aep-pa.local', password: 'Server123!', role: UserRole.INTERN_SERVER },
+  { email: 'admin@aep-pa.local', name: 'Administrador AEP-PA', password: 'Admin123!', role: UserRole.ADMIN },
+  {
+    email: 'supervisor@aep-pa.local',
+    name: 'Chefia Imediata AEP-PA',
+    password: 'Supervisor123!',
+    role: UserRole.IMMEDIATE_SUPERVISOR,
+  },
+  { email: 'cesad@aep-pa.local', name: 'Membro CESAD AEP-PA', password: 'Cesad123!', role: UserRole.CESAD_MEMBER },
+  {
+    email: 'assistant@aep-pa.local',
+    name: 'Assistente da Comissao AEP-PA',
+    password: 'Assistant123!',
+    role: UserRole.COMMISSION_ASSISTANT,
+  },
+  {
+    email: 'authority@aep-pa.local',
+    name: 'Autoridade Homologadora AEP-PA',
+    password: 'Authority123!',
+    role: UserRole.HOMOLOGATION_AUTHORITY,
+  },
+  { email: 'server@aep-pa.local', name: 'Servidor Estagiario AEP-PA', password: 'Server123!', role: UserRole.INTERN_SERVER },
 ];
 
 async function main() {
@@ -21,12 +36,14 @@ async function main() {
     await prisma.user.upsert({
       where: { email: user.email },
       update: {
+        name: user.name,
         passwordHash,
         role: user.role,
         isActive: true,
       },
       create: {
         email: user.email,
+        name: user.name,
         passwordHash,
         role: user.role,
       },

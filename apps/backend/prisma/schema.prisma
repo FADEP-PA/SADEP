@@ -120,6 +120,7 @@ enum CesadCommissionMemberRoleType {
 model User {
   id                       String                 @id @default(cuid())
   email                    String                 @unique
+  name                     String
   passwordHash             String
   role                     UserRole
   isActive                 Boolean                @default(true)

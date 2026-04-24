@@ -33,6 +33,7 @@ describe('SupervisorEvaluationsService', () => {
   const mockUser = {
     sub: 'user-123',
     email: 'supervisor@test.local',
+    name: 'Supervisora Teste',
     role: UserRole.IMMEDIATE_SUPERVISOR,
   };
 
@@ -216,6 +217,7 @@ describe('SupervisorEvaluationsService', () => {
       const internUser = {
         sub: 'intern-123',
         email: 'intern@test.local',
+        name: 'Servidor Interno',
         role: UserRole.INTERN_SERVER,
       };
 

@@ -392,7 +392,7 @@ export async function runCesadStageReadServiceTests() {
 
     assert.equal(snapshot.readOnly, true);
     assert.equal(snapshot.process.status, ProcessStatus.EM_ANALISE_CESAD);
-    assert.equal(snapshot.server.displayName, 'Maria Silva');
+    assert.equal(snapshot.server.displayName, intern.name);
     assert.equal(snapshot.server.positionName, 'Cargo não informado no cadastro');
     assert.equal(snapshot.server.registrationNumber, 'Matrícula não informada no cadastro');
     assert.equal(snapshot.stage.stageId, stageTwo.id);

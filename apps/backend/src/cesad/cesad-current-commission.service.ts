@@ -51,6 +51,7 @@ export class CesadCurrentCommissionService {
             user: {
               select: {
                 email: true,
+                name: true,
                 role: true,
                 isActive: true,
               },
@@ -256,6 +257,7 @@ export class CesadCurrentCommissionService {
     updatedAt: Date;
     user: {
       email: string;
+      name: string;
       role: PrismaUserRole;
       isActive: boolean;
     };
@@ -284,6 +286,7 @@ export class CesadCurrentCommissionService {
       updatedAt: domainMember.updatedAt.toISOString(),
       user: {
         email: member.user.email,
+        name: member.user.name,
         role: this.toContractUserRole(member.user.role),
         isActive: member.user.isActive,
       },

@@ -163,10 +163,12 @@ export async function createUser(
   prisma: PrismaClient,
   role: UserRole,
   email: string,
+  name = buildNameFromEmail(email),
 ) {
   return prisma.user.create({
     data: {
       email,
+      name,
       passwordHash: await hashPassword('Test123456!'),
       role: toDatabaseRole(role),
       isActive: true,
@@ -225,8 +227,25 @@ export function authenticatedUser(userId: string, role: UserRole | PrismaUserRol
   return {
     sub: userId,
     email: `${userId}@test.local`,
+    name: `User ${userId}`,
     role: toContractRole(role),
   };
+}
+
+function buildNameFromEmail(email: string): string {
+  const [localPart] = email.trim().split('@');
+  const normalized = localPart
+    .replace(/[._-]+/g, ' ')
+    .trim();
+
+  if (!normalized) {
+    return 'Usuario de teste';
+  }
+
+  return normalized
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
 export function buildSupervisorEvaluationPayload(overrides: Partial<{

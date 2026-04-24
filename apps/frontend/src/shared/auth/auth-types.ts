@@ -3,6 +3,7 @@ import type { UserRole } from '@aep-pa/contracts';
 export type AuthenticatedUser = {
   sub: string;
   email: string;
+  name: string;
   role: UserRole;
 };
 

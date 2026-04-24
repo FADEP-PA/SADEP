@@ -60,7 +60,7 @@ export default function TechnicalHomePage() {
           </div>
           <div className="portal-stat-card">
             <span>Usuario autenticado</span>
-            <strong>{session?.user.email ?? 'Nao informado'}</strong>
+            <strong>{session?.user.name ?? 'Nao informado'}</strong>
           </div>
           <div className="portal-stat-card">
             <span>Area inicial</span>
@@ -122,7 +122,8 @@ export default function TechnicalHomePage() {
         <div className="portal-callout__panel">
           <KeyValueList
             items={[
-              { label: 'usuario', value: session?.user.email ?? 'Nao informado' },
+              { label: 'usuario', value: session?.user.name ?? 'Nao informado' },
+              { label: 'email', value: session?.user.email ?? 'Nao informado' },
               { label: 'perfil', value: rolePresentation?.label ?? 'Nao informado' },
               { label: 'home', value: rolePresentation?.homePath ?? 'Nao informada' },
             ]}

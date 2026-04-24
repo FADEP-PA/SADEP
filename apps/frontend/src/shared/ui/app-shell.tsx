@@ -108,25 +108,20 @@ function getSidebarIconByHref(href: string): SidebarIconName {
   return 'folder';
 }
 
-function getDisplayNameFromEmail(email: string | undefined) {
-  if (!email) {
+function getDisplayName(name: string | undefined) {
+  if (!name || name.trim().length === 0) {
     return 'Usuario interno';
   }
 
-  const localPart = email.split('@')[0] ?? '';
-  const normalized = localPart.replace(/[._-]+/g, ' ').trim();
-
-  if (!normalized) {
-    return email;
-  }
-
-  return normalized
-    .split(/\s+/)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+  return name.trim();
 }
 
-function getAvatarLabel(email: string | undefined) {
+function getAvatarLabel(displayName: string, email: string | undefined) {
+  const normalizedDisplayName = displayName.trim();
+  if (normalizedDisplayName.length > 0) {
+    return (normalizedDisplayName[0] ?? 'U').toUpperCase();
+  }
+
   if (!email) {
     return 'U';
   }
@@ -140,8 +135,8 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const navigationGroups = session ? getMenuByRole(session.user.role) : [];
   const rolePresentation = session ? getRolePresentation(session.user.role) : null;
-  const displayName = getDisplayNameFromEmail(session?.user.email);
-  const avatarLabel = getAvatarLabel(session?.user.email);
+  const displayName = getDisplayName(session?.user.name);
+  const avatarLabel = getAvatarLabel(displayName, session?.user.email);
 
   useEffect(() => {
     if (typeof window === 'undefined') {

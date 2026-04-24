@@ -87,6 +87,7 @@ export class CesadStageReadService {
           select: {
             id: true,
             email: true,
+            name: true,
             role: true,
           },
         },
@@ -200,7 +201,7 @@ export class CesadStageReadService {
         userId: process.evaluatedUser.id,
         email: process.evaluatedUser.email,
         role: this.toContractUserRole(process.evaluatedUser.role),
-        displayName: this.resolveDisplayName(process.evaluatedUser.email),
+        displayName: process.evaluatedUser.name,
         positionName: 'Cargo não informado no cadastro',
         registrationNumber: 'Matrícula não informada no cadastro',
       },
@@ -465,22 +466,6 @@ export class CesadStageReadService {
     }
 
     return metadata as Record<string, unknown>;
-  }
-
-  private resolveDisplayName(email: string): string {
-    const [localPart] = email.trim().split('@');
-    const normalizedTokens = localPart
-      .split(/[^a-zA-Z0-9]+/)
-      .map((token) => token.trim())
-      .filter((token) => token.length > 0);
-
-    if (normalizedTokens.length === 0) {
-      return email;
-    }
-
-    return normalizedTokens
-      .map((token) => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase())
-      .join(' ');
   }
 
   private isProcessAction(value: string): value is ProcessAction {

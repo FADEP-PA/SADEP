@@ -123,7 +123,7 @@ export async function runCesadCurrentCommissionEndpointTests() {
       members: Array<{
         id: string;
         userId: string;
-        user: { email: string; isActive: boolean };
+        user: { email: string; name: string; isActive: boolean };
       }>;
       relatedActs: Array<{ id: string }>;
       warnings: string[];
@@ -134,6 +134,7 @@ export async function runCesadCurrentCommissionEndpointTests() {
     assert.equal(adminPayload.members[1].id, activeMember.id);
     assert.equal(adminPayload.members[1].userId, memberUser.id);
     assert.equal(adminPayload.members[1].user.email, memberUser.email);
+    assert.equal(adminPayload.members[1].user.name, memberUser.name);
     assert.equal(adminPayload.relatedActs.length, 1);
     assert.equal(adminPayload.relatedActs[0].id, renewalAct.id);
     assert.match(adminPayload.warnings.join(' | '), /inactive user\(s\)/);

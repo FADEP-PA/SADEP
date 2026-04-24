@@ -95,22 +95,12 @@ function getInitialProcessId() {
   return process.env.NEXT_PUBLIC_TECHNICAL_PROCESS_ID?.trim() || '';
 }
 
-function getDisplayNameFromEmail(email: string | undefined) {
-  if (!email) {
+function getDisplayName(name: string | undefined) {
+  if (!name || name.trim().length === 0) {
     return 'Servidor autenticado';
   }
 
-  const localPart = email.split('@')[0] ?? '';
-  const normalized = localPart.replace(/[._-]+/g, ' ').trim();
-
-  if (!normalized) {
-    return email;
-  }
-
-  return normalized
-    .split(/\s+/)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+  return name.trim();
 }
 
 function normalizeSelfEvaluationPayload(
@@ -256,7 +246,7 @@ export function InternServerWorkspace() {
   const [activeOperation, setActiveOperation] = useState<ActionOperation>(null);
   const [isSelfEvaluationExpanded, setIsSelfEvaluationExpanded] = useState(false);
 
-  const displayName = getDisplayNameFromEmail(session?.user.email);
+  const displayName = getDisplayName(session?.user.name);
   const supervisorDocumentContext = snapshot?.supervisorEvaluation?.documentContext;
   const selfEvaluationDocumentContext = snapshot?.selfEvaluation?.documentContext;
   const canSignSupervisorEvaluation = Boolean(supervisorDocumentContext?.internSignaturePending);
