@@ -114,25 +114,23 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 # Estado atual
 
 ## Bloco/feature ativo
-**BLOCO 5 — Ponte entre Identidade, Comissão e Parecer**
+**BLOCO 3 — Hardening Operacional e Dívida Técnica Imediata**
 
 ## Task ativa
-**BE-STR-01 — Modelar signatários esperados do parecer CESAD**
+**BE-OPS-03 — Criar bootstrap determinístico do backend**
 
 ## Contexto atual
-Após a conclusão do bloco de institucionalização da Comissão CESAD e da ponte de identidade canônica, o próximo passo natural do roadmap é a modelagem de signatários esperados do parecer CESAD.
+A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
 
-A `BE-IDENT-01` foi aprovada e consolidou `User.name` como fonte canônica do nome institucional da pessoa, com propagação por persistência, auth, sessão e frontend.
+Com isso, o bloqueio estrutural de domínio para congelamento dos signatários esperados foi removido. O snapshot passa a ser derivado da comissão vigente e da composição vigente no fluxo `ISSUE_CESAD_OPINION`, preservando `User.name` em `nameSnapshot` e mantendo o assistente fora da assinatura.
 
-Com isso, a dependência estrutural anterior foi removida: o futuro snapshot do parecer já pode congelar `nameSnapshot` a partir do `User`, sem depender de email nem de nome sintético derivado do email.
-
-Paralelamente, a varredura transversal mais recente do projeto registrou problemas operacionais importantes de backend, como:
+O foco ativo do roadmap backend volta para a estabilização operacional. A próxima task autorizada é o bootstrap determinístico do backend, considerando problemas já registrados como:
 - instabilidade de `prisma generate` em ambiente Windows;
 - bootstrap local dependente de preparo manual do banco;
 - ausência de fluxo consolidado de build/start de produção;
 - fragilidades nos pacotes compartilhados do monorepo.  
 
-Esses itens foram incorporados neste tracker como backlog backend explícito, mas **não substituem a prioridade atual da `BE-STR-01`**.
+Esses itens permanecem no backlog backend explícito e agora orientam a prioridade operacional da `BE-OPS-03`.
 
 ---
 
@@ -384,7 +382,7 @@ Remover a fragilidade operacional observada no fluxo de geração do Prisma Clie
 
 ## BE-OPS-03 — Criar bootstrap determinístico do backend
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
@@ -750,11 +748,11 @@ Introduzir um campo explícito, confiável e canônico de nome no `User`, para s
 
 ## BE-STR-01 — Modelar signatários esperados do parecer CESAD
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `feat(cesad): add expected signers snapshot for stage opinions`
 - **Dependências:** BE-IDENT-01 concluída antes
 
 **Objetivo**
@@ -776,10 +774,13 @@ Separar:
 - reformulação de `SignatureRecord` nesta etapa
 
 **Observações**
-- todos os titulares vigentes assinam todos os pareceres
-- suplente só assina por substituição explícita
-- assistente não assina
-- o snapshot deve preservar o nome canônico vindo do `User`
+- os signatários esperados passaram a existir como snapshot persistido no `CesadStageOpinion`, por meio de relação 1:N com `CesadStageOpinionExpectedSigner`
+- o freeze ocorre no fluxo `ISSUE_CESAD_OPINION`
+- a derivação usa a comissão vigente e inclui apenas membros titulares vigentes por padrão
+- `User.name` passou a ser preservado em `nameSnapshot`, com `User.email` em `emailSnapshot`
+- o assistente permanece fora da assinatura
+- a substituição explícita por suplente ficou apenas preparada no modelo, por `EXPLICIT_SUBSTITUTION` e `substitutedCommissionMemberId`
+- não houve implementação de afastamento formal, assinatura efetiva, PDF, documento formal completo `CESAD_OPINION` nem mudança em `SignatureRecord`
 
 ---
 

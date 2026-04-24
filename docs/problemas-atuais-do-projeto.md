@@ -50,6 +50,7 @@ Este documento **não substitui** o tracker backend.
 - `npm run test --workspace @aep-pa/backend` → passou
 - `npm run test:unit --workspace @aep-pa/backend` → passou
 - `npm run typecheck:spec --workspace @aep-pa/backend` → passou
+- validação dos contracts compartilhados → passou
 - `npx tsc --noEmit -p tsconfig.json` em `apps/frontend` → passou
 - `npm run build --workspace @aep-pa/frontend` → passou
 
@@ -57,29 +58,31 @@ Este documento **não substitui** o tracker backend.
 
 - a `BE-IDENT-01` foi aprovada e removeu a dependência estrutural de identidade canônica antes da `BE-STR-01`;
 - `User.name` foi introduzido e alinhado por auth, sessão e UI;
-- o principal problema operacional atual no backend continua concentrado nas frentes técnicas de Prisma/migrations e bootstrap, não na identidade canônica;
+- a `BE-STR-01` foi aprovada e concluiu a modelagem de signatários esperados do parecer CESAD;
+- o bloqueio estrutural do snapshot de signatários do parecer foi removido;
+- o principal problema operacional atual no backend passa a se concentrar nas frentes técnicas de bootstrap, Prisma/migrations e execução local;
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
-- o roadmap backend segue corretamente com a task ativa `BE-STR-01`, agora já sem o bloqueio estrutural de nome canônico no `User`.  
+- o roadmap backend segue corretamente com a task ativa `BE-OPS-03`, agora com foco operacional.  
 
 ---
 
 # Frentes ativas e dependências estruturais
 
 ## Frente ativa do backend
-**BE-STR-01 — Modelar signatários esperados do parecer CESAD**
+**BE-OPS-03 — Criar bootstrap determinístico do backend**
 
 ### Motivo
-A próxima frente de domínio do backend é modelar os signatários esperados do parecer CESAD sobre a base já estabilizada de identidade canônica e comissão vigente.
+A próxima frente do backend passa a ser operacional: eliminar a dependência de preparo manual do banco e tornar o bootstrap local previsível.
 
 ### Situação atual
 Hoje o sistema:
-- já possui `User.name` obrigatório;
-- já propaga `name` por auth, sessão e frontend;
-- já substituiu os principais usos de nome derivado de email pela fonte canônica;
-- já expõe `user.name` na leitura da comissão vigente sem duplicar nome em `CesadCommissionMember`.
+- já possui identidade canônica e snapshot de signatários esperados do parecer CESAD resolvidos;
+- ainda depende de preparo manual do banco em alguns fluxos locais;
+- ainda registra fragilidades operacionais em Prisma/migrations, especialmente no ambiente Windows;
+- ainda não possui um fluxo único e determinístico de bootstrap backend.
 
 ### Consequência
-`BE-STR-01` pode avançar sem depender de email ou de nome sintético para o futuro `nameSnapshot` do parecer.
+O próximo foco backend deve ser o fluxo operacional de bootstrap, sem reabrir as frentes de domínio já aprovadas.
 
 ---
 
@@ -102,6 +105,29 @@ O problema estrutural de identidade canônica foi resolvido nesta rodada. `User.
 
 ### Status no tracker
 - corresponde à task **`BE-IDENT-01`**, agora aprovada e concluída no `backend-implementation-tracker.md`
+
+---
+
+## Modelagem de signatários esperados do parecer CESAD foi resolvida
+
+### Descrição
+A modelagem de signatários esperados foi concluída. O parecer CESAD da etapa passou a ter um snapshot persistido próprio, vinculado a `CesadStageOpinion`, separado da composição formal da comissão e da assinatura efetiva.
+
+### Evidências
+- os signatários esperados passaram a existir em `CesadStageOpinionExpectedSigner`;
+- o freeze ocorre no fluxo operacional de `ISSUE_CESAD_OPINION`;
+- a derivação usa a comissão vigente e inclui apenas titulares vigentes por padrão;
+- `SUPLENTE` permanece fora por padrão e `COMMISSION_ASSISTANT` não entra como signatário;
+- `User.name` é congelado em `nameSnapshot` e `User.email` em `emailSnapshot`;
+- o snapshot passou a ser exposto no `consolidated-read` da etapa.
+
+### Impacto
+- o bloqueio estrutural de snapshot do parecer CESAD foi removido;
+- o documento formal futuro poderá consumir o snapshot sem recalcular signatários;
+- a substituição explícita por suplente ficou apenas preparada no modelo, sem fluxo operacional completo nesta task.
+
+### Status no tracker
+- corresponde à task **`BE-STR-01`**, agora aprovada e concluída no `backend-implementation-tracker.md`
 
 ---
 
@@ -332,7 +358,7 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
     - propagar `name` por login, token, `/auth/me`, sessão e frontend;
     - trocar, quando possível, exibições derivadas de email pela fonte canônica do `User`.
 
-- [ ] `{BACK}` **BE-STR-01** — Modelar signatários esperados do parecer CESAD
+- [x] `{BACK}` **BE-STR-01** — Modelar signatários esperados do parecer CESAD
   - Como corrigir:
     - criar snapshot de signatários esperados ligado ao parecer CESAD específico;
     - congelar snapshot quando o parecer for colocado para assinatura;
@@ -421,8 +447,9 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 # Observações finais
 
 - o documento transversal não altera automaticamente a task ativa do backend;
-- a task ativa agora é `BE-STR-01`, conforme o tracker backend;
+- a task ativa agora é `BE-OPS-03`, conforme o tracker backend;
 - a dependência estrutural de identidade canônica do `User` já foi removida pela conclusão da `BE-IDENT-01`;
+- a modelagem de signatários esperados do parecer CESAD já foi resolvida pela conclusão da `BE-STR-01`;
 - o nome oficial das pessoas deve ter `User` como fonte canônica;
 - comissão e composição não devem manter segunda fonte independente de nome para a mesma pessoa;
-- os problemas operacionais do Prisma em Windows e do bootstrap do backend ganharam visibilidade maior, mas não substituem a prioridade estrutural da frente de domínio já em andamento.
+- os problemas operacionais do Prisma em Windows e do bootstrap do backend seguem abertos e passam a orientar a frente ativa.
