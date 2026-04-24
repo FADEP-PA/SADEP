@@ -94,13 +94,13 @@ O projeto já saiu da fase de desalinhamentos críticos de fluxo e entrou em um 
 # Estado atual
 
 ## Bloco/feature ativa
-**BLOCO 4 — Institucionalização da Comissão CESAD**
+**BLOCO 5 — Ponte entre Comissão e Parecer**
 
 ## Task ativa
-**CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente**
+**BE-STR-01 — Modelar signatários esperados do parecer CESAD**
 
 ## Contexto atual
-Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD, alinhamento da leitura consolidada da etapa CESAD, criação da entidade institucional mínima da comissão, modelagem do ato normativo / portaria da Comissão CESAD, modelagem da composição formal da comissão e introdução do perfil global de assistente da comissão, o próximo passo estrutural do projeto é expor a leitura da comissão vigente e de sua composição vigente.
+Após a conclusão do bloco de segurança, estabilização técnica, alinhamento frontend/backend, fechamento do fluxo operacional até a CESAD, alinhamento da leitura consolidada da etapa CESAD, criação da entidade institucional mínima da comissão, modelagem do ato normativo / portaria da Comissão CESAD, modelagem da composição formal da comissão, introdução do perfil global de assistente da comissão e exposição da leitura consolidada da comissão vigente e da composição vigente, o próximo passo estrutural do projeto é modelar os signatários esperados do parecer CESAD.
 
 A partir daqui, o sistema já reconhece a comissão como **entidade institucional própria** em sua fundação mínima, e deve avançar gradualmente para:
 
@@ -541,11 +541,11 @@ Prever formalmente o papel administrativo-operacional da comissão.
 
 ## CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente
 
-- **Status:** PLANNED
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `feat(cesad): add current commission consolidated read`
 - **Dependências:** CESAD-DOM-01A, 01B e 01C
 
 **Objetivo**
@@ -556,6 +556,11 @@ Disponibilizar leitura operacional da comissão vigente e de sua composição vi
 - consulta da composição ativa
 - distinção entre titulares, suplentes e assistente
 - base para futuras regras de signatários esperados
+
+**Observações**
+- a leitura consolidada da comissão vigente foi exposta em endpoint próprio `GET /cesad/commissions/current`, com `referenceDate` opcional
+- a vigência passou a ser resolvida principalmente pela própria `CesadCommission`, e a composição vigente passou a ser derivada pela janela temporal dos membros
+- `relatedActs` entrou apenas como contexto documental, sem eleição automática de ato vigente, e `COMMISSION_ASSISTANT` pode ler a consulta mas segue fora da composição formal
 
 ---
 

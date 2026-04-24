@@ -157,17 +157,20 @@ Ele deve passar a reconhecê-la como uma **entidade institucional explícita**, 
     - homologar.
   - Observação: o role global `COMMISSION_ASSISTANT` foi criado, o assistente ficou restrito à leitura operacional CESAD, não foi modelado como membro formal da comissão e a task não antecipou signatários, assinatura nem persistência institucional do assistente.
 
-- [ ] CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente
+- [x] CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente
   - Objetivo: disponibilizar leitura operacional da comissão ativa e de sua composição válida.
   - Fazer:
     - consulta da comissão vigente;
     - consulta da composição vigente;
     - distinção entre titulares, suplentes e assistente;
     - base para futuras regras de signatários esperados.
+  - Observação: o endpoint `GET /cesad/commissions/current` foi criado; a comissão vigente passou a ser definida pela própria `CesadCommission`, a composição vigente passou a ser derivada pela janela temporal dos membros, `relatedActs` entrou apenas como contexto documental e o assistente permaneceu fora da composição formal.
 
 ---
 
 ## Próxima Frente Após a Comissão
+
+Próxima task estrutural ativa: `BE-STR-01 — Modelar signatários esperados do parecer CESAD`.
 
 ### Alta
 
@@ -320,7 +323,7 @@ Observação:
 - [x] Macrobloco / Alta / CESAD-DOM-01B — Modelar ato normativo / portaria da comissão
 - [x] Macrobloco / Alta / CESAD-DOM-01C — Modelar composição formal da comissão
 - [x] Macrobloco / Média / CESAD-DOM-01D — Introduzir perfil Assistente da Comissão
-- [ ] Macrobloco / Alta / CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente
+- [x] Macrobloco / Alta / CESAD-DOM-01E — Expor leitura da comissão vigente e da composição vigente
 
 - [ ] Macrobloco / Alta / BE-STR-01 — Modelar signatários esperados do parecer CESAD
 
