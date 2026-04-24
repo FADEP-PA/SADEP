@@ -30,6 +30,8 @@ No ambiente auditado anteriormente, a validação de instalação e compilação
 
 O bootstrap local executa `prisma generate`, preparação mínima de compatibilidade do SQLite local legado, `prisma db push --schema prisma/schema.prisma --skip-generate`, `prisma:seed` e `db:check`. Nesta etapa, `db push` é o fluxo local oficial por compatibilidade com o estado atual das migrations do repositório; `migrate dev` não deve ser tratado como caminho principal de desenvolvimento local até saneamento posterior da limitação histórica conhecida.
 
+No Windows, o `prisma generate` passa por uma guarda antes de atualizar o Prisma Client. Se houver processos Node relacionados ao backend, testes ou Prisma em execução, o comando bloqueia a geração, lista PIDs/command lines relevantes e orienta fechar esses processos para evitar `EPERM` no `query_engine-windows.dll.node`. A guarda não encerra processos automaticamente e não remove arquivos temporários; se o erro persistir sem processos relacionados, verifique OneDrive, antivírus ou indexação.
+
 Para validar apenas as precondições mínimas do banco local sem subir o Nest:
 
 - `npm run db:check --workspace @aep-pa/backend`

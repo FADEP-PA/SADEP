@@ -30,6 +30,8 @@ npm run backend:bootstrap
 
 O bootstrap local executa, nesta ordem: `prisma generate`, preparação mínima de compatibilidade do SQLite local, `prisma db push --schema prisma/schema.prisma --skip-generate`, seed de desenvolvimento e checagem mínima do banco. O fluxo local atual usa `db push` de forma explícita por compatibilidade com o estado atual das migrations do repositório.
 
+No Windows, o `prisma generate` possui uma guarda operacional que bloqueia a execução quando detecta processos Node relacionados ao backend, testes ou Prisma que possam estar segurando `query_engine-windows.dll.node`. Feche esses processos antes de rodar o bootstrap; se o erro `EPERM` persistir sem processos relacionados, verifique OneDrive, antivírus ou indexação.
+
 ### 3. Subir os serviços
 
 Backend:

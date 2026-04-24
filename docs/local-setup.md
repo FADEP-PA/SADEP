@@ -48,6 +48,8 @@ Esse é o fluxo oficial de preparo local do backend nesta etapa. Ele executa, em
 
 O projeto usa `db push` como solução operacional local compatível com o estado atual do repositório. `migrate dev` não é o caminho principal local nesta etapa, pois há limitação conhecida em migration histórica no shadow database SQLite.
 
+No Windows, o passo `prisma generate` executa uma guarda operacional antes de gerar o Prisma Client. Se houver processos Node relacionados ao backend, testes ou Prisma em execução, o comando falha cedo e lista os PIDs/command lines relevantes para evitar `EPERM` ao atualizar o engine `query_engine-windows.dll.node`. Feche esses processos e rode o bootstrap novamente.
+
 ### 3. Validar o banco local sem repetir todo o bootstrap
 
 Se quiser apenas checar se o banco local está pronto:
@@ -113,6 +115,20 @@ Depois encerre o PID correspondente:
 ```powershell
 Stop-Process -Id <PID> -Force
 ```
+
+### `prisma generate` falhando com `EPERM` no Windows
+
+O Prisma pode falhar no Windows ao atualizar `node_modules/.prisma/client/query_engine-windows.dll.node` quando algum processo Node relacionado ao backend, testes ou Prisma ainda está usando o engine nativo.
+
+Antes de executar `npm run backend:bootstrap` ou `npm run prisma:generate --workspace @aep-pa/backend`, feche terminais do backend, testes integrados/unitários e comandos Prisma concorrentes. O guard do projeto lista PIDs e command lines quando detecta risco provável, mas não encerra processos automaticamente.
+
+Para inspecionar manualmente:
+
+```powershell
+Get-CimInstance Win32_Process -Filter "name = 'node.exe'" | Select-Object ProcessId,CommandLine
+```
+
+Se o erro persistir sem processos Node relacionados, verifique interferência de OneDrive, antivírus ou indexação no diretório do repositório.
 
 ### Login falhando com `Invalid credentials`
 
