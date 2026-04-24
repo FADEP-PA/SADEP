@@ -117,14 +117,14 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 **BLOCO 5 — Ponte entre Identidade, Comissão e Parecer**
 
 ## Task ativa
-**BE-IDENT-01 — Introduzir nome canônico no User antes do snapshot de signatários**
+**BE-STR-01 — Modelar signatários esperados do parecer CESAD**
 
 ## Contexto atual
-Após a conclusão do bloco de institucionalização da Comissão CESAD, o próximo passo natural do roadmap seria a modelagem de signatários esperados do parecer CESAD.
+Após a conclusão do bloco de institucionalização da Comissão CESAD e da ponte de identidade canônica, o próximo passo natural do roadmap é a modelagem de signatários esperados do parecer CESAD.
 
-Entretanto, a análise prévia identificou uma dependência estrutural importante: **o modelo atual de `User` não possui campo explícito de nome**, e o sistema ainda depende de `email` ou de nomes derivados do email para exibição em vários pontos.
+A `BE-IDENT-01` foi aprovada e consolidou `User.name` como fonte canônica do nome institucional da pessoa, com propagação por persistência, auth, sessão e frontend.
 
-Como o parecer CESAD deverá congelar um `nameSnapshot` dos signatários no momento em que for colocado para assinatura, isso exige uma **fonte canônica e confiável de nome** antes da implementação da `BE-STR-01`.
+Com isso, a dependência estrutural anterior foi removida: o futuro snapshot do parecer já pode congelar `nameSnapshot` a partir do `User`, sem depender de email nem de nome sintético derivado do email.
 
 Paralelamente, a varredura transversal mais recente do projeto registrou problemas operacionais importantes de backend, como:
 - instabilidade de `prisma generate` em ambiente Windows;
@@ -132,7 +132,7 @@ Paralelamente, a varredura transversal mais recente do projeto registrou problem
 - ausência de fluxo consolidado de build/start de produção;
 - fragilidades nos pacotes compartilhados do monorepo.  
 
-Esses itens foram incorporados neste tracker como backlog backend explícito, mas **não substituem a prioridade atual da `BE-IDENT-01`**.
+Esses itens foram incorporados neste tracker como backlog backend explícito, mas **não substituem a prioridade atual da `BE-STR-01`**.
 
 ---
 
@@ -712,11 +712,11 @@ Objetivo: preparar a camada de signatários esperados do parecer CESAD sobre uma
 
 ## BE-IDENT-01 — Introduzir nome canônico no User antes do snapshot de signatários
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `feat(identity): add canonical user name across auth and session flows`
 - **Dependências:** CESAD-DOM-01E concluída antes
 
 **Objetivo**
@@ -740,16 +740,17 @@ Introduzir um campo explícito, confiável e canônico de nome no `User`, para s
 - refactor amplo de nomenclatura de contratos só por estética
 
 **Observações**
-- o sistema hoje não possui campo explícito de nome no `User`
-- a UI e partes do backend ainda derivam display name a partir do email
-- isso bloqueia a `BE-STR-01`, pois o snapshot do parecer não deve congelar email nem nome sintético
-- `User` deve ser a fonte canônica do nome; a comissão apenas referencia a pessoa
+- `User` passou a ter `name` obrigatório e se consolidou como fonte canônica do nome institucional
+- persistência, seed, `AuthenticatedUser`, login, JWT, `verifyToken`, `/auth/me`, sessão e frontend passaram a propagar `name`
+- os principais usos de nome derivado de email foram substituídos, preservando `displayName` legado apenas onde isso reduziu risco
+- `CesadCommissionMember` continuou sem duplicação de nome e a leitura da comissão vigente passou a expor `user.name`
+- a validação da migration nova foi feita de forma controlada sobre esquema legado mínimo do `User`, sem bloquear a aprovação da task
 
 ---
 
 ## BE-STR-01 — Modelar signatários esperados do parecer CESAD
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim

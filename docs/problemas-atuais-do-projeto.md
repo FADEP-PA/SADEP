@@ -43,70 +43,71 @@ Este documento **não substitui** o tracker backend.
 
 ## Validações executadas nesta rodada
 
-- `npm install` → dependências já instaladas
-- `npm install` → `npm audit` reportou `10 vulnerabilities (9 high, 1 critical)`
-- `npm run prisma:generate --workspace @aep-pa/backend` → falhou com `EPERM` ao renomear `query_engine-windows.dll.node`
-- `npx prisma db push --schema prisma/schema.prisma` em `apps/backend` → banco sincronizado; a etapa de generate continuou falhando com `EPERM`
-- `npm run prisma:seed --workspace @aep-pa/backend` → passou
+- `npx prisma validate --schema prisma/schema.prisma` → passou
+- `npm run prisma:generate --workspace @aep-pa/backend` → passou
+- validação controlada da migration nova sobre esquema legado mínimo do `User` → passou
 - `npm run typecheck --workspace @aep-pa/backend` → passou
 - `npm run test --workspace @aep-pa/backend` → passou
 - `npm run test:unit --workspace @aep-pa/backend` → passou
 - `npm run typecheck:spec --workspace @aep-pa/backend` → passou
+- `npx tsc --noEmit -p tsconfig.json` em `apps/frontend` → passou
 - `npm run build --workspace @aep-pa/frontend` → passou
 
 ## Conclusão técnica desta rodada
 
-- o backend está funcional depois de sincronização manual do banco e execução do seed;
-- o principal problema operacional atual no backend está no fluxo de geração do Prisma no Windows;
+- a `BE-IDENT-01` foi aprovada e removeu a dependência estrutural de identidade canônica antes da `BE-STR-01`;
+- `User.name` foi introduzido e alinhado por auth, sessão e UI;
+- o principal problema operacional atual no backend continua concentrado nas frentes técnicas de Prisma/migrations e bootstrap, não na identidade canônica;
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
-- o roadmap backend segue corretamente com a task ativa `BE-IDENT-01`, pois a modelagem futura de signatários do parecer depende de nome canônico no `User`, e esse campo ainda não existe.  
+- o roadmap backend segue corretamente com a task ativa `BE-STR-01`, agora já sem o bloqueio estrutural de nome canônico no `User`.  
 
 ---
 
 # Frentes ativas e dependências estruturais
 
 ## Frente ativa do backend
-**BE-IDENT-01 — Introduzir nome canônico no User antes do snapshot de signatários**
+**BE-STR-01 — Modelar signatários esperados do parecer CESAD**
 
 ### Motivo
-A próxima frente de domínio do backend é `BE-STR-01`, que modelará os signatários esperados do parecer CESAD. Entretanto, isso depende de uma fonte canônica de nome em `User`, pois o snapshot do parecer não pode congelar:
-- email;
-- nem nome sintético derivado do email.
+A próxima frente de domínio do backend é modelar os signatários esperados do parecer CESAD sobre a base já estabilizada de identidade canônica e comissão vigente.
 
 ### Situação atual
 Hoje o sistema:
-- não possui campo explícito de nome em `User`;
-- usa email como identificador humano visível;
-- e em alguns pontos deriva “display name” a partir do email.
+- já possui `User.name` obrigatório;
+- já propaga `name` por auth, sessão e frontend;
+- já substituiu os principais usos de nome derivado de email pela fonte canônica;
+- já expõe `user.name` na leitura da comissão vigente sem duplicar nome em `CesadCommissionMember`.
 
 ### Consequência
-`BE-IDENT-01` foi corretamente posicionada antes da `BE-STR-01` no tracker backend.
+`BE-STR-01` pode avançar sem depender de email ou de nome sintético para o futuro `nameSnapshot` do parecer.
+
+---
+
+# Problemas recentemente resolvidos
+
+## Nome canônico no `User` foi resolvido e retirado da frente crítica
+
+### Descrição
+O problema estrutural de identidade canônica foi resolvido nesta rodada. `User.name` foi introduzido como campo obrigatório e passou a sustentar a exibição institucional do nome da pessoa.
+
+### Evidências
+- `User.name` foi introduzido e propagado por persistência, seed, auth, JWT, `/auth/me`, sessão e frontend;
+- os principais pontos que derivavam nome do email passaram a usar a fonte canônica do `User`;
+- `CesadCommissionMember` continuou sem duplicação de nome e a leitura da comissão vigente passou a expor `user.name`.
+
+### Impacto
+- a dependência estrutural para a `BE-STR-01` foi removida;
+- o snapshot futuro do parecer já poderá congelar `nameSnapshot` com base canônica;
+- a revisão mais ampla do fluxo de migrations/Prisma continua fora do escopo desta task e permanece nas frentes técnicas já mapeadas.
+
+### Status no tracker
+- corresponde à task **`BE-IDENT-01`**, agora aprovada e concluída no `backend-implementation-tracker.md`
 
 ---
 
 # Problemas atuais de maior prioridade
 
-## 1. Nome canônico ainda ausente no `User`
-
-### Descrição
-O sistema ainda não possui um campo explícito, confiável e canônico de nome em `User`. Isso afeta diretamente a futura modelagem de signatários esperados do parecer CESAD, porque o snapshot documental precisará congelar nome institucional de pessoas reais.
-
-### Evidências
-- o diagnóstico confirmou ausência estrutural de nome no `User`;
-- o backend e o frontend ainda recorrem a email ou display name derivado de email;
-- a task `BE-IDENT-01` já foi aberta no tracker backend como pré-requisito para `BE-STR-01`.
-
-### Impacto
-- bloqueio estrutural para modelagem correta do `nameSnapshot`;
-- risco de congelar identificadores inadequados em parecer institucional;
-- propagação de nomes sintéticos pelo sistema.
-
-### Status no tracker
-- corresponde à task **`BE-IDENT-01`** no `backend-implementation-tracker.md`
-
----
-
-## 2. Geração do Prisma instável no ambiente Windows
+## 1. Geração do Prisma instável no ambiente Windows
 
 ### Descrição
 O comando de geração do client Prisma falha com erro de sistema operacional ao renomear o engine nativo em `node_modules/.prisma/client`. O erro é compatível com lock de arquivo por processo em execução.
@@ -126,7 +127,7 @@ O comando de geração do client Prisma falha com erro de sistema operacional ao
 
 ---
 
-## 3. Bootstrap do backend depende de preparo manual do banco
+## 2. Bootstrap do backend depende de preparo manual do banco
 
 ### Descrição
 O backend passou em `typecheck` e testes somente após execução manual de `db push` e `seed`. Os logs existentes mostram falha anterior em runtime por ausência de tabelas.
@@ -145,7 +146,7 @@ O backend passou em `typecheck` e testes somente após execução manual de `db 
 
 ---
 
-## 4. Configuração Prisma depreciada
+## 3. Configuração Prisma depreciada
 
 ### Descrição
 O projeto ainda utiliza configuração em `package.json#prisma`. O Prisma atual já emite aviso de depreciação e indica migração para `prisma.config.ts`.
@@ -163,7 +164,7 @@ O projeto ainda utiliza configuração em `package.json#prisma`. O Prisma atual 
 
 ---
 
-## 5. Vulnerabilidades abertas em dependências
+## 4. Vulnerabilidades abertas em dependências
 
 ### Descrição
 O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda não foi feita classificação formal entre dependência de runtime, dev-only e transitiva.
@@ -324,7 +325,7 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 
 ## Backend / Domínio
 
-- [ ] `{BACK}` **BE-IDENT-01** — Introduzir nome canônico no `User`
+- [x] `{BACK}` **BE-IDENT-01** — Introduzir nome canônico no `User`
   - Como corrigir:
     - adicionar campo `name` ao `User`;
     - ajustar schema, migration, seed e helpers de teste;
@@ -420,8 +421,8 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 # Observações finais
 
 - o documento transversal não altera automaticamente a task ativa do backend;
-- a task ativa continua sendo `BE-IDENT-01`, conforme o tracker backend;
-- a `BE-STR-01` continua dependente da identidade canônica do `User`;
+- a task ativa agora é `BE-STR-01`, conforme o tracker backend;
+- a dependência estrutural de identidade canônica do `User` já foi removida pela conclusão da `BE-IDENT-01`;
 - o nome oficial das pessoas deve ter `User` como fonte canônica;
 - comissão e composição não devem manter segunda fonte independente de nome para a mesma pessoa;
 - os problemas operacionais do Prisma em Windows e do bootstrap do backend ganharam visibilidade maior, mas não substituem a prioridade estrutural da frente de domínio já em andamento.
