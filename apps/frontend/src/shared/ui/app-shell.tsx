@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/shared/auth/auth-context';
 import { getMenuByRole } from '@/shared/rbac/menu';
@@ -16,17 +16,96 @@ type AppShellProps = {
   sidebarFooter?: React.ReactNode;
 };
 
+type SidebarIconName =
+  | 'home'
+  | 'clipboard'
+  | 'user'
+  | 'folder'
+  | 'logout'
+  | 'chevron-left'
+  | 'chevron-right';
+
 const SIDEBAR_STORAGE_KEY = 'aep-pa-sidebar-collapsed';
 
-function getNavigationBadge(label: string) {
-  const badge = label
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
+function SidebarIcon({ name }: { name: SidebarIconName }) {
+  if (name === 'home') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 10.5 12 4l8 6.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M7.5 10v8.5h9V10" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
 
-  return badge || 'AP';
+  if (name === 'clipboard') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="7" y="4.5" width="10" height="15" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M9 4.5h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M9.5 9.5h5m-5 3h5m-5 3h3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (name === 'user') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M6.5 18.5c1.2-2.6 3.2-4 5.5-4s4.3 1.4 5.5 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (name === 'folder') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4.5 8.5h5l1.6 1.8H19a1.5 1.5 0 0 1 1.5 1.5v5.7A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5V10A1.5 1.5 0 0 1 5 8.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (name === 'logout') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M10 7V5.8A1.8 1.8 0 0 0 8.2 4H5.8A1.8 1.8 0 0 0 4 5.8v12.4A1.8 1.8 0 0 0 5.8 20h2.4A1.8 1.8 0 0 0 10 18.2V17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M13 8.5 17 12l-4 3.5M9 12h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (name === 'chevron-left') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="m14.5 6.5-5 5.5 5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="m9.5 6.5 5 5.5-5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function getSidebarIconByHref(href: string): SidebarIconName {
+  if (href === '/inicio') {
+    return 'home';
+  }
+
+  if (href === '/servidor-estagiario' || href === '/chefia-imediata') {
+    return 'clipboard';
+  }
+
+  if (href === '/perfil') {
+    return 'user';
+  }
+
+  if (href === '/processos') {
+    return 'folder';
+  }
+
+  return 'folder';
 }
 
 function getDisplayNameFromEmail(email: string | undefined) {
@@ -64,14 +143,6 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
   const displayName = getDisplayNameFromEmail(session?.user.email);
   const avatarLabel = getAvatarLabel(session?.user.email);
 
-  const navigationItems = useMemo(
-    () =>
-      Array.from(
-        new Map(navigationGroups.flatMap((group) => group.items).map((item) => [item.href, item])).values(),
-      ),
-    [navigationGroups],
-  );
-
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -104,8 +175,8 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
             className="app-shell__brand app-shell__sidebar-brand"
             aria-label="Ir para a pagina inicial do AEP-PA"
           >
-            <span className="app-shell__brand-mark" aria-hidden="true">
-              <span>AEP</span>
+            <span className="app-shell__brand-mark app-shell__brand-mark--coat" aria-hidden="true">
+              <img src="/brasao-para.svg" alt="" />
             </span>
             <span className="app-shell__brand-copy">
               <strong>AEP-PA</strong>
@@ -119,7 +190,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
             onClick={() => setIsSidebarCollapsed((current) => !current)}
             aria-label={isSidebarCollapsed ? 'Abrir menu lateral' : 'Fechar menu lateral'}
           >
-            {isSidebarCollapsed ? '>' : '<'}
+            <SidebarIcon name={isSidebarCollapsed ? 'chevron-right' : 'chevron-left'} />
           </button>
         </div>
 
@@ -147,7 +218,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
                       }
                     >
                       <span className="app-shell__sidebar-link-dot" aria-hidden="true">
-                        {getNavigationBadge(item.label)}
+                        <SidebarIcon name={getSidebarIconByHref(item.href)} />
                       </span>
                       <span className="app-shell__sidebar-link-text">{item.label}</span>
                     </Link>
@@ -162,7 +233,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
           {sidebarFooter}
           <button type="button" className="app-shell__sidebar-signout" onClick={signOut}>
             <span className="app-shell__sidebar-signout-icon" aria-hidden="true">
-              {'->'}
+              <SidebarIcon name="logout" />
             </span>
             <span className="app-shell__sidebar-signout-text">Sair do sistema</span>
           </button>
@@ -172,19 +243,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
       <div className="app-shell__workspace">
         <header className="app-shell__header">
           <div className="app-shell__header-left">
-            <button
-              type="button"
-              className="app-shell__header-toggle"
-              onClick={() => setIsSidebarCollapsed((current) => !current)}
-              aria-label={isSidebarCollapsed ? 'Abrir menu lateral' : 'Fechar menu lateral'}
-            >
-              Menu
-            </button>
-
             <div className="app-shell__header-branding">
-              <span className="app-shell__header-branding-mark" aria-hidden="true">
-                GOV
-              </span>
               <div className="app-shell__header-branding-copy">
                 <strong>Governo do Estado do Para</strong>
                 <span>Secretaria de Educacao</span>
@@ -199,10 +258,6 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
 
           <div className="app-shell__header-right">
             {headerActions}
-
-            <Link href="/perfil" className="app-shell__header-link">
-              Meu perfil
-            </Link>
 
             <div className="app-shell__header-user">
               <strong>{displayName}</strong>

@@ -5,8 +5,8 @@ export default function ForbiddenPage() {
     <main className="forbidden-page">
       <section className="forbidden-page__card" aria-labelledby="forbidden-title">
         <div className="app-shell__brand app-shell__brand--footer">
-          <span className="app-shell__brand-mark" aria-hidden="true">
-            <span>AEP</span>
+          <span className="app-shell__brand-mark app-shell__brand-mark--coat" aria-hidden="true">
+            <img src="/brasao-para.svg" alt="" />
           </span>
           <span className="app-shell__brand-copy">
             <strong>AEP-PA</strong>
@@ -17,7 +17,7 @@ export default function ForbiddenPage() {
         <span className="forbidden-page__badge">Acesso bloqueado</span>
         <h1 id="forbidden-title">Seu perfil nao pode abrir esta rota</h1>
         <p>
-          A pagina solicitada continua protegida pela politica atual de permissao. O sistema
+          A pagina solicitada continua protegida pela politica atual de permissao. O ambiente
           manteve a navegacao dentro do escopo liberado para o perfil autenticado.
         </p>
 

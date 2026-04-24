@@ -10,22 +10,22 @@ import { KeyValueList } from '@/shared/ui/key-value-list';
 const overviewCards = [
   {
     title: 'Consulta de processos',
-    description: 'Painel tecnico e institucional para ler workflow, bloqueios, acoes e historico do processo.',
+    description: 'Leitura centralizada do andamento, dos bloqueios e das proximas referencias do processo.',
   },
   {
-    title: 'Workspaces por perfil',
-    description: 'Cada papel institucional opera em uma tela propria, com linguagem visual unificada.',
+    title: 'Areas por perfil',
+    description: 'Cada papel institucional opera em um workspace proprio, com linguagem visual unificada.',
   },
   {
     title: 'Rastreabilidade processual',
-    description: 'Cards, estados e alertas priorizam leitura clara sem deslocar regra de negocio para a interface.',
+    description: 'Cards, estados e alertas reforcam leitura clara sem deslocar regra de negocio para a interface.',
   },
 ];
 
 const governanceHighlights = [
-  'Contratos tipados e regras processuais vindas do backend.',
-  'Separacao de navegacao, leitura e operacao por perfil.',
-  'Base visual pronta para crescimento das etapas, pareceres e homologacao.',
+  'Leitura institucional organizada por papel e momento do processo.',
+  'Navegacao clara para consulta, acompanhamento e operacao por perfil.',
+  'Base visual pronta para crescer com etapas, pareceres e homologacao.',
 ];
 
 export default function TechnicalHomePage() {
@@ -37,11 +37,10 @@ export default function TechnicalHomePage() {
       <div className="portal-hero">
         <article className="portal-hero__copy">
           <span className="section-chip">Portal central</span>
-          <h2>Uma entrada unica para navegar pelas areas do AEP-PA</h2>
+          <h2>Um ambiente unico para acompanhar o AEP-PA com clareza</h2>
           <p>
-            O ambiente autenticado foi reorganizado como um portal institucional: mais leve,
-            mais claro e com foco em leitura processual, servicos por perfil e continuidade do
-            frontend.
+            O ambiente autenticado foi reorganizado como um portal institucional mais claro,
+            com foco em leitura processual, servicos por perfil e continuidade segura do frontend.
           </p>
 
           <div className="portal-hero__actions">
@@ -77,10 +76,10 @@ export default function TechnicalHomePage() {
 
         <div className="portal-spotlight__content">
           <span className="section-chip">Leitura orientada</span>
-          <h2>Encontre sua proxima acao sem se perder no fluxo</h2>
+          <h2>Encontre sua proxima referencia sem se perder no fluxo</h2>
           <p>
-            O design agora usa blocos institucionais maiores, tipografia de destaque e agrupamento
-            claro de operacoes para reduzir friccao entre consulta, execucao e acompanhamento.
+            O desenho prioriza blocos institucionais maiores, agrupamento claro de informacoes e
+            uma hierarquia visual que reduz a friccao entre consulta, execucao e acompanhamento.
           </p>
 
           <div className="portal-spotlight__actions">
@@ -99,7 +98,7 @@ export default function TechnicalHomePage() {
           <span className="section-chip">Destaques</span>
           <div>
             <h2>Areas em destaque</h2>
-            <p>Pontos centrais da operacao diaria disponiveis no frontend atual.</p>
+            <p>Pontos centrais da operacao diaria que ja estao organizados no frontend atual.</p>
           </div>
         </header>
 
@@ -112,11 +111,11 @@ export default function TechnicalHomePage() {
 
       <section className="portal-callout">
         <div className="portal-callout__copy">
-          <span className="section-chip">Governanca visual</span>
+          <span className="section-chip">Continuidade</span>
           <h2>Base pronta para as proximas evolucoes do frontend</h2>
           <p>
             O shell, os cards e os estados visuais foram preparados para sustentar a expansao das
-            jornadas da CESAD, da homologacao e das leituras por etapa sem perder unidade.
+            jornadas por perfil sem perder unidade, legibilidade e previsibilidade.
           </p>
         </div>
 

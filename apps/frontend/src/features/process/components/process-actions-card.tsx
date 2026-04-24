@@ -11,8 +11,8 @@ type ProcessActionsCardProps = {
 export function ProcessActionsCard({ actions, status }: ProcessActionsCardProps) {
   return (
     <InfoCard
-      eyebrow="Ações disponíveis"
-      title="Próximas operações permitidas"
+      eyebrow="Acoes disponiveis"
+      title="Proximas operacoes permitidas"
       description="Lista calculada pelo backend conforme o estado atual do processo e o perfil autenticado."
     >
       {actions.length > 0 ? (
@@ -23,8 +23,8 @@ export function ProcessActionsCard({ actions, status }: ProcessActionsCardProps)
         </ul>
       ) : (
         <ContentState
-          title="Nenhuma ação liberada no momento"
-          description={`O workflow não retornou ações para o perfil autenticado enquanto o processo está em ${formatProcessStatus(status)}.`}
+          title="Nenhuma acao liberada no momento"
+          description={`O workflow nao retornou acoes para o perfil autenticado enquanto o processo esta em ${formatProcessStatus(status)}.`}
           tone="warning"
         />
       )}

@@ -15,17 +15,17 @@ export function ProcessHistoryCard({ history }: ProcessHistoryCardProps) {
 
   return (
     <InfoCard
-      eyebrow="Histórico resumido"
-      title="Última movimentação"
-      description="Resumo da trilha auditável retornada pelo processo consultado."
+      eyebrow="Historico resumido"
+      title="Ultima movimentacao"
+      description="Resumo da trilha auditavel retornada pelo processo consultado."
     >
       {lastEntry ? (
         <KeyValueList
           items={[
-            { label: 'Ação', value: formatProcessAction(lastEntry.action) },
+            { label: 'Acao', value: formatProcessAction(lastEntry.action) },
             { label: 'Perfil executor', value: formatRole(lastEntry.actorRole) },
             { label: 'Data e hora', value: formatDateTime(lastEntry.occurredAt) },
-            { label: 'Comentário', value: lastEntry.comment ?? 'Sem comentário registrado' },
+            { label: 'Comentario', value: lastEntry.comment ?? 'Sem comentario registrado' },
           ]}
         />
       ) : (

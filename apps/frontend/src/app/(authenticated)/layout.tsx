@@ -12,7 +12,7 @@ export default function AuthenticatedLayout({
     <AuthGuard>
       <AppShell
         title="Portal AEP-PA"
-        subtitle="Acompanhamento institucional do estagio probatorio."
+        subtitle="Acompanhamento institucional do estagio probatorio"
       >
         {children}
       </AppShell>

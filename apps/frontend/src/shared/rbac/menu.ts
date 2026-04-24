@@ -102,7 +102,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
         {
           label: getRolePresentation(UserRole.COMMISSION_ASSISTANT).label,
           href: '/cesad-comissao',
-          description: 'Consultar processos, histórico e leitura consolidada da etapa em modo de apoio.',
+          description: 'Consultar processos, historico e leitura consolidada da etapa em modo de apoio.',
         },
       ],
     },

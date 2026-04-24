@@ -129,7 +129,7 @@ export function ProcessWorkspace() {
         <PageSection
           eyebrow="Processos"
           title="Consulta operacional de processos"
-          description="Informe um processo para visualizar o status atual, as acoes permitidas, o historico e os dados complementares disponiveis para o seu perfil."
+          description="Informe um processo para visualizar status, leitura institucional, historico e dados complementares disponiveis para o seu perfil."
         >
           <div className="workspace-overview workspace-overview--accent">
             <div className="workspace-overview__copy">
@@ -140,8 +140,8 @@ export function ProcessWorkspace() {
                   : 'Abra um processo para acompanhar workflow, historico e bloqueios'}
               </h3>
               <p>
-                Esta area concentra a leitura principal do processo e reorganiza a consulta como um
-                servico institucional claro, com destaque para status, historico e proximas acoes.
+                Esta area concentra a leitura principal do processo e organiza a consulta como um
+                servico institucional claro, com destaque para status, historico e proximas referencias.
               </p>
 
               <form className="inline-form inline-form--elevated" onSubmit={handleLoadProcess}>
@@ -241,7 +241,7 @@ export function ProcessWorkspace() {
               <InfoCard
                 eyebrow="Leitura rapida"
                 title="Painel institucional"
-                description="Resumo imediato para orientar a consulta antes de entrar nos cards tecnicos."
+                description="Resumo imediato para orientar a consulta antes de entrar nos detalhes do processo."
               >
                 <KeyValueList
                   items={[
@@ -264,7 +264,7 @@ export function ProcessWorkspace() {
               <InfoCard
                 eyebrow="Como usar"
                 title="Leitura orientada"
-                description="A consulta organiza o processo como um quadro institucional, com foco em decisao rapida."
+                description="A consulta organiza o processo como um quadro institucional, com foco em leitura rapida e decisao segura."
               >
                 <ul className="content-list">
                   <li>Use o identificador do processo para atualizar o quadro principal.</li>
@@ -278,7 +278,7 @@ export function ProcessWorkspace() {
           {!snapshot && !errorMessage ? (
             <ContentState
               title="Nenhum processo carregado"
-              description="Faca uma consulta para visualizar os dados operacionais disponiveis para este perfil."
+              description="Faca uma consulta para abrir o painel principal do processo com os dados liberados para este perfil."
               tone="info"
             />
           ) : null}

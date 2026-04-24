@@ -35,14 +35,14 @@ export function RolePlaceholderPage({
   return (
     <AuthGuard allowedRoles={allowedRoles}>
       <section className="portal-dashboard">
-        <PageSection eyebrow="Painel do perfil" title={title} description={description}>
+        <PageSection eyebrow="Area do perfil" title={title} description={description}>
           <div className="workspace-overview workspace-overview--accent">
             <div className="workspace-overview__copy">
-              <span className="section-chip">Perfil autenticado</span>
+              <span className="section-chip">Area em consolidacao</span>
               <h3>{rolePresentation?.label ?? 'Perfil nao identificado'}</h3>
               <p>
-                Esta area ja entra no novo desenho institucional e fica pronta para receber os
-                proximos blocos funcionais do frontend com a mesma linguagem visual do portal.
+                Esta area ja segue a linguagem visual do portal e fica pronta para receber os
+                proximos fluxos funcionais sem perder consistencia com o restante do frontend.
               </p>
 
               <div className="portal-hero__actions">
@@ -66,16 +66,16 @@ export function RolePlaceholderPage({
 
               <div className="workspace-stat-grid">
                 <div className="workspace-stat">
-                  <span>modulos em foco</span>
+                  <span>frentes em foco</span>
                   <strong>{highlights.length}</strong>
                 </div>
                 <div className="workspace-stat">
                   <span>navegacao</span>
-                  <strong>Portal unico</strong>
+                  <strong>Portal integrado</strong>
                 </div>
                 <div className="workspace-stat">
                   <span>status visual</span>
-                  <strong>Pronto para evoluir</strong>
+                  <strong>Base consolidada</strong>
                 </div>
               </div>
             </aside>
@@ -97,12 +97,11 @@ export function RolePlaceholderPage({
 
           <div className="portal-callout">
             <div className="portal-callout__copy">
-              <span className="section-chip">Pronto para continuidade</span>
-              <h2>Estrutura visual alinhada ao restante do frontend</h2>
+              <span className="section-chip">Proxima etapa</span>
+              <h2>Estrutura pronta para crescimento funcional</h2>
               <p>
-                O layout deste perfil agora acompanha a mesma hierarquia, tipografia e ritmo do
-                portal principal, deixando o modulo pronto para ganhar funcionalidade real sem
-                precisar refazer a base visual.
+                O layout deste perfil acompanha a mesma hierarquia, tipografia e ritmo do portal,
+                deixando o modulo pronto para ganhar funcionalidade real sem precisar refazer a base visual.
               </p>
             </div>
 
@@ -115,9 +114,9 @@ export function RolePlaceholderPage({
                 ]}
               />
               <ul className="content-list">
-                <li>Tipografia e proporcao visual alinhadas ao novo shell institucional.</li>
-                <li>Cards preparados para indicadores, filas e alertas especificos do perfil.</li>
-                <li>Espaco pronto para componentizacao sem perder coerencia entre as rotas.</li>
+                <li>Tipografia e hierarquia alinhadas ao shell institucional.</li>
+                <li>Cards preparados para indicadores, filas e alertas do perfil.</li>
+                <li>Espaco pronto para evoluir sem quebrar a coerencia entre rotas.</li>
               </ul>
             </div>
           </div>

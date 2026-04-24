@@ -408,7 +408,7 @@ export function SupervisorEvaluationWorkspace() {
       <PageSection
         eyebrow="Chefia imediata"
         title="Avaliacao funcional da chefia"
-        description="Tela funcional para carregar o processo e criar, editar, submeter ou retificar a avaliacao antes da assinatura do servidor."
+        description="Area de trabalho da chefia para abrir o processo, registrar a avaliacao e acompanhar a documentacao da etapa."
       >
         <div className="workspace-overview workspace-overview--accent">
           <div className="workspace-overview__copy">
@@ -418,11 +418,10 @@ export function SupervisorEvaluationWorkspace() {
                 ? `Processo ${snapshot.process.id} pronto para acompanhamento da avaliacao`
                 : 'Abra um processo para preencher, submeter ou retificar a avaliacao'}
             </h3>
-            <p>
-              O workspace da chefia agora segue a mesma leitura de portal institucional, com
-              formulario principal, status da ficha e contexto operacional reunidos em um unico
-              quadro.
-            </p>
+              <p>
+              O workspace da chefia reune formulario principal, status da ficha e contexto
+              operacional em um unico quadro, com leitura mais direta para preenchimento e acompanhamento.
+              </p>
 
             <form className="inline-form inline-form--elevated" onSubmit={handleLoadProcess}>
               <label className="field-group" htmlFor="supervisor-process-id">
@@ -527,8 +526,8 @@ export function SupervisorEvaluationWorkspace() {
 
         {!snapshot && !loadErrorMessage ? (
           <ContentState
-            title="Tela pronta para uso real"
-            description="Informe um processo existente para consultar status e iniciar a avaliacao da chefia com persistencia no backend."
+            title="Area pronta para abrir uma avaliacao"
+            description="Informe um processo existente para consultar o status da etapa e iniciar a avaliacao da chefia com persistencia no backend."
             tone="info"
           />
         ) : null}

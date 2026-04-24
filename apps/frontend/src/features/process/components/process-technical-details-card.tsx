@@ -13,26 +13,26 @@ export function ProcessTechnicalDetailsCard({ snapshot }: ProcessTechnicalDetail
   return (
     <InfoCard
       eyebrow="Dados operacionais"
-      title="Informações complementares do processo"
-      description="Resumo auxiliar para conferência do processo consultado e da disponibilidade de dados para o perfil autenticado."
+      title="Informacoes complementares do processo"
+      description="Resumo auxiliar para conferencia do processo consultado e da disponibilidade de dados para o perfil autenticado."
     >
       <KeyValueList
         items={[
-          { label: 'Eventos no histórico', value: snapshot.history.length },
-          { label: 'Ações recebidas', value: snapshot.workflow.availableActions.length },
+          { label: 'Eventos no historico', value: snapshot.history.length },
+          { label: 'Acoes recebidas', value: snapshot.workflow.availableActions.length },
           {
-            label: 'Avaliação da chefia',
-            value: snapshot.supervisorEvaluation ? 'Disponível para leitura' : 'Indisponível para este perfil',
+            label: 'Avaliacao da chefia',
+            value: snapshot.supervisorEvaluation ? 'Disponivel para leitura' : 'Indisponivel para este perfil',
           },
           {
-            label: 'Última atualização conhecida',
+            label: 'Ultima atualizacao conhecida',
             value: snapshot.supervisorEvaluation
               ? formatDateTime(snapshot.supervisorEvaluation.updatedAt)
               : formatDateTime(snapshot.history[snapshot.history.length - 1]?.occurredAt),
           },
           {
-            label: 'Restrição por perfil',
-            value: snapshot.supervisorEvaluationWarning ? 'Sim' : 'Não identificada',
+            label: 'Restricao por perfil',
+            value: snapshot.supervisorEvaluationWarning ? 'Sim' : 'Nao identificada',
           },
         ]}
       />

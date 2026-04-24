@@ -273,62 +273,70 @@ export function InternServerWorkspace() {
     [snapshot],
   );
   const heroHighlights = useMemo(
-    () => [
-      {
-        label: 'Assinatura da chefia',
-        value: canSignSupervisorEvaluation
-          ? 'Disponivel agora'
-          : supervisorDocumentContext
-            ? 'Ja tratada'
-            : 'Aguardando liberacao',
-        description: canSignSupervisorEvaluation
-          ? 'O documento da chefia ja pode ser confirmado pelo servidor.'
-          : 'A liberacao depende do documento formal da etapa.',
-      },
-      {
-        label: 'Autoavaliacao',
-        value: snapshot?.selfEvaluation
-          ? formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)
-          : canEditSelfEvaluation
-            ? 'Liberada'
-            : 'Nao iniciada',
-        description: snapshot?.selfEvaluation
-          ? 'Seu texto ja esta vinculado ao processo atual.'
-          : 'O campo abre depois da assinatura da avaliacao da chefia.',
-      },
-      {
-        label: 'Historico recente',
-        value: lastHistoryEntries.length > 0 ? `${lastHistoryEntries.length} registros` : 'Sem eventos',
-        description:
-          lastHistoryEntries.length > 0
-            ? 'As ultimas movimentacoes auditaveis aparecem logo abaixo.'
-            : 'Assim que houver novas movimentacoes, elas aparecem neste painel.',
-      },
-    ],
+    () =>
+      !snapshot
+        ? []
+        : [
+            {
+              label: 'Assinatura da chefia',
+              value: canSignSupervisorEvaluation
+                ? 'Disponivel agora'
+                : supervisorDocumentContext
+                  ? 'Ja tratada'
+                  : 'Aguardando liberacao',
+              description: canSignSupervisorEvaluation
+                ? 'O documento da chefia ja pode ser confirmado pelo servidor.'
+                : 'A liberacao depende do documento formal da etapa.',
+            },
+            {
+              label: 'Autoavaliacao',
+              value: snapshot.selfEvaluation
+                ? formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)
+                : canEditSelfEvaluation
+                  ? 'Liberada'
+                  : 'Nao iniciada',
+              description: snapshot.selfEvaluation
+                ? 'Seu texto ja esta vinculado ao processo atual.'
+                : 'O campo abre depois da assinatura da avaliacao da chefia.',
+            },
+            {
+              label: 'Historico recente',
+              value: lastHistoryEntries.length > 0 ? `${lastHistoryEntries.length} registros` : 'Sem eventos',
+              description:
+                lastHistoryEntries.length > 0
+                  ? 'As ultimas movimentacoes auditaveis aparecem logo abaixo.'
+                  : 'Assim que houver novas movimentacoes, elas aparecem neste painel.',
+            },
+          ],
     [
       canEditSelfEvaluation,
       canSignSupervisorEvaluation,
       lastHistoryEntries.length,
+      snapshot,
       snapshot?.selfEvaluation,
       supervisorDocumentContext,
     ],
   );
-  const processSummaryItems = useMemo(
-    () => [
-      { label: 'processo', value: snapshot?.workflow.id ?? 'Nenhum processo carregado' },
+  const processSummaryItems = useMemo(() => {
+    if (!snapshot) {
+      return [];
+    }
+
+    return [
+      { label: 'processo', value: snapshot.workflow.id },
       {
         label: 'status macro',
-        value: snapshot ? formatProcessStatus(snapshot.workflow.status) : 'Aguardando consulta',
+        value: formatProcessStatus(snapshot.workflow.status),
       },
       {
         label: 'avaliacao da chefia',
-        value: snapshot?.supervisorEvaluation
+        value: snapshot.supervisorEvaluation
           ? formatSupervisorEvaluationStatus(snapshot.supervisorEvaluation.status)
           : 'Ainda nao liberada',
       },
       {
         label: 'autoavaliacao',
-        value: snapshot?.selfEvaluation
+        value: snapshot.selfEvaluation
           ? formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)
           : 'Ainda nao iniciada',
       },
@@ -336,9 +344,8 @@ export function InternServerWorkspace() {
         label: 'ult. movimentacao',
         value: lastHistoryEntries[0] ? formatDateTime(lastHistoryEntries[0].occurredAt) : 'Sem eventos',
       },
-    ],
-    [lastHistoryEntries, snapshot],
-  );
+    ];
+  }, [lastHistoryEntries, snapshot]);
 
   const flowCards = useMemo(() => {
     const status = snapshot?.workflow.status;
@@ -609,10 +616,12 @@ export function InternServerWorkspace() {
                 <p className="operations-kicker">Acompanhamento individual</p>
                 <h2>Painel do servidor-estagiario</h2>
               </div>
-              <StatusBadge
-                label={snapshot ? formatProcessStatus(snapshot.workflow.status) : 'Pronto para consulta'}
-                tone={snapshot ? getProcessStatusTone(snapshot.workflow.status) : 'info'}
-              />
+              {snapshot ? (
+                <StatusBadge
+                  label={formatProcessStatus(snapshot.workflow.status)}
+                  tone={getProcessStatusTone(snapshot.workflow.status)}
+                />
+              ) : null}
             </div>
             <p>
               Acompanhe a etapa atual do seu processo, assine a avaliacao da chefia e conclua a
@@ -646,30 +655,49 @@ export function InternServerWorkspace() {
               </div>
             ) : null}
 
-            <div className="operations-highlight-grid">
-              {heroHighlights.map((item) => (
-                <article key={item.label} className="operations-highlight-card">
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                  <p>{item.description}</p>
-                </article>
-              ))}
-            </div>
+            {snapshot ? (
+              <div className="operations-highlight-grid">
+                {heroHighlights.map((item) => (
+                  <article key={item.label} className="operations-highlight-card">
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                    <p>{item.description}</p>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="operations-hero__placeholder">
+                <strong>Pronto para conectar</strong>
+                <p>
+                  Informe o identificador de um processo para abrir a leitura real da etapa,
+                  dos documentos e do historico retornados pela API.
+                </p>
+              </div>
+            )}
           </div>
 
           <aside className="operations-hero__panel">
-            <div className="operations-pill-row">
-              <StatusBadge
-                label={snapshot ? formatProcessStatus(snapshot.workflow.status) : 'Consulta individual'}
-                tone={snapshot ? getProcessStatusTone(snapshot.workflow.status) : 'neutral'}
-              />
-              {snapshot?.selfEvaluation?.status ? (
+            {snapshot ? (
+              <div className="operations-pill-row">
                 <StatusBadge
-                  label={`Autoavaliacao ${formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status).toLowerCase()}`}
-                  tone={getSupervisorEvaluationStatusTone(snapshot.selfEvaluation.status)}
+                  label={formatProcessStatus(snapshot.workflow.status)}
+                  tone={getProcessStatusTone(snapshot.workflow.status)}
                 />
-              ) : null}
-            </div>
+                {snapshot.selfEvaluation?.status ? (
+                  <StatusBadge
+                    label={`Autoavaliacao ${formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status).toLowerCase()}`}
+                    tone={getSupervisorEvaluationStatusTone(snapshot.selfEvaluation.status)}
+                  />
+                ) : null}
+              </div>
+            ) : (
+              <div className="operations-pill-row">
+                <StatusBadge
+                  label="Conexao com processo"
+                  tone="info"
+                />
+              </div>
+            )}
 
             <form className="operations-query-form" onSubmit={handleLoadProcess}>
               <label className="field-group" htmlFor="intern-process-id">
@@ -685,11 +713,21 @@ export function InternServerWorkspace() {
               </label>
 
               <button type="submit" disabled={isLoading || activeOperation !== null}>
-                {isLoading ? 'Consultando...' : snapshot ? 'Atualizar painel' : 'Abrir processo'}
+                  {isLoading ? 'Consultando...' : snapshot ? 'Atualizar painel' : 'Abrir processo'}
               </button>
             </form>
 
-            <KeyValueList items={processSummaryItems} />
+            {snapshot ? (
+              <KeyValueList items={processSummaryItems} />
+            ) : (
+              <div className="operations-panel-placeholder">
+                <strong>Painel aguardando consulta</strong>
+                <p>
+                  O painel permanece limpo ate que um processo valido seja consultado. Depois disso,
+                  os blocos abaixo passam a refletir somente os dados reais retornados pelo backend.
+                </p>
+              </div>
+            )}
           </aside>
         </div>
 

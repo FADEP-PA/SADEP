@@ -147,7 +147,7 @@ export function CesadStageReadWorkspace() {
         <PageSection
           eyebrow="CESAD"
           title="Leitura consolidada da etapa"
-          description="Consulta somente leitura, focada em uma etapa específica, com processo, servidor, avaliações, documentos, assinaturas e histórico resumido relevante."
+          description="Consulta somente leitura, focada em uma etapa especifica, com processo, servidor, avaliacoes, documentos, assinaturas e historico relevante."
         >
           <div className="workspace-overview workspace-overview--lilac">
             <div className="workspace-overview__copy">
@@ -159,8 +159,7 @@ export function CesadStageReadWorkspace() {
               </h3>
               <p>
                 Esta visao da CESAD foi reorganizada como uma leitura institucional, com foco na
-                etapa, nos documentos obrigatorios e no historico resumido necessario para a
-                instrucao.
+                etapa, nos documentos obrigatorios e no historico resumido necessario para a instrucao.
               </p>
 
               <form className="inline-form cesad-stage-read__form inline-form--elevated" onSubmit={handleSubmit}>
@@ -282,7 +281,7 @@ export function CesadStageReadWorkspace() {
           {!snapshot && !errorMessage ? (
             <ContentState
               title="Nenhuma etapa carregada"
-              description="Informe o processo e o número da etapa para abrir a visão consolidada da CESAD em modo somente leitura."
+              description="Informe o processo e o numero da etapa para abrir a visao consolidada da CESAD em modo somente leitura."
               tone="info"
             />
           ) : null}

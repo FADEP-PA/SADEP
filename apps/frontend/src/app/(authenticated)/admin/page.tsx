@@ -7,8 +7,8 @@ export default function AdminPage() {
     <RolePlaceholderPage
       allowedRoles={[UserRole.ADMIN]}
       title="Painel administrativo"
-      description="Visão inicial para suporte operacional, permissões de acesso e acompanhamento administrativo da plataforma."
-      highlights={['Observabilidade', 'Permissões', 'Suporte operacional']}
+      description="Area preparada para suporte operacional, controle de acessos e acompanhamento administrativo da plataforma."
+      highlights={['Observabilidade', 'Permissoes', 'Suporte operacional']}
     />
   );
 }

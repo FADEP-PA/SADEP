@@ -10,27 +10,20 @@ import { PageSection } from '@/shared/ui/page-section';
 
 const integrationPoints = [
   {
-    title: 'Retorno de /auth/login',
-    items: ['accessToken: string', 'user.sub: string', 'user.email: string', 'user.role: UserRole'],
+    title: 'Identificacao da conta',
+    items: ['Email autenticado da sessao atual.', 'Perfil institucional aplicado ao ambiente.', 'Identificador interno do usuario autenticado.'],
   },
   {
-    title: 'Retorno de /auth/me',
-    items: ['sub: string', 'email: string', 'role: UserRole'],
+    title: 'Persistencia da sessao',
+    items: ['Sessao longa quando a opcao de lembrar estiver ativa.', 'Sessao de aba quando o acesso nao deve persistir.', 'Revalidacao automatica da identidade ao abrir o app.'],
   },
   {
-    title: 'Erros de autenticacao',
-    items: [
-      '401 para credenciais invalidas, token invalido ou token expirado.',
-      'Mensagens tratadas pelo frontend com payload padrao de erro.',
-    ],
+    title: 'Acesso e permissao',
+    items: ['As rotas abertas dependem do perfil autenticado.', 'O portal preserva o escopo institucional de cada area.', 'Telas protegidas redirecionam quando o acesso nao e permitido.'],
   },
   {
-    title: 'Persistencia local',
-    items: [
-      'localStorage quando rememberMe estiver ativo.',
-      'sessionStorage quando a sessao for apenas da aba.',
-      'Revalidacao obrigatoria em /auth/me no bootstrap da app.',
-    ],
+    title: 'Seguranca operacional',
+    items: ['A autenticacao expirada encerra o acesso protegido.', 'Falhas de sessao geram feedback claro ao usuario.', 'O frontend depende apenas dos dados liberados pelo backend.'],
   },
 ];
 
@@ -41,17 +34,17 @@ export default function AuthenticatedProfilePage() {
   return (
     <AuthGuard>
       <PageSection
-        eyebrow="Usuario autenticado"
-        title="Perfil da sessao atual"
-        description="Resumo da identidade autenticada, do perfil catalogado e dos pontos principais da integracao de autenticacao."
+        eyebrow="Conta autenticada"
+        title="Perfil e sessao atual"
+        description="Resumo da identidade autenticada, do perfil institucional e do estado atual da sessao."
       >
         <div className="portal-hero portal-hero--compact">
           <div className="portal-hero__copy">
             <span className="section-chip">Sessao ativa</span>
             <h2>{rolePresentation?.label ?? 'Perfil nao identificado'}</h2>
             <p>
-              O novo shell institucional deixa o contexto de autenticacao mais visivel e ajuda a
-              diagnosticar rapidamente bootstrap, sessao e permissao.
+              Esta area concentra a leitura da conta autenticada e ajuda a confirmar rapidamente
+              identidade, permissao de acesso e persistencia da sessao.
             </p>
           </div>
 
@@ -69,8 +62,8 @@ export default function AuthenticatedProfilePage() {
 
         <div className="metrics-grid">
           <InfoCard
-            eyebrow="Payload"
-            title="Dados atuais da sessao"
+            eyebrow="Sessao"
+            title="Dados atuais da conta"
             description="Campos usados pelo frontend para identificar o usuario autenticado."
           >
             <KeyValueList
@@ -84,8 +77,8 @@ export default function AuthenticatedProfilePage() {
           </InfoCard>
 
           <InfoCard
-            eyebrow="Catalogo"
-            title="Apresentacao do perfil"
+            eyebrow="Perfil"
+            title="Apresentacao institucional"
             description="Referencia institucional usada para rotas iniciais, descricao e rotulagem visual."
           >
             <KeyValueList

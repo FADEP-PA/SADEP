@@ -26,10 +26,10 @@ type SupervisorEvaluationDocumentCardProps = {
 export function SupervisorEvaluationDocumentCard({ evaluation }: SupervisorEvaluationDocumentCardProps) {
   if (!evaluation) {
     return (
-      <InfoCard title="Avaliação da chefia" description="Contexto documental exibido ao servidor estagiário.">
+      <InfoCard title="Avaliacao da chefia" description="Contexto documental exibido ao servidor estagiario.">
         <MissingDocumentState
-          title="Avaliação da chefia ausente"
-          description="Ainda não há avaliação registrada para este processo."
+          title="Avaliacao da chefia ausente"
+          description="Ainda nao ha avaliacao registrada para este processo."
         />
       </InfoCard>
     );
@@ -37,10 +37,10 @@ export function SupervisorEvaluationDocumentCard({ evaluation }: SupervisorEvalu
 
   if (!evaluation.documentContext) {
     return (
-      <InfoCard title="Avaliação da chefia" description="Contexto documental exibido ao servidor estagiário.">
+      <InfoCard title="Avaliacao da chefia" description="Contexto documental exibido ao servidor estagiario.">
         <ReadNotReleasedState
-          title="Leitura documental ainda não liberada"
-          description="A avaliação existe, mas ainda não foi formalizada em documento assinado."
+          title="Leitura documental ainda nao liberada"
+          description="A avaliacao existe, mas ainda nao foi formalizada em documento assinado."
         />
       </InfoCard>
     );
@@ -48,7 +48,7 @@ export function SupervisorEvaluationDocumentCard({ evaluation }: SupervisorEvalu
 
   return (
     <InfoCard
-      title="Avaliação da chefia"
+      title="Avaliacao da chefia"
       description="Contexto documental consolidado para leitura do servidor, incluindo status e assinaturas."
     >
       <KeyValueList
@@ -65,7 +65,7 @@ export function SupervisorEvaluationDocumentCard({ evaluation }: SupervisorEvalu
           },
           {
             label: 'Assinatura do servidor',
-            value: evaluation.documentContext.internSignaturePending ? 'Pendente' : 'Concluída',
+            value: evaluation.documentContext.internSignaturePending ? 'Pendente' : 'Concluida',
           },
         ]}
       />
