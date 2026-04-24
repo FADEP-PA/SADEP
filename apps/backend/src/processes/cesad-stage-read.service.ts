@@ -6,6 +6,9 @@ import {
 } from '@nestjs/common';
 import {
   AuditEventType as PrismaAuditEventType,
+  CesadCommissionMemberRoleType as PrismaCesadCommissionMemberRoleType,
+  CesadStageOpinionExpectedSignerDerivationType as PrismaCesadStageOpinionExpectedSignerDerivationType,
+  CesadStageOpinionSigningCapacity as PrismaCesadStageOpinionSigningCapacity,
   CesadStageOpinionStatus as PrismaCesadStageOpinionStatus,
   DocumentType as PrismaDocumentType,
   SelfEvaluationStatus as PrismaSelfEvaluationStatus,
@@ -14,7 +17,11 @@ import {
 } from '@prisma/client';
 import {
   AuditEventType,
+  CesadCommissionMemberRoleType,
+  CesadStageOpinionExpectedSignerDerivationType,
+  CesadStageOpinionSigningCapacity,
   CesadStageOpinionStatus,
+  type CesadStageOpinionExpectedSignerRef,
   type CesadStageOpinionRef,
   DocumentType,
   type CesadStageHistoryItemRef,
@@ -166,6 +173,26 @@ export class CesadStageReadService {
             completedAt: true,
             createdAt: true,
             updatedAt: true,
+            expectedSigners: {
+              orderBy: { sortOrder: 'asc' },
+              select: {
+                id: true,
+                cesadStageOpinionId: true,
+                commissionId: true,
+                actingCommissionMemberId: true,
+                actingUserId: true,
+                derivationType: true,
+                signingCapacity: true,
+                substitutedCommissionMemberId: true,
+                nameSnapshot: true,
+                emailSnapshot: true,
+                roleTypeSnapshot: true,
+                sortOrder: true,
+                frozenAt: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
           },
         },
       },
@@ -441,6 +468,23 @@ export class CesadStageReadService {
     completedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    expectedSigners: Array<{
+      id: string;
+      cesadStageOpinionId: string;
+      commissionId: string;
+      actingCommissionMemberId: string;
+      actingUserId: string;
+      derivationType: PrismaCesadStageOpinionExpectedSignerDerivationType;
+      signingCapacity: PrismaCesadStageOpinionSigningCapacity;
+      substitutedCommissionMemberId: string | null;
+      nameSnapshot: string;
+      emailSnapshot: string;
+      roleTypeSnapshot: PrismaCesadCommissionMemberRoleType;
+      sortOrder: number;
+      frozenAt: Date;
+      createdAt: Date;
+      updatedAt: Date;
+    }>;
   }): CesadStageOpinionRef {
     return {
       id: opinion.id,
@@ -455,8 +499,45 @@ export class CesadStageReadService {
       stageConcept: opinion.stageConcept,
       stageResult: opinion.stageResult,
       completedAt: opinion.completedAt?.toISOString() ?? null,
+      expectedSigners: opinion.expectedSigners.map((signer) => this.toExpectedSignerRef(signer)),
       createdAt: opinion.createdAt.toISOString(),
       updatedAt: opinion.updatedAt.toISOString(),
+    };
+  }
+
+  private toExpectedSignerRef(signer: {
+    id: string;
+    cesadStageOpinionId: string;
+    commissionId: string;
+    actingCommissionMemberId: string;
+    actingUserId: string;
+    derivationType: PrismaCesadStageOpinionExpectedSignerDerivationType;
+    signingCapacity: PrismaCesadStageOpinionSigningCapacity;
+    substitutedCommissionMemberId: string | null;
+    nameSnapshot: string;
+    emailSnapshot: string;
+    roleTypeSnapshot: PrismaCesadCommissionMemberRoleType;
+    sortOrder: number;
+    frozenAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+  }): CesadStageOpinionExpectedSignerRef {
+    return {
+      id: signer.id,
+      cesadStageOpinionId: signer.cesadStageOpinionId,
+      commissionId: signer.commissionId,
+      actingCommissionMemberId: signer.actingCommissionMemberId,
+      actingUserId: signer.actingUserId,
+      derivationType: this.toContractExpectedSignerDerivationType(signer.derivationType),
+      signingCapacity: this.toContractSigningCapacity(signer.signingCapacity),
+      substitutedCommissionMemberId: signer.substitutedCommissionMemberId,
+      nameSnapshot: signer.nameSnapshot,
+      emailSnapshot: signer.emailSnapshot,
+      roleTypeSnapshot: this.toContractCommissionMemberRoleType(signer.roleTypeSnapshot),
+      sortOrder: signer.sortOrder,
+      frozenAt: signer.frozenAt.toISOString(),
+      createdAt: signer.createdAt.toISOString(),
+      updatedAt: signer.updatedAt.toISOString(),
     };
   }
 
@@ -522,5 +603,47 @@ export class CesadStageReadService {
     }
 
     return status as CesadStageOpinionStatus;
+  }
+
+  private toContractExpectedSignerDerivationType(
+    derivationType: PrismaCesadStageOpinionExpectedSignerDerivationType,
+  ): CesadStageOpinionExpectedSignerDerivationType {
+    if (
+      !Object.values(CesadStageOpinionExpectedSignerDerivationType).includes(
+        derivationType as CesadStageOpinionExpectedSignerDerivationType,
+      )
+    ) {
+      throw new BadRequestException(
+        `Unsupported CESAD stage opinion expected signer derivation type ${derivationType}`,
+      );
+    }
+
+    return derivationType as CesadStageOpinionExpectedSignerDerivationType;
+  }
+
+  private toContractSigningCapacity(
+    signingCapacity: PrismaCesadStageOpinionSigningCapacity,
+  ): CesadStageOpinionSigningCapacity {
+    if (
+      !Object.values(CesadStageOpinionSigningCapacity).includes(
+        signingCapacity as CesadStageOpinionSigningCapacity,
+      )
+    ) {
+      throw new BadRequestException(
+        `Unsupported CESAD stage opinion signing capacity ${signingCapacity}`,
+      );
+    }
+
+    return signingCapacity as CesadStageOpinionSigningCapacity;
+  }
+
+  private toContractCommissionMemberRoleType(
+    roleType: PrismaCesadCommissionMemberRoleType,
+  ): CesadCommissionMemberRoleType {
+    if (!Object.values(CesadCommissionMemberRoleType).includes(roleType as CesadCommissionMemberRoleType)) {
+      throw new BadRequestException(`Unsupported CESAD commission member role type ${roleType}`);
+    }
+
+    return roleType as CesadCommissionMemberRoleType;
   }
 }

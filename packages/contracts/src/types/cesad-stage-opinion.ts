@@ -1,4 +1,5 @@
 import type { CesadStageOpinionStatus } from '../enums';
+import type { CesadStageOpinionExpectedSignerRef } from './cesad-stage-opinion-expected-signer';
 
 export interface CesadStageOpinionRef {
   id: string;
@@ -13,6 +14,7 @@ export interface CesadStageOpinionRef {
   stageConcept: string | null;
   stageResult: string | null;
   completedAt: string | null;
+  expectedSigners: CesadStageOpinionExpectedSignerRef[];
   createdAt: string;
   updatedAt: string;
 }

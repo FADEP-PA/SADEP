@@ -1,11 +1,17 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import {
   AuditEventType as PrismaAuditEventType,
+  CesadCommissionMemberRoleType as PrismaCesadCommissionMemberRoleType,
+  CesadCommissionStatus as PrismaCesadCommissionStatus,
+  CesadStageOpinionExpectedSignerDerivationType as PrismaCesadStageOpinionExpectedSignerDerivationType,
+  CesadStageOpinionSigningCapacity as PrismaCesadStageOpinionSigningCapacity,
+  CesadStageOpinionStatus as PrismaCesadStageOpinionStatus,
   DocumentStatus as PrismaDocumentStatus,
   DocumentType as PrismaDocumentType,
   Prisma,
@@ -311,12 +317,21 @@ export class ProcessesService {
       }
     }
 
+    const occurredAt = new Date().toISOString();
+
+    if (payload.action === ProcessAction.ISSUE_CESAD_OPINION) {
+      await this.ensureCompletedCesadStageOpinionAndFreezeExpectedSigners(
+        transaction,
+        process,
+        new Date(occurredAt),
+      );
+    }
+
     await transaction.evaluationProcess.update({
       where: { id: process.id },
       data: { status: this.toDatabaseProcessStatus(transition.to) },
     });
 
-    const occurredAt = new Date().toISOString();
     const metadata: Prisma.InputJsonValue = {
       eventType: transition.eventType,
       action: transition.action,
@@ -388,6 +403,107 @@ export class ProcessesService {
       this.isDocumentComplete(supervisorEvaluationDocument, DocumentType.SUPERVISOR_EVALUATION) &&
       this.isDocumentComplete(selfEvaluationDocument, DocumentType.SELF_EVALUATION)
     );
+  }
+
+  private async ensureCompletedCesadStageOpinionAndFreezeExpectedSigners(
+    transaction: PrismaTransactionClient,
+    process: ProcessAccessContext,
+    frozenAt: Date,
+  ): Promise<void> {
+    const opinion = await transaction.cesadStageOpinion.findUnique({
+      where: { processStageId: process.currentStage.id },
+      select: {
+        id: true,
+        status: true,
+        _count: {
+          select: { expectedSigners: true },
+        },
+      },
+    });
+
+    if (!opinion || opinion.status !== PrismaCesadStageOpinionStatus.COMPLETED) {
+      throw new BadRequestException(
+        'Process can only issue CESAD opinion after a completed CESAD stage opinion exists for the current stage',
+      );
+    }
+
+    if (opinion._count.expectedSigners > 0) {
+      return;
+    }
+
+    const matchingCommissions = await transaction.cesadCommission.findMany({
+      where: {
+        status: PrismaCesadCommissionStatus.ACTIVE,
+        effectiveStartDate: { lte: frozenAt },
+        OR: [{ effectiveEndDate: null }, { effectiveEndDate: { gte: frozenAt } }],
+      },
+      select: {
+        id: true,
+        members: {
+          where: {
+            roleType: PrismaCesadCommissionMemberRoleType.TITULAR,
+            startDate: { lte: frozenAt },
+            OR: [{ endDate: null }, { endDate: { gte: frozenAt } }],
+            user: {
+              role: { not: PrismaUserRole.COMMISSION_ASSISTANT },
+            },
+          },
+          select: {
+            id: true,
+            userId: true,
+            roleType: true,
+            startDate: true,
+            createdAt: true,
+            user: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: [{ startDate: 'asc' }, { createdAt: 'asc' }],
+        },
+      },
+      orderBy: [{ effectiveStartDate: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    if (matchingCommissions.length === 0) {
+      throw new BadRequestException(
+        'Cannot derive CESAD opinion expected signers because no active CESAD commission was found for the freeze date',
+      );
+    }
+
+    if (matchingCommissions.length > 1) {
+      throw new ConflictException(
+        'Cannot derive CESAD opinion expected signers because more than one active CESAD commission was found for the freeze date',
+      );
+    }
+
+    const commission = matchingCommissions[0]!;
+    const titularMembers = commission.members;
+
+    if (titularMembers.length === 0) {
+      throw new BadRequestException(
+        'Cannot derive CESAD opinion expected signers because the active CESAD commission has no active titular member for the freeze date',
+      );
+    }
+
+    await transaction.cesadStageOpinionExpectedSigner.createMany({
+      data: titularMembers.map((member, index) => ({
+        cesadStageOpinionId: opinion.id,
+        commissionId: commission.id,
+        actingCommissionMemberId: member.id,
+        actingUserId: member.userId,
+        derivationType: PrismaCesadStageOpinionExpectedSignerDerivationType.ACTIVE_TITULAR,
+        signingCapacity: PrismaCesadStageOpinionSigningCapacity.EFFECTIVE_MEMBER,
+        substitutedCommissionMemberId: null,
+        nameSnapshot: member.user.name,
+        emailSnapshot: member.user.email,
+        roleTypeSnapshot: member.roleType,
+        sortOrder: index + 1,
+        frozenAt,
+      })),
+    });
   }
 
   async ensureUserHasProcessAccess(

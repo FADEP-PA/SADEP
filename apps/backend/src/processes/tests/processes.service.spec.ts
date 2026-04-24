@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 
-import { AuditEventType, ProcessAction, ProcessStatus, UserRole } from '@aep-pa/contracts';
+import {
+  AuditEventType,
+  CesadCommissionMemberRoleType,
+  CesadStageOpinionExpectedSignerDerivationType,
+  CesadStageOpinionSigningCapacity,
+  ProcessAction,
+  ProcessStatus,
+  UserRole,
+} from '@aep-pa/contracts';
 
 import {
   authenticatedUser,
@@ -436,6 +444,195 @@ export async function runProcessesServiceTests() {
       ProcessAction.ISSUE_CESAD_OPINION,
       ProcessAction.REQUEST_ADJUSTMENT,
     ]);
+
+    const titularOne = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'expected-signer-titular-one@test.local',
+      'Titular Um',
+    );
+    const titularTwo = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'expected-signer-titular-two@test.local',
+      'Titular Dois',
+    );
+    const suplente = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'expected-signer-suplente@test.local',
+      'Suplente Fora do Snapshot',
+    );
+    const commission = await context.prisma.cesadCommission.create({
+      data: {
+        name: 'Comissão CESAD vigente para snapshot',
+        status: 'ACTIVE',
+        effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
+      },
+    });
+    const titularOneMember = await context.prisma.cesadCommissionMember.create({
+      data: {
+        commissionId: commission.id,
+        userId: titularOne.id,
+        roleType: 'TITULAR',
+        startDate: new Date('2020-01-01T00:00:00.000Z'),
+      },
+    });
+    const titularTwoMember = await context.prisma.cesadCommissionMember.create({
+      data: {
+        commissionId: commission.id,
+        userId: titularTwo.id,
+        roleType: 'TITULAR',
+        startDate: new Date('2020-01-02T00:00:00.000Z'),
+      },
+    });
+    await context.prisma.cesadCommissionMember.create({
+      data: {
+        commissionId: commission.id,
+        userId: suplente.id,
+        roleType: 'SUPLENTE',
+        startDate: new Date('2020-01-03T00:00:00.000Z'),
+      },
+    });
+    await context.prisma.cesadCommissionMember.create({
+      data: {
+        commissionId: commission.id,
+        userId: assistant.id,
+        roleType: 'TITULAR',
+        startDate: new Date('2020-01-04T00:00:00.000Z'),
+      },
+    });
+
+    const cesadStageOpinion = await context.prisma.cesadStageOpinion.create({
+      data: {
+        processId: cesadProcess.id,
+        processStageId: cesadProcess.defaultStageId,
+        authorUserId: cesad.id,
+        status: 'COMPLETED',
+        reportText: 'Relatório final para congelamento de signatários esperados.',
+        legalBasis: 'Base legal do parecer.',
+        conclusion: 'Conclusão final do parecer.',
+        stageConcept: 'Satisfatório',
+        stageResult: 'Favorável',
+        completedAt: new Date('2026-04-24T12:00:00.000Z'),
+      },
+    });
+
+    const issuedWorkflow = await context.service.transitionWorkflow(
+      cesadProcess.id,
+      authenticatedUser(cesad.id, cesad.role),
+      { action: workflowActions.issueOpinion },
+    );
+    assert.equal(issuedWorkflow.status, ProcessStatus.PARECER_EMITIDO);
+
+    const expectedSigners = await context.prisma.cesadStageOpinionExpectedSigner.findMany({
+      where: { cesadStageOpinionId: cesadStageOpinion.id },
+      orderBy: { sortOrder: 'asc' },
+    });
+    assert.equal(expectedSigners.length, 2);
+    assert.deepEqual(
+      expectedSigners.map((signer) => signer.actingUserId),
+      [titularOne.id, titularTwo.id],
+    );
+    assert(!expectedSigners.some((signer) => signer.actingUserId === suplente.id));
+    assert(!expectedSigners.some((signer) => signer.actingUserId === assistant.id));
+    assert.equal(expectedSigners[0]?.cesadStageOpinionId, cesadStageOpinion.id);
+    assert.equal(expectedSigners[0]?.commissionId, commission.id);
+    assert.equal(expectedSigners[0]?.actingCommissionMemberId, titularOneMember.id);
+    assert.equal(expectedSigners[0]?.derivationType, CesadStageOpinionExpectedSignerDerivationType.ACTIVE_TITULAR);
+    assert.equal(expectedSigners[0]?.signingCapacity, CesadStageOpinionSigningCapacity.EFFECTIVE_MEMBER);
+    assert.equal(expectedSigners[0]?.substitutedCommissionMemberId, null);
+    assert.equal(expectedSigners[0]?.nameSnapshot, 'Titular Um');
+    assert.equal(expectedSigners[0]?.emailSnapshot, titularOne.email);
+    assert.equal(expectedSigners[0]?.roleTypeSnapshot, CesadCommissionMemberRoleType.TITULAR);
+    assert.equal(expectedSigners[1]?.actingCommissionMemberId, titularTwoMember.id);
+    assert.equal(expectedSigners[1]?.nameSnapshot, 'Titular Dois');
+
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          cesadProcess.id,
+          authenticatedUser(cesad.id, cesad.role),
+          { action: workflowActions.issueOpinion },
+        ),
+      /Action ISSUE_CESAD_OPINION is not allowed when process is in status PARECER_EMITIDO/,
+    );
+    assert.equal(
+      await context.prisma.cesadStageOpinionExpectedSigner.count({
+        where: { cesadStageOpinionId: cesadStageOpinion.id },
+      }),
+      2,
+    );
+
+    await context.prisma.user.update({
+      where: { id: titularOne.id },
+      data: {
+        name: 'Titular Um Renomeado',
+        email: 'expected-signer-titular-one-updated@test.local',
+      },
+    });
+    await context.prisma.cesadCommissionMember.update({
+      where: { id: titularOneMember.id },
+      data: { endDate: new Date('2020-12-31T23:59:59.000Z') },
+    });
+
+    const persistedSnapshotAfterCompositionChange = await context.prisma.cesadStageOpinionExpectedSigner.findMany({
+      where: { cesadStageOpinionId: cesadStageOpinion.id },
+      orderBy: { sortOrder: 'asc' },
+    });
+    assert.equal(persistedSnapshotAfterCompositionChange[0]?.nameSnapshot, 'Titular Um');
+    assert.equal(persistedSnapshotAfterCompositionChange[0]?.emailSnapshot, titularOne.email);
+
+    const readSnapshot = await context.cesadStageReadService.getStageReadSnapshot(
+      cesadProcess.id,
+      1,
+      authenticatedUser(assistant.id, assistant.role),
+    );
+    assert.equal(readSnapshot.cesadStageOpinion?.id, cesadStageOpinion.id);
+    assert.equal(readSnapshot.cesadStageOpinion?.expectedSigners.length, 2);
+    assert.equal(readSnapshot.cesadStageOpinion?.expectedSigners[0]?.nameSnapshot, 'Titular Um');
+    assert.equal(readSnapshot.cesadStageOpinion?.expectedSigners[0]?.emailSnapshot, titularOne.email);
+
+    const conflictingCommission = await context.prisma.cesadCommission.create({
+      data: {
+        name: 'Comissão CESAD conflitante',
+        status: 'ACTIVE',
+        effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
+      },
+    });
+    await context.prisma.cesadCommissionMember.create({
+      data: {
+        commissionId: conflictingCommission.id,
+        userId: titularTwo.id,
+        roleType: 'TITULAR',
+        startDate: new Date('2020-01-01T00:00:00.000Z'),
+      },
+    });
+    const conflictingProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+    );
+    await context.prisma.cesadStageOpinion.create({
+      data: {
+        processId: conflictingProcess.id,
+        processStageId: conflictingProcess.defaultStageId,
+        authorUserId: cesad.id,
+        status: 'COMPLETED',
+        reportText: 'Relatório final com comissão conflitante.',
+        conclusion: 'Conclusão final com comissão conflitante.',
+        completedAt: new Date('2026-04-24T12:30:00.000Z'),
+      },
+    });
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          conflictingProcess.id,
+          authenticatedUser(cesad.id, cesad.role),
+          { action: workflowActions.issueOpinion },
+        ),
+      /more than one active CESAD commission/,
+    );
   } finally {
     await disposeTestContext(context);
   }
