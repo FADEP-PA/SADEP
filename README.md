@@ -25,12 +25,10 @@ npm install
 
 ```powershell
 Copy-Item apps\backend\.env.example apps\backend\.env
-npm run prisma:generate --workspace @aep-pa/backend
-cd apps\backend
-npx prisma db push --schema prisma/schema.prisma
-cd ..\..
-npm run prisma:seed --workspace @aep-pa/backend
+npm run backend:bootstrap
 ```
+
+O bootstrap local executa, nesta ordem: `prisma generate`, preparação mínima de compatibilidade do SQLite local, `prisma db push --schema prisma/schema.prisma --skip-generate`, seed de desenvolvimento e checagem mínima do banco. O fluxo local atual usa `db push` de forma explícita por compatibilidade com o estado atual das migrations do repositório.
 
 ### 3. Subir os serviços
 

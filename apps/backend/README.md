@@ -23,14 +23,16 @@ No ambiente auditado anteriormente, a validação de instalação e compilação
    - `npm install`
 2. preparar ambiente:
    - `cp apps/backend/.env.example apps/backend/.env`
-3. gerar client Prisma:
-   - `npm run prisma:generate --workspace @aep-pa/backend`
-4. aplicar migration local:
-   - `npm run prisma:migrate:dev --workspace @aep-pa/backend -- --name init_identity_auth`
-5. executar seed de desenvolvimento:
-   - `npm run prisma:seed --workspace @aep-pa/backend`
-6. subir o backend:
+3. preparar banco local e seed de desenvolvimento:
+   - `npm run backend:bootstrap`
+4. subir o backend:
    - `npm run backend:start:dev`
+
+O bootstrap local executa `prisma generate`, preparação mínima de compatibilidade do SQLite local legado, `prisma db push --schema prisma/schema.prisma --skip-generate`, `prisma:seed` e `db:check`. Nesta etapa, `db push` é o fluxo local oficial por compatibilidade com o estado atual das migrations do repositório; `migrate dev` não deve ser tratado como caminho principal de desenvolvimento local até saneamento posterior da limitação histórica conhecida.
+
+Para validar apenas as precondições mínimas do banco local sem subir o Nest:
+
+- `npm run db:check --workspace @aep-pa/backend`
 
 > Observação: para integração local com o frontend em `http://localhost:3001`, o backend agora usa `FRONTEND_ORIGIN` para responder corretamente ao preflight CORS (`OPTIONS`) em endpoints como `/auth/login`.
 

@@ -32,26 +32,28 @@ npm install
 Copy-Item apps\backend\.env.example apps\backend\.env
 ```
 
-### 2. Gerar o Prisma Client
+### 2. Executar o bootstrap determinístico do backend
 
 ```powershell
-npm run prisma:generate --workspace @aep-pa/backend
+npm run backend:bootstrap
 ```
 
-### 3. Sincronizar o banco SQLite local
+Esse é o fluxo oficial de preparo local do backend nesta etapa. Ele executa, em ordem:
 
-Execute a partir da pasta do backend:
+- `prisma generate`
+- preparação mínima de compatibilidade do SQLite local legado
+- `prisma db push --schema prisma/schema.prisma --skip-generate`
+- seed de desenvolvimento
+- checagem mínima do banco
+
+O projeto usa `db push` como solução operacional local compatível com o estado atual do repositório. `migrate dev` não é o caminho principal local nesta etapa, pois há limitação conhecida em migration histórica no shadow database SQLite.
+
+### 3. Validar o banco local sem repetir todo o bootstrap
+
+Se quiser apenas checar se o banco local está pronto:
 
 ```powershell
-cd apps\backend
-npx prisma db push --schema prisma/schema.prisma
-cd ..\..
-```
-
-### 4. Popular usuários de desenvolvimento
-
-```powershell
-npm run prisma:seed --workspace @aep-pa/backend
+npm run db:check --workspace @aep-pa/backend
 ```
 
 ## Credenciais locais padrão
@@ -61,6 +63,7 @@ Após o seed, os usuários abaixo ficam disponíveis:
 - `admin@aep-pa.local` / `Admin123!`
 - `supervisor@aep-pa.local` / `Supervisor123!`
 - `cesad@aep-pa.local` / `Cesad123!`
+- `assistant@aep-pa.local` / `Assistant123!`
 - `authority@aep-pa.local` / `Authority123!`
 - `server@aep-pa.local` / `Server123!`
 
@@ -113,12 +116,18 @@ Stop-Process -Id <PID> -Force
 
 ### Login falhando com `Invalid credentials`
 
-Isso normalmente indica que o banco local ainda não recebeu o seed.
+Isso normalmente indica que o banco local ainda não recebeu o seed, ou que o banco não foi preparado pelo fluxo oficial.
 
-Execute novamente:
+Execute novamente o bootstrap:
 
 ```powershell
-npm run prisma:seed --workspace @aep-pa/backend
+npm run backend:bootstrap
+```
+
+Para validar apenas as precondições mínimas do banco:
+
+```powershell
+npm run db:check --workspace @aep-pa/backend
 ```
 
 ### Frontend com erro relacionado a `.next`
@@ -141,9 +150,10 @@ Checklist mínimo para validar o ambiente:
 
 - `npm install` executado com sucesso
 - `apps/backend/.env` criado
+- `npm run backend:bootstrap` executado com sucesso
 - Prisma Client gerado
 - banco sincronizado com `db push`
-- seed executado
+- seed e `db:check` executados
 - backend respondendo em `3000`
 - frontend respondendo em `3001`
 - login funcionando com `admin@aep-pa.local`
