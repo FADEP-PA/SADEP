@@ -1,7 +1,7 @@
 # AEP-PA Backend Implementation Tracker
 
 **Status:** Controle operacional das implementações do backend  
-**Versão:** 1.7.0  
+**Versão:** 1.8.0  
 **Data:** 2026-04-24  
 **Objetivo:** Registrar, controlar e acompanhar as implementações do backend do AEP-PA com suporte a execução por agente de IA, revisão técnica e aprovação humana.
 
@@ -20,6 +20,26 @@ Ele deve ser usado para:
 - impedir que o agente avance fora do escopo autorizado;
 - manter rastreabilidade entre task, implementação, auditoria e commit;
 - alinhar a execução prática do backend com o checklist de correções estruturais do projeto.
+
+---
+
+# Relação com a documentação transversal do projeto
+
+Este tracker **não substitui** o documento transversal de problemas do projeto.
+
+## Fonte operacional do backend
+- `docs/backend-implementation-tracker.md`
+
+## Painel transversal do projeto
+- `docs/problemas-atuais-do-projeto.md`
+
+## Regra de convivência entre os documentos
+
+- o **tracker** governa a **ordem do roadmap backend**, suas dependências e a task ativa autorizada;
+- o arquivo **`problemas-atuais-do-projeto.md`** registra o panorama amplo do projeto, incluindo backend, frontend, infraestrutura, build, DX e lacunas gerais;
+- itens do documento transversal **só entram no fluxo do tracker** quando forem convertidos em task backend explícita, com escopo e ordem definidos aqui.
+
+Essa separação evita que o agente trate todo problema transversal como backlog backend imediatamente executável.
 
 ---
 
@@ -60,6 +80,7 @@ Sempre que uma implementação for iniciada, o prompt deve indicar explicitament
 
 1. o arquivo a ser consultado:
    - `docs/backend-implementation-tracker.md`
+   - `docs/problemas-atuais-do-projeto.md`
 2. o bloco/feature ativo
 3. a task específica autorizada
 4. a proibição de avançar para outras tasks
@@ -83,7 +104,7 @@ A ordem de trabalho foi reorganizada segundo os seguintes princípios:
 4. **Fluxo ponta a ponta operacional antes de refinamentos institucionais**
 5. **Modelagem correta do domínio CESAD antes da assinatura colegiada**
 6. **Identidade canônica das pessoas antes do congelamento documental de signatários**
-7. **Hardening operacional e dívida técnica seguem importantes, mas não devem impedir evolução estrutural do domínio**
+7. **Problemas operacionais críticos do backend devem ser registrados sem desorganizar a trilha de domínio já em curso**
 8. **Formalização documental e assinatura colegiada do parecer CESAD apenas depois da base institucional estabilizada**
 
 Essa ordem reduz risco de regressão e evita construir regras institucionais ou documentais sobre abstrações frágeis.
@@ -93,7 +114,7 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 # Estado atual
 
 ## Bloco/feature ativo
-**BLOCO 5 — Ponte entre Comissão e Parecer**
+**BLOCO 5 — Ponte entre Identidade, Comissão e Parecer**
 
 ## Task ativa
 **BE-IDENT-01 — Introduzir nome canônico no User antes do snapshot de signatários**
@@ -105,7 +126,13 @@ Entretanto, a análise prévia identificou uma dependência estrutural important
 
 Como o parecer CESAD deverá congelar um `nameSnapshot` dos signatários no momento em que for colocado para assinatura, isso exige uma **fonte canônica e confiável de nome** antes da implementação da `BE-STR-01`.
 
-Por isso, foi aberta uma task intermediária obrigatória para introduzir o nome canônico no `User` e propagá-lo com segurança por backend, auth, sessão e frontend.
+Paralelamente, a varredura transversal mais recente do projeto registrou problemas operacionais importantes de backend, como:
+- instabilidade de `prisma generate` em ambiente Windows;
+- bootstrap local dependente de preparo manual do banco;
+- ausência de fluxo consolidado de build/start de produção;
+- fragilidades nos pacotes compartilhados do monorepo.  
+
+Esses itens foram incorporados neste tracker como backlog backend explícito, mas **não substituem a prioridade atual da `BE-IDENT-01`**.
 
 ---
 
@@ -308,7 +335,7 @@ Objetivo: corrigir desalinhamentos reais de contrato entre frontend e backend qu
 
 # BLOCO 3 — Hardening Operacional e Dívida Técnica Imediata
 
-Objetivo: reduzir riscos operacionais e débitos técnicos que continuam importantes, mas não são a frente principal neste momento.
+Objetivo: reduzir riscos operacionais e débitos técnicos importantes do backend, sem quebrar a trilha principal de domínio já em curso.
 
 ---
 
@@ -323,7 +350,88 @@ Objetivo: reduzir riscos operacionais e débitos técnicos que continuam importa
 
 **Observações**
 - permanece relevante
-- deixou de ser a melhor próxima task diante da necessidade de modelagem estrutural da comissão
+- deixou de ser a melhor próxima task diante da necessidade de modelagem estrutural da comissão e identidade canônica do usuário
+
+---
+
+## BE-OPS-02 — Estabilizar `prisma generate` no ambiente Windows
+
+- **Status:** PLANNED
+- **Prioridade:** Alta
+- **Responsável atual:** —
+- **Auditoria necessária:** Sim
+- **Commit associado:** —
+- **Dependências:** Nenhuma rígida
+
+**Objetivo**
+Remover a fragilidade operacional observada no fluxo de geração do Prisma Client em ambiente Windows.
+
+**Escopo**
+- diagnosticar e mitigar o `EPERM` ao renomear `query_engine-windows.dll.node`
+- revisar interferência de processos `node` ativos durante generate
+- separar, se necessário, o fluxo de generate do runtime dev
+- documentar procedimento local reproduzível
+
+**Fora do escopo**
+- migração da configuração Prisma deprecada
+- correção da migration histórica que bloqueia `prisma migrate dev`
+
+**Observações**
+- o problema foi validado no documento transversal do projeto
+- esse item trata lock operacional do engine, não o problema histórico de migration
+
+---
+
+## BE-OPS-03 — Criar bootstrap determinístico do backend
+
+- **Status:** PLANNED
+- **Prioridade:** Alta
+- **Responsável atual:** —
+- **Auditoria necessária:** Sim
+- **Commit associado:** —
+- **Dependências:** Nenhuma rígida
+
+**Objetivo**
+Eliminar a dependência de preparo manual e implícito do banco para que o backend funcione localmente de forma previsível.
+
+**Escopo**
+- definir fluxo único de bootstrap local
+- ordenar `generate`, sync/migrate e `seed`
+- documentar sequência mínima funcional
+- validar comportamento guiado quando o banco não estiver pronto
+
+**Fora do escopo**
+- CI/CD completo
+- build de produção
+- reestruturação global de scripts raiz
+
+**Observações**
+- o backend hoje depende de sincronização manual do banco e seed para funcionar de forma confiável
+- esse item deve reduzir erros 500 de ambiente não preparado
+
+---
+
+## BE-OPS-04 — Definir build e start de produção do backend
+
+- **Status:** PLANNED
+- **Prioridade:** Média
+- **Responsável atual:** —
+- **Auditoria necessária:** Sim
+- **Commit associado:** —
+- **Dependências:** BE-OPS-03 recomendada antes
+
+**Objetivo**
+Definir fluxo claro de build compilada e start de produção para o backend.
+
+**Escopo**
+- separar scripts de dev/test/prod
+- substituir dependência principal em `ts-node` por build compilada no fluxo de produção
+- validar boot do artefato compilado
+
+**Fora do escopo**
+- pipeline completa de deploy
+- containerização obrigatória
+- automações de infraestrutura
 
 ---
 
@@ -342,10 +450,34 @@ Objetivo: reduzir riscos operacionais e débitos técnicos que continuam importa
 
 ---
 
+## BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo
+
+- **Status:** PLANNED
+- **Prioridade:** Média
+- **Responsável atual:** —
+- **Auditoria necessária:** Sim
+- **Commit associado:** —
+- **Dependências:** Nenhuma rígida
+
+**Objetivo**
+Dar maturidade operacional aos pacotes compartilhados do monorepo, especialmente `contracts` e `config`.
+
+**Escopo**
+- revisar forma de build e consumo do `packages/contracts`
+- reduzir acoplamento direto em `src`
+- estruturar melhor o pacote `config`
+- melhorar clareza de uso entre apps
+
+**Fora do escopo**
+- redesign completo da arquitetura do monorepo
+- refactor transversal em todos os imports sem necessidade prática
+
+---
+
 ## BE-TECH-01 — Migrar a configuração depreciada do Prisma
 
 - **Status:** PLANNED
-- **Prioridade:** Baixa
+- **Prioridade:** Média
 - **Responsável atual:** —
 - **Auditoria necessária:** Não obrigatória
 - **Commit associado:** —
@@ -353,10 +485,10 @@ Objetivo: reduzir riscos operacionais e débitos técnicos que continuam importa
 
 **Observações**
 - warnings continuam aparecendo nos testes
-- permanece como dívida técnica de baixa prioridade
 - `prisma migrate dev` permanece impedido por migration histórica anterior no shadow database SQLite: `20260415113000_increment_10b_cesad_stage_opinion_artifact`
-- a falha decorre do uso de `ALTER TABLE ... ADD CONSTRAINT` nessa migration histórica; as migrations recentes do macrobloco CESAD foram validadas isoladamente e não são as causadoras
-- essa dívida deve ser corrigida em task técnica futura específica para restaurar o fluxo local de migrations
+- a falha decorre do uso de `ALTER TABLE ... ADD CONSTRAINT` nessa migration histórica
+- as migrations recentes do macrobloco CESAD foram validadas isoladamente e não são as causadoras
+- essa task deve cobrir a migração de `package.json#prisma` para `prisma.config.ts`, sem confundir isso com o lock operacional do generate em Windows
 
 ---
 
@@ -369,9 +501,13 @@ Objetivo: reduzir riscos operacionais e débitos técnicos que continuam importa
 - **Commit associado:** —
 - **Dependências:** Nenhuma
 
+**Observações**
+- `worker` e `cron` existem na estrutura, mas ainda não entregam funcionalidade real
+- revisar se entram como escopo concreto ou saem da promessa arquitetural imediata
+
 ---
 
-## BE-TECH-03 — Limpeza de placeholders e estruturas provisórias
+## BE-TECH-03 — Limpeza de placeholders e estruturas provisórias do backend
 
 - **Status:** PLANNED
 - **Prioridade:** Baixa
@@ -587,12 +723,13 @@ Objetivo: preparar a camada de signatários esperados do parecer CESAD sobre uma
 Introduzir um campo explícito, confiável e canônico de nome no `User`, para servir como fonte de verdade para exibição institucional e para futuro congelamento em `nameSnapshot` dos signatários esperados do parecer CESAD.
 
 **Escopo**
-- adicionar campo de nome ao `User`
+- adicionar campo `name` ao `User`
 - ajustar persistência/migration
 - ajustar seed
 - propagar nome por auth/login/me
 - ajustar sessão/frontend
 - substituir, quando couber, exibições sintéticas derivadas de email
+- manter `displayName` legado apenas onde ele já existir como contrato de apresentação, trocando a fonte para `User.name`
 
 **Fora do escopo**
 - modelagem de signatários esperados
@@ -600,6 +737,7 @@ Introduzir um campo explícito, confiável e canônico de nome no `User`, para s
 - documento formal do parecer
 - nova fonte de nome dentro da comissão/composição
 - duplicação de nome em `CesadCommissionMember`
+- refactor amplo de nomenclatura de contratos só por estética
 
 **Observações**
 - o sistema hoje não possui campo explícito de nome no `User`
@@ -725,11 +863,15 @@ Esses itens foram tratados e aprovados anteriormente e não devem ser reabertos 
 20. `BE-FLOW-10B`
 21. `BE-FLOW-10C`
 
-22. `BE-OPS-01`
-23. `BE-ARCH-01`
-24. `BE-TECH-01`
-25. `BE-TECH-02`
-26. `BE-TECH-03`
+22. `BE-OPS-02`
+23. `BE-OPS-03`
+24. `BE-OPS-04`
+25. `BE-OPS-01`
+26. `BE-ARCH-01`
+27. `BE-ARCH-02`
+28. `BE-TECH-01`
+29. `BE-TECH-02`
+30. `BE-TECH-03`
 
 ---
 
@@ -738,6 +880,7 @@ Esses itens foram tratados e aprovados anteriormente e não devem ser reabertos 
 Sempre que um agente de IA for usado, o prompt deve seguir esta lógica:
 
 - consultar `docs/backend-implementation-tracker.md`
+- consultar `docs/problemas-atuais-do-projeto.md`
 - localizar o bloco/feature ativo
 - localizar a task autorizada
 - implementar somente aquela task
@@ -783,10 +926,10 @@ Usar este template ao registrar evolução de uma task:
 Este documento deve ser mantido atualizado durante toda a evolução do backend.
 
 Ele é a fonte operacional de verdade para:
-
 - ordem das implementações
 - task ativa
 - status real de execução
 - relação entre implementação, auditoria e aprovação
+- integração do roadmap backend com o painel transversal de problemas do projeto
 
 Ao final do ciclo do backend, este tracker poderá ser arquivado ou movido para histórico.

@@ -1,279 +1,427 @@
 # Problemas atuais do projeto AEP-PA
 
-Atualizado em: 24/04/2026
+**Atualizado em:** 24/04/2026  
+**Função deste documento:** painel transversal de problemas ativos do projeto  
+**Escopo:** backend, frontend, infraestrutura, build, DX e lacunas estruturais gerais
 
-## Estado atual validado
+---
 
-Validacoes executadas nesta rodada:
+# Finalidade deste documento
 
-- `npm install` -> dependencias ja instaladas
-- `npm install` -> `npm audit` reportou `10 vulnerabilities (9 high, 1 critical)`
-- `npm run prisma:generate --workspace @aep-pa/backend` -> falhou com `EPERM` ao renomear `query_engine-windows.dll.node`
-- `npx prisma db push --schema prisma/schema.prisma` em `apps/backend` -> banco sincronizado; a etapa de generate continuou falhando com `EPERM`
-- `npm run prisma:seed --workspace @aep-pa/backend` -> passou
-- `npm run typecheck --workspace @aep-pa/backend` -> passou
-- `npm run test --workspace @aep-pa/backend` -> passou
-- `npm run test:unit --workspace @aep-pa/backend` -> passou
-- `npm run typecheck:spec --workspace @aep-pa/backend` -> passou
-- `npm run build --workspace @aep-pa/frontend` -> passou
+Este documento registra os **problemas atuais do projeto como um todo**, independentemente de estarem ou não na frente ativa do roadmap backend.
 
-Conclusao tecnica desta rodada:
+Ele deve ser usado para:
 
-- o backend esta funcional depois de sincronizacao manual do banco e execucao do seed
-- o principal problema operacional atual no backend esta no fluxo de geracao do Prisma no Windows
-- o frontend compila, mas continua com lacunas funcionais e areas placeholder
+- consolidar problemas validados em backend, frontend, infraestrutura e DX;
+- registrar riscos e lacunas relevantes do projeto;
+- apoiar priorização técnica;
+- servir como mapa de problemas transversais para equipe e agentes;
+- complementar o roadmap operacional do backend.
 
-## Problemas atuais de maior prioridade
+---
 
-### 1. Geração do Prisma instável no ambiente Windows
+# Relação com o roadmap backend
 
-Descricao:
+Este documento **não substitui** o tracker backend.
 
-O comando de geracao do client Prisma falha com erro de sistema operacional ao renomear o engine nativo em `node_modules/.prisma/client`. O erro e compativel com lock de arquivo por processo em execucao.
+## Fonte de verdade do roadmap backend
+- `docs/backend-implementation-tracker.md`
 
-Evidencias:
+## Função deste documento
+- registrar o panorama amplo de problemas do projeto;
+- indicar itens que podem virar tasks específicas no tracker backend ou em futuros trackers de frontend/infra;
+- preservar achados importantes sem obrigar execução imediata.
 
+## Regra de convivência
+- o **tracker backend** governa a **ordem de implementação do backend**;
+- este documento governa a **visão ampla dos problemas atuais do projeto**;
+- um problema listado aqui só entra no fluxo operacional do backend quando for convertido em task explícita no tracker.
+
+---
+
+# Estado atual validado
+
+## Validações executadas nesta rodada
+
+- `npm install` → dependências já instaladas
+- `npm install` → `npm audit` reportou `10 vulnerabilities (9 high, 1 critical)`
+- `npm run prisma:generate --workspace @aep-pa/backend` → falhou com `EPERM` ao renomear `query_engine-windows.dll.node`
+- `npx prisma db push --schema prisma/schema.prisma` em `apps/backend` → banco sincronizado; a etapa de generate continuou falhando com `EPERM`
+- `npm run prisma:seed --workspace @aep-pa/backend` → passou
+- `npm run typecheck --workspace @aep-pa/backend` → passou
+- `npm run test --workspace @aep-pa/backend` → passou
+- `npm run test:unit --workspace @aep-pa/backend` → passou
+- `npm run typecheck:spec --workspace @aep-pa/backend` → passou
+- `npm run build --workspace @aep-pa/frontend` → passou
+
+## Conclusão técnica desta rodada
+
+- o backend está funcional depois de sincronização manual do banco e execução do seed;
+- o principal problema operacional atual no backend está no fluxo de geração do Prisma no Windows;
+- o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
+- o roadmap backend segue corretamente com a task ativa `BE-IDENT-01`, pois a modelagem futura de signatários do parecer depende de nome canônico no `User`, e esse campo ainda não existe.  
+
+---
+
+# Frentes ativas e dependências estruturais
+
+## Frente ativa do backend
+**BE-IDENT-01 — Introduzir nome canônico no User antes do snapshot de signatários**
+
+### Motivo
+A próxima frente de domínio do backend é `BE-STR-01`, que modelará os signatários esperados do parecer CESAD. Entretanto, isso depende de uma fonte canônica de nome em `User`, pois o snapshot do parecer não pode congelar:
+- email;
+- nem nome sintético derivado do email.
+
+### Situação atual
+Hoje o sistema:
+- não possui campo explícito de nome em `User`;
+- usa email como identificador humano visível;
+- e em alguns pontos deriva “display name” a partir do email.
+
+### Consequência
+`BE-IDENT-01` foi corretamente posicionada antes da `BE-STR-01` no tracker backend.
+
+---
+
+# Problemas atuais de maior prioridade
+
+## 1. Nome canônico ainda ausente no `User`
+
+### Descrição
+O sistema ainda não possui um campo explícito, confiável e canônico de nome em `User`. Isso afeta diretamente a futura modelagem de signatários esperados do parecer CESAD, porque o snapshot documental precisará congelar nome institucional de pessoas reais.
+
+### Evidências
+- o diagnóstico confirmou ausência estrutural de nome no `User`;
+- o backend e o frontend ainda recorrem a email ou display name derivado de email;
+- a task `BE-IDENT-01` já foi aberta no tracker backend como pré-requisito para `BE-STR-01`.
+
+### Impacto
+- bloqueio estrutural para modelagem correta do `nameSnapshot`;
+- risco de congelar identificadores inadequados em parecer institucional;
+- propagação de nomes sintéticos pelo sistema.
+
+### Status no tracker
+- corresponde à task **`BE-IDENT-01`** no `backend-implementation-tracker.md`
+
+---
+
+## 2. Geração do Prisma instável no ambiente Windows
+
+### Descrição
+O comando de geração do client Prisma falha com erro de sistema operacional ao renomear o engine nativo em `node_modules/.prisma/client`. O erro é compatível com lock de arquivo por processo em execução.
+
+### Evidências
 - `npm run prisma:generate --workspace @aep-pa/backend` falhou com `EPERM`
-- `npx prisma db push --schema prisma/schema.prisma` sincronizou o banco, mas a etapa automatica de generate falhou pelo mesmo motivo
-- Havia processos `node` ativos executando backend/frontend no momento da tentativa
+- `npx prisma db push --schema prisma/schema.prisma` sincronizou o banco, mas a etapa automatizada de generate falhou pelo mesmo motivo
+- havia processos `node` ativos executando backend/frontend no momento da tentativa
 
-Impacto:
+### Impacto
+- setup local não determinístico
+- risco de client Prisma desatualizado em relação ao schema
+- aumento de falso positivo de “backend quebrado” em ambiente de desenvolvimento
 
-- setup local nao deterministico
-- risco de client Prisma desatualizado em relacao ao schema
-- aumento de falso positivo de "backend quebrado" em ambiente de desenvolvimento
+### Status no tracker
+- corresponde à task **`BE-OPS-02 — Estabilizar prisma generate no ambiente Windows`**
 
-### 2. Bootstrap do backend depende de preparo manual do banco
+---
 
-Descricao:
+## 3. Bootstrap do backend depende de preparo manual do banco
 
-O backend passou em `typecheck` e testes somente apos execucao manual de `db push` e `seed`. Os logs existentes mostram falha anterior em runtime por ausencia de tabelas.
+### Descrição
+O backend passou em `typecheck` e testes somente após execução manual de `db push` e `seed`. Os logs existentes mostram falha anterior em runtime por ausência de tabelas.
 
-Evidencias:
-
-- [apps/backend/backend-dev-3000.err.log](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/backend/backend-dev-3000.err.log)
+### Evidências
 - mensagem registrada: `The table main.User does not exist in the current database`
-- a sequencia minima funcional nesta rodada foi: `db push` -> `seed` -> validacoes
+- a sequência mínima funcional nesta rodada foi: `db push` → `seed` → validações
 
-Impacto:
+### Impacto
+- onboarding local frágil
+- risco de erro 500 em runtime quando a base não foi preparada
+- ausência de bootstrap reproduzível para equipe e CI
 
-- onboarding local fragil
-- risco de erro 500 em runtime quando a base nao foi preparada
-- ausencia de bootstrap reproduzivel para equipe e CI
+### Status no tracker
+- corresponde à task **`BE-OPS-03 — Criar bootstrap determinístico do backend`**
 
-### 3. Configuracao Prisma deprecada
+---
 
-Descricao:
+## 4. Configuração Prisma depreciada
 
-O projeto ainda utiliza configuracao em `package.json#prisma`. O Prisma atual ja emite aviso de deprecacao e indica migracao para `prisma.config.ts`.
+### Descrição
+O projeto ainda utiliza configuração em `package.json#prisma`. O Prisma atual já emite aviso de depreciação e indica migração para `prisma.config.ts`.
 
-Evidencias:
-
+### Evidências
 - os testes exibiram aviso deprecado do Prisma para `package.json#prisma`
-- [apps/backend/package.json](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/backend/package.json)
 
-Impacto:
-
-- debito tecnico de configuracao
+### Impacto
+- débito técnico de configuração
 - risco de quebra em upgrade futuro para Prisma 7
-- ruido recorrente na esteira local
+- ruído recorrente na esteira local
 
-### 4. Vulnerabilidades abertas em dependencias
+### Status no tracker
+- corresponde à task **`BE-TECH-01 — Migrar a configuração depreciada do Prisma`**
 
-Descricao:
+---
 
-O `npm install` reportou vulnerabilidades em dependencias do workspace. Nao foi feita ainda a classificacao entre dependencia de runtime, dev-only e transitiva.
+## 5. Vulnerabilidades abertas em dependências
 
-Evidencias:
+### Descrição
+O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda não foi feita classificação formal entre dependência de runtime, dev-only e transitiva.
 
+### Evidências
 - `npm install` reportou `10 vulnerabilities (9 high, 1 critical)`
 
-Impacto:
-
-- risco de seguranca ainda nao qualificado
+### Impacto
+- risco de segurança ainda não qualificado
 - possibilidade de impacto direto em runtime ou cadeia de build
 
-## Riscos altos
+### Status no tracker
+- permanece como problema transversal relevante
+- ainda não foi convertido em task backend específica com ID próprio
 
-### 5. Mecanismo de autenticacao ainda nao esta endurecido para producao
+---
 
-Descricao:
+# Riscos altos
 
-A autenticacao usa token bearer proprio, sem refresh token, sem revogacao e com persistencia de sessao no navegador.
+## 6. Mecanismo de autenticação ainda não está endurecido para produção
 
-Evidencias:
+### Descrição
+A autenticação usa token bearer próprio, sem refresh token, sem revogação e com persistência de sessão no navegador.
 
-- [apps/backend/src/auth/auth.service.ts](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/backend/src/auth/auth.service.ts)
-- [apps/frontend/src/shared/auth/session-storage.ts](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/frontend/src/shared/auth/session-storage.ts)
-
-Impacto:
-
-- maior exposicao a problemas de sessao e roubo de token
-- baixo controle operacional sobre expiracao e revogacao
+### Impacto
+- maior exposição a problemas de sessão e roubo de token
+- baixo controle operacional sobre expiração e revogação
 - desenho insuficiente para ambiente institucional real
 
-### 6. Frontend ainda depende de lacunas de API
+### Status no tracker
+- corresponde à task **`BE-ARCH-01 — Revisar estratégia de autenticação web`**
 
-Descricao:
+---
 
-Algumas jornadas do frontend usam mensagens e comportamento de contorno porque a API nao expoe todos os dados necessarios para leitura completa da etapa.
+## 7. Frontend ainda depende de lacunas de API
 
-Evidencias:
+### Descrição
+Algumas jornadas do frontend usam mensagens e comportamento de contorno porque a API ainda não expõe todos os dados necessários para leitura completa da etapa.
 
-- [apps/frontend/src/features/process/components/intern-server-workspace.tsx](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/frontend/src/features/process/components/intern-server-workspace.tsx)
+### Impacto
+- uso de heurística no cliente
+- maior risco de inconsistências entre regra de negócio e interface
 
-Impacto:
+### Status no tracker
+- permanece como problema transversal
+- se necessário, deve ser convertido em nova task de alinhamento backend/frontend
 
-- uso de heuristica no cliente
-- maior risco de inconsistencias entre regra de negocio e interface
+---
 
-### 7. Rotas importantes do frontend ainda estao em placeholder
+## 8. Rotas importantes do frontend ainda estão em placeholder
 
-Descricao:
+### Descrição
+As áreas de administração e homologação ainda usam estrutura visual de placeholder, sem entrega funcional equivalente ao restante do fluxo.
 
-As areas de administracao e homologacao ainda usam estrutura visual de placeholder, sem entrega funcional equivalente ao restante do fluxo.
-
-Evidencias:
-
-- [apps/frontend/src/features/home/components/role-placeholder-page.tsx](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/frontend/src/features/home/components/role-placeholder-page.tsx)
-- [apps/frontend/src/app/(authenticated)/admin/page.tsx](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/frontend/src/app/(authenticated)/admin/page.tsx)
-- [apps/frontend/src/app/(authenticated)/homologacao-autoridade/page.tsx](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/frontend/src/app/(authenticated)/homologacao-autoridade/page.tsx)
-
-Impacto:
-
+### Impacto
 - cobertura funcional incompleta por perfil
-- diferenca entre navegacao exposta e funcionalidade real disponivel
+- diferença entre navegação exposta e funcionalidade real disponível
 
-## Lacunas estruturais relevantes
+### Status no tracker
+- hoje não está no roadmap backend como task específica
+- permanece como backlog transversal do projeto
 
-### 8. Apps `cron` e `worker` estao somente na estrutura
+---
 
-Descricao:
+# Lacunas estruturais relevantes
 
-Os apps existem no monorepo, mas nao possuem implementacao funcional, script de execucao ou primeira entrega real.
+## 9. Apps `cron` e `worker` estão somente na estrutura
 
-Evidencias:
+### Descrição
+Os apps existem no monorepo, mas não possuem implementação funcional, script de execução ou primeira entrega real.
 
-- [apps/cron/README.md](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/cron/README.md)
-- [apps/worker/README.md](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/worker/README.md)
+### Impacto
+- não há processamento assíncrono real
+- não há rotina agendada real
 
-Impacto:
+### Status no tracker
+- corresponde à task **`BE-TECH-02 — Revisar estrutura de workspaces (worker / cron)`**
 
-- nao ha processamento assincrono real
-- nao ha rotina agendada real
+---
 
-### 9. Esteira de qualidade ainda nao esta consolidada na raiz
+## 10. Esteira de qualidade ainda não está consolidada na raiz
 
-Descricao:
+### Descrição
+O workspace raiz não tem scripts agregadores de `build`, `test`, `lint` e `typecheck`. O frontend também não define scripts de teste ou lint.
 
-O workspace raiz nao tem scripts agregadores de `build`, `test`, `lint` e `typecheck`. O frontend tambem nao define scripts de teste ou lint.
-
-Evidencias:
-
-- [package.json](C:/Users/SEDUC/Documents/GitHub/AEP-PA/package.json)
-- [apps/frontend/package.json](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/frontend/package.json)
-
-Impacto:
-
+### Impacto
 - CI/CD mais manual
-- ausencia de gate unico de qualidade para o repositório
+- ausência de gate único de qualidade para o repositório
 
-### 10. Pacotes compartilhados ainda estao subestruturados
+### Status no tracker
+- ainda não foi convertido em task backend explícita
+- permanece como problema transversal relevante
 
-Descricao:
+---
 
-`packages/config` ainda nao entrega configuracao compartilhada real, e `packages/contracts` expõe arquivos de `src` diretamente, sem build proprio.
+## 11. Pacotes compartilhados ainda estão subestruturados
 
-Evidencias:
+### Descrição
+`packages/config` ainda não entrega configuração compartilhada real, e `packages/contracts` expõe arquivos de `src` diretamente, sem build próprio.
 
-- [packages/config/README.md](C:/Users/SEDUC/Documents/GitHub/AEP-PA/packages/config/README.md)
-- [packages/contracts/package.json](C:/Users/SEDUC/Documents/GitHub/AEP-PA/packages/contracts/package.json)
-
-Impacto:
-
-- baixo nivel de maturidade da camada compartilhada
+### Impacto
+- baixo nível de maturidade da camada compartilhada
 - maior acoplamento entre apps e estrutura interna dos pacotes
 
-### 11. Backend ainda nao possui fluxo explicito de build de producao
+### Status no tracker
+- corresponde à task **`BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo`**
 
-Descricao:
+---
 
-Os scripts atuais do backend usam `ts-node` e nao existe fluxo consolidado de compilacao e start de producao.
+## 12. Backend ainda não possui fluxo explícito de build de produção
 
-Evidencias:
+### Descrição
+Os scripts atuais do backend usam `ts-node` e não existe fluxo consolidado de compilação e start de produção.
 
-- [apps/backend/package.json](C:/Users/SEDUC/Documents/GitHub/AEP-PA/apps/backend/package.json)
-
-Impacto:
-
+### Impacto
 - processo de deploy indefinido
 - baixa previsibilidade para runtime fora do ambiente dev
 
-## Dev experience
+### Status no tracker
+- corresponde à task **`BE-OPS-04 — Definir build e start de produção do backend`**
 
-### 12. Instabilidade observada no frontend em modo dev
+---
 
-Descricao:
+# Dev experience
 
+## 13. Instabilidade observada no frontend em modo dev
+
+### Descrição
 O `build` do frontend passou, mas o log de desenvolvimento registra falhas de hot reload, carga de chunks e respostas `500`/`404` em assets do Next.
 
-Evidencias:
-
-- [frontend-dev.log](C:/Users/SEDUC/Documents/GitHub/AEP-PA/frontend-dev.log)
-
-Impacto:
-
+### Impacto
 - perda de produtividade em desenvolvimento
-- maior ocorrencia de falso positivo de regressao visual ou de runtime
+- maior ocorrência de falso positivo de regressão visual ou de runtime
 
-## Checklist de correção recomendado
+### Status no tracker
+- permanece como problema transversal
+- ainda não convertido em task backend
 
-### Ordem recomendada
+---
 
-1. Preparar bootstrap deterministico do backend
-2. Remover fragilidade operacional do Prisma
-3. Limpar passivos de seguranca e configuracao
-4. Reduzir lacunas entre API e frontend
-5. Fechar areas placeholder
-6. Consolidar arquitetura de monorepo e producao
+# Checklist de correção recomendado
 
-### Tarefas
+## Ordem recomendada transversal
 
-- [ ] `{BACK}` Criar um fluxo unico de bootstrap do backend.
-Como corrigir: adicionar script unico para `prisma generate`, `db push` ou `migrate`, `seed` e validacao basica de health; documentar a ordem de execucao no README e no setup local.
+1. Introduzir nome canônico no `User`
+2. Modelar signatários esperados do parecer CESAD
+3. Preparar bootstrap determinístico do backend
+4. Remover fragilidade operacional do Prisma no Windows
+5. Definir build/start de produção do backend
+6. Limpar passivos de segurança e configuração
+7. Reduzir lacunas entre API e frontend
+8. Fechar áreas placeholder
+9. Consolidar arquitetura de monorepo e produção
 
-- [ ] `{BACK}` Fazer o backend falhar de forma guiada quando o banco nao estiver pronto.
-Como corrigir: validar schema/tabelas na inicializacao, emitir erro explicito de bootstrap e evitar 500 generico em login e rotas basicas quando a base estiver ausente.
+---
 
-- [ ] `{BACK}` Estabilizar `prisma generate` no Windows.
-Como corrigir: impedir generate com processo que esteja usando o engine ativo, revisar lock do `query_engine-windows.dll.node`, testar generate com backend/frontend parados e, se necessario, separar generate de runtime dev.
+# Tarefas mapeadas
 
-- [ ] `{BACK}` Migrar a configuracao Prisma deprecada.
-Como corrigir: remover uso de `package.json#prisma`, criar `prisma.config.ts` e ajustar scripts e documentacao para o formato atual suportado.
+## Backend / Domínio
 
-- [ ] `{BACK}` Classificar e corrigir vulnerabilidades de dependencias.
-Como corrigir: executar `npm audit`, separar vulnerabilidades de runtime e dev-only, atualizar dependencias diretas e transitivas com validacao posterior de backend e frontend.
+- [ ] `{BACK}` **BE-IDENT-01** — Introduzir nome canônico no `User`
+  - Como corrigir:
+    - adicionar campo `name` ao `User`;
+    - ajustar schema, migration, seed e helpers de teste;
+    - propagar `name` por login, token, `/auth/me`, sessão e frontend;
+    - trocar, quando possível, exibições derivadas de email pela fonte canônica do `User`.
 
-- [ ] `{BACK|FRONT}` Endurecer o desenho de autenticacao.
-Como corrigir: revisar estrategia de sessao, avaliar refresh token, revogacao, expiracao controlada, armazenamento mais seguro e regras de invalidacao entre backend e frontend.
+- [ ] `{BACK}` **BE-STR-01** — Modelar signatários esperados do parecer CESAD
+  - Como corrigir:
+    - criar snapshot de signatários esperados ligado ao parecer CESAD específico;
+    - congelar snapshot quando o parecer for colocado para assinatura;
+    - derivar signatários da composição vigente;
+    - usar nome canônico vindo do `User`.
 
-- [ ] `{BACK}` Expor na API os dados faltantes usados hoje por heuristica no frontend.
-Como corrigir: mapear endpoints ou campos ausentes para etapa, parecer e leitura processual; versionar contrato com o frontend e remover contornos locais baseados apenas em macrostatus.
+## Backend / Operacional
 
-- [ ] `{FRONT}` Remover dependencias de heuristica no cliente onde a API ja puder atender.
-Como corrigir: trocar mensagens e estados inferidos por dados retornados pelo backend, reduzir fallback semantico e alinhar a UI ao contrato final da API.
+- [ ] `{BACK}` **BE-OPS-03** — Criar bootstrap determinístico do backend
+  - Como corrigir:
+    - adicionar fluxo único para preparo local do backend;
+    - encadear generate, sync/migrate, seed e validação básica;
+    - documentar a ordem de execução;
+    - evitar boot “cego” com banco ausente.
 
-- [ ] `{FRONT}` Implementar as rotas placeholder de administracao e homologacao.
-Como corrigir: definir backlog funcional minimo por perfil, criar componentes e integrações reais e remover textos de consolidacao dessas rotas.
+- [ ] `{BACK}` **BE-OPS-02** — Estabilizar `prisma generate` no Windows
+  - Como corrigir:
+    - impedir generate com processo usando o engine ativo;
+    - revisar lock do `query_engine-windows.dll.node`;
+    - validar comportamento com backend/frontend parados;
+    - documentar procedimento local seguro.
 
-- [ ] `{BACK|FRONT}` Consolidar scripts de qualidade na raiz do monorepo.
-Como corrigir: adicionar scripts agregadores de `build`, `test`, `typecheck` e `lint` no `package.json` raiz e preparar execucao padronizada em CI.
+- [ ] `{BACK}` **BE-OPS-04** — Definir build e start de produção do backend
+  - Como corrigir:
+    - separar scripts de dev/test/prod;
+    - introduzir build compilada;
+    - validar boot do artefato compilado.
 
-- [ ] `{BACK}` Definir build e start de producao do backend.
-Como corrigir: substituir fluxo principal em `ts-node` por build compilada, separar scripts de dev/test/prod e validar boot do artefato compilado.
+## Backend / Arquitetura e técnica
 
-- [ ] `{BACK}` Estruturar de fato `worker` e `cron` ou retirar do escopo imediato.
-Como corrigir: escolher entre implementar um escopo minimo funcional real ou remover essas promessas da arquitetura e da documentacao ate haver entrega concreta.
+- [ ] `{BACK}` **BE-TECH-01** — Migrar a configuração Prisma deprecada
+  - Como corrigir:
+    - remover uso de `package.json#prisma`;
+    - criar `prisma.config.ts`;
+    - ajustar scripts e documentação.
 
-- [ ] `{BACK}` Fortalecer os pacotes compartilhados do monorepo.
-Como corrigir: dar corpo ao pacote `config`, revisar build do `contracts`, definir forma de consumo entre apps e reduzir acoplamento direto em `src`.
+- [ ] `{BACK}` **BE-ARCH-01** — Revisar estratégia de autenticação web
+  - Como corrigir:
+    - revisar estratégia de sessão;
+    - avaliar refresh token, revogação e expiração controlada;
+    - alinhar armazenamento e invalidadores entre backend e frontend.
+
+- [ ] `{BACK}` **BE-ARCH-02** — Fortalecer pacotes compartilhados do monorepo
+  - Como corrigir:
+    - estruturar melhor `contracts` e `config`;
+    - revisar build e forma de consumo;
+    - reduzir acoplamento direto em `src`.
+
+- [ ] `{BACK}` **BE-TECH-02** — Revisar `worker` e `cron`
+  - Como corrigir:
+    - escolher entre implementar escopo mínimo real
+    - ou retirar essas promessas da arquitetura imediata.
+
+## Backend / Segurança e configuração
+
+- [ ] `{BACK}` Classificar e corrigir vulnerabilidades de dependências
+  - Como corrigir:
+    - executar classificação entre runtime/dev/transitivas;
+    - atualizar dependências com validação posterior.
+
+- [ ] `{BACK}` Remover credenciais previsíveis de desenvolvimento
+  - Como corrigir:
+    - revisar seed, `.env.example` e docs;
+    - substituir segredos previsíveis por placeholders seguros.
+
+## Backend | Frontend
+
+- [ ] `{BACK|FRONT}` Expor na API os dados faltantes usados hoje por heurística no frontend
+  - Como corrigir:
+    - mapear endpoints ou campos ausentes;
+    - alinhar contrato com frontend;
+    - reduzir macroinferências no cliente.
+
+- [ ] `{BACK|FRONT}` Consolidar scripts de qualidade na raiz do monorepo
+  - Como corrigir:
+    - adicionar scripts agregadores de `build`, `test`, `typecheck` e `lint`;
+    - preparar execução padronizada em CI.
+
+## Frontend
+
+- [ ] `{FRONT}` Remover dependências de heurística no cliente onde a API já puder atender
+- [ ] `{FRONT}` Implementar as rotas placeholder de administração e homologação
+
+---
+
+# Observações finais
+
+- o documento transversal não altera automaticamente a task ativa do backend;
+- a task ativa continua sendo `BE-IDENT-01`, conforme o tracker backend;
+- a `BE-STR-01` continua dependente da identidade canônica do `User`;
+- o nome oficial das pessoas deve ter `User` como fonte canônica;
+- comissão e composição não devem manter segunda fonte independente de nome para a mesma pessoa;
+- os problemas operacionais do Prisma em Windows e do bootstrap do backend ganharam visibilidade maior, mas não substituem a prioridade estrutural da frente de domínio já em andamento.
