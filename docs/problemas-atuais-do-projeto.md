@@ -60,29 +60,31 @@ Este documento **não substitui** o tracker backend.
 - `User.name` foi introduzido e alinhado por auth, sessão e UI;
 - a `BE-STR-01` foi aprovada e concluiu a modelagem de signatários esperados do parecer CESAD;
 - o bloqueio estrutural do snapshot de signatários do parecer foi removido;
-- o principal problema operacional atual no backend passa a se concentrar nas frentes técnicas de bootstrap, Prisma/migrations e execução local;
+- o bootstrap determinístico local do backend foi aprovado e passou a ter fluxo oficial via `npm run backend:bootstrap`;
+- o principal problema operacional atual no backend passa a se concentrar na estabilização do `prisma generate` em ambiente Windows e nas demais frentes técnicas ainda abertas;
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
-- o roadmap backend segue corretamente com a task ativa `BE-OPS-03`, agora com foco operacional.  
+- o roadmap backend segue corretamente com a task ativa `BE-OPS-02`, agora com foco no `prisma generate` em ambiente Windows.  
 
 ---
 
 # Frentes ativas e dependências estruturais
 
 ## Frente ativa do backend
-**BE-OPS-03 — Criar bootstrap determinístico do backend**
+**BE-OPS-02 — Estabilizar `prisma generate` no ambiente Windows**
 
 ### Motivo
-A próxima frente do backend passa a ser operacional: eliminar a dependência de preparo manual do banco e tornar o bootstrap local previsível.
+A próxima frente do backend permanece operacional: estabilizar a geração do Prisma Client em ambiente Windows, reduzindo falhas por lock do engine nativo e falso positivo de ambiente quebrado.
 
 ### Situação atual
 Hoje o sistema:
 - já possui identidade canônica e snapshot de signatários esperados do parecer CESAD resolvidos;
-- ainda depende de preparo manual do banco em alguns fluxos locais;
-- ainda registra fragilidades operacionais em Prisma/migrations, especialmente no ambiente Windows;
-- ainda não possui um fluxo único e determinístico de bootstrap backend.
+- já possui bootstrap local oficial do backend via `npm run backend:bootstrap`;
+- já possui preflight guiado de banco via `db:check`;
+- ainda registra fragilidade operacional no `prisma generate` em ambiente Windows;
+- ainda mantém problemas técnicos de Prisma/migrations fora do escopo já aprovado da `BE-OPS-03`.
 
 ### Consequência
-O próximo foco backend deve ser o fluxo operacional de bootstrap, sem reabrir as frentes de domínio já aprovadas.
+O próximo foco backend deve ser a estabilização do `prisma generate` no Windows, sem reabrir o bootstrap já aprovado nem as frentes de domínio já concluídas.
 
 ---
 
@@ -131,6 +133,28 @@ A modelagem de signatários esperados foi concluída. O parecer CESAD da etapa p
 
 ---
 
+## Bootstrap determinístico local do backend foi resolvido
+
+### Descrição
+O backend deixou de depender de preparo manual implícito do banco para o fluxo local padrão. Foi formalizado o comando oficial `npm run backend:bootstrap`.
+
+### Evidências
+- o fluxo local oficial passou a encadear `prisma generate`, `db:prepare:local`, `prisma db push --schema prisma/schema.prisma --skip-generate`, `prisma:seed` e `db:check`;
+- o preflight `db:check` valida acesso à tabela `User` e presença mínima do seed;
+- a documentação local passou a substituir o fluxo manual anterior pelo bootstrap oficial;
+- `migrate dev` deixou de ser tratado como fluxo principal local nesta etapa.
+
+### Impacto
+- onboarding local menos frágil;
+- redução de erro 500 causado por banco não preparado;
+- preparação local do backend ficou reproduzível por comando único;
+- `db:prepare:local` ficou restrito à compatibilidade cirúrgica de SQLite local legado, sem substituir a correção futura das migrations históricas.
+
+### Status no tracker
+- corresponde à task **`BE-OPS-03`**, agora aprovada e concluída no `backend-implementation-tracker.md`
+
+---
+
 # Problemas atuais de maior prioridade
 
 ## 1. Geração do Prisma instável no ambiente Windows
@@ -153,26 +177,7 @@ O comando de geração do client Prisma falha com erro de sistema operacional ao
 
 ---
 
-## 2. Bootstrap do backend depende de preparo manual do banco
-
-### Descrição
-O backend passou em `typecheck` e testes somente após execução manual de `db push` e `seed`. Os logs existentes mostram falha anterior em runtime por ausência de tabelas.
-
-### Evidências
-- mensagem registrada: `The table main.User does not exist in the current database`
-- a sequência mínima funcional nesta rodada foi: `db push` → `seed` → validações
-
-### Impacto
-- onboarding local frágil
-- risco de erro 500 em runtime quando a base não foi preparada
-- ausência de bootstrap reproduzível para equipe e CI
-
-### Status no tracker
-- corresponde à task **`BE-OPS-03 — Criar bootstrap determinístico do backend`**
-
----
-
-## 3. Configuração Prisma depreciada
+## 2. Configuração Prisma depreciada
 
 ### Descrição
 O projeto ainda utiliza configuração em `package.json#prisma`. O Prisma atual já emite aviso de depreciação e indica migração para `prisma.config.ts`.
@@ -190,7 +195,7 @@ O projeto ainda utiliza configuração em `package.json#prisma`. O Prisma atual 
 
 ---
 
-## 4. Vulnerabilidades abertas em dependências
+## 3. Vulnerabilidades abertas em dependências
 
 ### Descrição
 O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda não foi feita classificação formal entre dependência de runtime, dev-only e transitiva.
@@ -337,13 +342,12 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 
 1. Introduzir nome canônico no `User`
 2. Modelar signatários esperados do parecer CESAD
-3. Preparar bootstrap determinístico do backend
-4. Remover fragilidade operacional do Prisma no Windows
-5. Definir build/start de produção do backend
-6. Limpar passivos de segurança e configuração
-7. Reduzir lacunas entre API e frontend
-8. Fechar áreas placeholder
-9. Consolidar arquitetura de monorepo e produção
+3. Remover fragilidade operacional do Prisma no Windows
+4. Definir build/start de produção do backend
+5. Limpar passivos de segurança e configuração
+6. Reduzir lacunas entre API e frontend
+7. Fechar áreas placeholder
+8. Consolidar arquitetura de monorepo e produção
 
 ---
 
@@ -367,12 +371,12 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 
 ## Backend / Operacional
 
-- [ ] `{BACK}` **BE-OPS-03** — Criar bootstrap determinístico do backend
-  - Como corrigir:
-    - adicionar fluxo único para preparo local do backend;
-    - encadear generate, sync/migrate, seed e validação básica;
-    - documentar a ordem de execução;
-    - evitar boot “cego” com banco ausente.
+- [x] `{BACK}` **BE-OPS-03** — Criar bootstrap determinístico do backend
+  - Como foi corrigido:
+    - adicionou fluxo único para preparo local do backend via `npm run backend:bootstrap`;
+    - encadeou `prisma generate`, `db:prepare:local`, `db push --skip-generate`, seed e `db:check`;
+    - documentou a ordem de execução;
+    - adicionou preflight guiado para evitar boot “cego” com banco ausente ou seed mínimo incompleto.
 
 - [ ] `{BACK}` **BE-OPS-02** — Estabilizar `prisma generate` no Windows
   - Como corrigir:
@@ -447,9 +451,10 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 # Observações finais
 
 - o documento transversal não altera automaticamente a task ativa do backend;
-- a task ativa agora é `BE-OPS-03`, conforme o tracker backend;
+- a task ativa agora é `BE-OPS-02`, conforme o tracker backend;
 - a dependência estrutural de identidade canônica do `User` já foi removida pela conclusão da `BE-IDENT-01`;
 - a modelagem de signatários esperados do parecer CESAD já foi resolvida pela conclusão da `BE-STR-01`;
 - o nome oficial das pessoas deve ter `User` como fonte canônica;
 - comissão e composição não devem manter segunda fonte independente de nome para a mesma pessoa;
-- os problemas operacionais do Prisma em Windows e do bootstrap do backend seguem abertos e passam a orientar a frente ativa.
+- o bootstrap determinístico local do backend foi resolvido pela `BE-OPS-03`;
+- o problema operacional do `prisma generate` em Windows segue aberto e passa a orientar a frente ativa.

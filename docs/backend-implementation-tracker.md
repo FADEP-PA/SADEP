@@ -117,20 +117,21 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 **BLOCO 3 — Hardening Operacional e Dívida Técnica Imediata**
 
 ## Task ativa
-**BE-OPS-03 — Criar bootstrap determinístico do backend**
+**BE-OPS-02 — Estabilizar `prisma generate` no ambiente Windows**
 
 ## Contexto atual
 A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
 
 Com isso, o bloqueio estrutural de domínio para congelamento dos signatários esperados foi removido. O snapshot passa a ser derivado da comissão vigente e da composição vigente no fluxo `ISSUE_CESAD_OPINION`, preservando `User.name` em `nameSnapshot` e mantendo o assistente fora da assinatura.
 
-O foco ativo do roadmap backend volta para a estabilização operacional. A próxima task autorizada é o bootstrap determinístico do backend, considerando problemas já registrados como:
+O bootstrap determinístico local do backend foi aprovado na `BE-OPS-03`, consolidando `npm run backend:bootstrap` como fluxo oficial de preparo local com `prisma generate`, `db:prepare:local`, `db push --skip-generate`, seed e `db:check`.
+
+O foco ativo do roadmap backend permanece na estabilização operacional. A próxima task autorizada é a estabilização do `prisma generate` no ambiente Windows, considerando problemas já registrados como:
 - instabilidade de `prisma generate` em ambiente Windows;
-- bootstrap local dependente de preparo manual do banco;
 - ausência de fluxo consolidado de build/start de produção;
 - fragilidades nos pacotes compartilhados do monorepo.  
 
-Esses itens permanecem no backlog backend explícito e agora orientam a prioridade operacional da `BE-OPS-03`.
+Esses itens permanecem no backlog backend explícito e agora orientam a prioridade operacional da `BE-OPS-02`.
 
 ---
 
@@ -354,7 +355,7 @@ Objetivo: reduzir riscos operacionais e débitos técnicos importantes do backen
 
 ## BE-OPS-02 — Estabilizar `prisma generate` no ambiente Windows
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
@@ -382,11 +383,11 @@ Remover a fragilidade operacional observada no fluxo de geração do Prisma Clie
 
 ## BE-OPS-03 — Criar bootstrap determinístico do backend
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `chore(backend): add deterministic local bootstrap workflow`
 - **Dependências:** Nenhuma rígida
 
 **Objetivo**
@@ -404,8 +405,11 @@ Eliminar a dependência de preparo manual e implícito do banco para que o backe
 - reestruturação global de scripts raiz
 
 **Observações**
-- o backend hoje depende de sincronização manual do banco e seed para funcionar de forma confiável
-- esse item deve reduzir erros 500 de ambiente não preparado
+- o backend passou a ter fluxo oficial de bootstrap local via `npm run backend:bootstrap`
+- o fluxo local encadeia `prisma generate`, `db:prepare:local`, `prisma db push --schema prisma/schema.prisma --skip-generate`, `prisma:seed` e `db:check`
+- o preflight `db:check` valida acesso à tabela `User` e presença mínima do seed, orientando a execução do bootstrap quando o banco não está pronto
+- a documentação local passou a orientar `db push` como fluxo local oficial compatível com o estado atual do repositório
+- `db:prepare:local` foi introduzido como compatibilidade cirúrgica para SQLite local legado; não substitui a correção futura das migrations históricas e não deve ser tratado como modelo geral de evolução de schema
 
 ---
 
