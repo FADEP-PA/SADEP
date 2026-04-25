@@ -31,10 +31,14 @@ export function validateEnvironmentVariables(config: Record<string, unknown>): A
     throw new Error('Invalid DATABASE_URL: value is required.');
   }
 
-  const jwtSecret = String(config.JWT_SECRET ?? 'dev-only-change-me').trim();
+  const jwtSecret = typeof config.JWT_SECRET === 'string' ? config.JWT_SECRET.trim() : '';
 
-  if (jwtSecret.length < 16) {
-    throw new Error('Invalid JWT_SECRET: expected at least 16 characters.');
+  if (!jwtSecret) {
+    throw new Error('Invalid JWT_SECRET: value is required.');
+  }
+
+  if (jwtSecret.length < 32) {
+    throw new Error('Invalid JWT_SECRET: expected at least 32 characters.');
   }
 
   const frontendOrigin = String(config.FRONTEND_ORIGIN ?? 'http://localhost:3001').trim();

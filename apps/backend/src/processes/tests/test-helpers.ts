@@ -44,7 +44,7 @@ export async function createTestContext(databaseName: string): Promise<TestConte
 
   process.env.NODE_ENV = 'test';
   process.env.PORT = '0';
-  process.env.JWT_SECRET = 'test-secret-with-16-chars';
+  process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters';
   process.env.DATABASE_URL = databaseUrl;
 
   const schemaScript = execFileSync(

@@ -32,7 +32,7 @@ describe('AuthService', () => {
 
     service = new AuthService(
       prismaService as unknown as PrismaService,
-      { jwtSecret: 'unit-test-secret-1234' } as AppConfigService,
+      { jwtSecret: 'unit-test-secret-with-at-least-32-characters' } as AppConfigService,
       logger as unknown as AppLogger,
     );
   });
@@ -72,7 +72,7 @@ describe('AuthService', () => {
         exp: Math.floor(Date.now() / 1000) + 60,
       }),
     ).toString('base64url');
-    const secret = 'unit-test-secret-1234';
+    const secret = 'unit-test-secret-with-at-least-32-characters';
     const signature = createHmac('sha256', secret)
       .update(`${header}.${payload}`)
       .digest('base64url');

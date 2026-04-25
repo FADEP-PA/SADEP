@@ -32,6 +32,18 @@ npm install
 Copy-Item apps\backend\.env.example apps\backend\.env
 ```
 
+Edite `apps\backend\.env` antes do bootstrap e defina os valores locais obrigatorios:
+
+```env
+JWT_SECRET=aep-pa-local-jwt-secret-com-mais-de-32-caracteres-2026
+DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
+```
+
+- `JWT_SECRET` e obrigatorio e deve ter pelo menos 32 caracteres.
+- `DEV_SEED_PASSWORD` e obrigatorio para o seed local.
+- Os usuarios seed mantem e-mails previsiveis; a senha de todos passa a ser o valor de `DEV_SEED_PASSWORD`.
+- Nao ha mais senha fixa versionada para usuarios seed.
+
 ### 2. Executar o bootstrap determinístico do backend
 
 ```powershell
@@ -62,12 +74,14 @@ npm run db:check --workspace @aep-pa/backend
 
 Após o seed, os usuários abaixo ficam disponíveis:
 
-- `admin@aep-pa.local` / `Admin123!`
-- `supervisor@aep-pa.local` / `Supervisor123!`
-- `cesad@aep-pa.local` / `Cesad123!`
-- `assistant@aep-pa.local` / `Assistant123!`
-- `authority@aep-pa.local` / `Authority123!`
-- `server@aep-pa.local` / `Server123!`
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| Admin | `admin@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| Chefia | `supervisor@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| CESAD | `cesad@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| Assistente da Comissao | `assistant@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| Autoridade Homologadora | `authority@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| Servidor | `server@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
 
 ## Execução do backend
 
@@ -165,14 +179,14 @@ npm run frontend:start:dev
 Checklist mínimo para validar o ambiente:
 
 - `npm install` executado com sucesso
-- `apps/backend/.env` criado
+- `apps/backend/.env` criado com `JWT_SECRET` e `DEV_SEED_PASSWORD`
 - `npm run backend:bootstrap` executado com sucesso
 - Prisma Client gerado
 - banco sincronizado com `db push`
 - seed e `db:check` executados
 - backend respondendo em `3000`
 - frontend respondendo em `3001`
-- login funcionando com `admin@aep-pa.local`
+- login funcionando com `admin@aep-pa.local` e a senha definida em `DEV_SEED_PASSWORD`
 
 ## Observação operacional
 

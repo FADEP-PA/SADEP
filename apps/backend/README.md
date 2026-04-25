@@ -23,12 +23,22 @@ No ambiente auditado anteriormente, a validação de instalação e compilação
    - `npm install`
 2. preparar ambiente:
    - `cp apps/backend/.env.example apps/backend/.env`
+   - definir `JWT_SECRET` com 32+ caracteres e `DEV_SEED_PASSWORD` em `apps/backend/.env`
 3. preparar banco local e seed de desenvolvimento:
    - `npm run backend:bootstrap`
 4. subir o backend:
    - `npm run backend:start:dev`
 
 Esse fluxo é de desenvolvimento local. Ele usa `ts-node` no `start:dev` e pode usar o bootstrap para preparar o SQLite local e o seed de desenvolvimento.
+
+Exemplo de valores locais para `apps/backend/.env`:
+
+```env
+JWT_SECRET=aep-pa-local-jwt-secret-com-mais-de-32-caracteres-2026
+DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
+```
+
+`JWT_SECRET` e obrigatorio para iniciar o backend e deve ter pelo menos 32 caracteres. `DEV_SEED_PASSWORD` e obrigatorio para o seed local; todos os usuarios seed usam essa senha, preservando os e-mails previsiveis de desenvolvimento.
 
 O bootstrap local executa `prisma generate`, preparação mínima de compatibilidade do SQLite local legado, `prisma db push --schema prisma/schema.prisma --skip-generate`, `prisma:seed` e `db:check`. Nesta etapa, `db push` é o fluxo local oficial por compatibilidade com o estado atual das migrations do repositório; `migrate dev` não deve ser tratado como caminho principal de desenvolvimento local até saneamento posterior da limitação histórica conhecida.
 

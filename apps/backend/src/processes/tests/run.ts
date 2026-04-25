@@ -1,20 +1,42 @@
-import { runCesadCommissionActsEndpointTests } from '../../cesad/tests/cesad-commission-acts.endpoint.spec';
-import { runCesadCommissionActsServiceTests } from '../../cesad/tests/cesad-commission-acts.service.spec';
-import { runCesadCommissionMembersEndpointTests } from '../../cesad/tests/cesad-commission-members.endpoint.spec';
-import { runCesadCommissionMembersServiceTests } from '../../cesad/tests/cesad-commission-members.service.spec';
-import { runCesadCommissionsEndpointTests } from '../../cesad/tests/cesad-commissions.endpoint.spec';
-import { runCesadCommissionsServiceTests } from '../../cesad/tests/cesad-commissions.service.spec';
-import { runCesadCurrentCommissionEndpointTests } from '../../cesad/tests/cesad-current-commission.endpoint.spec';
-import { runCesadCurrentCommissionServiceTests } from '../../cesad/tests/cesad-current-commission.service.spec';
-import { runCesadStageOpinionsServiceTests } from './cesad-stage-opinions.service.spec';
-import { runCesadStageReadServiceTests } from './cesad-stage-read.service.spec';
-import { runWorkflowCatalogTests } from './workflow-catalog.spec';
-import { runProcessesServiceTests } from './processes.service.spec';
-import { runProcessesEndpointTests } from './processes.endpoint.spec';
-import { runSelfEvaluationsTests } from './self-evaluations.service.spec';
-import { runSupervisorEvaluationsServiceTests } from './supervisor-evaluations.service.spec';
+process.env.NODE_ENV = 'test';
+process.env.PORT = '3000';
+process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters';
 
 async function main() {
+  const [
+    { runCesadCommissionActsEndpointTests },
+    { runCesadCommissionActsServiceTests },
+    { runCesadCommissionMembersEndpointTests },
+    { runCesadCommissionMembersServiceTests },
+    { runCesadCommissionsEndpointTests },
+    { runCesadCommissionsServiceTests },
+    { runCesadCurrentCommissionEndpointTests },
+    { runCesadCurrentCommissionServiceTests },
+    { runCesadStageOpinionsServiceTests },
+    { runCesadStageReadServiceTests },
+    { runWorkflowCatalogTests },
+    { runProcessesServiceTests },
+    { runProcessesEndpointTests },
+    { runSelfEvaluationsTests },
+    { runSupervisorEvaluationsServiceTests },
+  ] = await Promise.all([
+    import('../../cesad/tests/cesad-commission-acts.endpoint.spec'),
+    import('../../cesad/tests/cesad-commission-acts.service.spec'),
+    import('../../cesad/tests/cesad-commission-members.endpoint.spec'),
+    import('../../cesad/tests/cesad-commission-members.service.spec'),
+    import('../../cesad/tests/cesad-commissions.endpoint.spec'),
+    import('../../cesad/tests/cesad-commissions.service.spec'),
+    import('../../cesad/tests/cesad-current-commission.endpoint.spec'),
+    import('../../cesad/tests/cesad-current-commission.service.spec'),
+    import('./cesad-stage-opinions.service.spec'),
+    import('./cesad-stage-read.service.spec'),
+    import('./workflow-catalog.spec'),
+    import('./processes.service.spec'),
+    import('./processes.endpoint.spec'),
+    import('./self-evaluations.service.spec'),
+    import('./supervisor-evaluations.service.spec'),
+  ]);
+
   runWorkflowCatalogTests();
   await runProcessesServiceTests();
   await runCesadCommissionActsServiceTests();

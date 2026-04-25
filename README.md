@@ -28,6 +28,15 @@ Copy-Item apps\backend\.env.example apps\backend\.env
 npm run backend:bootstrap
 ```
 
+Antes de executar o bootstrap, edite `apps\backend\.env` e defina os valores locais obrigatorios:
+
+```env
+JWT_SECRET=aep-pa-local-jwt-secret-com-mais-de-32-caracteres-2026
+DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
+```
+
+`JWT_SECRET` deve ser explicito e ter pelo menos 32 caracteres. `DEV_SEED_PASSWORD` e a senha local usada pelo seed de desenvolvimento.
+
 O bootstrap local executa, nesta ordem: `prisma generate`, preparação mínima de compatibilidade do SQLite local, `prisma db push --schema prisma/schema.prisma --skip-generate`, seed de desenvolvimento e checagem mínima do banco. O fluxo local atual usa `db push` de forma explícita por compatibilidade com o estado atual das migrations do repositório.
 
 No Windows, o `prisma generate` possui uma guarda operacional que bloqueia a execução quando detecta processos Node relacionados ao backend, testes ou Prisma que possam estar segurando `query_engine-windows.dll.node`. Feche esses processos antes de rodar o bootstrap; se o erro `EPERM` persistir sem processos relacionados, verifique OneDrive, antivírus ou indexação.
@@ -51,10 +60,18 @@ npm run frontend:start:dev
 - Frontend: `http://localhost:3001`
 - Backend healthcheck: `http://localhost:3000/health`
 
-### 5. Credencial administrativa de desenvolvimento
+### 5. Credenciais de desenvolvimento
 
-- `admin@aep-pa.local`
-- `Admin123!`
+Os usuarios seed continuam disponiveis com e-mails previsiveis para testes locais. A senha de todos eles e o valor configurado em `DEV_SEED_PASSWORD`; nao ha mais senha fixa versionada.
+
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| Admin | `admin@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| Chefia | `supervisor@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| CESAD | `cesad@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| Assistente da Comissao | `assistant@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| Autoridade Homologadora | `authority@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| Servidor | `server@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
 
 ## Build e start de produção do backend
 
