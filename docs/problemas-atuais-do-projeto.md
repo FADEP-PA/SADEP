@@ -1,6 +1,6 @@
 # Problemas atuais do projeto AEP-PA
 
-**Atualizado em:** 24/04/2026  
+**Atualizado em:** 25/04/2026  
 **Função deste documento:** painel transversal de problemas ativos do projeto  
 **Escopo:** backend, frontend, infraestrutura, build, DX e lacunas estruturais gerais
 
@@ -28,7 +28,7 @@ Este documento **não substitui** o tracker backend.
 - `docs/backend-implementation-tracker.md`
 
 ## Função deste documento
-- registrar o panorama amplo de problemas do projeto;
+- registrar o panorama amplo dos problemas do projeto;
 - indicar itens que podem virar tasks específicas no tracker backend ou em futuros trackers de frontend/infra;
 - preservar achados importantes sem obrigar execução imediata.
 
@@ -70,9 +70,10 @@ Este documento **não substitui** o tracker backend.
 - o bootstrap determinístico local do backend foi aprovado e passou a ter fluxo oficial via `npm run backend:bootstrap`;
 - a `BE-OPS-02` foi aprovada e mitigou a instabilidade do `prisma generate` em ambiente Windows com guarda operacional específica;
 - a `BE-OPS-04` foi aprovada e consolidou o fluxo explícito de build/start de produção do backend;
-- o principal problema operacional atual no backend passa a se concentrar na remoção de credenciais previsíveis de desenvolvimento e nas demais frentes técnicas ainda abertas;
+- o principal problema operacional atual no backend permanece na remoção de credenciais previsíveis de desenvolvimento;
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
-- o roadmap backend segue corretamente com a task ativa `BE-OPS-01`, agora com foco em remover credenciais previsíveis de desenvolvimento.  
+- além disso, foi identificado um problema de alinhamento backend/frontend: o frontend ainda depende de heurísticas locais por falta de snapshot operacional suficientemente rico na API;
+- o roadmap backend segue com a task ativa `BE-OPS-01`, mas a frente futura `ALIGN-05` foi identificada como candidata direta a desbloquear o frontend.
 
 ---
 
@@ -96,7 +97,33 @@ Hoje o sistema:
 - ainda mantém problemas técnicos de Prisma/migrations fora do escopo já aprovado da `BE-OPS-03`.
 
 ### Consequência
-O próximo foco backend deve ser a `BE-OPS-01`, sem reabrir o bootstrap já aprovado, a mitigação operacional do `prisma generate` no Windows ou o fluxo de build/start de produção já aprovado.
+O próximo foco backend continua sendo a `BE-OPS-01`, sem reabrir o bootstrap já aprovado, a mitigação operacional do `prisma generate` no Windows ou o fluxo de build/start de produção já aprovado.
+
+---
+
+## Frente futura de alinhamento backend/frontend
+**ALIGN-05 — Expor snapshot operacional do servidor e flags de autoavaliação**
+
+### Motivo
+O frontend ainda depende de heurísticas locais para montar snapshot do processo, deduzir etapa atual, permissões, mensagens e estados documentais a partir de contratos públicos finos demais.
+
+### Situação atual
+Hoje o sistema:
+- já possui snapshot maduro da leitura CESAD;
+- já possui flags relevantes da avaliação da chefia no backend;
+- ainda não possui um snapshot operacional role-scoped suficientemente rico para o servidor;
+- ainda obriga o frontend a deduzir estado por macrostatus, contexto documental parcial, ausência de dados ou até respostas `403`.
+
+### Consequência
+Essa frente futura deverá atacar o contrato backend/frontend, sem reabrir domínio CESAD, bootstrap, produção ou outras frentes já aprovadas.
+
+### Regra de negócio já fechada para essa futura frente
+Quanto à leitura do parecer CESAD pelo servidor:
+
+- **etapas 1, 2 e 3**: o servidor poderá visualizar o parecer CESAD após sua **conclusão** e **assinatura integral**;
+- **etapa 4**: o servidor somente poderá visualizar o parecer CESAD após sua **conclusão**, **assinatura integral** e **notificação formal**.
+
+Essa decisão já deve orientar a futura modelagem do snapshot operacional do servidor.
 
 ---
 
@@ -252,6 +279,27 @@ O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda n
 
 ---
 
+## 3. Credenciais previsíveis de desenvolvimento ainda não foram saneadas
+
+### Descrição
+O fluxo local/backend ainda mantém credenciais previsíveis ou placeholders inseguros em seed, `.env.example` e validação de ambiente.
+
+### Evidências
+- seed local com senhas previsíveis versionadas;
+- `JWT_SECRET` previsível no `.env.example`;
+- fallback runtime fraco para `JWT_SECRET`;
+- documentação local ainda pode publicar credenciais reutilizáveis, caso a task não seja executada.
+
+### Impacto
+- normaliza práticas inseguras no repositório;
+- aumenta risco de uso indevido ou reaproveitamento indevido de segredos locais;
+- mantém hardening operacional incompleto.
+
+### Status no tracker
+- corresponde à task **`BE-OPS-01 — Remover credenciais previsíveis de desenvolvimento`**, ainda ativa
+
+---
+
 # Riscos altos
 
 ## 6. Mecanismo de autenticação ainda não está endurecido para produção
@@ -272,15 +320,18 @@ A autenticação usa token bearer próprio, sem refresh token, sem revogação e
 ## 7. Frontend ainda depende de lacunas de API
 
 ### Descrição
-Algumas jornadas do frontend usam mensagens e comportamento de contorno porque a API ainda não expõe todos os dados necessários para leitura completa da etapa.
+Algumas jornadas do frontend ainda usam mensagens, inferências e comportamento de contorno porque a API não expõe todos os dados necessários para leitura operacional completa da etapa.
 
 ### Impacto
 - uso de heurística no cliente
 - maior risco de inconsistências entre regra de negócio e interface
+- bloqueio parcial para evolução do workspace do servidor
 
 ### Status no tracker
-- permanece como problema transversal
-- se necessário, deve ser convertido em nova task de alinhamento backend/frontend
+- passa a se materializar na task futura **`ALIGN-05 — Expor snapshot operacional do servidor e flags de autoavaliação`**
+
+### Observação importante
+A dor principal atual está no workspace do servidor e no agregador transversal de processos, não na leitura consolidada CESAD, que já está madura.
 
 ---
 
@@ -333,11 +384,12 @@ O workspace raiz não tem scripts agregadores de `build`, `test`, `lint` e `type
 ## 11. Pacotes compartilhados ainda estão subestruturados
 
 ### Descrição
-`packages/config` ainda não entrega configuração compartilhada real, e `packages/contracts` expõe arquivos de `src` diretamente, sem build próprio.
+`packages/config` ainda não entrega configuração compartilhada real, e `packages/contracts` expõe arquivos de `src` diretamente, sem build plenamente amadurecido.
 
 ### Impacto
 - baixo nível de maturidade da camada compartilhada
 - maior acoplamento entre apps e estrutura interna dos pacotes
+- o ajuste mínimo de runtime em `contracts` resolveu produção do backend, mas não elimina a necessidade de amadurecimento do pacote
 
 ### Status no tracker
 - corresponde à task **`BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo`**
@@ -388,10 +440,11 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 3. Remover fragilidade operacional do Prisma no Windows
 4. Definir build/start de produção do backend
 5. Remover credenciais previsíveis de desenvolvimento
-6. Limpar passivos de segurança e configuração
-7. Reduzir lacunas entre API e frontend
-8. Fechar áreas placeholder
-9. Consolidar arquitetura de monorepo e produção
+6. Expor snapshot operacional do servidor e flags de autoavaliação
+7. Limpar passivos de segurança e configuração
+8. Reduzir lacunas entre API e frontend
+9. Fechar áreas placeholder
+10. Consolidar arquitetura de monorepo e produção
 
 ---
 
@@ -463,11 +516,6 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 
 ## Backend / Segurança e configuração
 
-- [ ] `{BACK}` Classificar e corrigir vulnerabilidades de dependências
-  - Como corrigir:
-    - executar classificação entre runtime/dev/transitivas;
-    - atualizar dependências com validação posterior.
-
 - [ ] `{BACK}` **BE-OPS-01** — Remover credenciais previsíveis de desenvolvimento
   - Como corrigir:
     - revisar seed, `.env.example` e docs;
@@ -475,11 +523,15 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 
 ## Backend | Frontend
 
-- [ ] `{BACK|FRONT}` Expor na API os dados faltantes usados hoje por heurística no frontend
+- [ ] `{BACK|FRONT}` **ALIGN-05** — Expor snapshot operacional do servidor e flags de autoavaliação
   - Como corrigir:
-    - mapear endpoints ou campos ausentes;
-    - alinhar contrato com frontend;
-    - reduzir macroinferências no cliente.
+    - expor etapa atual do processo no backend;
+    - expor autoavaliação com contexto documental em contrato compartilhado;
+    - expor flags operacionais derivadas no backend para reduzir heurísticas do frontend;
+    - preferir endpoint role-scoped do servidor, em vez de inflar o workflow público genérico;
+    - aplicar a regra já fechada de leitura do parecer CESAD pelo servidor:
+      - etapas 1, 2 e 3 após conclusão + assinatura integral
+      - etapa 4 após conclusão + assinatura integral + notificação formal
 
 - [ ] `{BACK|FRONT}` Consolidar scripts de qualidade na raiz do monorepo
   - Como corrigir:
@@ -504,4 +556,5 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 - o bootstrap determinístico local do backend foi resolvido pela `BE-OPS-03`;
 - o problema operacional do `prisma generate` em Windows foi mitigado pela `BE-OPS-02`;
 - o fluxo explícito de build/start de produção do backend foi resolvido pela `BE-OPS-04`;
-- o próximo foco operacional do backend passa a ser remover credenciais previsíveis de desenvolvimento pela `BE-OPS-01`.
+- o próximo foco operacional do backend permanece na `BE-OPS-01`;
+- a futura frente `ALIGN-05` foi registrada como candidata direta a reduzir heurísticas críticas do frontend sem reabrir blocos já aprovados.

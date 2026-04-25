@@ -1,8 +1,8 @@
 # AEP-PA Backend Implementation Tracker
 
 **Status:** Controle operacional das implementações do backend  
-**Versão:** 1.8.0  
-**Data:** 2026-04-24  
+**Versão:** 1.8.1  
+**Data:** 2026-04-25  
 **Objetivo:** Registrar, controlar e acompanhar as implementações do backend do AEP-PA com suporte a execução por agente de IA, revisão técnica e aprovação humana.
 
 ---
@@ -36,7 +36,7 @@ Este tracker **não substitui** o documento transversal de problemas do projeto.
 ## Regra de convivência entre os documentos
 
 - o **tracker** governa a **ordem do roadmap backend**, suas dependências e a task ativa autorizada;
-- o arquivo **`problemas-atuais-do-projeto.md`** registra o panorama amplo do projeto, incluindo backend, frontend, infraestrutura, build, DX e lacunas gerais;
+- o arquivo **`docs/problemas-atuais-do-projeto.md`** registra o panorama amplo do projeto, incluindo backend, frontend, infraestrutura, build, DX e lacunas gerais;
 - itens do documento transversal **só entram no fluxo do tracker** quando forem convertidos em task backend explícita, com escopo e ordem definidos aqui.
 
 Essa separação evita que o agente trate todo problema transversal como backlog backend imediatamente executável.
@@ -130,7 +130,11 @@ A `BE-OPS-02` foi aprovada e mitigou a instabilidade operacional do `prisma gene
 
 A `BE-OPS-04` foi aprovada e consolidou o fluxo explícito de build e start de produção do backend. O backend passou a usar `npm run backend:build` para compilar `@aep-pa/contracts`, executar `prisma generate` e compilar a aplicação com `tsc -p tsconfig.app.json`; `npm run backend:start:prod` passou a executar o artefato compilado com Node, mantendo `start:dev` separado no fluxo de desenvolvimento.
 
-O foco ativo do roadmap backend permanece na estabilização operacional. A próxima task autorizada é a remoção de credenciais previsíveis de desenvolvimento pela `BE-OPS-01`, sem reabrir o fluxo de build/start de produção já aprovado.
+No eixo de alinhamento backend/frontend, ficou registrada como necessidade futura a exposição de um snapshot operacional mais rico e role-scoped para o servidor, reduzindo heurísticas hoje existentes no frontend. Para essa futura frente, já está fechada a seguinte regra de negócio sobre leitura do parecer CESAD pelo servidor:
+- nas etapas **1, 2 e 3**, o servidor poderá visualizar o parecer CESAD após sua **conclusão** e **assinatura integral**;
+- na etapa **4**, o servidor somente poderá visualizar o parecer CESAD após sua **conclusão**, **assinatura integral** e **notificação formal**.
+
+O foco ativo do roadmap backend permanece na estabilização operacional. A próxima task autorizada continua sendo a remoção de credenciais previsíveis de desenvolvimento pela `BE-OPS-01`, sem reabrir o fluxo de build/start de produção já aprovado.
 
 ---
 
@@ -295,6 +299,49 @@ Objetivo: corrigir desalinhamentos reais de contrato entre frontend e backend qu
 - a chefia passou a visualizar e assinar a autoavaliação pela interface
 - o fluxo operacional ponta a ponta até a CESAD ficou fechado na UI
 - houve um fix residual posterior para limpar marcadores de conflito de merge no frontend, sem mudança de regra de negócio
+
+---
+
+## ALIGN-05 — Expor snapshot operacional do servidor e flags de autoavaliação
+
+- **Status:** PLANNED
+- **Prioridade:** Alta
+- **Responsável atual:** —
+- **Auditoria necessária:** Sim
+- **Commit associado:** —
+- **Dependências:** ALIGN-04 concluída antes; não depende de reabertura de CESAD, bootstrap ou produção
+
+**Objetivo**
+Reduzir heurísticas críticas do frontend expondo um snapshot operacional role-scoped para o servidor, com etapa atual, contextos documentais e flags operacionais derivadas no backend.
+
+**Escopo**
+- expor etapa atual do processo para o servidor
+- expor autoavaliação com contexto documental em contrato compartilhado
+- expor flags operacionais como:
+  - `canEditSelfEvaluation`
+  - `canSubmitSelfEvaluation`
+  - `canSignSupervisorEvaluation`
+  - `canSignSelfEvaluation`
+- preferir endpoint específico de workspace do servidor, em vez de inflar o workflow público genérico
+- reduzir inferências locais hoje existentes no `intern-server-workspace` e no agregador transversal de processos
+
+**Fora do escopo**
+- migrations
+- Prisma config
+- reabertura da `BE-STR-01`
+- redesign do domínio CESAD
+- homologação completa
+- placeholders de administração/homologação sem backend específico
+- CI/CD
+- Docker
+
+**Observações**
+- o frontend ainda deduz etapa atual, permissões e mensagens a partir de workflow fino, status macro, presença de documentos e contexto de assinatura
+- a leitura consolidada CESAD, os signatários esperados do parecer e as flags centrais da avaliação da chefia já estão maduras e não devem ser reabertas
+- regra já fechada para leitura do parecer CESAD pelo servidor:
+  - etapas **1, 2 e 3**: leitura após **conclusão** e **assinatura integral**
+  - etapa **4**: leitura apenas após **conclusão**, **assinatura integral** e **notificação formal**
+- esta task deve entrar como frente de alinhamento backend/frontend quando priorizada explicitamente, sem substituir automaticamente a task ativa do bloco operacional
 
 ---
 
@@ -867,29 +914,30 @@ Esses itens foram tratados e aprovados anteriormente e não devem ser reabertos 
 9. `ALIGN-04`
 10. `AUDIT-01`
 11. `CESAD-READ-01`
+12. `ALIGN-05`
 
-12. `CESAD-DOM-01A`
-13. `CESAD-DOM-01B`
-14. `CESAD-DOM-01C`
-15. `CESAD-DOM-01D`
-16. `CESAD-DOM-01E`
+13. `CESAD-DOM-01A`
+14. `CESAD-DOM-01B`
+15. `CESAD-DOM-01C`
+16. `CESAD-DOM-01D`
+17. `CESAD-DOM-01E`
 
-17. `BE-IDENT-01`
-18. `BE-STR-01`
+18. `BE-IDENT-01`
+19. `BE-STR-01`
 
-19. `BE-FLOW-10A`
-20. `BE-FLOW-10B`
-21. `BE-FLOW-10C`
+20. `BE-FLOW-10A`
+21. `BE-FLOW-10B`
+22. `BE-FLOW-10C`
 
-22. `BE-OPS-02`
-23. `BE-OPS-03`
-24. `BE-OPS-04`
-25. `BE-OPS-01`
-26. `BE-ARCH-01`
-27. `BE-ARCH-02`
-28. `BE-TECH-01`
-29. `BE-TECH-02`
-30. `BE-TECH-03`
+23. `BE-OPS-02`
+24. `BE-OPS-03`
+25. `BE-OPS-04`
+26. `BE-OPS-01`
+27. `BE-ARCH-01`
+28. `BE-ARCH-02`
+29. `BE-TECH-01`
+30. `BE-TECH-02`
+31. `BE-TECH-03`
 
 ---
 
