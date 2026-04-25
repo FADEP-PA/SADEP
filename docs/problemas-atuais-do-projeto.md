@@ -72,8 +72,9 @@ Este documento **não substitui** o tracker backend.
 - a `BE-OPS-04` foi aprovada e consolidou o fluxo explícito de build/start de produção do backend;
 - o principal problema operacional atual no backend permanece na remoção de credenciais previsíveis de desenvolvimento;
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
-- além disso, foi identificado um problema de alinhamento backend/frontend: o frontend ainda depende de heurísticas locais por falta de snapshot operacional suficientemente rico na API;
-- o roadmap backend segue com a task ativa `BE-OPS-01`, mas a frente futura `ALIGN-05` foi identificada como candidata direta a desbloquear o frontend.
+- a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
+- ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
+- o roadmap backend segue com a task ativa `BE-OPS-01`, sem reabrir bootstrap, produção, domínio CESAD ou Prisma config.
 
 ---
 
@@ -101,29 +102,30 @@ O próximo foco backend continua sendo a `BE-OPS-01`, sem reabrir o bootstrap j�
 
 ---
 
-## Frente futura de alinhamento backend/frontend
+## Frente de alinhamento backend/frontend concluída
 **ALIGN-05 — Expor snapshot operacional do servidor e flags de autoavaliação**
 
 ### Motivo
-O frontend ainda depende de heurísticas locais para montar snapshot do processo, deduzir etapa atual, permissões, mensagens e estados documentais a partir de contratos públicos finos demais.
+O frontend dependia de heurísticas locais para montar snapshot do processo, deduzir etapa atual, permissões, mensagens e estados documentais a partir de contratos públicos finos demais.
 
 ### Situação atual
 Hoje o sistema:
 - já possui snapshot maduro da leitura CESAD;
 - já possui flags relevantes da avaliação da chefia no backend;
-- ainda não possui um snapshot operacional role-scoped suficientemente rico para o servidor;
-- ainda obriga o frontend a deduzir estado por macrostatus, contexto documental parcial, ausência de dados ou até respostas `403`.
+- já possui snapshot operacional role-scoped do servidor via `GET /processes/:id/intern-workspace`;
+- já possui contrato compartilhado `InternServerWorkspaceSnapshotRef`;
+- o workspace do servidor passou a consumir o snapshot backend e deixou de depender das heurísticas críticas mais relevantes.
 
 ### Consequência
-Essa frente futura deverá atacar o contrato backend/frontend, sem reabrir domínio CESAD, bootstrap, produção ou outras frentes já aprovadas.
+Essa frente saneou parcialmente a lacuna de API no eixo do workspace do servidor, sem reabrir domínio CESAD, bootstrap, produção ou outras frentes já aprovadas. As lacunas de administração, homologação e outras jornadas ainda permanecem no painel transversal.
 
-### Regra de negócio já fechada para essa futura frente
+### Regra de negócio consolidada
 Quanto à leitura do parecer CESAD pelo servidor:
 
 - **etapas 1, 2 e 3**: o servidor poderá visualizar o parecer CESAD após sua **conclusão** e **assinatura integral**;
 - **etapa 4**: o servidor somente poderá visualizar o parecer CESAD após sua **conclusão**, **assinatura integral** e **notificação formal**.
 
-Essa decisão já deve orientar a futura modelagem do snapshot operacional do servidor.
+Essa regra foi implementada no backend no bloco `cesadOpinionAccess` do snapshot do servidor e depende da existência de `ProcessDocument` formal do tipo `CESAD_OPINION` assinado integralmente.
 
 ---
 
@@ -320,18 +322,18 @@ A autenticação usa token bearer próprio, sem refresh token, sem revogação e
 ## 7. Frontend ainda depende de lacunas de API
 
 ### Descrição
-Algumas jornadas do frontend ainda usam mensagens, inferências e comportamento de contorno porque a API não expõe todos os dados necessários para leitura operacional completa da etapa.
+Algumas jornadas do frontend ainda usam mensagens, inferências e comportamento de contorno porque a API não expõe todos os dados necessários para leitura operacional completa da etapa. A principal lacuna do workspace do servidor foi saneada pela `ALIGN-05`.
 
 ### Impacto
 - uso de heurística no cliente
 - maior risco de inconsistências entre regra de negócio e interface
-- bloqueio parcial para evolução do workspace do servidor
+- bloqueio parcial para evolução de áreas ainda sem contrato suficiente, especialmente administração e homologação
 
 ### Status no tracker
-- passa a se materializar na task futura **`ALIGN-05 — Expor snapshot operacional do servidor e flags de autoavaliação`**
+- parcialmente saneado pela task **`ALIGN-05 — Expor snapshot operacional do servidor e flags de autoavaliação`**
 
 ### Observação importante
-A dor principal atual está no workspace do servidor e no agregador transversal de processos, não na leitura consolidada CESAD, que já está madura.
+A dor principal do workspace do servidor foi resolvida com snapshot operacional backend, flags derivadas no servidor e regra de leitura do parecer CESAD por etapa. A leitura consolidada CESAD segue madura e não foi reaberta.
 
 ---
 
@@ -523,13 +525,13 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 
 ## Backend | Frontend
 
-- [ ] `{BACK|FRONT}` **ALIGN-05** — Expor snapshot operacional do servidor e flags de autoavaliação
+- [x] `{BACK|FRONT}` **ALIGN-05** — Expor snapshot operacional do servidor e flags de autoavaliação
   - Como corrigir:
-    - expor etapa atual do processo no backend;
-    - expor autoavaliação com contexto documental em contrato compartilhado;
-    - expor flags operacionais derivadas no backend para reduzir heurísticas do frontend;
-    - preferir endpoint role-scoped do servidor, em vez de inflar o workflow público genérico;
-    - aplicar a regra já fechada de leitura do parecer CESAD pelo servidor:
+    - endpoint `GET /processes/:id/intern-workspace` criado;
+    - contrato compartilhado `InternServerWorkspaceSnapshotRef` criado;
+    - etapa atual, autoavaliação, contexto documental e flags operacionais passaram a vir do backend;
+    - frontend do servidor passou a consumir o snapshot backend;
+    - regra de leitura do parecer CESAD pelo servidor aplicada:
       - etapas 1, 2 e 3 após conclusão + assinatura integral
       - etapa 4 após conclusão + assinatura integral + notificação formal
 
@@ -557,4 +559,5 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 - o problema operacional do `prisma generate` em Windows foi mitigado pela `BE-OPS-02`;
 - o fluxo explícito de build/start de produção do backend foi resolvido pela `BE-OPS-04`;
 - o próximo foco operacional do backend permanece na `BE-OPS-01`;
-- a futura frente `ALIGN-05` foi registrada como candidata direta a reduzir heurísticas críticas do frontend sem reabrir blocos já aprovados.
+- a `ALIGN-05` saneou a principal heurística do workspace do servidor sem reabrir blocos já aprovados;
+- permanecem abertas lacunas em frentes como administração, homologação, hardening de credenciais e arquitetura/segurança mapeadas.

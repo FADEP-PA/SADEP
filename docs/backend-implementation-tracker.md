@@ -304,11 +304,11 @@ Objetivo: corrigir desalinhamentos reais de contrato entre frontend e backend qu
 
 ## ALIGN-05 — Expor snapshot operacional do servidor e flags de autoavaliação
 
-- **Status:** PLANNED
+- **Status:** DONE
 - **Prioridade:** Alta
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `feat(processes): add intern workspace snapshot and reduce frontend heuristics`
 - **Dependências:** ALIGN-04 concluída antes; não depende de reabertura de CESAD, bootstrap ou produção
 
 **Objetivo**
@@ -336,12 +336,17 @@ Reduzir heurísticas críticas do frontend expondo um snapshot operacional role-
 - Docker
 
 **Observações**
-- o frontend ainda deduz etapa atual, permissões e mensagens a partir de workflow fino, status macro, presença de documentos e contexto de assinatura
+- foi criado o endpoint role-scoped `GET /processes/:id/intern-workspace`
+- o servidor passou a ter snapshot operacional próprio com etapa atual, contexto documental, autoavaliação, avaliação da chefia, `capabilities` e `cesadOpinionAccess`
+- as flags principais de autoavaliação e assinatura passaram a ser derivadas no backend
+- `canSubmitSelfEvaluation` representa permissão de regra de negócio para tentar submissão; a validação de conteúdo obrigatório permanece no frontend e no endpoint de submissão
+- a regra de leitura do parecer CESAD pelo servidor foi implementada por etapa, dependendo de `ProcessDocument` formal do tipo `CESAD_OPINION` assinado integralmente
+- o frontend do servidor deixou de depender das heurísticas críticas mais relevantes, incluindo montagem manual de snapshot por múltiplas chamadas, dedução de etapa por macrostatus, wrappers baseados em `403` e dedução local das principais permissões operacionais
 - a leitura consolidada CESAD, os signatários esperados do parecer e as flags centrais da avaliação da chefia já estão maduras e não devem ser reabertas
 - regra já fechada para leitura do parecer CESAD pelo servidor:
   - etapas **1, 2 e 3**: leitura após **conclusão** e **assinatura integral**
   - etapa **4**: leitura apenas após **conclusão**, **assinatura integral** e **notificação formal**
-- esta task deve entrar como frente de alinhamento backend/frontend quando priorizada explicitamente, sem substituir automaticamente a task ativa do bloco operacional
+- a `ALIGN-05` foi concluída sem alterar a task ativa do bloco operacional
 
 ---
 
