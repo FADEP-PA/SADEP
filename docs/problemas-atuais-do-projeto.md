@@ -53,8 +53,13 @@ Este documento **não substitui** o tracker backend.
 - `npm run test:unit --workspace @aep-pa/backend` → passou
 - `npm run typecheck:spec --workspace @aep-pa/backend` → passou
 - validação dos contracts compartilhados → passou
+- `npm run backend:build` → passou
+- `node -e "require('@aep-pa/contracts')"` → passou
+- `npm run backend:start:prod` → passou
+- healthcheck no runtime compilado do backend → respondeu `200`
 - `npx tsc --noEmit -p tsconfig.json` em `apps/frontend` → passou
 - `npm run build --workspace @aep-pa/frontend` → passou
+- `git diff --check` → passou
 
 ## Conclusão técnica desta rodada
 
@@ -64,19 +69,20 @@ Este documento **não substitui** o tracker backend.
 - o bloqueio estrutural do snapshot de signatários do parecer foi removido;
 - o bootstrap determinístico local do backend foi aprovado e passou a ter fluxo oficial via `npm run backend:bootstrap`;
 - a `BE-OPS-02` foi aprovada e mitigou a instabilidade do `prisma generate` em ambiente Windows com guarda operacional específica;
-- o principal problema operacional atual no backend passa a se concentrar na ausência de fluxo consolidado de build/start de produção e nas demais frentes técnicas ainda abertas;
+- a `BE-OPS-04` foi aprovada e consolidou o fluxo explícito de build/start de produção do backend;
+- o principal problema operacional atual no backend passa a se concentrar na remoção de credenciais previsíveis de desenvolvimento e nas demais frentes técnicas ainda abertas;
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
-- o roadmap backend segue corretamente com a task ativa `BE-OPS-04`, agora com foco em build e start de produção do backend.  
+- o roadmap backend segue corretamente com a task ativa `BE-OPS-01`, agora com foco em remover credenciais previsíveis de desenvolvimento.  
 
 ---
 
 # Frentes ativas e dependências estruturais
 
 ## Frente ativa do backend
-**BE-OPS-04 — Definir build e start de produção do backend**
+**BE-OPS-01 — Remover credenciais previsíveis de desenvolvimento**
 
 ### Motivo
-A próxima frente do backend permanece operacional: definir um fluxo claro de build compilada e start de produção, reduzindo a dependência atual de execução via `ts-node` para contextos fora do desenvolvimento local.
+A próxima frente do backend permanece operacional: remover credenciais previsíveis de desenvolvimento depois da consolidação do bootstrap local, da guarda do `prisma generate` no Windows e do fluxo explícito de build/start de produção.
 
 ### Situação atual
 Hoje o sistema:
@@ -84,11 +90,13 @@ Hoje o sistema:
 - já possui bootstrap local oficial do backend via `npm run backend:bootstrap`;
 - já possui preflight guiado de banco via `db:check`;
 - já possui guarda operacional antes de `prisma generate` em ambiente Windows;
-- ainda não possui fluxo explícito de build e start de produção do backend;
+- já possui fluxo explícito de build e start de produção do backend via `npm run backend:build` e `npm run backend:start:prod`;
+- já validou o runtime compilado com Node e healthcheck `200`;
+- ainda possui credenciais previsíveis de desenvolvimento a revisar;
 - ainda mantém problemas técnicos de Prisma/migrations fora do escopo já aprovado da `BE-OPS-03`.
 
 ### Consequência
-O próximo foco backend deve ser a definição do build/start de produção, sem reabrir o bootstrap já aprovado nem a mitigação operacional do `prisma generate` no Windows.
+O próximo foco backend deve ser a `BE-OPS-01`, sem reabrir o bootstrap já aprovado, a mitigação operacional do `prisma generate` no Windows ou o fluxo de build/start de produção já aprovado.
 
 ---
 
@@ -181,6 +189,28 @@ A instabilidade do `prisma generate` no Windows foi mitigada com uma guarda oper
 
 ### Observação de validação
 - o typecheck padrão do backend não cobre automaticamente scripts operacionais; a validação desta mitigação ficou apoiada no fluxo real de `prisma:generate`, no `backend:bootstrap` e em validação negativa guiada com processo Node relacionado ao backend.
+
+---
+
+## Build e start de produção do backend foram resolvidos
+
+### Descrição
+O backend passou a ter fluxo explícito de build compilado e start de produção, separando desenvolvimento, testes e produção.
+
+### Evidências
+- `npm run backend:build` compila `@aep-pa/contracts`, executa `prisma generate` e compila o backend com `tsc -p tsconfig.app.json`;
+- `npm run backend:start:prod` executa o artefato compilado com Node;
+- `start` e `start:prod` passaram a apontar para o runtime compilado, enquanto `start:dev` permaneceu em `ts-node`;
+- o runtime compilado foi validado com Node e healthcheck `200`;
+- houve ajuste mínimo em `@aep-pa/contracts` para runtime compilado, com build CommonJS em `dist/` e `exports.require` apontando para `dist/index.js`.
+
+### Impacto
+- o backend deixou de depender de `ts-node` no caminho principal de produção;
+- o fluxo oficial de produção ficou definido por `npm run backend:build` e `npm run backend:start:prod`;
+- o ajuste em `@aep-pa/contracts` foi restrito à compatibilidade de runtime; `main` e `types` permanecem apontando para `src/index.ts`, e refinamento mais amplo pode permanecer próximo de `BE-ARCH-02`.
+
+### Status no tracker
+- corresponde à task **`BE-OPS-04 — Definir build e start de produção do backend`**, agora aprovada e concluída no `backend-implementation-tracker.md`
 
 ---
 
@@ -314,17 +344,21 @@ O workspace raiz não tem scripts agregadores de `build`, `test`, `lint` e `type
 
 ---
 
-## 12. Backend ainda não possui fluxo explícito de build de produção
+## 12. Fluxo explícito de build de produção do backend foi resolvido
 
 ### Descrição
-Os scripts atuais do backend usam `ts-node` e não existe fluxo consolidado de compilação e start de produção.
+O backend agora possui build compilado e start de produção explícitos.
+
+### Evidências
+- fluxo oficial definido por `npm run backend:build` e `npm run backend:start:prod`
+- runtime compilado validado com Node e healthcheck `200`
 
 ### Impacto
-- processo de deploy indefinido
-- baixa previsibilidade para runtime fora do ambiente dev
+- maior previsibilidade para runtime fora do ambiente dev
+- separação clara entre `start:dev` com `ts-node` e produção com Node sobre artefato compilado
 
 ### Status no tracker
-- corresponde à task **`BE-OPS-04 — Definir build e start de produção do backend`**
+- corresponde à task **`BE-OPS-04 — Definir build e start de produção do backend`**, resolvida
 
 ---
 
@@ -353,10 +387,11 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 2. Modelar signatários esperados do parecer CESAD
 3. Remover fragilidade operacional do Prisma no Windows
 4. Definir build/start de produção do backend
-5. Limpar passivos de segurança e configuração
-6. Reduzir lacunas entre API e frontend
-7. Fechar áreas placeholder
-8. Consolidar arquitetura de monorepo e produção
+5. Remover credenciais previsíveis de desenvolvimento
+6. Limpar passivos de segurança e configuração
+7. Reduzir lacunas entre API e frontend
+8. Fechar áreas placeholder
+9. Consolidar arquitetura de monorepo e produção
 
 ---
 
@@ -395,11 +430,11 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
     - preservou `backend:bootstrap` como fluxo oficial com `prisma generate`;
     - documentou o procedimento local seguro sem alterar schema, migrations ou configuração Prisma.
 
-- [ ] `{BACK}` **BE-OPS-04** — Definir build e start de produção do backend
-  - Como corrigir:
-    - separar scripts de dev/test/prod;
-    - introduzir build compilada;
-    - validar boot do artefato compilado.
+- [x] `{BACK}` **BE-OPS-04** — Definir build e start de produção do backend
+  - Como foi corrigido:
+    - adicionou fluxo oficial `npm run backend:build` e `npm run backend:start:prod`;
+    - separou produção com Node sobre artefato compilado de `start:dev` com `ts-node`;
+    - ajustou minimamente `@aep-pa/contracts` para runtime compilado sem redesenhar o pacote compartilhado.
 
 ## Backend / Arquitetura e técnica
 
@@ -433,7 +468,7 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
     - executar classificação entre runtime/dev/transitivas;
     - atualizar dependências com validação posterior.
 
-- [ ] `{BACK}` Remover credenciais previsíveis de desenvolvimento
+- [ ] `{BACK}` **BE-OPS-01** — Remover credenciais previsíveis de desenvolvimento
   - Como corrigir:
     - revisar seed, `.env.example` e docs;
     - substituir segredos previsíveis por placeholders seguros.
@@ -461,11 +496,12 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 # Observações finais
 
 - o documento transversal não altera automaticamente a task ativa do backend;
-- a task ativa agora é `BE-OPS-04`, conforme o tracker backend;
+- a task ativa agora é `BE-OPS-01`, conforme o tracker backend;
 - a dependência estrutural de identidade canônica do `User` já foi removida pela conclusão da `BE-IDENT-01`;
 - a modelagem de signatários esperados do parecer CESAD já foi resolvida pela conclusão da `BE-STR-01`;
 - o nome oficial das pessoas deve ter `User` como fonte canônica;
 - comissão e composição não devem manter segunda fonte independente de nome para a mesma pessoa;
 - o bootstrap determinístico local do backend foi resolvido pela `BE-OPS-03`;
 - o problema operacional do `prisma generate` em Windows foi mitigado pela `BE-OPS-02`;
-- o próximo foco operacional do backend passa a ser a definição de build/start de produção pela `BE-OPS-04`.
+- o fluxo explícito de build/start de produção do backend foi resolvido pela `BE-OPS-04`;
+- o próximo foco operacional do backend passa a ser remover credenciais previsíveis de desenvolvimento pela `BE-OPS-01`.

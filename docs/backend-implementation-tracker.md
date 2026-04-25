@@ -117,7 +117,7 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 **BLOCO 3 — Hardening Operacional e Dívida Técnica Imediata**
 
 ## Task ativa
-**BE-OPS-04 — Definir build e start de produção do backend**
+**BE-OPS-01 — Remover credenciais previsíveis de desenvolvimento**
 
 ## Contexto atual
 A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
@@ -128,12 +128,9 @@ O bootstrap determinístico local do backend foi aprovado na `BE-OPS-03`, consol
 
 A `BE-OPS-02` foi aprovada e mitigou a instabilidade operacional do `prisma generate` no Windows com uma guarda prévia que detecta processos `node.exe` relacionados ao backend, testes ou Prisma antes da tentativa de atualização do engine nativo.
 
-O foco ativo do roadmap backend permanece na estabilização operacional. A próxima task autorizada é a definição de build e start de produção do backend, considerando problemas já registrados como:
-- ausência de fluxo consolidado de build/start de produção;
-- fragilidades nos pacotes compartilhados do monorepo;
-- configuração Prisma depreciada ainda pendente em task própria.
+A `BE-OPS-04` foi aprovada e consolidou o fluxo explícito de build e start de produção do backend. O backend passou a usar `npm run backend:build` para compilar `@aep-pa/contracts`, executar `prisma generate` e compilar a aplicação com `tsc -p tsconfig.app.json`; `npm run backend:start:prod` passou a executar o artefato compilado com Node, mantendo `start:dev` separado no fluxo de desenvolvimento.
 
-Esses itens permanecem no backlog backend explícito e agora orientam a prioridade operacional da `BE-OPS-04`.
+O foco ativo do roadmap backend permanece na estabilização operacional. A próxima task autorizada é a remoção de credenciais previsíveis de desenvolvimento pela `BE-OPS-01`, sem reabrir o fluxo de build/start de produção já aprovado.
 
 ---
 
@@ -342,7 +339,7 @@ Objetivo: reduzir riscos operacionais e débitos técnicos importantes do backen
 
 ## BE-OPS-01 — Remover credenciais previsíveis de desenvolvimento
 
-- **Status:** PLANNED
+- **Status:** ACTIVE
 - **Prioridade:** Média
 - **Responsável atual:** —
 - **Auditoria necessária:** Não obrigatória
@@ -351,7 +348,7 @@ Objetivo: reduzir riscos operacionais e débitos técnicos importantes do backen
 
 **Observações**
 - permanece relevante
-- deixou de ser a melhor próxima task diante da necessidade de modelagem estrutural da comissão e identidade canônica do usuário
+- passa a ser a task ativa após a aprovação da `BE-OPS-04`
 
 ---
 
@@ -423,11 +420,11 @@ Eliminar a dependência de preparo manual e implícito do banco para que o backe
 
 ## BE-OPS-04 — Definir build e start de produção do backend
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Média
 - **Responsável atual:** —
 - **Auditoria necessária:** Sim
-- **Commit associado:** —
+- **Commit associado:** `chore(backend): add compiled production build and start flow`
 - **Dependências:** BE-OPS-03 recomendada antes
 
 **Objetivo**
@@ -442,6 +439,13 @@ Definir fluxo claro de build compilada e start de produção para o backend.
 - pipeline completa de deploy
 - containerização obrigatória
 - automações de infraestrutura
+
+**Observações**
+- o backend passou a ter fluxo explícito de build e start de produção via `npm run backend:build` e `npm run backend:start:prod`
+- produção passou a executar Node sobre o artefato compilado, enquanto `start:dev` permaneceu separado e baseado em `ts-node`
+- o build do backend compila `@aep-pa/contracts`, executa `prisma generate` e compila a aplicação com `tsc -p tsconfig.app.json`
+- houve ajuste mínimo em `@aep-pa/contracts` para viabilizar runtime compilado: build CommonJS em `dist/` e `exports.require` apontando para `dist/index.js`
+- `main` e `types` de `@aep-pa/contracts` permaneceram apontando para `src/index.ts`; refinamento mais amplo do pacote compartilhado pode permanecer associado a `BE-ARCH-02`
 
 ---
 
