@@ -28,6 +28,8 @@ No ambiente auditado anteriormente, a validação de instalação e compilação
 4. subir o backend:
    - `npm run backend:start:dev`
 
+Esse fluxo é de desenvolvimento local. Ele usa `ts-node` no `start:dev` e pode usar o bootstrap para preparar o SQLite local e o seed de desenvolvimento.
+
 O bootstrap local executa `prisma generate`, preparação mínima de compatibilidade do SQLite local legado, `prisma db push --schema prisma/schema.prisma --skip-generate`, `prisma:seed` e `db:check`. Nesta etapa, `db push` é o fluxo local oficial por compatibilidade com o estado atual das migrations do repositório; `migrate dev` não deve ser tratado como caminho principal de desenvolvimento local até saneamento posterior da limitação histórica conhecida.
 
 No Windows, o `prisma generate` passa por uma guarda antes de atualizar o Prisma Client. Se houver processos Node relacionados ao backend, testes ou Prisma em execução, o comando bloqueia a geração, lista PIDs/command lines relevantes e orienta fechar esses processos para evitar `EPERM` no `query_engine-windows.dll.node`. A guarda não encerra processos automaticamente e não remove arquivos temporários; se o erro persistir sem processos relacionados, verifique OneDrive, antivírus ou indexação.
@@ -47,6 +49,26 @@ Para validar apenas as precondições mínimas do banco local sem subir o Nest:
 - `npm run typecheck:spec --workspace @aep-pa/backend` valida specs e helpers de teste pelo `tsconfig.spec.json`.
 
 Os aliases `test:runner` e `test:jest` foram preservados por compatibilidade, apontando respectivamente para `test:integration` e `test:unit`.
+
+## Build e start de produção
+
+O fluxo oficial de produção do backend usa artefato JavaScript compilado, executado diretamente com Node:
+
+```powershell
+npm run backend:build
+npm run backend:start:prod
+```
+
+No workspace do backend, os comandos equivalentes são:
+
+```powershell
+npm run build --workspace @aep-pa/backend
+npm run start:prod --workspace @aep-pa/backend
+```
+
+O build do backend executa o build mínimo de `@aep-pa/contracts`, roda `prisma generate` e compila a aplicação com `tsc -p tsconfig.app.json`. Como o `rootDir` do backend aponta para a raiz do monorepo, o entrypoint compilado fica em `apps/backend/dist/apps/backend/src/main.js`; por isso `start` e `start:prod` executam esse caminho com `node`.
+
+O `start:prod` não executa bootstrap local, seed, `db push`, `db:check` nem `prisma generate`. Antes de iniciar em produção, as variáveis de ambiente devem estar definidas, o Prisma Client deve ter sido gerado no build e o banco de dados deve estar previamente preparado pelo processo operacional do ambiente.
 
 ## Endpoints técnicos para validação
 

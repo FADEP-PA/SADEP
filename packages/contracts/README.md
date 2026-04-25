@@ -15,6 +15,16 @@ Este pacote concentra contratos compartilhados entre os apps, especialmente:
 - tipos de workflow, documentos e auditoria
 - base para futuros contratos de API e eventos de domínio
 
+## Compatibilidade de runtime
+
+Para permitir que o backend compilado rode com Node puro em produção, este pacote expõe um build CommonJS mínimo em `dist/` para chamadas `require()`:
+
+```powershell
+npm run build --workspace @aep-pa/contracts
+```
+
+Esse build compila apenas os contratos existentes e mantém o pacote pequeno. Ele não altera a modelagem dos contratos, não introduz nova arquitetura de pacotes compartilhados e não substitui uma revisão futura mais ampla do monorepo.
+
 ## Deliberadamente fora deste incremento
 
 - workflow-engine e regras de transição executáveis
