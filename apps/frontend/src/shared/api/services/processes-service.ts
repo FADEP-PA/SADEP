@@ -8,15 +8,13 @@ import type {
 } from '@/features/dashboard/types/process-dashboard-types';
 import {
   CesadStageReadSnapshotRef,
-  DocumentStatus,
-  DocumentType,
+  InternServerWorkspaceSnapshotRef,
   ProcessStatus,
   ProcessAction,
-  SelfEvaluationStatus,
-  SignatureStatus,
   SupervisorEvaluationDocumentContextRef,
   SupervisorEvaluationContentInput,
   SupervisorEvaluationWithDocumentContextRef,
+  SelfEvaluationWithDocumentContextRef,
   UserRole,
 } from '@aep-pa/contracts';
 
@@ -33,20 +31,6 @@ export type UpsertSelfEvaluationInput = {
   comment?: string;
 };
 
-export type SelfEvaluationDocumentContextRef = {
-  documentId: string;
-  documentType: DocumentType;
-  documentStatus: DocumentStatus;
-  hasArtifact: boolean;
-  artifactPath: string | null;
-  signatures: Array<{
-    signatoryRole: UserRole;
-    status: SignatureStatus;
-    signedAt: string | null;
-  }>;
-  supervisorSignaturePending: boolean;
-};
-
 export type WorkflowTransitionInput = {
   action: ProcessAction;
   comment?: string;
@@ -56,35 +40,8 @@ export type DocumentSignatureResponse = {
   success: boolean;
 };
 
-export type SelfEvaluationDocumentContext = {
-  documentId: string;
-  documentType: DocumentType;
-  documentStatus: DocumentStatus;
-  hasArtifact: boolean;
-  artifactPath: string | null;
-  signatures: Array<{
-    signatoryRole: UserRole;
-    status: SignatureStatus;
-    signedAt: string | null;
-  }>;
-  supervisorSignaturePending: boolean;
-};
-
-export type SelfEvaluationResponse = {
-  id: string;
-  processId: string;
-  processStageId: string;
-  authorUserId: string;
-  status: SelfEvaluationStatus;
-  selfReflection: string;
-  additionalNotes: string | null;
-  submittedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  documentContext?: SelfEvaluationDocumentContext;
-};
-
-export type SelfEvaluationWithDocumentContextRef = SelfEvaluationResponse;
+export type SelfEvaluationResponse = SelfEvaluationWithDocumentContextRef;
+export type { SelfEvaluationWithDocumentContextRef };
 
 export type SupervisorEvaluationWorkspaceSnapshot = {
   process: {
@@ -117,6 +74,16 @@ export async function getWorkflowHistory(processId: string, accessToken: string)
       total: history.length,
     },
   };
+}
+
+export async function getInternWorkspaceSnapshot(processId: string, accessToken: string) {
+  return httpRequest<InternServerWorkspaceSnapshotRef>(
+    `/processes/${processId}/intern-workspace`,
+    {
+      method: 'GET',
+      token: accessToken,
+    },
+  );
 }
 
 export async function getSupervisorEvaluation(processId: string, accessToken: string) {

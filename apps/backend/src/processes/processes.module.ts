@@ -8,6 +8,7 @@ import { CesadStageOpinionsController } from './cesad-stage-opinions/cesad-stage
 import { CesadStageOpinionsService } from './cesad-stage-opinions/cesad-stage-opinions.service';
 import { CesadStageReadController } from './cesad-stage-read.controller';
 import { CesadStageReadService } from './cesad-stage-read.service';
+import { InternWorkspaceService } from './intern-workspace/intern-workspace.service';
 import { ProcessesController } from './processes.controller';
 import { ProcessesService } from './processes.service';
 import { SelfEvaluationsController } from './self-evaluations/self-evaluations.controller';
@@ -28,6 +29,7 @@ import { SupervisorEvaluationsService } from './supervisor-evaluations/superviso
     ProcessesService,
     CesadStageOpinionsService,
     CesadStageReadService,
+    InternWorkspaceService,
     SupervisorEvaluationsService,
     SelfEvaluationsService,
     ProcessDocumentsService,

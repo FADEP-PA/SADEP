@@ -4,18 +4,16 @@ import {
   ProcessStatus,
   SelfEvaluationStatus,
   UserRole,
+  type InternServerWorkspaceSnapshotRef,
   type ProcessAction,
-  type SupervisorEvaluationWithDocumentContextRef,
 } from '@aep-pa/contracts';
 import { useMemo, useState, type FormEvent } from 'react';
 
-import type { WorkflowHistoryItem, WorkflowResponse } from '@/features/dashboard/types/process-dashboard-types';
-import { HttpError, getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '@/shared/api/http-error';
+import type { WorkflowHistoryItem } from '@/features/dashboard/types/process-dashboard-types';
+import { getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '@/shared/api/http-error';
 import {
-  getSelfEvaluation,
-  getSupervisorEvaluation,
-  getWorkflow,
   getWorkflowHistory,
+  getInternWorkspaceSnapshot,
   saveSelfEvaluationDraft,
   signSupervisorEvaluation,
   submitSelfEvaluation,
@@ -59,11 +57,12 @@ type SelfEvaluationFormState = {
 };
 
 type InternProcessSnapshot = {
-  workflow: WorkflowResponse;
+  workspace: InternServerWorkspaceSnapshotRef;
+  workflow: InternServerWorkspaceSnapshotRef['process'];
   history: WorkflowHistoryItem[];
-  supervisorEvaluation: SupervisorEvaluationWithDocumentContextRef | null;
+  supervisorEvaluation: InternServerWorkspaceSnapshotRef['supervisorEvaluation'];
   supervisorEvaluationWarning: string | null;
-  selfEvaluation: SelfEvaluationResponse | null;
+  selfEvaluation: InternServerWorkspaceSnapshotRef['selfEvaluation'];
   selfEvaluationWarning: string | null;
 };
 
@@ -120,48 +119,6 @@ function normalizeSelfEvaluationPayload(
     ...(additionalNotes ? { additionalNotes } : {}),
     ...(comment ? { comment } : {}),
   };
-}
-
-async function loadSupervisorEvaluationForIntern(processId: string, accessToken: string) {
-  try {
-    const evaluation = await getSupervisorEvaluation(processId, accessToken);
-
-    return {
-      evaluation,
-      warning: null,
-    };
-  } catch (error) {
-    if (error instanceof HttpError && error.status === 403) {
-      return {
-        evaluation: null,
-        warning:
-          'A avaliacao da chefia sera exibida aqui quando o documento formal da etapa estiver liberado para este perfil.',
-      };
-    }
-
-    throw error;
-  }
-}
-
-async function loadSelfEvaluationForIntern(processId: string, accessToken: string) {
-  try {
-    const evaluation = await getSelfEvaluation(processId, accessToken);
-
-    return {
-      evaluation,
-      warning: null,
-    };
-  } catch (error) {
-    if (error instanceof HttpError && error.status === 403) {
-      return {
-        evaluation: null,
-        warning:
-          'A autoavaliacao sera liberada somente depois da assinatura da avaliacao da chefia e da abertura formal da etapa.',
-      };
-    }
-
-    throw error;
-  }
 }
 
 function getCommissionStepDescription(status: ProcessStatus) {
@@ -247,17 +204,14 @@ export function InternServerWorkspace() {
   const [isSelfEvaluationExpanded, setIsSelfEvaluationExpanded] = useState(false);
 
   const displayName = getDisplayName(session?.user.name);
-  const supervisorDocumentContext = snapshot?.supervisorEvaluation?.documentContext;
-  const selfEvaluationDocumentContext = snapshot?.selfEvaluation?.documentContext;
-  const canSignSupervisorEvaluation = Boolean(supervisorDocumentContext?.internSignaturePending);
-  const canEditSelfEvaluation = Boolean(
-    snapshot &&
-      snapshot.workflow.status === ProcessStatus.AGUARDANDO_ASSINATURA &&
-      supervisorDocumentContext &&
-      !supervisorDocumentContext.internSignaturePending &&
-      snapshot.selfEvaluation?.status !== SelfEvaluationStatus.SUBMITTED,
-  );
-  const canSubmitSelfEvaluation = canEditSelfEvaluation && selfEvaluationForm.selfReflection.trim().length > 0;
+  const workspace = snapshot?.workspace;
+  const supervisorDocumentContext = workspace?.supervisorEvaluation?.documentContext;
+  const selfEvaluationDocumentContext = workspace?.selfEvaluation?.documentContext;
+  const canSignSupervisorEvaluation = workspace?.capabilities.canSignSupervisorEvaluation ?? false;
+  const canEditSelfEvaluation = workspace?.capabilities.canEditSelfEvaluation ?? false;
+  const canSubmitSelfEvaluation =
+    Boolean(workspace?.capabilities.canSubmitSelfEvaluation) &&
+    selfEvaluationForm.selfReflection.trim().length > 0;
   const lastHistoryEntries = useMemo(
     () => (snapshot ? [...snapshot.history].slice(-4).reverse() : []),
     [snapshot],
@@ -314,6 +268,10 @@ export function InternServerWorkspace() {
 
     return [
       { label: 'processo', value: snapshot.workflow.id },
+      {
+        label: 'etapa atual',
+        value: `${snapshot.workspace.currentStage.sequence}/${snapshot.workspace.currentStage.totalStages} - ${snapshot.workspace.currentStage.stageCode}`,
+      },
       {
         label: 'status macro',
         value: formatProcessStatus(snapshot.workflow.status),
@@ -442,20 +400,25 @@ export function InternServerWorkspace() {
     }
 
     const normalizedProcessId = activeProcessId.trim();
-    const [workflow, historyResponse, supervisorResult, selfResult] = await Promise.all([
-      getWorkflow(normalizedProcessId, session.accessToken),
+    const [workspaceSnapshot, historyResponse] = await Promise.all([
+      getInternWorkspaceSnapshot(normalizedProcessId, session.accessToken),
       getWorkflowHistory(normalizedProcessId, session.accessToken),
-      loadSupervisorEvaluationForIntern(normalizedProcessId, session.accessToken),
-      loadSelfEvaluationForIntern(normalizedProcessId, session.accessToken),
     ]);
 
     const nextSnapshot: InternProcessSnapshot = {
-      workflow,
+      workspace: workspaceSnapshot,
+      workflow: workspaceSnapshot.process,
       history: historyResponse.items,
-      supervisorEvaluation: supervisorResult.evaluation,
-      supervisorEvaluationWarning: supervisorResult.warning,
-      selfEvaluation: selfResult.evaluation,
-      selfEvaluationWarning: selfResult.warning,
+      supervisorEvaluation: workspaceSnapshot.supervisorEvaluation,
+      supervisorEvaluationWarning: workspaceSnapshot.capabilities.canViewSupervisorEvaluation
+        ? null
+        : 'A avaliacao da chefia sera exibida aqui quando estiver liberada no snapshot operacional do servidor.',
+      selfEvaluation: workspaceSnapshot.selfEvaluation,
+      selfEvaluationWarning:
+        workspaceSnapshot.capabilities.canViewSelfEvaluation ||
+        workspaceSnapshot.capabilities.canEditSelfEvaluation
+          ? null
+          : 'A autoavaliacao sera liberada conforme as regras operacionais calculadas pelo backend.',
     };
 
     setSnapshot(nextSnapshot);
@@ -463,9 +426,7 @@ export function InternServerWorkspace() {
     setIsSelfEvaluationExpanded(
       Boolean(
         nextSnapshot.workflow.status === ProcessStatus.AGUARDANDO_ASSINATURA &&
-          nextSnapshot.supervisorEvaluation?.documentContext &&
-          !nextSnapshot.supervisorEvaluation.documentContext.internSignaturePending &&
-          nextSnapshot.selfEvaluation?.status !== SelfEvaluationStatus.SUBMITTED,
+          nextSnapshot.workspace.capabilities.canEditSelfEvaluation,
       ),
     );
     setRecentProcessIds((current) =>
@@ -497,7 +458,7 @@ export function InternServerWorkspace() {
       await loadProcessSnapshot(processId.trim(), {
         title: 'Processo carregado',
         description:
-          'A leitura do servidor foi atualizada com workflow, historico, documento da chefia e autoavaliacao.',
+          'A leitura do servidor foi atualizada com etapa atual, documentos, autoavaliacao e flags operacionais.',
       });
     } catch (error) {
       const payload =
@@ -782,9 +743,9 @@ export function InternServerWorkspace() {
                   <span className="section-chip">Fluxo do processo</span>
                   <h3>Leitura operacional da etapa atual</h3>
                   <p>
-                    O backend ainda nao expoe a numeracao da etapa no endpoint publico do servidor.
-                    Por isso, o painel acompanha o fluxo real desta etapa com base no status macro e
-                    nos documentos ja liberados.
+                    Etapa {snapshot.workspace.currentStage.sequence} de{' '}
+                    {snapshot.workspace.currentStage.totalStages} calculada pelo snapshot operacional
+                    do servidor.
                   </p>
                 </div>
               </div>
@@ -953,15 +914,23 @@ export function InternServerWorkspace() {
                       <div>
                         <strong>Parecer da comissao</strong>
                         <p>
-                          Este bloco acompanha o momento da tramitaçao na CESAD com base no status
-                          macro do processo.
+                          {snapshot.workspace.cesadOpinionAccess.canView
+                            ? 'Parecer liberado conforme conclusao, assinatura integral e regra da etapa.'
+                            : snapshot.workspace.cesadOpinionAccess.blockedReason ??
+                              'Parecer ainda indisponivel para leitura do servidor.'}
                         </p>
                       </div>
 
                       <StatusBadge
-                        label={getCommissionStepDescription(snapshot.workflow.status)}
+                        label={
+                          snapshot.workspace.cesadOpinionAccess.canView
+                            ? 'Disponivel para leitura'
+                            : getCommissionStepDescription(snapshot.workflow.status)
+                        }
                         tone={
-                          snapshot.workflow.status === ProcessStatus.EM_ANALISE_CESAD
+                          snapshot.workspace.cesadOpinionAccess.canView
+                            ? 'success'
+                            : snapshot.workflow.status === ProcessStatus.EM_ANALISE_CESAD
                             ? 'warning'
                             : [
                                   ProcessStatus.PARECER_EMITIDO,
@@ -977,8 +946,9 @@ export function InternServerWorkspace() {
                     </div>
 
                     <p className="document-tile__hint">
-                      A leitura detalhada do parecer ainda depende de um endpoint especifico para o
-                      servidor. Enquanto isso, o painel informa o macrostatus real do processo.
+                      {snapshot.workspace.cesadOpinionAccess.requiresFormalNotification
+                        ? 'Na etapa 4, a leitura depende tambem de notificacao formal ao servidor.'
+                        : 'Nas etapas 1 a 3, a leitura depende de conclusao e assinatura integral do parecer.'}
                     </p>
                   </article>
                 </div>

@@ -1,4 +1,10 @@
-import type { SelfEvaluationStatus } from '../enums';
+import type {
+  DocumentStatus,
+  DocumentType,
+  SelfEvaluationStatus,
+  SignatureStatus,
+  UserRole,
+} from '../enums';
 
 export interface SelfEvaluationRef {
   id: string;
@@ -11,4 +17,24 @@ export interface SelfEvaluationRef {
   submittedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SelfEvaluationDocumentSignatureRef {
+  signatoryRole: UserRole;
+  status: SignatureStatus;
+  signedAt: string | null;
+}
+
+export interface SelfEvaluationDocumentContextRef {
+  documentId: string;
+  documentType: DocumentType;
+  documentStatus: DocumentStatus;
+  hasArtifact: boolean;
+  artifactPath: string | null;
+  signatures: SelfEvaluationDocumentSignatureRef[];
+  supervisorSignaturePending: boolean;
+}
+
+export interface SelfEvaluationWithDocumentContextRef extends SelfEvaluationRef {
+  documentContext?: SelfEvaluationDocumentContextRef;
 }

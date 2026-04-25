@@ -14,13 +14,26 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import type { WorkflowTransitionRequestDto } from './dto/workflow-transition.dto';
+import { InternWorkspaceService } from './intern-workspace/intern-workspace.service';
 import { ProcessesService } from './processes.service';
 import { isWorkflowAction } from './workflow-catalog';
 
 @Controller('processes')
 @UseGuards(JwtAuthGuard)
 export class ProcessesController {
-  constructor(private readonly processesService: ProcessesService) {}
+  constructor(
+    private readonly processesService: ProcessesService,
+    private readonly internWorkspaceService: InternWorkspaceService,
+  ) {}
+
+  @Get(':id/intern-workspace')
+  async getInternWorkspace(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    if (!user) {
+      throw new UnauthorizedException('Authenticated user not found');
+    }
+
+    return this.internWorkspaceService.getSnapshot(id, user);
+  }
 
   @Get(':id/workflow')
   async getWorkflow(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
