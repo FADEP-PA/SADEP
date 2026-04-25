@@ -54,6 +54,12 @@ Este documento **não substitui** o tracker backend.
 - `npm run typecheck:spec --workspace @aep-pa/backend` → passou
 - validação dos contracts compartilhados → passou
 - `npm run backend:build` → passou
+- `npm run backend:bootstrap` com `JWT_SECRET` e `DEV_SEED_PASSWORD` configurados → passou
+- validação negativa sem `DEV_SEED_PASSWORD` no seed → falhou corretamente com mensagem clara
+- validação negativa sem `JWT_SECRET` no start dev → falhou corretamente com mensagem clara
+- validação negativa com `JWT_SECRET` curto → falhou corretamente por mínimo de 32 caracteres
+- validação negativa do seed com `NODE_ENV=production` → falhou corretamente com mensagem clara
+- `git grep` confirmou ausência das credenciais antigas versionadas do seed e dos segredos antigos de teste
 - `node -e "require('@aep-pa/contracts')"` → passou
 - `npm run backend:start:prod` → passou
 - healthcheck no runtime compilado do backend → respondeu `200`
@@ -70,21 +76,25 @@ Este documento **não substitui** o tracker backend.
 - o bootstrap determinístico local do backend foi aprovado e passou a ter fluxo oficial via `npm run backend:bootstrap`;
 - a `BE-OPS-02` foi aprovada e mitigou a instabilidade do `prisma generate` em ambiente Windows com guarda operacional específica;
 - a `BE-OPS-04` foi aprovada e consolidou o fluxo explícito de build/start de produção do backend;
-- o principal problema operacional atual no backend permanece na remoção de credenciais previsíveis de desenvolvimento;
+- a `BE-OPS-01` foi aprovada e removeu credenciais previsíveis de desenvolvimento;
+- o hardening mínimo de `JWT_SECRET` foi aplicado: segredo obrigatório, sem fallback fraco e com mínimo de 32 caracteres;
+- o seed local passou a depender de `DEV_SEED_PASSWORD`, preservando usuários/e-mails/roles previsíveis para desenvolvimento;
+- o seed de desenvolvimento passou a ser bloqueado em `NODE_ENV=production`;
+- `.env.example` e documentação local foram atualizados para orientar o novo fluxo de bootstrap e login manual;
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
 - a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
-- o roadmap backend segue com a task ativa `BE-OPS-01`, sem reabrir bootstrap, produção, domínio CESAD ou Prisma config.
+- a próxima candidata recomendada no roadmap backend é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e não por implementação direta, sem reabrir bootstrap, produção, domínio CESAD ou Prisma config.
 
 ---
 
 # Frentes ativas e dependências estruturais
 
-## Frente ativa do backend
-**BE-OPS-01 — Remover credenciais previsíveis de desenvolvimento**
+## Próxima frente backend recomendada para diagnóstico
+**BE-ARCH-01 — Revisar estratégia de autenticação web**
 
 ### Motivo
-A próxima frente do backend permanece operacional: remover credenciais previsíveis de desenvolvimento depois da consolidação do bootstrap local, da guarda do `prisma generate` no Windows e do fluxo explícito de build/start de produção.
+A frente operacional de remoção de credenciais previsíveis foi concluída pela `BE-OPS-01`. A próxima candidata do roadmap é arquitetural e sensível: revisar a estratégia de autenticação web.
 
 ### Situação atual
 Hoje o sistema:
@@ -94,11 +104,11 @@ Hoje o sistema:
 - já possui guarda operacional antes de `prisma generate` em ambiente Windows;
 - já possui fluxo explícito de build e start de produção do backend via `npm run backend:build` e `npm run backend:start:prod`;
 - já validou o runtime compilado com Node e healthcheck `200`;
-- ainda possui credenciais previsíveis de desenvolvimento a revisar;
+- já removeu credenciais previsíveis de desenvolvimento pela `BE-OPS-01`;
 - ainda mantém problemas técnicos de Prisma/migrations fora do escopo já aprovado da `BE-OPS-03`.
 
 ### Consequência
-O próximo foco backend continua sendo a `BE-OPS-01`, sem reabrir o bootstrap já aprovado, a mitigação operacional do `prisma generate` no Windows ou o fluxo de build/start de produção já aprovado.
+Antes de qualquer implementação da `BE-ARCH-01`, a próxima ação recomendada é uma varredura/diagnóstico arquitetural. A revisão ampla de autenticação web permanece aberta e não foi resolvida pela `BE-OPS-01`.
 
 ---
 
@@ -243,6 +253,33 @@ O backend passou a ter fluxo explícito de build compilado e start de produção
 
 ---
 
+## Credenciais previsíveis de desenvolvimento foram resolvidas
+
+### Descrição
+A frente de credenciais previsíveis de desenvolvimento foi saneada pela `BE-OPS-01`, preservando a experiência local de desenvolvimento sem manter senhas fixas versionadas.
+
+### Evidências
+- senhas hardcoded dos usuários seed foram removidas;
+- usuários, e-mails e roles seed foram preservados para testes locais;
+- todos os usuários seed locais passaram a usar a senha definida em `DEV_SEED_PASSWORD`;
+- o seed passou a exigir `DEV_SEED_PASSWORD`;
+- o seed passou a bloquear execução em `NODE_ENV=production`;
+- `JWT_SECRET` passou a ser obrigatório e com mínimo de 32 caracteres;
+- o fallback fraco de `JWT_SECRET` foi removido;
+- `.env.example` e documentação local foram atualizados com placeholders seguros e orientação de bootstrap;
+- testes foram ajustados para segredos de 32+ caracteres;
+- `git grep` confirmou ausência das credenciais antigas versionadas e dos segredos antigos de teste.
+
+### Impacto
+- remove práticas inseguras normalizadas no fluxo local;
+- mantém usuários seed úteis para login manual com senha local definida pelo dev;
+- conclui o hardening operacional de credenciais previsíveis sem resolver a estratégia ampla de autenticação web.
+
+### Status no tracker
+- corresponde à task **`BE-OPS-01 — Remover credenciais previsíveis de desenvolvimento`**, agora aprovada e concluída no `backend-implementation-tracker.md`
+
+---
+
 # Problemas atuais de maior prioridade
 
 ## 1. Configuração Prisma depreciada
@@ -278,27 +315,6 @@ O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda n
 ### Status no tracker
 - permanece como problema transversal relevante
 - ainda não foi convertido em task backend específica com ID próprio
-
----
-
-## 3. Credenciais previsíveis de desenvolvimento ainda não foram saneadas
-
-### Descrição
-O fluxo local/backend ainda mantém credenciais previsíveis ou placeholders inseguros em seed, `.env.example` e validação de ambiente.
-
-### Evidências
-- seed local com senhas previsíveis versionadas;
-- `JWT_SECRET` previsível no `.env.example`;
-- fallback runtime fraco para `JWT_SECRET`;
-- documentação local ainda pode publicar credenciais reutilizáveis, caso a task não seja executada.
-
-### Impacto
-- normaliza práticas inseguras no repositório;
-- aumenta risco de uso indevido ou reaproveitamento indevido de segredos locais;
-- mantém hardening operacional incompleto.
-
-### Status no tracker
-- corresponde à task **`BE-OPS-01 — Remover credenciais previsíveis de desenvolvimento`**, ainda ativa
 
 ---
 
@@ -518,10 +534,16 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 
 ## Backend / Segurança e configuração
 
-- [ ] `{BACK}` **BE-OPS-01** — Remover credenciais previsíveis de desenvolvimento
-  - Como corrigir:
-    - revisar seed, `.env.example` e docs;
-    - substituir segredos previsíveis por placeholders seguros.
+- [x] `{BACK}` **BE-OPS-01** — Remover credenciais previsíveis de desenvolvimento
+  - Como foi corrigido:
+    - senhas hardcoded foram removidas do seed;
+    - `DEV_SEED_PASSWORD` passou a ser obrigatório para seed local;
+    - usuários seed foram preservados com e-mails previsíveis;
+    - seed foi bloqueado em produção;
+    - `JWT_SECRET` passou a ser obrigatório e com mínimo de 32 caracteres;
+    - fallback fraco de `JWT_SECRET` foi removido;
+    - documentação e `.env.example` foram atualizados;
+    - testes foram ajustados para segredos de 32+ caracteres.
 
 ## Backend | Frontend
 
@@ -550,7 +572,7 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 # Observações finais
 
 - o documento transversal não altera automaticamente a task ativa do backend;
-- a task ativa agora é `BE-OPS-01`, conforme o tracker backend;
+- após a conclusão da `BE-OPS-01`, não há task ativa formal sem confirmação humana no tracker backend;
 - a dependência estrutural de identidade canônica do `User` já foi removida pela conclusão da `BE-IDENT-01`;
 - a modelagem de signatários esperados do parecer CESAD já foi resolvida pela conclusão da `BE-STR-01`;
 - o nome oficial das pessoas deve ter `User` como fonte canônica;
@@ -558,6 +580,7 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 - o bootstrap determinístico local do backend foi resolvido pela `BE-OPS-03`;
 - o problema operacional do `prisma generate` em Windows foi mitigado pela `BE-OPS-02`;
 - o fluxo explícito de build/start de produção do backend foi resolvido pela `BE-OPS-04`;
-- o próximo foco operacional do backend permanece na `BE-OPS-01`;
+- a `BE-OPS-01` resolveu o hardening operacional de credenciais previsíveis de desenvolvimento;
+- a próxima candidata recomendada é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e dependendo de confirmação humana antes de implementação;
 - a `ALIGN-05` saneou a principal heurística do workspace do servidor sem reabrir blocos já aprovados;
-- permanecem abertas lacunas em frentes como administração, homologação, hardening de credenciais e arquitetura/segurança mapeadas.
+- permanecem abertas lacunas em frentes como administração, homologação, dependências, Prisma config, autenticação web ampla e arquitetura/segurança mapeadas.

@@ -117,7 +117,12 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 **BLOCO 3 — Hardening Operacional e Dívida Técnica Imediata**
 
 ## Task ativa
-**BE-OPS-01 — Remover credenciais previsíveis de desenvolvimento**
+**Nenhuma task ativa formal após a conclusão da BE-OPS-01 sem confirmação humana**
+
+## Próxima candidata recomendada
+**BE-ARCH-01 — Revisar estratégia de autenticação web**
+
+A próxima ação recomendada para a `BE-ARCH-01` é diagnóstico/varredura arquitetural, não implementação direta. A task permanece `PLANNED` até confirmação humana explícita.
 
 ## Contexto atual
 A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
@@ -134,7 +139,7 @@ No eixo de alinhamento backend/frontend, ficou registrada como necessidade futur
 - nas etapas **1, 2 e 3**, o servidor poderá visualizar o parecer CESAD após sua **conclusão** e **assinatura integral**;
 - na etapa **4**, o servidor somente poderá visualizar o parecer CESAD após sua **conclusão**, **assinatura integral** e **notificação formal**.
 
-O foco ativo do roadmap backend permanece na estabilização operacional. A próxima task autorizada continua sendo a remoção de credenciais previsíveis de desenvolvimento pela `BE-OPS-01`, sem reabrir o fluxo de build/start de produção já aprovado.
+A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. A próxima candidata recomendada no roadmap é a `BE-ARCH-01`, iniciando por diagnóstico/varredura arquitetural e dependendo de confirmação humana antes de implementação.
 
 ---
 
@@ -391,16 +396,25 @@ Objetivo: reduzir riscos operacionais e débitos técnicos importantes do backen
 
 ## BE-OPS-01 — Remover credenciais previsíveis de desenvolvimento
 
-- **Status:** ACTIVE
+- **Status:** DONE
 - **Prioridade:** Média
 - **Responsável atual:** —
 - **Auditoria necessária:** Não obrigatória
-- **Commit associado:** —
+- **Commit associado:** `chore(backend): remove predictable development credentials`
 - **Dependências:** Nenhuma rígida
 
 **Observações**
-- permanece relevante
-- passa a ser a task ativa após a aprovação da `BE-OPS-04`
+- senhas hardcoded dos usuários seed foram removidas
+- usuários, e-mails e roles seed foram preservados para testes locais
+- o seed passou a exigir `DEV_SEED_PASSWORD` e todos os usuários seed locais usam essa senha
+- o seed passou a bloquear execução em `NODE_ENV=production`
+- `JWT_SECRET` passou a ser obrigatório, com mínimo de 32 caracteres
+- o fallback fraco de `JWT_SECRET` foi removido
+- `.env.example` e documentação local foram atualizados para orientar `JWT_SECRET` e `DEV_SEED_PASSWORD`
+- testes foram ajustados para segredos de 32+ caracteres
+- validações principais passaram: `typecheck`, `typecheck:spec`, suíte backend, build e `backend:bootstrap` com variáveis configuradas
+- validações negativas passaram: ausência de `DEV_SEED_PASSWORD`, ausência de `JWT_SECRET`, `JWT_SECRET` curto e seed em produção
+- `git grep` confirmou ausência das credenciais antigas versionadas e dos segredos antigos de teste
 
 ---
 
@@ -513,6 +527,7 @@ Definir fluxo claro de build compilada e start de produção para o backend.
 **Observações**
 - ainda importante como análise arquitetural
 - não é o principal bloqueio estrutural do momento
+- próxima candidata recomendada após a conclusão da `BE-OPS-01`, iniciando por diagnóstico/varredura arquitetural e não por implementação direta
 
 ---
 
