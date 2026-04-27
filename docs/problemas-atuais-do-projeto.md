@@ -68,6 +68,7 @@ Este documento **não substitui** o tracker backend.
 - `npm run typecheck --workspace @aep-pa/frontend` → passou
 - `npm run frontend:build` → passou
 - `npm run frontend:typecheck` → passou
+- configuração explícita de `outputFileTracingRoot` no Next.js → removeu o aviso de raiz inferida por lockfiles externos no build
 - upgrade controlado do Next.js no frontend de `15.3.0` para `15.5.15` → build passou
 - `npm audit` após upgrade do Next.js → removeu a vulnerabilidade crítica associada ao Next.js; permanecem vulnerabilidades altas e moderadas em outras dependências/transitivas
 - `git diff --check` → passou
@@ -89,6 +90,7 @@ Este documento **não substitui** o tracker backend.
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
 - o frontend passou a usar `next@15.5.15`, removendo a vulnerabilidade crítica anteriormente associada ao `next@15.3.0`;
 - o frontend passou a ter script explícito de typecheck no workspace e atalhos raiz `frontend:build` e `frontend:typecheck`;
+- o build do frontend passou a ter raiz de tracing explícita no monorepo, evitando o aviso de inferência incorreta por lockfiles externos;
 - a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
 - a próxima candidata recomendada no roadmap backend é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e não por implementação direta, sem reabrir bootstrap, produção, domínio CESAD ou Prisma config.
@@ -448,6 +450,7 @@ O backend agora possui build compilado e start de produção explícitos.
 
 ### Descrição
 O `build` do frontend passou, mas o log de desenvolvimento registra falhas de hot reload, carga de chunks e respostas `500`/`404` em assets do Next.
+O aviso de build sobre raiz inferida incorretamente por lockfiles externos foi mitigado com `outputFileTracingRoot` explícito.
 
 ### Impacto
 - perda de produtividade em desenvolvimento
@@ -456,6 +459,7 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
 ### Status no tracker
 - permanece como problema transversal
 - ainda não convertido em task backend
+- parcialmente mitigado no eixo de build do frontend; falhas históricas de hot reload/dev server ainda exigem validação específica em modo desenvolvimento
 
 ---
 
@@ -584,6 +588,7 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
     - `next` foi atualizado de `15.3.0` para `15.5.15`;
     - `package-lock.json` foi atualizado;
     - `next-env.d.ts` recebeu a referência gerada pelo Next 15.5 para tipos de rotas;
+    - `outputFileTracingRoot` foi configurado para a raiz do monorepo em `next.config.ts`;
     - `npm run build --workspace @aep-pa/frontend` passou;
     - a vulnerabilidade crítica associada ao Next.js deixou de aparecer no `npm audit`.
 
