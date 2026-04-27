@@ -92,6 +92,7 @@ Este documento **não substitui** o tracker backend.
 - o frontend passou a ter script explícito de typecheck no workspace e atalhos raiz `frontend:build` e `frontend:typecheck`;
 - o build do frontend passou a ter raiz de tracing explícita no monorepo, evitando o aviso de inferência incorreta por lockfiles externos;
 - a rota administrativa deixou de usar o placeholder genérico e passou a ter painel próprio de apoio, ainda sem backend administrativo dedicado;
+- a rota de homologação deixou de usar o placeholder genérico e passou a ter painel próprio de conferência, ainda sem backend decisório dedicado;
 - a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
 - a próxima candidata recomendada no roadmap backend é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e não por implementação direta, sem reabrir bootstrap, produção, domínio CESAD ou Prisma config.
@@ -368,17 +369,17 @@ A dor principal do workspace do servidor foi resolvida com snapshot operacional 
 ## 8. Rotas importantes do frontend ainda estão em placeholder
 
 ### Descrição
-A área de homologação ainda usa estrutura visual de placeholder, sem entrega funcional equivalente ao restante do fluxo. A área administrativa já deixou o placeholder genérico, mas ainda não possui backend administrativo dedicado.
+As áreas de administração e homologação já deixaram o placeholder genérico, mas ainda não possuem backend dedicado para entregar funcionalidade equivalente ao restante do fluxo.
 
 ### Impacto
-- cobertura funcional incompleta no perfil de homologação
-- painel administrativo ainda limitado a apoio, atalhos e leitura da sessão
+- painéis de administração e homologação ainda limitados a apoio, atalhos e leitura da sessão
+- ações reais de gestão administrativa e decisão homologatória seguem dependentes de contratos backend
 - diferença parcial entre navegação exposta e funcionalidade real disponível
 
 ### Status no tracker
 - hoje não está no roadmap backend como task específica
 - permanece como backlog transversal do projeto
-- parcialmente mitigado no frontend pela substituição do placeholder genérico da rota `/admin`
+- parcialmente mitigado no frontend pela substituição dos placeholders genéricos das rotas `/admin` e `/homologacao-autoridade`
 
 ---
 
@@ -599,7 +600,8 @@ O aviso de build sobre raiz inferida incorretamente por lockfiles externos foi m
 - [ ] `{FRONT}` Implementar as rotas placeholder de administração e homologação
   - Progresso parcial:
     - rota `/admin` deixou de usar `RolePlaceholderPage` e passou a ter painel administrativo próprio;
-    - rota `/homologacao-autoridade` ainda usa placeholder e permanece pendente.
+    - rota `/homologacao-autoridade` deixou de usar `RolePlaceholderPage` e passou a ter painel próprio de conferência;
+    - funcionalidades reais de gestão administrativa e homologação ainda dependem de APIs dedicadas.
 
 ---
 
