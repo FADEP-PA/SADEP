@@ -66,6 +66,7 @@ Este documento **não substitui** o tracker backend.
 - `npx tsc --noEmit -p tsconfig.json` em `apps/frontend` → passou
 - `npm run build --workspace @aep-pa/frontend` → passou
 - `npm run typecheck --workspace @aep-pa/frontend` → passou
+- `npm run frontend:build` → passou
 - `npm run frontend:typecheck` → passou
 - upgrade controlado do Next.js no frontend de `15.3.0` para `15.5.15` → build passou
 - `npm audit` após upgrade do Next.js → removeu a vulnerabilidade crítica associada ao Next.js; permanecem vulnerabilidades altas e moderadas em outras dependências/transitivas
@@ -87,7 +88,7 @@ Este documento **não substitui** o tracker backend.
 - `.env.example` e documentação local foram atualizados para orientar o novo fluxo de bootstrap e login manual;
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
 - o frontend passou a usar `next@15.5.15`, removendo a vulnerabilidade crítica anteriormente associada ao `next@15.3.0`;
-- o frontend passou a ter script explícito de typecheck no workspace e atalho raiz `frontend:typecheck`;
+- o frontend passou a ter script explícito de typecheck no workspace e atalhos raiz `frontend:build` e `frontend:typecheck`;
 - a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
 - a próxima candidata recomendada no roadmap backend é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e não por implementação direta, sem reabrir bootstrap, produção, domínio CESAD ou Prisma config.
@@ -400,7 +401,7 @@ O workspace raiz ainda não tem scripts agregadores completos de `build`, `test`
 ### Impacto
 - CI/CD mais manual
 - ausência de gate único completo de qualidade para o repositório
-- checagem de tipos do frontend já pode ser executada de forma padronizada pelo workspace e pela raiz
+- build e checagem de tipos do frontend já podem ser executados de forma padronizada pela raiz
 
 ### Status no tracker
 - ainda não foi convertido em task backend explícita
@@ -572,6 +573,7 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
     - preparar execução padronizada em CI.
   - Progresso parcial:
     - `apps/frontend` passou a expor `npm run typecheck --workspace @aep-pa/frontend`;
+    - a raiz passou a expor `npm run frontend:build`;
     - a raiz passou a expor `npm run frontend:typecheck`;
     - ainda faltam agregadores completos de `build`, `test`, `lint` e `typecheck` para todo o monorepo.
 
