@@ -91,6 +91,7 @@ Este documento **não substitui** o tracker backend.
 - o frontend passou a usar `next@15.5.15`, removendo a vulnerabilidade crítica anteriormente associada ao `next@15.3.0`;
 - o frontend passou a ter script explícito de typecheck no workspace e atalhos raiz `frontend:build` e `frontend:typecheck`;
 - o build do frontend passou a ter raiz de tracing explícita no monorepo, evitando o aviso de inferência incorreta por lockfiles externos;
+- a rota administrativa deixou de usar o placeholder genérico e passou a ter painel próprio de apoio, ainda sem backend administrativo dedicado;
 - a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
 - a próxima candidata recomendada no roadmap backend é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e não por implementação direta, sem reabrir bootstrap, produção, domínio CESAD ou Prisma config.
@@ -367,15 +368,17 @@ A dor principal do workspace do servidor foi resolvida com snapshot operacional 
 ## 8. Rotas importantes do frontend ainda estão em placeholder
 
 ### Descrição
-As áreas de administração e homologação ainda usam estrutura visual de placeholder, sem entrega funcional equivalente ao restante do fluxo.
+A área de homologação ainda usa estrutura visual de placeholder, sem entrega funcional equivalente ao restante do fluxo. A área administrativa já deixou o placeholder genérico, mas ainda não possui backend administrativo dedicado.
 
 ### Impacto
-- cobertura funcional incompleta por perfil
-- diferença entre navegação exposta e funcionalidade real disponível
+- cobertura funcional incompleta no perfil de homologação
+- painel administrativo ainda limitado a apoio, atalhos e leitura da sessão
+- diferença parcial entre navegação exposta e funcionalidade real disponível
 
 ### Status no tracker
 - hoje não está no roadmap backend como task específica
 - permanece como backlog transversal do projeto
+- parcialmente mitigado no frontend pela substituição do placeholder genérico da rota `/admin`
 
 ---
 
@@ -594,6 +597,9 @@ O aviso de build sobre raiz inferida incorretamente por lockfiles externos foi m
 
 - [ ] `{FRONT}` Remover dependências de heurística no cliente onde a API já puder atender
 - [ ] `{FRONT}` Implementar as rotas placeholder de administração e homologação
+  - Progresso parcial:
+    - rota `/admin` deixou de usar `RolePlaceholderPage` e passou a ter painel administrativo próprio;
+    - rota `/homologacao-autoridade` ainda usa placeholder e permanece pendente.
 
 ---
 
