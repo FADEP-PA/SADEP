@@ -1,6 +1,6 @@
 # Problemas atuais do projeto AEP-PA
 
-**Atualizado em:** 25/04/2026  
+**Atualizado em:** 27/04/2026
 **Função deste documento:** painel transversal de problemas ativos do projeto  
 **Escopo:** backend, frontend, infraestrutura, build, DX e lacunas estruturais gerais
 
@@ -65,6 +65,10 @@ Este documento **não substitui** o tracker backend.
 - healthcheck no runtime compilado do backend → respondeu `200`
 - `npx tsc --noEmit -p tsconfig.json` em `apps/frontend` → passou
 - `npm run build --workspace @aep-pa/frontend` → passou
+- `npm run typecheck --workspace @aep-pa/frontend` → passou
+- `npm run frontend:typecheck` → passou
+- upgrade controlado do Next.js no frontend de `15.3.0` para `15.5.15` → build passou
+- `npm audit` após upgrade do Next.js → removeu a vulnerabilidade crítica associada ao Next.js; permanecem vulnerabilidades altas e moderadas em outras dependências/transitivas
 - `git diff --check` → passou
 
 ## Conclusão técnica desta rodada
@@ -82,6 +86,8 @@ Este documento **não substitui** o tracker backend.
 - o seed de desenvolvimento passou a ser bloqueado em `NODE_ENV=production`;
 - `.env.example` e documentação local foram atualizados para orientar o novo fluxo de bootstrap e login manual;
 - o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
+- o frontend passou a usar `next@15.5.15`, removendo a vulnerabilidade crítica anteriormente associada ao `next@15.3.0`;
+- o frontend passou a ter script explícito de typecheck no workspace e atalho raiz `frontend:typecheck`;
 - a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
 - a próxima candidata recomendada no roadmap backend é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e não por implementação direta, sem reabrir bootstrap, produção, domínio CESAD ou Prisma config.
@@ -307,6 +313,7 @@ O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda n
 
 ### Evidências
 - `npm install` reportou `10 vulnerabilities (9 high, 1 critical)`
+- após upgrade do frontend para `next@15.5.15`, a vulnerabilidade crítica do Next.js deixou de aparecer no `npm audit`; permanecem vulnerabilidades altas e moderadas, especialmente em NestJS, Prisma e dependências transitivas
 
 ### Impacto
 - risco de segurança ainda não qualificado
@@ -315,6 +322,7 @@ O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda n
 ### Status no tracker
 - permanece como problema transversal relevante
 - ainda não foi convertido em task backend específica com ID próprio
+- parcialmente mitigado no frontend pelo upgrade do Next.js, sem resolver o conjunto completo de dependências vulneráveis
 
 ---
 
@@ -387,15 +395,16 @@ Os apps existem no monorepo, mas não possuem implementação funcional, script 
 ## 10. Esteira de qualidade ainda não está consolidada na raiz
 
 ### Descrição
-O workspace raiz não tem scripts agregadores de `build`, `test`, `lint` e `typecheck`. O frontend também não define scripts de teste ou lint.
+O workspace raiz ainda não tem scripts agregadores completos de `build`, `test`, `lint` e `typecheck`. O frontend passou a definir script de `typecheck`, mas ainda não define scripts de teste ou lint.
 
 ### Impacto
 - CI/CD mais manual
-- ausência de gate único de qualidade para o repositório
+- ausência de gate único completo de qualidade para o repositório
+- checagem de tipos do frontend já pode ser executada de forma padronizada pelo workspace e pela raiz
 
 ### Status no tracker
 - ainda não foi convertido em task backend explícita
-- permanece como problema transversal relevante
+- permanece como problema transversal relevante, parcialmente mitigado no eixo de typecheck do frontend
 
 ---
 
@@ -561,8 +570,20 @@ O `build` do frontend passou, mas o log de desenvolvimento registra falhas de ho
   - Como corrigir:
     - adicionar scripts agregadores de `build`, `test`, `typecheck` e `lint`;
     - preparar execução padronizada em CI.
+  - Progresso parcial:
+    - `apps/frontend` passou a expor `npm run typecheck --workspace @aep-pa/frontend`;
+    - a raiz passou a expor `npm run frontend:typecheck`;
+    - ainda faltam agregadores completos de `build`, `test`, `lint` e `typecheck` para todo o monorepo.
 
 ## Frontend
+
+- [x] `{FRONT}` Atualizar Next.js para versão corrigida
+  - Como foi corrigido:
+    - `next` foi atualizado de `15.3.0` para `15.5.15`;
+    - `package-lock.json` foi atualizado;
+    - `next-env.d.ts` recebeu a referência gerada pelo Next 15.5 para tipos de rotas;
+    - `npm run build --workspace @aep-pa/frontend` passou;
+    - a vulnerabilidade crítica associada ao Next.js deixou de aparecer no `npm audit`.
 
 - [ ] `{FRONT}` Remover dependências de heurística no cliente onde a API já puder atender
 - [ ] `{FRONT}` Implementar as rotas placeholder de administração e homologação
