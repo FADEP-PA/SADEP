@@ -12,6 +12,7 @@
     "backend:start": "npm run start --workspace @aep-pa/backend",
     "backend:start:prod": "npm run start:prod --workspace @aep-pa/backend",
     "backend:start:dev": "npm run start:dev --workspace @aep-pa/backend",
+    "frontend:typecheck": "npm run typecheck --workspace @aep-pa/frontend",
     "frontend:start": "npm run start --workspace @aep-pa/frontend",
     "frontend:start:dev": "npm run dev --workspace @aep-pa/frontend"
   }
