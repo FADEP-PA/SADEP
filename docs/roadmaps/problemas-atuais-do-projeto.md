@@ -119,7 +119,8 @@ Este documento **não substitui** o tracker backend.
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
 - a varredura arquitetural da `BE-ARCH-01` foi concluída e a semântica incremental da sessão web foi fechada documentalmente na `BE-ARCH-01A`;
 - a `BE-ARCH-01B` foi concluída e mitigou o risco de o backend confiar apenas no payload do token até sua expiração, passando a revalidar usuário vivo em requests autenticadas e a tratar sessão inválida com `401`;
-- a próxima ação recomendada no roadmap backend passou a ser a `BE-ARCH-01C`, sem reabrir a `BE-OPS-01`, a `BE-TECH-01`, bootstrap, produção, domínio CESAD ou Prisma config;
+- a `BE-ARCH-01C` foi concluída e mitigou a duplicação básica de contratos de auth/session entre backend e frontend, introduzindo `AuthenticatedUserRef`, `LoginRequest` e `LoginResponse` em `packages/contracts` sem alterar comportamento funcional;
+- a próxima ação recomendada no roadmap backend passou a ser a `BE-ARCH-01D`, começando por análise/varredura curta do frontend de sessão, sem reabrir a `BE-OPS-01`, a `BE-TECH-01`, bootstrap, produção, domínio CESAD ou Prisma config;
 - o gap de autorização contextual CESAD por processo foi registrado separadamente como `BE-SEC-03`, por se tratar de problema de autorização contextual e não de estratégia de sessão.
 
 ---
@@ -387,21 +388,23 @@ A autenticação atual usa bearer JWT stateless, já foi varrida arquiteturalmen
 - o backend agora revalida usuário vivo em requests autenticadas, consultando o banco após validar assinatura e expiração do JWT
 - `/auth/me` agora reflete leitura viva do estado persistido atual do usuário
 - sessão inválida agora retorna `401` quando o usuário não existe, está inativo ou diverge da role persistida no banco
+- os contratos mínimos compartilhados de auth/session agora existem em `packages/contracts` como `AuthenticatedUserRef`, `LoginRequest` e `LoginResponse`
+- backend e frontend passaram a reutilizar esses contratos sem alterar o comportamento funcional real de login, `/auth/me` ou sessão local do frontend
 - frontend continuará apenas reagindo a `401`, limpando sessão local por enquanto
 - risco alto para homologação/produção institucional
 
 ### Subtasks recomendadas da `BE-ARCH-01`
 - [x] **BE-ARCH-01A — Fechar semântica de sessão web**
 - [x] **BE-ARCH-01B — Revalidar usuário atual no backend**
-- [ ] **BE-ARCH-01C — Compartilhar contratos de auth/session**
+- [x] **BE-ARCH-01C — Compartilhar contratos de auth/session**
 - [ ] **BE-ARCH-01D — Alinhar frontend de sessão**
 - [ ] **BE-ARCH-01E — Definir estratégia de produção para refresh/revogação**
 - [ ] **BE-ARCH-01F — Auditar e testar eventos de autenticação**
 
 ### Próxima ação recomendada
-- executar `BE-ARCH-01C`
-- a `BE-ARCH-01C` deve começar por análise/varredura curta dos contratos atuais de auth/session entre `packages/contracts`, backend e frontend
-- continuam pendentes `BE-ARCH-01C`, `BE-ARCH-01D`, `BE-ARCH-01E` e `BE-ARCH-01F`
+- executar `BE-ARCH-01D`
+- a `BE-ARCH-01D` deve começar por análise/varredura curta do frontend de sessão, com foco em UX de expiração, bootstrap de sessão, invalidadores e consumo dos contratos compartilhados
+- continuam pendentes `BE-ARCH-01D`, `BE-ARCH-01E` e `BE-ARCH-01F`
 
 ### Achado crítico separado
 - [ ] **BE-SEC-03 — Fortalecer autorização contextual CESAD por processo**
@@ -409,6 +412,7 @@ A autenticação atual usa bearer JWT stateless, já foi varrida arquiteturalmen
 
 ### Impacto
 - o risco específico de o backend confiar apenas no payload do token até a expiração foi mitigado
+- a duplicação básica de contratos de auth/session entre backend e frontend foi mitigada
 - ainda existe exposição relevante a problemas de sessão e roubo de token em um desenho bearer stateless sem refresh/revogação
 - baixo controle operacional sobre expiração e revogação
 - desenho insuficiente para ambiente institucional real
@@ -427,7 +431,7 @@ A autenticação atual usa bearer JWT stateless, já foi varrida arquiteturalmen
 - usuários seed com e-mails previsíveis e senha definida por `DEV_SEED_PASSWORD`
 
 ### Status no tracker
-- corresponde à frente **`BE-ARCH-01 — Revisar estratégia de autenticação web`**, ainda aberta, com `BE-ARCH-01A` e `BE-ARCH-01B` concluídas e `BE-ARCH-01C` como próxima ação recomendada
+- corresponde à frente **`BE-ARCH-01 — Revisar estratégia de autenticação web`**, ainda aberta, com `BE-ARCH-01A`, `BE-ARCH-01B` e `BE-ARCH-01C` concluídas e `BE-ARCH-01D` como próxima ação recomendada
 - o achado CESAD foi registrado separadamente como **`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`**
 
 ---
@@ -634,7 +638,7 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
   - Subtasks planejadas:
     - [x] `BE-ARCH-01A` — fechar semântica de sessão web
     - [x] `BE-ARCH-01B` — revalidar usuário atual no backend
-    - [ ] `BE-ARCH-01C` — compartilhar contratos de auth/session
+    - [x] `BE-ARCH-01C` — compartilhar contratos de auth/session
     - [ ] `BE-ARCH-01D` — alinhar frontend de sessão
     - [ ] `BE-ARCH-01E` — definir estratégia de produção para refresh/revogação
     - [ ] `BE-ARCH-01F` — auditar e testar eventos de autenticação
@@ -772,7 +776,8 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
 - a `BE-TECH-01` resolveu a configuração Prisma depreciada, sem corrigir a limitação histórica de `prisma:migrate:dev`;
 - a varredura da `BE-ARCH-01` foi concluída, a semântica incremental da sessão web foi fechada na `BE-ARCH-01A` e a frente segue aberta em subtasks planejadas;
 - a `BE-ARCH-01B` foi concluída e mitigou o risco de confiança exclusiva no payload do token;
-- a próxima ação recomendada passou a ser `BE-ARCH-01C`;
+- a `BE-ARCH-01C` foi concluída e mitigou a duplicação básica de contratos de auth/session entre backend e frontend;
+- a próxima ação recomendada passou a ser `BE-ARCH-01D`;
 - o achado de autorização contextual CESAD por processo foi registrado separadamente como `BE-SEC-03`;
 - a `ALIGN-05` saneou a principal heurística do workspace do servidor sem reabrir blocos já aprovados;
 - permanecem abertas lacunas em frentes como administração, homologação, dependências, autenticação web ampla e arquitetura/segurança mapeadas.

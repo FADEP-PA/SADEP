@@ -117,12 +117,12 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 **BLOCO 3 — Hardening Operacional e Dívida Técnica Imediata**
 
 ## Task ativa
-**Nenhuma task ativa formal após a conclusão da BE-TECH-01 sem confirmação humana**
+**Nenhuma task ativa formal após a conclusão da BE-ARCH-01C sem confirmação humana**
 
 ## Próxima candidata recomendada
-**BE-ARCH-01C — Compartilhar contratos de auth/session**
+**BE-ARCH-01D — Alinhar frontend de sessão**
 
-A varredura arquitetural da `BE-ARCH-01` foi concluída, a `BE-ARCH-01A` foi fechada como decisão documental/aprovada e a `BE-ARCH-01B` foi implementada, auditada e aprovada com revalidação backend do usuário autenticado. A próxima ação recomendada passa a ser a `BE-ARCH-01C — Compartilhar contratos de auth/session`, começando por análise/varredura curta dos contratos atuais entre `packages/contracts`, backend e frontend antes de nova implementação.
+A varredura arquitetural da `BE-ARCH-01` foi concluída, a `BE-ARCH-01A` foi fechada como decisão documental/aprovada, a `BE-ARCH-01B` foi implementada, auditada e aprovada com revalidação backend do usuário autenticado, e a `BE-ARCH-01C` foi implementada/aprovada com centralização dos contratos mínimos de auth/session em `packages/contracts`. A próxima ação recomendada passa a ser a `BE-ARCH-01D — Alinhar frontend de sessão`, começando por análise/varredura curta do frontend de sessão, com foco em bootstrap, UX de expiração, invalidadores e consumo dos contratos compartilhados.
 
 ## Contexto atual
 A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
@@ -141,7 +141,7 @@ No eixo de alinhamento backend/frontend, ficou registrada como necessidade futur
 - nas etapas **1, 2 e 3**, o servidor poderá visualizar o parecer CESAD após sua **conclusão** e **assinatura integral**;
 - na etapa **4**, o servidor somente poderá visualizar o parecer CESAD após sua **conclusão**, **assinatura integral** e **notificação formal**.
 
-A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Com a `BE-ARCH-01A` fechada como decisão documental/aprovada e a `BE-ARCH-01B` aprovada, a próxima ação recomendada no roadmap passa a ser a `BE-ARCH-01C`, mantendo refresh token, cookies HttpOnly, revogação, rotação e logout server-side fora da próxima implementação da frente.
+A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Com a `BE-ARCH-01A` fechada como decisão documental/aprovada, a `BE-ARCH-01B` aprovada e a `BE-ARCH-01C` concluída/aprovada, a próxima ação recomendada no roadmap passa a ser a `BE-ARCH-01D`, mantendo refresh token, cookies HttpOnly, revogação, rotação e logout server-side fora da próxima implementação da frente.
 
 ---
 
@@ -552,10 +552,10 @@ Definir fluxo claro de build compilada e start de produção para o backend.
 - a estratégia atual permanece aceitável apenas para desenvolvimento local/MVP assistido e não é suficiente para homologação/produção institucional
 
 **Próxima ação recomendada**
-- executar `BE-ARCH-01C — Compartilhar contratos de auth/session`
-- a `BE-ARCH-01C` deve começar por análise/varredura curta dos contratos atuais de autenticação e sessão entre `packages/contracts`, backend e frontend
-- o foco imediato da `BE-ARCH-01C` deve ser consolidar tipos compartilhados de auth/session sem reabrir a semântica já aprovada da sessão web
-- `BE-ARCH-01C` a `BE-ARCH-01F` permanecem posteriores e não devem ser marcadas como concluídas nesta etapa
+- executar `BE-ARCH-01D — Alinhar frontend de sessão`
+- a `BE-ARCH-01D` deve começar por análise/varredura curta do frontend de sessão, com foco em bootstrap, UX de expiração, invalidadores e consumo dos contratos compartilhados já aprovados
+- o foco imediato da `BE-ARCH-01D` deve ser alinhar a sessão do frontend sem reabrir a semântica já aprovada da sessão web nem a centralização mínima de contratos feita na `BE-ARCH-01C`
+- `BE-ARCH-01E` e `BE-ARCH-01F` permanecem posteriores e não devem ser marcadas como concluídas nesta etapa
 
 **Subtasks planejadas**
 - [x] **BE-ARCH-01A — Fechar semântica de sessão web**
@@ -575,11 +575,25 @@ Definir fluxo claro de build compilada e start de produção para o backend.
   - Observação de teste: logs `401` e `403` durante a suíte integrada eram esperados, pois os testes exercitam fluxos negativos e terminaram com sucesso.
   - Fora do escopo preservado: refresh token, cookies HttpOnly, revogação, logout server-side, rotação, alteração de storage frontend, alteração em `packages/contracts`, alteração em seed, alteração em roles existentes, autorização CESAD, workflow, Prisma schema e migrations.
 
-- [ ] **BE-ARCH-01C — Compartilhar contratos de auth/session**
-  - Consolidar tipos como `AuthenticatedUserRef`, `LoginRequest`, `LoginResponse` e eventual `SessionReadResponse` em `packages/contracts`, reduzindo duplicação backend/frontend.
+- [x] **BE-ARCH-01C — Compartilhar contratos de auth/session**
+  - **Status:** APPROVED
+  - **Commit associado:** `chore(auth): share auth session contracts`
+  - Foi criado `packages/contracts/src/types/auth.ts`, consolidando os contratos compartilhados mínimos `AuthenticatedUserRef`, `LoginRequest` e `LoginResponse`.
+  - Os novos contratos passaram a ser exportados em `packages/contracts/src/types/index.ts`, preservando o barrel root do pacote sem refactor estrutural amplo.
+  - O backend passou a reaproveitar `AuthenticatedUserRef` via alias local `AuthenticatedUser`, preservando compatibilidade com os imports já existentes no app.
+  - `AuthService.login()` passou a ser tipado com `LoginResponse`, sem alterar o shape real de `POST /auth/login`.
+  - O controller de login passou a usar `LoginRequest` apenas como referência de shape para a validação manual já existente, preservando o comportamento atual de erro.
+  - O frontend passou a reaproveitar `AuthenticatedUserRef` e `LoginResponse` por meio de `apps/frontend/src/shared/auth/auth-types.ts`.
+  - `AuthSession` e `rememberMe` permaneceram locais no frontend, e `LoginInput` continuou local como composição de `LoginRequest` com `rememberMe`.
+  - `JwtPayload` permaneceu local no backend, sem alteração do payload JWT real.
+  - `GET /auth/me` manteve o shape real atual, retornando diretamente o contrato compatível do usuário autenticado.
+  - A duplicação básica de contratos de auth/session entre backend e frontend foi mitigada sem alteração de comportamento funcional.
+  - Validações executadas/aprovadas: `npm run build --workspace @aep-pa/contracts`, `node -e "require('@aep-pa/contracts')"`, `npm run typecheck --workspace @aep-pa/backend`, `npm run typecheck:spec --workspace @aep-pa/backend`, `npm run test --workspace @aep-pa/backend`, `npm run backend:build`, `npm run typecheck --workspace @aep-pa/frontend` e `npm run build --workspace @aep-pa/frontend`.
+  - Fora do escopo preservado: `SessionReadResponse`, `expiresAt`, refresh token, cookies HttpOnly, revogação, logout server-side, auditoria, alteração de storage frontend, alteração de UI, refactor amplo de `packages/contracts`, `BE-ARCH-02`, CESAD, workflow, Prisma e migrations.
 
 - [ ] **BE-ARCH-01D — Alinhar frontend de sessão**
   - Ajustar bootstrap de sessão, UX de expiração, limpeza de sessão e consumo de contrato compartilhado.
+  - Deve começar por análise/varredura curta do frontend de sessão, com foco em bootstrap, UX de expiração, invalidadores e consumo dos contratos compartilhados.
 
 - [ ] **BE-ARCH-01E — Definir estratégia de produção para refresh/revogação**
   - Avaliar refresh token, revogação, logout server-side, rotação e cookies HttpOnly para homologação/produção.
