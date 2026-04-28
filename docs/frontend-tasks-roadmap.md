@@ -286,7 +286,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-12 — Criar `StageHistoryPanel`
+### [x] FT-12 — Criar `StageHistoryPanel`
 **Objetivo:** padronizar a exibição do histórico resumido da etapa.
 
 **Escopo:**
@@ -299,6 +299,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 **Fora do escopo:**
 - histórico bruto completo
 - filtros avançados
+
+**Evidência observada em 2026-04-28:**
+- componente criado em `apps/frontend/src/features/cesad/components/stage-history-panel.tsx`;
+- `CesadStageReadWorkspace` passou a delegar o histórico resumido relevante para o componente;
+- a refatoração preservou os mesmos eventos auditáveis vindos do backend;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 

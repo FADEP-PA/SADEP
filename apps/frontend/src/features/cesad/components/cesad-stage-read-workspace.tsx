@@ -6,7 +6,6 @@ import { UserRole, type CesadStageReadSnapshotRef } from '@aep-pa/contracts';
 import {
   formatCesadStageOpinionStatus,
   formatDateTime,
-  formatProcessAction,
   formatProcessStatus,
   formatRole,
   formatStageInstructionStatus,
@@ -30,7 +29,6 @@ import { InfoCard } from '@/shared/ui/info-card';
 import { KeyValueList } from '@/shared/ui/key-value-list';
 import {
   AccessBlockedState,
-  InsufficientHistoryState,
   StageUnavailableState,
 } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
@@ -38,18 +36,11 @@ import { StatusBadge } from '@/shared/ui/status-badge';
 
 import { ProcessHeaderCard } from './process-header-card';
 import { StageDocumentList } from './stage-document-list';
+import { StageHistoryPanel } from './stage-history-panel';
 import { StageSummaryCard } from './stage-summary-card';
 
 function getInitialStageSequence() {
   return '1';
-}
-
-function getHistoryDescription(item: CesadStageReadSnapshotRef['history'][number]) {
-  if (item.action) {
-    return formatProcessAction(item.action);
-  }
-
-  return item.eventType;
 }
 
 export function CesadStageReadWorkspace() {
@@ -465,32 +456,7 @@ export function CesadStageReadWorkspace() {
               </div>
 
               <StageDocumentList documents={snapshot.documents} />
-
-              <PageSection
-                eyebrow="Histórico"
-                title="Histórico resumido relevante"
-                description="Eventos auditáveis que ajudam a CESAD a reconstituir a instrução da etapa, sem introduzir novas regras na interface."
-              >
-                {snapshot.history.length > 0 ? (
-                  <div className="surface-card">
-                    <ul className="content-list cesad-stage-read__history">
-                      {snapshot.history.map((item) => (
-                        <li key={item.id}>
-                          <strong>{getHistoryDescription(item)}</strong>
-                          <span>
-                            {' '}
-                            por {item.actorRole ? formatRole(item.actorRole) : 'Perfil não identificado'} em{' '}
-                            {formatDateTime(item.occurredAt)}
-                          </span>
-                          {item.comment ? <div>{item.comment}</div> : null}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <InsufficientHistoryState />
-                )}
-              </PageSection>
+              <StageHistoryPanel history={snapshot.history} />
             </>
           ) : null}
         </PageSection>
