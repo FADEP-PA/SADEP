@@ -4,17 +4,15 @@ import {
   formatDateTime,
   formatDocumentStatus,
   formatDocumentType,
-  formatRole,
-  formatSignatureStatus,
   getDocumentStatusTone,
-  getSignatureStatusTone,
 } from '@/features/process/components/process-formatters';
-import { ContentState } from '@/shared/ui/content-state';
 import { InfoCard } from '@/shared/ui/info-card';
 import { KeyValueList } from '@/shared/ui/key-value-list';
 import { MissingDocumentState } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
 import { StatusBadge } from '@/shared/ui/status-badge';
+
+import { SignatureTimeline } from './signature-timeline';
 
 type StageDocumentListProps = {
   documents: CesadStageReadSnapshotRef['documents'];
@@ -84,31 +82,7 @@ export function StageDocumentList({ documents }: StageDocumentListProps) {
               />
 
               {document.exists ? (
-                document.signatures.length > 0 ? (
-                  <div>
-                    <strong>Assinaturas</strong>
-                    <ul className="content-list cesad-stage-read__signatures">
-                      {document.signatures.map((signature) => (
-                        <li key={signature.signatureId}>
-                          <strong>{formatRole(signature.signatoryRole)}</strong>{' '}
-                          <StatusBadge
-                            label={formatSignatureStatus(signature.status)}
-                            tone={getSignatureStatusTone(signature.status)}
-                          />
-                          {signature.signedAt
-                            ? ` em ${formatDateTime(signature.signedAt)}`
-                            : ' sem data de conclusão'}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <ContentState
-                    title="Sem trilha de assinatura"
-                    description="O documento existe, mas ainda não há registros de assinatura associados."
-                    tone="warning"
-                  />
-                )
+                <SignatureTimeline signatures={document.signatures} />
               ) : (
                 <MissingDocumentState
                   title={`${formatDocumentType(document.documentType)} ausente`}

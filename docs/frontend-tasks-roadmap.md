@@ -265,7 +265,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-11 — Criar `SignatureTimeline`
+### [x] FT-11 — Criar `SignatureTimeline`
 **Objetivo:** padronizar a exibição das assinaturas ligadas aos documentos da etapa.
 
 **Escopo:**
@@ -277,6 +277,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 **Fora do escopo:**
 - assinatura em si
 - workflow de assinatura
+
+**Evidência observada em 2026-04-28:**
+- componente criado em `apps/frontend/src/features/cesad/components/signature-timeline.tsx`;
+- `StageDocumentList` passou a delegar a exibição de assinaturas para o componente;
+- a refatoração preservou somente leitura e não adicionou fluxo de assinatura;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 
