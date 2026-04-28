@@ -308,7 +308,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-13 — Criar `ProcessWarningsPanel`
+### [x] FT-13 — Criar `ProcessWarningsPanel`
 **Objetivo:** exibir warnings e limitações vindos do backend de forma clara.
 
 **Escopo:**
@@ -318,6 +318,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 **Fora do escopo:**
 - geração de warning no frontend
+
+**Evidência observada em 2026-04-28:**
+- componente criado em `apps/frontend/src/features/cesad/components/process-warnings-panel.tsx`;
+- `CesadStageReadWorkspace` passou a delegar os warnings da leitura consolidada para o componente;
+- a refatoração apenas apresenta warnings já enviados pelo backend;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 

@@ -35,6 +35,7 @@ import { PageSection } from '@/shared/ui/page-section';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
 import { ProcessHeaderCard } from './process-header-card';
+import { ProcessWarningsPanel } from './process-warnings-panel';
 import { StageDocumentList } from './stage-document-list';
 import { StageHistoryPanel } from './stage-history-panel';
 import { StageSummaryCard } from './stage-summary-card';
@@ -286,14 +287,7 @@ export function CesadStageReadWorkspace() {
                 <StageSummaryCard snapshot={snapshot} />
               </div>
 
-              {snapshot.warnings.length > 0 ? (
-                <FeedbackAlert
-                  title="Avisos da leitura"
-                  tone="warning"
-                  description="A resposta consolidada foi montada sem alterar workflow e sinaliza apenas compatibilidades residuais ou limitações de histórico ainda presentes no modelo."
-                  details={snapshot.warnings}
-                />
-              ) : null}
+              <ProcessWarningsPanel warnings={snapshot.warnings} />
 
               <div className="metrics-grid">
                 <InfoCard title="Processo" eyebrow="Dados consolidados">
