@@ -101,7 +101,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ## Bloco 2 — Refinamento das áreas já funcionais
 
-### [ ] FT-04 — Refinar a tela `/processos`
+### [x] FT-04 — Refinar a tela `/processos`
 **Objetivo:** transformar a tela técnica em painel operacional de leitura do processo.
 
 **Escopo:**
@@ -119,6 +119,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 - inferir elegibilidade
 - criar ações novas
 - alterar fluxo jurídico
+
+**Evidência observada em 2026-04-28:**
+- `/processos` já organiza consulta, resumo, status, ações disponíveis, histórico, bloqueios e detalhes técnicos a partir do snapshot carregado;
+- `ProcessHistoryCard` passou a exibir movimentações recentes em lista, em vez de apenas a última movimentação;
+- `ProcessListCard` teve o estado vazio ajustado para linguagem operacional atual;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 

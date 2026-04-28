@@ -56,7 +56,7 @@ export function ProcessListCard({ items, activeProcessId }: ProcessListCardProps
       ) : (
         <ContentState
           title="Nenhum processo carregado"
-          description="Informe um identificador valido para popular a listagem inicial da Sprint 3B."
+          description="Informe um identificador valido para iniciar a lista de processos consultados nesta sessao."
           tone="info"
         />
       )}
