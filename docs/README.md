@@ -77,12 +77,13 @@ Regra de uso:
 
 ### Frontend e referência visual
 
-- [`frontend-roadmap-imediato.md`](./frontend-roadmap-imediato.md): diretriz operacional temporal para desenvolvimento frontend imediato.
-- [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md): backlog operacional principal do frontend.
-- [`wireframes/sprint-3b-frontend-flow.md`](./wireframes/sprint-3b-frontend-flow.md): referência visual e funcional de sprint para o fluxo inicial de telas.
+- [`frontend/README.md`](./frontend/README.md): porta de entrada para diretrizes frontend, referências ativas e relação com o roadmap operacional vivo.
+- [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md): roadmap operacional principal e backlog vivo do frontend.
+- [`archive/frontend/frontend-roadmap-imediato-2026-04-15.md`](./archive/frontend/frontend-roadmap-imediato-2026-04-15.md): diretriz operacional temporal preservada como histórico.
+- [`archive/sprints/sprint-3b-frontend-flow.md`](./archive/sprints/sprint-3b-frontend-flow.md): referência visual e funcional de sprint preservada como histórico.
 - [`wireframes/`](./wireframes/): área de referência visual das telas e fluxos operacionais.
 
-Documentos temporais, de sprint ou de apoio visual podem ser reclassificados ou arquivados em fases posteriores.
+O roadmap vivo do frontend é `docs/roadmaps/frontend-tasks-roadmap.md`. Documentos arquivados são históricos ou referenciais e não prevalecem sobre roadmaps vivos nem sobre documentos normativos de domínio e workflow.
 
 ---
 
@@ -141,7 +142,8 @@ Ler adicionalmente conforme impacto:
 
 - [`domain/document-modeling-catalog.md`](./domain/document-modeling-catalog.md)
 - [`workflow/four-stage-flow-and-appeals.md`](./workflow/four-stage-flow-and-appeals.md)
-- [`wireframes/sprint-3b-frontend-flow.md`](./wireframes/sprint-3b-frontend-flow.md), se ainda aplicável.
+- [`frontend/README.md`](./frontend/README.md)
+- [`archive/sprints/sprint-3b-frontend-flow.md`](./archive/sprints/sprint-3b-frontend-flow.md), se ainda aplicável como referência histórica.
 
 ---
 
