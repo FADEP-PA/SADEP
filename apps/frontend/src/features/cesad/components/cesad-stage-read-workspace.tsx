@@ -43,6 +43,7 @@ import { PageSection } from '@/shared/ui/page-section';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
 import { ProcessHeaderCard } from './process-header-card';
+import { StageSummaryCard } from './stage-summary-card';
 
 function getInitialStageSequence() {
   return '1';
@@ -315,42 +316,7 @@ export function CesadStageReadWorkspace() {
 
               <div className="cesad-stage-read__hero">
                 <ProcessHeaderCard snapshot={snapshot} />
-
-                <div className="surface-card">
-                  <h3>Status documental</h3>
-                  <KeyValueList
-                    items={[
-                      {
-                        label: 'Situação da etapa',
-                        value: formatStageInstructionStatus(stageInstructionStatus),
-                      },
-                      {
-                        label: 'Documentos obrigatórios',
-                        value: snapshot.documentationStatus.requiredDocumentTypes
-                          .map((documentType) => formatDocumentType(documentType))
-                          .join(', '),
-                      },
-                      {
-                        label: 'Pendências',
-                        value:
-                          snapshot.documentationStatus.missingRequiredDocumentTypes.length > 0
-                            ? snapshot.documentationStatus.missingRequiredDocumentTypes
-                                .map((documentType) => formatDocumentType(documentType))
-                                .join(', ')
-                            : 'Nenhuma pendência obrigatória',
-                      },
-                      {
-                        label: 'Assinaturas pendentes',
-                        value:
-                          snapshot.documentationStatus.pendingSignatureDocumentTypes.length > 0
-                            ? snapshot.documentationStatus.pendingSignatureDocumentTypes
-                                .map((documentType) => formatDocumentType(documentType))
-                                .join(', ')
-                            : 'Nenhuma assinatura pendente',
-                      },
-                    ]}
-                  />
-                </div>
+                <StageSummaryCard snapshot={snapshot} />
               </div>
 
               {snapshot.warnings.length > 0 ? (

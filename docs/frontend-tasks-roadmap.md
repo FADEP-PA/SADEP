@@ -222,7 +222,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-09 — Criar `StageSummaryCard`
+### [x] FT-09 — Criar `StageSummaryCard`
 **Objetivo:** apresentar resumo visual da etapa em foco.
 
 **Escopo:**
@@ -233,6 +233,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 **Fora do escopo:**
 - timeline completa das 4 etapas
+
+**Evidência observada em 2026-04-28:**
+- componente criado em `apps/frontend/src/features/cesad/components/stage-summary-card.tsx`;
+- `CesadStageReadWorkspace` passou a usar o componente para o resumo da etapa e status documental;
+- a refatoração manteve a leitura da CESAD em modo somente leitura, sem nova regra de negócio;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 
