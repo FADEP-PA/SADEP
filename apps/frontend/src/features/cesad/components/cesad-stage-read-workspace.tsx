@@ -42,6 +42,8 @@ import {
 import { PageSection } from '@/shared/ui/page-section';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
+import { ProcessHeaderCard } from './process-header-card';
+
 function getInitialStageSequence() {
   return '1';
 }
@@ -312,25 +314,7 @@ export function CesadStageReadWorkspace() {
               </div>
 
               <div className="cesad-stage-read__hero">
-                <div className="surface-card">
-                  <span className="section-chip">Modo somente leitura</span>
-                  <h3>Etapa {snapshot.stage.sequence}</h3>
-                  <p>
-                    Processo <code>{snapshot.process.id}</code> em{' '}
-                    {formatProcessStatus(snapshot.process.status)} com foco documental na etapa{' '}
-                    <strong>{snapshot.stage.stageCode}</strong>.
-                  </p>
-                  <div className="cesad-stage-read__badges">
-                    <StatusBadge
-                      label={formatProcessStatus(snapshot.process.status)}
-                      tone={getProcessStatusTone(snapshot.process.status)}
-                    />
-                    <StatusBadge
-                      label={formatStageInstructionStatus(stageInstructionStatus)}
-                      tone={getStageInstructionStatusTone(stageInstructionStatus)}
-                    />
-                  </div>
-                </div>
+                <ProcessHeaderCard snapshot={snapshot} />
 
                 <div className="surface-card">
                   <h3>Status documental</h3>

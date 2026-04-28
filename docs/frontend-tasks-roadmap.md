@@ -201,7 +201,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-08 — Criar `ProcessHeaderCard`
+### [x] FT-08 — Criar `ProcessHeaderCard`
 **Objetivo:** padronizar o cabeçalho visual do processo.
 
 **Escopo:**
@@ -213,6 +213,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 **Fora do escopo:**
 - lógica de negócio
+
+**Evidência observada em 2026-04-28:**
+- componente criado em `apps/frontend/src/features/cesad/components/process-header-card.tsx`;
+- `CesadStageReadWorkspace` passou a usar o componente no cabeçalho da leitura consolidada;
+- a refatoração manteve o mesmo endpoint e apenas reorganizou apresentação;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 
