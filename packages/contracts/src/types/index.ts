@@ -1,3 +1,4 @@
+export * from './auth';
 export * from './audit-metadata';
 export * from './base-entity-ref';
 export * from './cesad-commission-act';

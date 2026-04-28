@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserRole } from '@aep-pa/contracts';
+import type { LoginRequest } from '@aep-pa/contracts';
 
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -24,7 +25,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  async login(@Body() body: Record<string, unknown>) {
+  async login(@Body() body: Partial<LoginRequest> = {}) {
     const email = typeof body.email === 'string' ? body.email : '';
     const password = typeof body.password === 'string' ? body.password : '';
 

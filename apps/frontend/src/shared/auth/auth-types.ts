@@ -1,25 +1,19 @@
-import type { UserRole } from '@aep-pa/contracts';
+import type {
+  AuthenticatedUserRef,
+  LoginRequest,
+  LoginResponse as SharedLoginResponse,
+} from '@aep-pa/contracts';
 
-export type AuthenticatedUser = {
-  sub: string;
-  email: string;
-  name: string;
-  role: UserRole;
-};
+export type AuthenticatedUser = AuthenticatedUserRef;
 
-export type AuthSession = {
+export interface AuthSession {
   accessToken: string;
   rememberMe: boolean;
   user: AuthenticatedUser;
-};
+}
 
-export type LoginInput = {
-  email: string;
-  password: string;
+export type LoginInput = LoginRequest & {
   rememberMe: boolean;
 };
 
-export type LoginResponse = {
-  accessToken: string;
-  user: AuthenticatedUser;
-};
+export type LoginResponse = SharedLoginResponse;
