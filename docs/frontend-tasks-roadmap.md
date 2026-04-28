@@ -558,7 +558,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-25 — Triar vulnerabilidades e dependências que afetam o frontend
+### [x] FT-25 — Triar vulnerabilidades e dependências que afetam o frontend
 **Objetivo:** separar risco real de frontend de vulnerabilidades transitivas ou major upgrades inseguros.
 
 **Escopo:**
@@ -571,6 +571,14 @@ Esta revisão compara o backlog com o código atual do frontend.
 - aplicar `npm audit fix --force` sem análise
 - fazer downgrade de framework para satisfazer sugestão automática
 - resolver vulnerabilidades backend dentro de task frontend
+
+**Evidência observada em 2026-04-28:**
+- `npm audit` foi revisado e separado entre pendências de backend/transitivas e frontend;
+- dependências NestJS/Prisma transitivas foram atualizadas de forma segura pelo lockfile, removendo vulnerabilidades altas;
+- `npm audit --omit=dev` passou de 9 altas + 2 moderadas para 0 altas + 2 moderadas;
+- as 2 moderadas restantes são o alerta `next`/`postcss`, cuja correção automática sugere downgrade para `next@9.3.3`, opção rejeitada por ser regressiva e insegura para o projeto;
+- tentativa controlada de upgrade para Next 16 não removeu o alerta porque a dependência transitiva continuou em `postcss@8.4.31`; o projeto foi mantido em `next@15.5.15`;
+- validações executadas: `npm run typecheck --workspace @aep-pa/backend`, `npm run test --workspace @aep-pa/backend`, `npm run backend:build` e `npm run frontend:check`.
 
 ---
 
@@ -593,14 +601,13 @@ Esta revisão compara o backlog com o código atual do frontend.
 ## Ordem recomendada de execução a partir de 2026-04-28
 
 1. FT-21 — Validar visualmente os fluxos principais com backend local
-2. FT-25 — Triar vulnerabilidades e dependências que afetam o frontend
-3. FT-17 — Preparar a área `/homologacao-autoridade`
-4. FT-16 — Preparar layout base do futuro parecer CESAD de etapa
-5. FT-18 — Revisar consistência textual
-6. FT-19 — Revisar responsividade
-7. FT-20 — Revisar shell autenticado
-8. FT-24 — Reduzir dependência operacional de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`
-9. FT-26 — Limpar scaffolds e placeholders legados do frontend
+2. FT-17 — Preparar a área `/homologacao-autoridade`
+3. FT-16 — Preparar layout base do futuro parecer CESAD de etapa
+4. FT-18 — Revisar consistência textual
+5. FT-19 — Revisar responsividade
+6. FT-20 — Revisar shell autenticado
+7. FT-24 — Reduzir dependência operacional de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`
+8. FT-26 — Limpar scaffolds e placeholders legados do frontend
 
 ---
 

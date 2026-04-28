@@ -72,7 +72,8 @@ Este documento **não substitui** o tracker backend.
 - `npm run frontend:check` → passou
 - configuração explícita de `outputFileTracingRoot` no Next.js → removeu o aviso de raiz inferida por lockfiles externos no build
 - upgrade controlado do Next.js no frontend de `15.3.0` para `15.5.15` → build passou
-- `npm audit` após upgrade do Next.js → removeu a vulnerabilidade crítica associada ao Next.js; permanecem vulnerabilidades altas e moderadas em outras dependências/transitivas
+- `npm audit` após upgrade do Next.js → removeu a vulnerabilidade crítica associada ao Next.js
+- `npm audit --omit=dev` após atualização segura de NestJS/Prisma transitivos → restaram apenas 2 vulnerabilidades moderadas associadas a `next`/`postcss`
 - `git diff --check` → passou
 
 ## Conclusão técnica desta rodada
@@ -322,16 +323,20 @@ O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda n
 
 ### Evidências
 - `npm install` reportou `10 vulnerabilities (9 high, 1 critical)`
-- após upgrade do frontend para `next@15.5.15`, a vulnerabilidade crítica do Next.js deixou de aparecer no `npm audit`; permanecem vulnerabilidades altas e moderadas, especialmente em NestJS, Prisma e dependências transitivas
+- após upgrade do frontend para `next@15.5.15`, a vulnerabilidade crítica do Next.js deixou de aparecer no `npm audit`;
+- após atualização segura de NestJS/Prisma transitivos, as vulnerabilidades altas deixaram de aparecer no `npm audit --omit=dev`;
+- permanecem 2 vulnerabilidades moderadas associadas a `next`/`postcss`;
+- a correção automática sugerida pelo audit é `npm audit fix --force`, com downgrade para `next@9.3.3`, e não deve ser aplicada sem decisão explícita;
 
 ### Impacto
-- risco de segurança ainda não qualificado
-- possibilidade de impacto direto em runtime ou cadeia de build
+- risco residual moderado no frontend ainda depende de correção segura upstream do Next/PostCSS
+- risco alto previamente ligado a NestJS, Prisma e transitivas foi mitigado por atualização de lockfile
 
 ### Status no tracker
-- permanece como problema transversal relevante
+- permanece como problema transversal residual
 - ainda não foi convertido em task backend específica com ID próprio
-- parcialmente mitigado no frontend pelo upgrade do Next.js, sem resolver o conjunto completo de dependências vulneráveis
+- mitigado no conjunto de vulnerabilidades altas por atualização segura de dependências transitivas
+- permanece pendente apenas o caso moderado `next`/`postcss`, sem correção automática segura no momento
 
 ---
 
@@ -636,11 +641,13 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
   - Referência no roadmap frontend:
     - FT-23.
 
-- [ ] `{FRONT}` Triar vulnerabilidades e dependências que afetam o frontend
-  - Como corrigir:
-    - classificar achados de `npm audit` entre frontend, backend, dev-only e transitivos;
-    - evitar downgrade ou `audit fix --force` sem análise;
-    - registrar recomendação objetiva de upgrade ou aceite temporário de risco.
+- [x] `{FRONT}` Triar vulnerabilidades e dependências que afetam o frontend
+  - Como foi corrigido:
+    - achados de `npm audit` foram separados entre frontend, backend e transitivos;
+    - dependências NestJS/Prisma transitivas foram atualizadas pelo lockfile;
+    - vulnerabilidades altas foram removidas;
+    - `audit fix --force` foi rejeitado porque faria downgrade para `next@9.3.3`;
+    - o alerta residual `next`/`postcss` ficou documentado como risco moderado sem correção automática segura.
   - Referência no roadmap frontend:
     - FT-25.
 
