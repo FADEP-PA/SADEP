@@ -6,11 +6,11 @@ import {
   formatDocumentType,
   getDocumentStatusTone,
 } from '@/features/process/components/process-formatters';
-import { InfoCard } from '@/shared/ui/info-card';
-import { KeyValueList } from '@/shared/ui/key-value-list';
+import {
+  StageDocumentOverview,
+  type StageDocumentOverviewItem,
+} from '@/features/process/components/stage-document-overview';
 import { MissingDocumentState } from '@/shared/ui/operational-states';
-import { PageSection } from '@/shared/ui/page-section';
-import { StatusBadge } from '@/shared/ui/status-badge';
 
 import { SignatureTimeline } from './signature-timeline';
 
@@ -46,56 +46,45 @@ function getStageLinkModeLabel(document: CesadStageReadSnapshotRef['documents'][
   return 'Sem vínculo explícito com a etapa';
 }
 
+function mapDocumentToOverviewItem(
+  document: CesadStageReadSnapshotRef['documents'][number],
+): StageDocumentOverviewItem {
+  return {
+    id: document.documentType,
+    title: formatDocumentType(document.documentType),
+    eyebrow: document.exists ? 'Documento localizado' : 'Documento ausente',
+    statusLabel: document.exists
+      ? formatDocumentStatus(document.documentStatus)
+      : getMissingStageDocumentDescription(document.documentType),
+    statusTone: getStageReadBadgeTone(document),
+    details: [
+      { label: 'ID', value: document.documentId ?? 'Não gerado' },
+      { label: 'Vínculo com etapa', value: getStageLinkModeLabel(document) },
+      {
+        label: 'Arquivo lógico',
+        value: document.artifactPath ?? 'Sem artefato físico informado',
+      },
+      { label: 'Atualizado em', value: formatDateTime(document.updatedAt) },
+    ],
+    content: document.exists ? (
+      <SignatureTimeline signatures={document.signatures} />
+    ) : (
+      <MissingDocumentState
+        title={`${formatDocumentType(document.documentType)} ausente`}
+        description={
+          document.missingReason ??
+          'O backend sinalizou ausência deste documento no escopo da etapa.'
+        }
+      />
+    ),
+  };
+}
+
 export function StageDocumentList({ documents }: StageDocumentListProps) {
   return (
-    <PageSection
-      eyebrow="Documentos"
-      title="Documentos e assinaturas da etapa"
+    <StageDocumentOverview
       description="A lista abaixo explicita os documentos esperados da etapa, inclusive quando ainda não existem ou não possuem vínculo explícito."
-    >
-      <div className="metrics-grid">
-        {documents.map((document) => (
-          <InfoCard
-            key={document.documentType}
-            title={formatDocumentType(document.documentType)}
-            eyebrow={document.exists ? 'Documento localizado' : 'Documento ausente'}
-          >
-            <div className="cesad-stage-read__stack">
-              <StatusBadge
-                label={
-                  document.exists
-                    ? formatDocumentStatus(document.documentStatus)
-                    : getMissingStageDocumentDescription(document.documentType)
-                }
-                tone={getStageReadBadgeTone(document)}
-              />
-              <KeyValueList
-                items={[
-                  { label: 'ID', value: document.documentId ?? 'Não gerado' },
-                  { label: 'Vínculo com etapa', value: getStageLinkModeLabel(document) },
-                  {
-                    label: 'Arquivo lógico',
-                    value: document.artifactPath ?? 'Sem artefato físico informado',
-                  },
-                  { label: 'Atualizado em', value: formatDateTime(document.updatedAt) },
-                ]}
-              />
-
-              {document.exists ? (
-                <SignatureTimeline signatures={document.signatures} />
-              ) : (
-                <MissingDocumentState
-                  title={`${formatDocumentType(document.documentType)} ausente`}
-                  description={
-                    document.missingReason ??
-                    'O backend sinalizou ausência deste documento no escopo da etapa.'
-                  }
-                />
-              )}
-            </div>
-          </InfoCard>
-        ))}
-      </div>
-    </PageSection>
+      items={documents.map((document) => mapDocumentToOverviewItem(document))}
+    />
   );
 }

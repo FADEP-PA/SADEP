@@ -350,7 +350,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-15 — Criar visualização padronizada de documentos por etapa
+### [x] FT-15 — Criar visualização padronizada de documentos por etapa
 **Objetivo:** permitir exibição consistente dos artefatos da etapa em várias telas.
 
 **Escopo:**
@@ -363,6 +363,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 **Fora do escopo:**
 - documentos finais fora do escopo da etapa
+
+**Evidência observada em 2026-04-28:**
+- componente reutilizável criado em `apps/frontend/src/features/process/components/stage-document-overview.tsx`;
+- `StageDocumentList` passou a adaptar documentos da CESAD para a visualização padronizada;
+- a refatoração manteve a lista da CESAD em modo somente leitura e sem nova regra de negócio;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 
