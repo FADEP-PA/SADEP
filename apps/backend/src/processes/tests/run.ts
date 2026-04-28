@@ -4,6 +4,7 @@ process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters';
 
 async function main() {
   const [
+    { runAuthEndpointTests },
     { runCesadCommissionActsEndpointTests },
     { runCesadCommissionActsServiceTests },
     { runCesadCommissionMembersEndpointTests },
@@ -20,6 +21,7 @@ async function main() {
     { runSelfEvaluationsTests },
     { runSupervisorEvaluationsServiceTests },
   ] = await Promise.all([
+    import('../../auth/auth.endpoint.spec'),
     import('../../cesad/tests/cesad-commission-acts.endpoint.spec'),
     import('../../cesad/tests/cesad-commission-acts.service.spec'),
     import('../../cesad/tests/cesad-commission-members.endpoint.spec'),
@@ -38,6 +40,7 @@ async function main() {
   ]);
 
   runWorkflowCatalogTests();
+  await runAuthEndpointTests();
   await runProcessesServiceTests();
   await runCesadCommissionActsServiceTests();
   await runCesadCommissionActsEndpointTests();

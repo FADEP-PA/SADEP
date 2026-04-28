@@ -7,7 +7,7 @@ import type { AuthenticatedRequest } from '../interfaces/auth-request.interface'
 export class JwtAuthGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const authorization = request.headers.authorization;
 
@@ -16,7 +16,8 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const token = authorization.replace('Bearer ', '').trim();
-    request.user = this.authService.verifyToken(token);
+    const tokenUser = this.authService.verifyToken(token);
+    request.user = await this.authService.resolveAuthenticatedUser(tokenUser);
 
     return true;
   }

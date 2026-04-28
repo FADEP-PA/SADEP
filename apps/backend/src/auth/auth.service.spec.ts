@@ -61,6 +61,81 @@ describe('AuthService', () => {
     expect(service.verifyToken(result.accessToken)).toEqual(result.user);
   });
 
+  it('resolves the authenticated user from current persisted data', async () => {
+    prismaService.user.findUnique.mockResolvedValue({
+      id: 'user-123',
+      email: 'maria.atualizada@test.local',
+      name: 'Maria Atualizada',
+      role: UserRole.CESAD_MEMBER,
+      isActive: true,
+    } as never);
+
+    await expect(
+      service.resolveAuthenticatedUser({
+        sub: 'user-123',
+        email: 'maria.antiga@test.local',
+        name: 'Maria Antiga',
+        role: UserRole.CESAD_MEMBER,
+      }),
+    ).resolves.toEqual({
+      sub: 'user-123',
+      email: 'maria.atualizada@test.local',
+      name: 'Maria Atualizada',
+      role: UserRole.CESAD_MEMBER,
+    });
+  });
+
+  it('rejects authenticated session when user no longer exists', async () => {
+    prismaService.user.findUnique.mockResolvedValue(null as never);
+
+    await expect(
+      service.resolveAuthenticatedUser({
+        sub: 'missing-user',
+        email: 'missing@test.local',
+        name: 'Missing User',
+        role: UserRole.ADMIN,
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejects authenticated session when user is inactive', async () => {
+    prismaService.user.findUnique.mockResolvedValue({
+      id: 'user-123',
+      email: 'maria.silva@test.local',
+      name: 'Maria Silva',
+      role: UserRole.CESAD_MEMBER,
+      isActive: false,
+    } as never);
+
+    await expect(
+      service.resolveAuthenticatedUser({
+        sub: 'user-123',
+        email: 'maria.silva@test.local',
+        name: 'Maria Silva',
+        role: UserRole.CESAD_MEMBER,
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejects authenticated session when persisted role diverges from token role', async () => {
+    prismaService.user.findUnique.mockResolvedValue({
+      id: 'user-123',
+      email: 'maria.silva@test.local',
+      name: 'Maria Silva',
+      role: UserRole.ADMIN,
+      isActive: true,
+    } as never);
+
+    await expect(
+      service.resolveAuthenticatedUser({
+        sub: 'user-123',
+        email: 'maria.silva@test.local',
+        name: 'Maria Silva',
+        role: UserRole.CESAD_MEMBER,
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
   it('rejects token payload without canonical name', () => {
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
     const payload = Buffer.from(

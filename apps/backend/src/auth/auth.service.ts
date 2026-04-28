@@ -19,6 +19,14 @@ type JwtPayload = AuthenticatedUser & {
   iat: number;
 };
 
+type PersistedAuthenticatedUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  isActive: boolean;
+};
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -97,6 +105,46 @@ export class AuthService {
       name: payload.name,
       role: this.toUserRole(payload.role),
     };
+  }
+
+  async resolveAuthenticatedUser(tokenUser: AuthenticatedUser): Promise<AuthenticatedUser> {
+    const userId = tokenUser.sub.trim();
+
+    if (!userId) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    const currentUser = await this.prismaService.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+      },
+    });
+
+    if (!currentUser) {
+      this.logger.warn(`Authenticated session rejected because user ${userId} no longer exists`);
+      throw new UnauthorizedException('Invalid session');
+    }
+
+    if (!currentUser.isActive) {
+      this.logger.warn(`Authenticated session rejected because user ${userId} is inactive`);
+      throw new UnauthorizedException('Invalid session');
+    }
+
+    const currentRole = this.toUserRole(currentUser.role);
+
+    if (tokenUser.role !== currentRole) {
+      this.logger.warn(
+        `Authenticated session rejected because role changed for user ${userId}: token=${tokenUser.role} current=${currentRole}`,
+      );
+      throw new UnauthorizedException('Invalid session');
+    }
+
+    return this.toAuthenticatedUser(currentUser);
   }
 
   private signToken(user: AuthenticatedUser): string {
@@ -183,5 +231,14 @@ export class AuthService {
     }
 
     return role as UserRole;
+  }
+
+  private toAuthenticatedUser(user: PersistedAuthenticatedUser): AuthenticatedUser {
+    return {
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+      role: this.toUserRole(user.role),
+    };
   }
 }
