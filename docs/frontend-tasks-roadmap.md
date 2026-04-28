@@ -242,7 +242,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-10 — Criar `StageDocumentList`
+### [x] FT-10 — Criar `StageDocumentList`
 **Objetivo:** padronizar a listagem dos documentos da etapa.
 
 **Escopo:**
@@ -256,6 +256,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 **Fora do escopo:**
 - parecer conclusivo final
 - documentos finais
+
+**Evidência observada em 2026-04-28:**
+- componente criado em `apps/frontend/src/features/cesad/components/stage-document-list.tsx`;
+- `CesadStageReadWorkspace` passou a delegar a listagem de documentos e assinaturas da etapa para o componente;
+- a refatoração preservou os mesmos dados retornados pelo snapshot consolidado da CESAD;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 

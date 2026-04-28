@@ -1,23 +1,18 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { DocumentType, UserRole, type CesadStageReadSnapshotRef } from '@aep-pa/contracts';
+import { UserRole, type CesadStageReadSnapshotRef } from '@aep-pa/contracts';
 
 import {
   formatCesadStageOpinionStatus,
   formatDateTime,
-  formatDocumentStatus,
-  formatDocumentType,
   formatProcessAction,
   formatProcessStatus,
   formatRole,
-  formatSignatureStatus,
   formatStageInstructionStatus,
   formatSupervisorEvaluationStatus,
   getCesadStageOpinionStatusTone,
-  getDocumentStatusTone,
   getProcessStatusTone,
-  getSignatureStatusTone,
   getStageInstructionStatusTone,
   getSupervisorEvaluationStatusTone,
 } from '@/features/process/components/process-formatters';
@@ -36,28 +31,17 @@ import { KeyValueList } from '@/shared/ui/key-value-list';
 import {
   AccessBlockedState,
   InsufficientHistoryState,
-  MissingDocumentState,
   StageUnavailableState,
 } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
 import { ProcessHeaderCard } from './process-header-card';
+import { StageDocumentList } from './stage-document-list';
 import { StageSummaryCard } from './stage-summary-card';
 
 function getInitialStageSequence() {
   return '1';
-}
-
-function getStageReadBadgeTone(document: {
-  exists: boolean;
-  documentStatus: CesadStageReadSnapshotRef['documents'][number]['documentStatus'];
-}) {
-  if (!document.exists) {
-    return 'warning' as const;
-  }
-
-  return getDocumentStatusTone(document.documentStatus);
 }
 
 function getHistoryDescription(item: CesadStageReadSnapshotRef['history'][number]) {
@@ -66,14 +50,6 @@ function getHistoryDescription(item: CesadStageReadSnapshotRef['history'][number
   }
 
   return item.eventType;
-}
-
-function getMissingStageDocumentDescription(documentType: DocumentType) {
-  if (documentType === DocumentType.CESAD_OPINION) {
-    return 'Parecer da etapa ainda não emitido.';
-  }
-
-  return 'Documento ainda não formalizado para a etapa.';
 }
 
 export function CesadStageReadWorkspace() {
@@ -488,90 +464,7 @@ export function CesadStageReadWorkspace() {
                 </InfoCard>
               </div>
 
-              <PageSection
-                eyebrow="Documentos"
-                title="Documentos e assinaturas da etapa"
-                description="A lista abaixo explicita os documentos esperados da etapa, inclusive quando ainda não existem ou não possuem vínculo explícito."
-              >
-                <div className="metrics-grid">
-                  {snapshot.documents.map((document) => (
-                    <InfoCard
-                      key={document.documentType}
-                      title={formatDocumentType(document.documentType)}
-                      eyebrow={document.exists ? 'Documento localizado' : 'Documento ausente'}
-                    >
-                      <div className="cesad-stage-read__stack">
-                        <StatusBadge
-                          label={
-                            document.exists
-                              ? formatDocumentStatus(document.documentStatus)
-                              : getMissingStageDocumentDescription(document.documentType)
-                          }
-                          tone={getStageReadBadgeTone(document)}
-                        />
-                        <KeyValueList
-                          items={[
-                            { label: 'ID', value: document.documentId ?? 'Não gerado' },
-                            {
-                              label: 'Vínculo com etapa',
-                              value:
-                                document.stageLinkMode === 'STAGE_BOUND'
-                                  ? 'Documento vinculado diretamente à etapa'
-                                  : document.stageLinkMode === 'PROCESS_SINGLE_STAGE_FALLBACK'
-                                    ? 'Documento inferido a partir de processo com etapa única'
-                                    : 'Sem vínculo explícito com a etapa',
-                            },
-                            {
-                              label: 'Arquivo lógico',
-                              value: document.artifactPath ?? 'Sem artefato físico informado',
-                            },
-                            {
-                              label: 'Atualizado em',
-                              value: formatDateTime(document.updatedAt),
-                            },
-                          ]}
-                        />
-
-                        {document.exists ? (
-                          document.signatures.length > 0 ? (
-                            <div>
-                              <strong>Assinaturas</strong>
-                              <ul className="content-list cesad-stage-read__signatures">
-                                {document.signatures.map((signature) => (
-                                  <li key={signature.signatureId}>
-                                    <strong>{formatRole(signature.signatoryRole)}</strong>{' '}
-                                    <StatusBadge
-                                      label={formatSignatureStatus(signature.status)}
-                                      tone={getSignatureStatusTone(signature.status)}
-                                    />
-                                    {signature.signedAt
-                                      ? ` em ${formatDateTime(signature.signedAt)}`
-                                      : ' sem data de conclusão'}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ) : (
-                            <ContentState
-                              title="Sem trilha de assinatura"
-                              description="O documento existe, mas ainda não há registros de assinatura associados."
-                              tone="warning"
-                            />
-                          )
-                        ) : (
-                          <MissingDocumentState
-                            title={`${formatDocumentType(document.documentType)} ausente`}
-                            description={
-                              document.missingReason ??
-                              'O backend sinalizou ausência deste documento no escopo da etapa.'
-                            }
-                          />
-                        )}
-                      </div>
-                    </InfoCard>
-                  ))}
-                </div>
-              </PageSection>
+              <StageDocumentList documents={snapshot.documents} />
 
               <PageSection
                 eyebrow="Histórico"
