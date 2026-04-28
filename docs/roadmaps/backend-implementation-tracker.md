@@ -1,8 +1,8 @@
 # AEP-PA Backend Implementation Tracker
 
 **Status:** Controle operacional das implementações do backend  
-**Versão:** 1.8.1  
-**Data:** 2026-04-25  
+**Versão:** 1.8.2
+**Data:** 2026-04-28
 **Objetivo:** Registrar, controlar e acompanhar as implementações do backend do AEP-PA com suporte a execução por agente de IA, revisão técnica e aprovação humana.
 
 ---
@@ -122,7 +122,7 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 ## Próxima candidata recomendada
 **BE-ARCH-01 — Revisar estratégia de autenticação web**
 
-A próxima ação recomendada para a `BE-ARCH-01` é diagnóstico/varredura arquitetural, não implementação direta. A task permanece `PLANNED` até confirmação humana explícita. Essa próxima frente não deve reabrir a `BE-OPS-01` nem a `BE-TECH-01`, nem confundir o hardening já aplicado de `JWT_SECRET` e segredos locais com um redesenho mais amplo de sessão/autenticação web.
+A varredura arquitetural da `BE-ARCH-01` foi concluída e confirmou que a frente não deve ser implementada em bloco único. A próxima ação recomendada passa a ser a `BE-ARCH-01A — Fechar semântica de sessão web`, seguida pela `BE-ARCH-01B — Revalidar usuário atual no backend`. A `BE-ARCH-01B` já parece madura para implementação após a decisão semântica da `BE-ARCH-01A`. Essa próxima frente não deve reabrir a `BE-OPS-01` nem a `BE-TECH-01`, nem confundir o hardening já aplicado de `JWT_SECRET` e segredos locais com um redesenho mais amplo de sessão/autenticação web.
 
 ## Contexto atual
 A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
@@ -141,7 +141,7 @@ No eixo de alinhamento backend/frontend, ficou registrada como necessidade futur
 - nas etapas **1, 2 e 3**, o servidor poderá visualizar o parecer CESAD após sua **conclusão** e **assinatura integral**;
 - na etapa **4**, o servidor somente poderá visualizar o parecer CESAD após sua **conclusão**, **assinatura integral** e **notificação formal**.
 
-A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Após a conclusão da `BE-TECH-01`, a próxima candidata recomendada no roadmap segue sendo a `BE-ARCH-01`, iniciando por diagnóstico/varredura arquitetural e dependendo de confirmação humana antes de implementação.
+A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Após a conclusão da varredura da `BE-ARCH-01`, a próxima ação recomendada no roadmap passa a ser a `BE-ARCH-01A`, seguida da `BE-ARCH-01B`, mantendo `refresh token`, cookies, revogação e logout server-side fora da primeira implementação da frente.
 
 ---
 
@@ -526,10 +526,70 @@ Definir fluxo claro de build compilada e start de produção para o backend.
 - **Commit associado:** —
 - **Dependências:** Nenhuma rígida
 
+**Diagnóstico da varredura**
+- a autenticação atual usa bearer JWT stateless
+- o JWT expira em `1h`
+- não há refresh token
+- não há revogação
+- o logout atual é apenas limpeza local no frontend
+- o token fica persistido no frontend em `localStorage` ou `sessionStorage`
+- `/auth/me` hoje ecoa o payload do token válido, sem leitura viva do banco
+- o backend não revalida usuário existente, `isActive` e role atual a cada request autenticada
+- a estratégia atual é aceitável apenas temporariamente para desenvolvimento local e não é suficiente para homologação/produção institucional
+
+**Próxima ação recomendada**
+- iniciar por `BE-ARCH-01A — Fechar semântica de sessão web`
+- em seguida executar `BE-ARCH-01B — Revalidar usuário atual no backend`
+- a `BE-ARCH-01B` já parece madura para implementação após a decisão semântica da `BE-ARCH-01A`
+
+**Subtasks planejadas**
+- [ ] **BE-ARCH-01A — Fechar semântica de sessão web**
+  - Decidir e registrar a estratégia incremental: manter bearer JWT por enquanto, expiração curta, `/auth/me` como leitura viva do usuário atual, sem refresh/cookies/revogação nesta etapa.
+
+- [ ] **BE-ARCH-01B — Revalidar usuário atual no backend**
+  - Fazer requests autenticadas consultarem usuário vivo no banco, validando existência, `isActive` e role atual antes de aceitar a sessão.
+
+- [ ] **BE-ARCH-01C — Compartilhar contratos de auth/session**
+  - Consolidar tipos como `AuthenticatedUserRef`, `LoginRequest`, `LoginResponse` e eventual `SessionReadResponse` em `packages/contracts`, reduzindo duplicação backend/frontend.
+
+- [ ] **BE-ARCH-01D — Alinhar frontend de sessão**
+  - Ajustar bootstrap de sessão, UX de expiração, limpeza de sessão e consumo de contrato compartilhado.
+
+- [ ] **BE-ARCH-01E — Definir estratégia de produção para refresh/revogação**
+  - Avaliar refresh token, revogação, logout server-side, rotação e cookies HttpOnly para homologação/produção.
+
+- [ ] **BE-ARCH-01F — Auditar e testar eventos de autenticação**
+  - Definir e cobrir eventos como login bem-sucedido, login falho, logout, refresh, revogação, alteração de role e desativação.
+
+**Fora do escopo da primeira implementação**
+- refresh token
+- cookies HttpOnly
+- revogação
+- logout server-side
+- rotação
+- troca de storage no frontend
+- redesign amplo de permissões
+- correção do gap CESAD por processo dentro da mesma task
+
+---
+
+## BE-SEC-03 — Fortalecer autorização contextual CESAD por processo
+
+- **Status:** PLANNED
+- **Prioridade:** Alta
+- **Responsável atual:** —
+- **Auditoria necessária:** Sim
+- **Commit associado:** —
+- **Dependências:** Nenhuma rígida
+
+**Objetivo**
+Revisar endpoints CESAD sensíveis para exigir vínculo contextual real da comissão ou do assistente com o processo e a etapa, em vez de aceitar apenas role global combinada com status do processo.
+
 **Observações**
-- ainda importante como análise arquitetural
-- não é o principal bloqueio estrutural do momento
-- próxima candidata recomendada após a conclusão da `BE-OPS-01`, iniciando por diagnóstico/varredura arquitetural e não por implementação direta
+- achado crítico separado da `BE-ARCH-01`
+- trata-se de problema de autorização por processo, não de estratégia de sessão
+- revisar especialmente leitura consolidada CESAD e parecer CESAD por etapa
+- severidade alta/crítica antes de homologação/produção
 
 ---
 
@@ -970,11 +1030,17 @@ Esses itens foram tratados e aprovados anteriormente e não devem ser reabertos 
 24. `BE-OPS-03`
 25. `BE-OPS-04`
 26. `BE-OPS-01`
-27. `BE-ARCH-01`
-28. `BE-ARCH-02`
-29. `BE-TECH-01`
-30. `BE-TECH-02`
-31. `BE-TECH-03`
+27. `BE-ARCH-01A`
+28. `BE-ARCH-01B`
+29. `BE-ARCH-01C`
+30. `BE-ARCH-01D`
+31. `BE-ARCH-01E`
+32. `BE-ARCH-01F`
+33. `BE-SEC-03`
+34. `BE-ARCH-02`
+35. `BE-TECH-01`
+36. `BE-TECH-02`
+37. `BE-TECH-03`
 
 ---
 

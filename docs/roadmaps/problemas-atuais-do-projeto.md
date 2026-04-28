@@ -117,13 +117,15 @@ Este documento **não substitui** o tracker backend.
 - as próximas lacunas prioritárias do frontend são validação visual em navegador, investigação da instabilidade histórica do dev server, gates de qualidade e preparação das áreas ainda dependentes de API;
 - a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
-- a próxima candidata recomendada no roadmap backend é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e não por implementação direta, sem reabrir a `BE-OPS-01`, a `BE-TECH-01`, bootstrap, produção, domínio CESAD ou Prisma config.
+- a varredura arquitetural da `BE-ARCH-01` foi concluída e confirmou que a frente deve ser quebrada em subtasks;
+- a próxima ação recomendada no roadmap backend passou a ser a `BE-ARCH-01A`, seguida da `BE-ARCH-01B`, sem reabrir a `BE-OPS-01`, a `BE-TECH-01`, bootstrap, produção, domínio CESAD ou Prisma config;
+- o gap de autorização contextual CESAD por processo foi registrado separadamente como `BE-SEC-03`, por se tratar de problema de autorização contextual e não de estratégia de sessão.
 
 ---
 
 # Frentes ativas e dependências estruturais
 
-## Próxima frente backend recomendada para diagnóstico
+## Próxima frente backend recomendada após diagnóstico
 **BE-ARCH-01 — Revisar estratégia de autenticação web**
 
 ### Motivo
@@ -141,7 +143,7 @@ Hoje o sistema:
 - ainda mantém problemas técnicos de Prisma/migrations fora do escopo já aprovado da `BE-OPS-03`.
 
 ### Consequência
-Antes de qualquer implementação da `BE-ARCH-01`, a próxima ação recomendada é uma varredura/diagnóstico arquitetural. A revisão ampla de autenticação web permanece aberta e não foi resolvida pela `BE-OPS-01`.
+A varredura/diagnóstico arquitetural já foi concluída. A frente permanece aberta, mas agora deve seguir de forma incremental: primeiro `BE-ARCH-01A — Fechar semântica de sessão web`, depois `BE-ARCH-01B — Revalidar usuário atual no backend`. A revisão ampla de autenticação web não foi resolvida pela `BE-OPS-01` e a primeira implementação não deve incluir refresh token, cookies, revogação, logout server-side nem rotação.
 
 ---
 
@@ -371,15 +373,58 @@ O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda n
 ## 6. Mecanismo de autenticação ainda não está endurecido para produção
 
 ### Descrição
-A autenticação usa token bearer próprio, sem refresh token, sem revogação e com persistência de sessão no navegador.
+A autenticação atual usa bearer JWT stateless e já foi varrida arquiteturalmente, com confirmação de que a frente `BE-ARCH-01` deve ser quebrada em subtasks antes de implementação.
+
+### Estado atual da autenticação
+- bearer JWT stateless
+- expiração de `1h`
+- sem refresh token
+- sem revogação
+- logout apenas local
+- token persistido em `localStorage` ou `sessionStorage`
+- `/auth/me` hoje ecoa o payload do token válido e não faz leitura viva do banco
+- backend não revalida usuário existente, `isActive` e role atual em cada request autenticada
+- risco alto para homologação/produção institucional
+
+### Subtasks recomendadas da `BE-ARCH-01`
+- [ ] **BE-ARCH-01A — Fechar semântica de sessão web**
+- [ ] **BE-ARCH-01B — Revalidar usuário atual no backend**
+- [ ] **BE-ARCH-01C — Compartilhar contratos de auth/session**
+- [ ] **BE-ARCH-01D — Alinhar frontend de sessão**
+- [ ] **BE-ARCH-01E — Definir estratégia de produção para refresh/revogação**
+- [ ] **BE-ARCH-01F — Auditar e testar eventos de autenticação**
+
+### Próxima ação recomendada
+- primeiro executar `BE-ARCH-01A`
+- em seguida executar `BE-ARCH-01B`
+- a `BE-ARCH-01B` já parece madura para implementação após a decisão semântica da `BE-ARCH-01A`
+
+### Achado crítico separado
+- [ ] **BE-SEC-03 — Fortalecer autorização contextual CESAD por processo**
+  - Revisar endpoints de leitura consolidada CESAD e parecer CESAD por etapa para exigir vínculo contextual real da comissão ou do assistente com o processo/etapa, e não apenas role global combinada com status.
 
 ### Impacto
 - maior exposição a problemas de sessão e roubo de token
 - baixo controle operacional sobre expiração e revogação
 - desenho insuficiente para ambiente institucional real
 
+### Riscos classificados
+
+#### Críticos antes de produção
+- usuário desativado, removido ou com role alterada pode continuar usando token até a expiração
+- token bearer acessível por JavaScript no navegador
+- ausência de refresh token, revogação e logout server-side
+- endpoints CESAD sensíveis sem vínculo contextual real com processo/etapa
+- ausência de auditoria formal de eventos de autenticação
+
+#### Aceitáveis temporariamente em desenvolvimento
+- bearer token em storage local do navegador
+- logout apenas local
+- usuários seed com e-mails previsíveis e senha definida por `DEV_SEED_PASSWORD`
+
 ### Status no tracker
-- corresponde à task **`BE-ARCH-01 — Revisar estratégia de autenticação web`**
+- corresponde à frente **`BE-ARCH-01 — Revisar estratégia de autenticação web`**, agora quebrada em subtasks planejadas
+- o achado CESAD foi registrado separadamente como **`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`**
 
 ---
 
@@ -579,9 +624,16 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
 
 - [ ] `{BACK}` **BE-ARCH-01** — Revisar estratégia de autenticação web
   - Como corrigir:
-    - revisar estratégia de sessão;
-    - avaliar refresh token, revogação e expiração controlada;
-    - alinhar armazenamento e invalidadores entre backend e frontend.
+    - concluir a `BE-ARCH-01A` para fechar a semântica incremental da sessão web;
+    - executar a `BE-ARCH-01B` para revalidar usuário vivo no backend;
+    - manter refresh token, cookies, revogação e logout server-side fora da primeira implementação.
+  - Subtasks planejadas:
+    - [ ] `BE-ARCH-01A` — fechar semântica de sessão web
+    - [ ] `BE-ARCH-01B` — revalidar usuário atual no backend
+    - [ ] `BE-ARCH-01C` — compartilhar contratos de auth/session
+    - [ ] `BE-ARCH-01D` — alinhar frontend de sessão
+    - [ ] `BE-ARCH-01E` — definir estratégia de produção para refresh/revogação
+    - [ ] `BE-ARCH-01F` — auditar e testar eventos de autenticação
 
 - [ ] `{BACK}` **BE-ARCH-02** — Fortalecer pacotes compartilhados do monorepo
   - Como corrigir:
@@ -606,6 +658,14 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
     - fallback fraco de `JWT_SECRET` foi removido;
     - documentação e `.env.example` foram atualizados;
     - testes foram ajustados para segredos de 32+ caracteres.
+
+- [ ] `{BACK}` **BE-SEC-03** — Fortalecer autorização contextual CESAD por processo
+  - Como corrigir:
+    - revisar endpoints de leitura consolidada CESAD e parecer CESAD por etapa;
+    - exigir vínculo contextual real da comissão ou do assistente com o processo e a etapa;
+    - remover dependência de role global + status como critério isolado de autorização.
+  - Observação:
+    - achado separado da `BE-ARCH-01`, com severidade alta/crítica antes de homologação/produção.
 
 ## Backend | Frontend
 
@@ -706,6 +766,8 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
 - o fluxo explícito de build/start de produção do backend foi resolvido pela `BE-OPS-04`;
 - a `BE-OPS-01` resolveu o hardening operacional de credenciais previsíveis de desenvolvimento;
 - a `BE-TECH-01` resolveu a configuração Prisma depreciada, sem corrigir a limitação histórica de `prisma:migrate:dev`;
-- a próxima candidata recomendada é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e dependendo de confirmação humana antes de implementação;
+- a varredura da `BE-ARCH-01` foi concluída e a frente foi quebrada em subtasks planejadas;
+- a próxima ação recomendada passou a ser `BE-ARCH-01A`, seguida da `BE-ARCH-01B`;
+- o achado de autorização contextual CESAD por processo foi registrado separadamente como `BE-SEC-03`;
 - a `ALIGN-05` saneou a principal heurística do workspace do servidor sem reabrir blocos já aprovados;
 - permanecem abertas lacunas em frentes como administração, homologação, dependências, autenticação web ampla e arquitetura/segurança mapeadas.
