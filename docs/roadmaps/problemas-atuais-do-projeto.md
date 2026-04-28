@@ -25,7 +25,7 @@ Ele deve ser usado para:
 Este documento **não substitui** o tracker backend.
 
 ## Fonte de verdade do roadmap backend
-- `docs/backend-implementation-tracker.md`
+- `./backend-implementation-tracker.md`
 
 ## Função deste documento
 - registrar o panorama amplo dos problemas do projeto;

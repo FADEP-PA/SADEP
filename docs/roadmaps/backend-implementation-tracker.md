@@ -28,15 +28,15 @@ Ele deve ser usado para:
 Este tracker **não substitui** o documento transversal de problemas do projeto.
 
 ## Fonte operacional do backend
-- `docs/backend-implementation-tracker.md`
+- `./backend-implementation-tracker.md`
 
 ## Painel transversal do projeto
-- `docs/problemas-atuais-do-projeto.md`
+- `./problemas-atuais-do-projeto.md`
 
 ## Regra de convivência entre os documentos
 
 - o **tracker** governa a **ordem do roadmap backend**, suas dependências e a task ativa autorizada;
-- o arquivo **`docs/problemas-atuais-do-projeto.md`** registra o panorama amplo do projeto, incluindo backend, frontend, infraestrutura, build, DX e lacunas gerais;
+- o arquivo **`./problemas-atuais-do-projeto.md`** registra o panorama amplo do projeto, incluindo backend, frontend, infraestrutura, build, DX e lacunas gerais;
 - itens do documento transversal **só entram no fluxo do tracker** quando forem convertidos em task backend explícita, com escopo e ordem definidos aqui.
 
 Essa separação evita que o agente trate todo problema transversal como backlog backend imediatamente executável.
@@ -79,8 +79,8 @@ Cada task deve usar exatamente um dos status abaixo:
 Sempre que uma implementação for iniciada, o prompt deve indicar explicitamente:
 
 1. o arquivo a ser consultado:
-   - `docs/backend-implementation-tracker.md`
-   - `docs/problemas-atuais-do-projeto.md`
+   - `docs/roadmaps/backend-implementation-tracker.md`
+   - `docs/roadmaps/problemas-atuais-do-projeto.md`
 2. o bloco/feature ativo
 3. a task específica autorizada
 4. a proibição de avançar para outras tasks
@@ -965,8 +965,8 @@ Esses itens foram tratados e aprovados anteriormente e não devem ser reabertos 
 
 Sempre que um agente de IA for usado, o prompt deve seguir esta lógica:
 
-- consultar `docs/backend-implementation-tracker.md`
-- consultar `docs/problemas-atuais-do-projeto.md`
+- consultar `docs/roadmaps/backend-implementation-tracker.md`
+- consultar `docs/roadmaps/problemas-atuais-do-projeto.md`
 - localizar o bloco/feature ativo
 - localizar a task autorizada
 - implementar somente aquela task

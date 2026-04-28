@@ -32,9 +32,10 @@ O `AGENTS.md` na raiz é a instrução padrão que agentes devem encontrar por d
 
 ### Roadmaps operacionais
 
-- [`backend-implementation-tracker.md`](./backend-implementation-tracker.md): tracker oficial das implementações de backend e da ordem operacional das tasks backend.
-- [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md): backlog operacional e ordem de execução das tasks frontend.
-- [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md): painel transversal de problemas ativos do projeto; registra riscos e impedimentos amplos e não substitui os roadmaps.
+- [`roadmaps/README.md`](./roadmaps/README.md): índice específico dos roadmaps operacionais e da convivência entre os documentos de acompanhamento.
+- [`roadmaps/backend-implementation-tracker.md`](./roadmaps/backend-implementation-tracker.md): tracker oficial das implementações de backend e da ordem operacional das tasks backend.
+- [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md): backlog operacional e ordem de execução das tasks frontend.
+- [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md): painel transversal de problemas ativos do projeto; registra riscos e impedimentos amplos e não substitui os roadmaps.
 
 Regra de uso:
 
@@ -77,7 +78,7 @@ Regra de uso:
 ### Frontend e referência visual
 
 - [`frontend-roadmap-imediato.md`](./frontend-roadmap-imediato.md): diretriz operacional temporal para desenvolvimento frontend imediato.
-- [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md): backlog operacional principal do frontend.
+- [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md): backlog operacional principal do frontend.
 - [`wireframes/sprint-3b-frontend-flow.md`](./wireframes/sprint-3b-frontend-flow.md): referência visual e funcional de sprint para o fluxo inicial de telas.
 - [`wireframes/`](./wireframes/): área de referência visual das telas e fluxos operacionais.
 
@@ -99,9 +100,9 @@ Em caso de conflito entre documentos, deve prevalecer:
    - [`skills/process-document-skill.md`](./skills/process-document-skill.md);
    - [`domain/audit-event-semantics.md`](./domain/audit-event-semantics.md);
 4. roadmaps operacionais:
-   - [`backend-implementation-tracker.md`](./backend-implementation-tracker.md);
-   - [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md);
-   - [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md);
+   - [`roadmaps/backend-implementation-tracker.md`](./roadmaps/backend-implementation-tracker.md);
+   - [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md);
+   - [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md);
 5. setup e DX;
 6. referências visuais, pesquisa, sprints e documentos históricos.
 
@@ -114,8 +115,8 @@ Em caso de conflito entre documentos, deve prevalecer:
 Ler obrigatoriamente:
 
 - [`../AGENTS.md`](../AGENTS.md)
-- [`backend-implementation-tracker.md`](./backend-implementation-tracker.md)
-- [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md)
+- [`roadmaps/backend-implementation-tracker.md`](./roadmaps/backend-implementation-tracker.md)
+- [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md)
 
 Ler adicionalmente conforme impacto:
 
@@ -133,8 +134,8 @@ Ler adicionalmente conforme impacto:
 Ler obrigatoriamente:
 
 - [`../AGENTS.md`](../AGENTS.md)
-- [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md)
-- [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md)
+- [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md)
+- [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md)
 
 Ler adicionalmente conforme impacto:
 
@@ -150,6 +151,7 @@ Ler:
 
 - [`../AGENTS.md`](../AGENTS.md)
 - [`README.md`](./README.md)
+- [`roadmaps/README.md`](./roadmaps/README.md)
 - roadmaps afetados;
 - documentos normativos relacionados.
 
@@ -161,7 +163,7 @@ Ler:
 
 - [`../AGENTS.md`](../AGENTS.md)
 - [`local-setup.md`](./local-setup.md)
-- [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md)
+- [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md)
 
 ---
 
@@ -169,9 +171,9 @@ Ler:
 
 Após cada implementação aprovada, deve-se avaliar atualização de:
 
-- [`backend-implementation-tracker.md`](./backend-implementation-tracker.md), quando a task for backend;
-- [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md), quando a task for frontend;
-- [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md), quando houver impacto transversal;
+- [`roadmaps/backend-implementation-tracker.md`](./roadmaps/backend-implementation-tracker.md), quando a task for backend;
+- [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md), quando a task for frontend;
+- [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md), quando houver impacto transversal;
 - documentos normativos, somente quando houver decisão de negócio ou arquitetura consolidada;
 - [`local-setup.md`](./local-setup.md), quando houver mudança de setup, scripts ou DX.
 
@@ -203,6 +205,8 @@ Após cada implementação aprovada, deve-se avaliar atualização de:
 ### Fase 3 — Roadmaps operacionais
 
 - organizar roadmaps em pasta própria;
+- consolidar o tracker backend, o roadmap frontend e o painel transversal em `docs/roadmaps/`;
+- criar `docs/roadmaps/README.md` como índice operacional;
 - diferenciar:
   - tracker backend;
   - roadmap frontend;
@@ -226,15 +230,8 @@ Após cada implementação aprovada, deve-se avaliar atualização de:
 
 ---
 
-## Fora do escopo desta fase
+## Observação sobre escopo das fases
 
-Não fazer nesta fase:
+Cada fase de sanitização documental deve ter escopo próprio e controlado. Movimentações físicas, arquivamento de documentos, alterações em roadmaps e mudanças normativas só devem ocorrer quando expressamente previstas na fase ativa.
 
-- reorganização física completa de `docs/`;
-- mover roadmaps para subpastas;
-- arquivar documentos;
-- reescrever documentos normativos;
-- alterar conteúdo de regras de negócio;
-- alterar status de tasks;
-- atualizar roadmap com novos achados técnicos;
-- alterar código.
+A sanitização documental não deve alterar código, regras de negócio, workflow funcional, backend, frontend, contratos, Prisma, migrations ou status de tasks sem autorização explícita.
