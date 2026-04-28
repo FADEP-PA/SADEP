@@ -1,7 +1,7 @@
 # AEP-PA Backend Implementation Tracker
 
 **Status:** Controle operacional das implementações do backend  
-**Versão:** 1.8.2
+**Versão:** 1.8.3
 **Data:** 2026-04-28
 **Objetivo:** Registrar, controlar e acompanhar as implementações do backend do AEP-PA com suporte a execução por agente de IA, revisão técnica e aprovação humana.
 
@@ -120,9 +120,9 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 **Nenhuma task ativa formal após a conclusão da BE-TECH-01 sem confirmação humana**
 
 ## Próxima candidata recomendada
-**BE-ARCH-01 — Revisar estratégia de autenticação web**
+**BE-ARCH-01B — Revalidar usuário atual no backend**
 
-A varredura arquitetural da `BE-ARCH-01` foi concluída e confirmou que a frente não deve ser implementada em bloco único. A próxima ação recomendada passa a ser a `BE-ARCH-01A — Fechar semântica de sessão web`, seguida pela `BE-ARCH-01B — Revalidar usuário atual no backend`. A `BE-ARCH-01B` já parece madura para implementação após a decisão semântica da `BE-ARCH-01A`. Essa próxima frente não deve reabrir a `BE-OPS-01` nem a `BE-TECH-01`, nem confundir o hardening já aplicado de `JWT_SECRET` e segredos locais com um redesenho mais amplo de sessão/autenticação web.
+A varredura arquitetural da `BE-ARCH-01` foi concluída e a `BE-ARCH-01A` foi fechada como decisão documental/aprovada. A próxima ação recomendada passa a ser a `BE-ARCH-01B — Revalidar usuário atual no backend`, já madura para prompt de implementação com escopo limitado: revalidar o usuário atual no banco a cada request autenticada e preparar `/auth/me` para refletir leitura viva da sessão, sem reabrir a `BE-OPS-01`, a `BE-TECH-01` nem antecipar refresh token, cookies, revogação, rotação ou logout server-side.
 
 ## Contexto atual
 A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
@@ -141,7 +141,7 @@ No eixo de alinhamento backend/frontend, ficou registrada como necessidade futur
 - nas etapas **1, 2 e 3**, o servidor poderá visualizar o parecer CESAD após sua **conclusão** e **assinatura integral**;
 - na etapa **4**, o servidor somente poderá visualizar o parecer CESAD após sua **conclusão**, **assinatura integral** e **notificação formal**.
 
-A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Após a conclusão da varredura da `BE-ARCH-01`, a próxima ação recomendada no roadmap passa a ser a `BE-ARCH-01A`, seguida da `BE-ARCH-01B`, mantendo `refresh token`, cookies, revogação e logout server-side fora da primeira implementação da frente.
+A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Com a `BE-ARCH-01A` fechada como decisão documental/aprovada, a próxima ação recomendada no roadmap passa a ser a `BE-ARCH-01B`, mantendo `refresh token`, cookies, revogação, rotação e logout server-side fora da próxima implementação da frente.
 
 ---
 
@@ -537,17 +537,32 @@ Definir fluxo claro de build compilada e start de produção para o backend.
 - o backend não revalida usuário existente, `isActive` e role atual a cada request autenticada
 - a estratégia atual é aceitável apenas temporariamente para desenvolvimento local e não é suficiente para homologação/produção institucional
 
+**Decisão incremental fechada na `BE-ARCH-01A`**
+- a sessão web do AEP-PA continuará, nesta etapa, baseada em bearer JWT
+- o token continuará sendo enviado pelo frontend no header `Authorization: Bearer`
+- a expiração atual de `1h` permanece por enquanto
+- o token não deve ser tratado como fonte suficiente da verdade sobre o usuário
+- o backend deve evoluir para revalidar, em cada request autenticada, se o usuário ainda existe, está ativo e mantém role válida
+- o endpoint `/auth/me` deve deixar de ser mero eco do payload do token e passar a refletir o estado atual do usuário persistido
+- se o usuário for removido, desativado ou ficar inconsistente, a sessão deve falhar com `401`
+- mudanças de role exigem cautela; para a primeira implementação segura, divergência relevante entre token e banco deve invalidar a sessão com `401`, salvo se o código existente indicar estratégia mais segura
+- o frontend continuará apenas reagindo a `401`, limpando a sessão local por enquanto
+- refresh token, revogação, rotação, cookies HttpOnly e logout server-side ficam fora do escopo imediato
+- a auditoria de eventos de autenticação continua obrigatória antes de homologação/produção, mas será tratada em subtask própria
+- a estratégia atual permanece aceitável apenas para desenvolvimento local/MVP assistido e não é suficiente para homologação/produção institucional
+
 **Próxima ação recomendada**
-- iniciar por `BE-ARCH-01A — Fechar semântica de sessão web`
-- em seguida executar `BE-ARCH-01B — Revalidar usuário atual no backend`
-- a `BE-ARCH-01B` já parece madura para implementação após a decisão semântica da `BE-ARCH-01A`
+- executar `BE-ARCH-01B — Revalidar usuário atual no backend`
+- a `BE-ARCH-01B` já está madura para prompt de implementação com escopo limitado
+- o foco imediato da `BE-ARCH-01B` deve ser revalidar usuário existente/ativo/role válida em requests autenticadas e preparar `/auth/me` como leitura viva da sessão
+- `BE-ARCH-01C` a `BE-ARCH-01F` permanecem posteriores e não devem ser marcadas como concluídas nesta etapa
 
 **Subtasks planejadas**
-- [ ] **BE-ARCH-01A — Fechar semântica de sessão web**
-  - Decidir e registrar a estratégia incremental: manter bearer JWT por enquanto, expiração curta, `/auth/me` como leitura viva do usuário atual, sem refresh/cookies/revogação nesta etapa.
+- [x] **BE-ARCH-01A — Fechar semântica de sessão web**
+  - Decisão documental/aprovada: manter bearer JWT temporariamente com expiração de `1h`, evoluir `/auth/me` para leitura viva do usuário atual, exigir revalidação backend de usuário existente/ativo/role válida, invalidar sessão com `401` quando o usuário estiver inexistente/inativo/inconsistente e manter refresh token, cookies HttpOnly, revogação, rotação e logout server-side fora desta etapa.
 
 - [ ] **BE-ARCH-01B — Revalidar usuário atual no backend**
-  - Fazer requests autenticadas consultarem usuário vivo no banco, validando existência, `isActive` e role atual antes de aceitar a sessão.
+  - Fazer requests autenticadas consultarem usuário vivo no banco, validando existência, `isActive` e role válida/atual antes de aceitar a sessão, com `401` para sessão inválida e escopo limitado já maduro para implementação.
 
 - [ ] **BE-ARCH-01C — Compartilhar contratos de auth/session**
   - Consolidar tipos como `AuthenticatedUserRef`, `LoginRequest`, `LoginResponse` e eventual `SessionReadResponse` em `packages/contracts`, reduzindo duplicação backend/frontend.

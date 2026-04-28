@@ -117,8 +117,8 @@ Este documento **não substitui** o tracker backend.
 - as próximas lacunas prioritárias do frontend são validação visual em navegador, investigação da instabilidade histórica do dev server, gates de qualidade e preparação das áreas ainda dependentes de API;
 - a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
-- a varredura arquitetural da `BE-ARCH-01` foi concluída e confirmou que a frente deve ser quebrada em subtasks;
-- a próxima ação recomendada no roadmap backend passou a ser a `BE-ARCH-01A`, seguida da `BE-ARCH-01B`, sem reabrir a `BE-OPS-01`, a `BE-TECH-01`, bootstrap, produção, domínio CESAD ou Prisma config;
+- a varredura arquitetural da `BE-ARCH-01` foi concluída e a semântica incremental da sessão web foi fechada documentalmente na `BE-ARCH-01A`;
+- a próxima ação recomendada no roadmap backend passou a ser a `BE-ARCH-01B`, sem reabrir a `BE-OPS-01`, a `BE-TECH-01`, bootstrap, produção, domínio CESAD ou Prisma config;
 - o gap de autorização contextual CESAD por processo foi registrado separadamente como `BE-SEC-03`, por se tratar de problema de autorização contextual e não de estratégia de sessão.
 
 ---
@@ -143,7 +143,7 @@ Hoje o sistema:
 - ainda mantém problemas técnicos de Prisma/migrations fora do escopo já aprovado da `BE-OPS-03`.
 
 ### Consequência
-A varredura/diagnóstico arquitetural já foi concluída. A frente permanece aberta, mas agora deve seguir de forma incremental: primeiro `BE-ARCH-01A — Fechar semântica de sessão web`, depois `BE-ARCH-01B — Revalidar usuário atual no backend`. A revisão ampla de autenticação web não foi resolvida pela `BE-OPS-01` e a primeira implementação não deve incluir refresh token, cookies, revogação, logout server-side nem rotação.
+A varredura/diagnóstico arquitetural já foi concluída e a `BE-ARCH-01A` foi encerrada como decisão documental. A frente permanece aberta, mas agora segue com próxima correção prática clara: `BE-ARCH-01B — Revalidar usuário atual no backend`. A revisão ampla de autenticação web não foi resolvida pela `BE-OPS-01`, e a próxima implementação não deve incluir refresh token, cookies, revogação, logout server-side nem rotação.
 
 ---
 
@@ -373,7 +373,7 @@ O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda n
 ## 6. Mecanismo de autenticação ainda não está endurecido para produção
 
 ### Descrição
-A autenticação atual usa bearer JWT stateless e já foi varrida arquiteturalmente, com confirmação de que a frente `BE-ARCH-01` deve ser quebrada em subtasks antes de implementação.
+A autenticação atual usa bearer JWT stateless, já foi varrida arquiteturalmente e teve a semântica incremental da sessão web fechada documentalmente na `BE-ARCH-01A`. O problema maior de autenticação web, porém, ainda não está resolvido e segue aberto em subtasks posteriores da `BE-ARCH-01`.
 
 ### Estado atual da autenticação
 - bearer JWT stateless
@@ -382,12 +382,15 @@ A autenticação atual usa bearer JWT stateless e já foi varrida arquiteturalme
 - sem revogação
 - logout apenas local
 - token persistido em `localStorage` ou `sessionStorage`
-- `/auth/me` hoje ecoa o payload do token válido e não faz leitura viva do banco
-- backend não revalida usuário existente, `isActive` e role atual em cada request autenticada
+- o token não deve ser tratado como fonte suficiente da verdade sobre o usuário
+- `/auth/me` ainda precisa evoluir de eco do payload do token para leitura viva do usuário atual no banco
+- requests autenticadas ainda precisam revalidar usuário existente, `isActive` e role válida/atual no backend
+- usuário inexistente, inativo ou com role inconsistente deve passar a invalidar a sessão com `401`
+- frontend continuará apenas reagindo a `401`, limpando sessão local por enquanto
 - risco alto para homologação/produção institucional
 
 ### Subtasks recomendadas da `BE-ARCH-01`
-- [ ] **BE-ARCH-01A — Fechar semântica de sessão web**
+- [x] **BE-ARCH-01A — Fechar semântica de sessão web**
 - [ ] **BE-ARCH-01B — Revalidar usuário atual no backend**
 - [ ] **BE-ARCH-01C — Compartilhar contratos de auth/session**
 - [ ] **BE-ARCH-01D — Alinhar frontend de sessão**
@@ -395,9 +398,9 @@ A autenticação atual usa bearer JWT stateless e já foi varrida arquiteturalme
 - [ ] **BE-ARCH-01F — Auditar e testar eventos de autenticação**
 
 ### Próxima ação recomendada
-- primeiro executar `BE-ARCH-01A`
-- em seguida executar `BE-ARCH-01B`
-- a `BE-ARCH-01B` já parece madura para implementação após a decisão semântica da `BE-ARCH-01A`
+- executar `BE-ARCH-01B`
+- a `BE-ARCH-01B` já está madura para implementação com escopo limitado
+- continuam pendentes `BE-ARCH-01C`, `BE-ARCH-01D`, `BE-ARCH-01E` e `BE-ARCH-01F`
 
 ### Achado crítico separado
 - [ ] **BE-SEC-03 — Fortalecer autorização contextual CESAD por processo**
@@ -423,7 +426,7 @@ A autenticação atual usa bearer JWT stateless e já foi varrida arquiteturalme
 - usuários seed com e-mails previsíveis e senha definida por `DEV_SEED_PASSWORD`
 
 ### Status no tracker
-- corresponde à frente **`BE-ARCH-01 — Revisar estratégia de autenticação web`**, agora quebrada em subtasks planejadas
+- corresponde à frente **`BE-ARCH-01 — Revisar estratégia de autenticação web`**, ainda aberta, com `BE-ARCH-01A` concluída como decisão documental e `BE-ARCH-01B` como próxima correção prática recomendada
 - o achado CESAD foi registrado separadamente como **`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`**
 
 ---
@@ -624,11 +627,11 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
 
 - [ ] `{BACK}` **BE-ARCH-01** — Revisar estratégia de autenticação web
   - Como corrigir:
-    - concluir a `BE-ARCH-01A` para fechar a semântica incremental da sessão web;
+    - manter a decisão da `BE-ARCH-01A` registrada: bearer JWT temporário, expiração de `1h`, `/auth/me` como leitura viva futura e `401` para sessão inválida;
     - executar a `BE-ARCH-01B` para revalidar usuário vivo no backend;
     - manter refresh token, cookies, revogação e logout server-side fora da primeira implementação.
   - Subtasks planejadas:
-    - [ ] `BE-ARCH-01A` — fechar semântica de sessão web
+    - [x] `BE-ARCH-01A` — fechar semântica de sessão web
     - [ ] `BE-ARCH-01B` — revalidar usuário atual no backend
     - [ ] `BE-ARCH-01C` — compartilhar contratos de auth/session
     - [ ] `BE-ARCH-01D` — alinhar frontend de sessão
@@ -766,8 +769,8 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
 - o fluxo explícito de build/start de produção do backend foi resolvido pela `BE-OPS-04`;
 - a `BE-OPS-01` resolveu o hardening operacional de credenciais previsíveis de desenvolvimento;
 - a `BE-TECH-01` resolveu a configuração Prisma depreciada, sem corrigir a limitação histórica de `prisma:migrate:dev`;
-- a varredura da `BE-ARCH-01` foi concluída e a frente foi quebrada em subtasks planejadas;
-- a próxima ação recomendada passou a ser `BE-ARCH-01A`, seguida da `BE-ARCH-01B`;
+- a varredura da `BE-ARCH-01` foi concluída, a semântica incremental da sessão web foi fechada na `BE-ARCH-01A` e a frente segue aberta em subtasks planejadas;
+- a próxima ação recomendada passou a ser `BE-ARCH-01B`;
 - o achado de autorização contextual CESAD por processo foi registrado separadamente como `BE-SEC-03`;
 - a `ALIGN-05` saneou a principal heurística do workspace do servidor sem reabrir blocos já aprovados;
 - permanecem abertas lacunas em frentes como administração, homologação, dependências, autenticação web ampla e arquitetura/segurança mapeadas.
