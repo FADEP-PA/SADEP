@@ -175,14 +175,14 @@ ANTES de criar qualquer código:
 
 O projeto utiliza como referências obrigatórias, entre outras, as seguintes diretrizes:
 
-- `docs/workflow-engine.md`
-- `docs/process-document.md`
-- `docs/document-modeling-catalog.md`
+- `docs/skills/workflow-engine-skill.md`
+- `docs/skills/process-document-skill.md`
+- `docs/domain/document-modeling-catalog.md`
 - `docs/workflow/four-stage-flow-and-appeals.md`
 
 ### Regra de uso
-- Se envolver estado do processo → usar `workflow-engine`
-- Se envolver documento oficial → usar `process-document`
+- Se envolver estado do processo → usar `workflow-engine-skill`
+- Se envolver documento oficial → usar `process-document-skill`
 - Se envolver tipologia e ciclo de documentos → usar `document-modeling-catalog`
 - Se envolver rito do Caso 2, 4 etapas, parecer final e recursos → usar `four-stage-flow-and-appeals`
 

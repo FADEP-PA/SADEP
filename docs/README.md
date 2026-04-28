@@ -46,19 +46,17 @@ Regra de uso:
 
 ### Documentos normativos de domínio
 
-- [`document-modeling-catalog.md`](./document-modeling-catalog.md): catálogo oficial de modelagem documental, tipologia, ciclo e rastreabilidade dos documentos do processo.
-- [`architecture/evaluation-instruments.md`](./architecture/evaluation-instruments.md): instrumentos oficiais de avaliação e seus efeitos sobre backend, workflow, documentos e assinaturas.
+- [`domain/document-modeling-catalog.md`](./domain/document-modeling-catalog.md): catálogo oficial de modelagem documental, tipologia, ciclo e rastreabilidade dos documentos do processo.
+- [`domain/evaluation-instruments.md`](./domain/evaluation-instruments.md): instrumentos oficiais de avaliação e seus efeitos sobre backend, workflow, documentos e assinaturas.
 - [`workflow/four-stage-flow-and-appeals.md`](./workflow/four-stage-flow-and-appeals.md): fluxo oficial do Caso 2 com 4 etapas, pareceres, homologação e recursos.
 
 ---
 
 ### Workflow, documentos e auditoria
 
-- [`workflow-engine.md`](./workflow-engine.md): diretriz de modelagem de workflow, estados, transições e guards do processo administrativo.
-- [`process-document.md`](./process-document.md): diretriz para estrutura e ciclo de vida dos documentos oficiais do processo.
-- [`architecture/audit-event-semantics.md`](./architecture/audit-event-semantics.md): semântica dos eventos de auditoria e trilha estruturada do sistema.
-
-Observação: alguns documentos normativos ainda estão em `architecture/` por herança histórica. A reorganização física será tratada em fases posteriores.
+- [`skills/workflow-engine-skill.md`](./skills/workflow-engine-skill.md): diretriz de uso da workflow-engine por agentes para estados, transições, guards e coerência processual.
+- [`skills/process-document-skill.md`](./skills/process-document-skill.md): diretriz de uso por agentes para documentos processuais, ciclo documental e assinaturas.
+- [`domain/audit-event-semantics.md`](./domain/audit-event-semantics.md): semântica normativa dos eventos de auditoria e da trilha estruturada do sistema.
 
 ---
 
@@ -95,11 +93,11 @@ Em caso de conflito entre documentos, deve prevalecer:
 2. [`../AGENTS.md`](../AGENTS.md);
 3. documentos normativos de domínio:
    - [`workflow/four-stage-flow-and-appeals.md`](./workflow/four-stage-flow-and-appeals.md);
-   - [`document-modeling-catalog.md`](./document-modeling-catalog.md);
-   - [`architecture/evaluation-instruments.md`](./architecture/evaluation-instruments.md);
-   - [`workflow-engine.md`](./workflow-engine.md);
-   - [`process-document.md`](./process-document.md);
-   - [`architecture/audit-event-semantics.md`](./architecture/audit-event-semantics.md);
+   - [`domain/document-modeling-catalog.md`](./domain/document-modeling-catalog.md);
+   - [`domain/evaluation-instruments.md`](./domain/evaluation-instruments.md);
+   - [`skills/workflow-engine-skill.md`](./skills/workflow-engine-skill.md);
+   - [`skills/process-document-skill.md`](./skills/process-document-skill.md);
+   - [`domain/audit-event-semantics.md`](./domain/audit-event-semantics.md);
 4. roadmaps operacionais:
    - [`backend-implementation-tracker.md`](./backend-implementation-tracker.md);
    - [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md);
@@ -121,12 +119,12 @@ Ler obrigatoriamente:
 
 Ler adicionalmente conforme impacto:
 
-- [`workflow-engine.md`](./workflow-engine.md)
-- [`process-document.md`](./process-document.md)
-- [`document-modeling-catalog.md`](./document-modeling-catalog.md)
+- [`skills/workflow-engine-skill.md`](./skills/workflow-engine-skill.md)
+- [`skills/process-document-skill.md`](./skills/process-document-skill.md)
+- [`domain/document-modeling-catalog.md`](./domain/document-modeling-catalog.md)
 - [`workflow/four-stage-flow-and-appeals.md`](./workflow/four-stage-flow-and-appeals.md)
-- [`architecture/audit-event-semantics.md`](./architecture/audit-event-semantics.md)
-- [`architecture/evaluation-instruments.md`](./architecture/evaluation-instruments.md)
+- [`domain/audit-event-semantics.md`](./domain/audit-event-semantics.md)
+- [`domain/evaluation-instruments.md`](./domain/evaluation-instruments.md)
 
 ---
 
@@ -140,7 +138,7 @@ Ler obrigatoriamente:
 
 Ler adicionalmente conforme impacto:
 
-- [`document-modeling-catalog.md`](./document-modeling-catalog.md)
+- [`domain/document-modeling-catalog.md`](./domain/document-modeling-catalog.md)
 - [`workflow/four-stage-flow-and-appeals.md`](./workflow/four-stage-flow-and-appeals.md)
 - [`wireframes/sprint-3b-frontend-flow.md`](./wireframes/sprint-3b-frontend-flow.md), se ainda aplicável.
 
@@ -195,11 +193,10 @@ Após cada implementação aprovada, deve-se avaliar atualização de:
 ### Fase 2 — Reorganização dos documentos normativos e skills
 
 - organizar documentos de domínio, workflow, auditoria e skills em pastas coerentes;
-- exemplo futuro:
-  - `docs/domain/`;
-  - `docs/workflow/`;
-  - `docs/architecture/`;
-  - `docs/skills/`.
+- consolidar documentos normativos de domínio em `docs/domain/`;
+- consolidar skills e diretrizes operacionais de agentes em `docs/skills/`;
+- preservar `docs/workflow/` para o fluxo oficial do Caso 2;
+- preservar `docs/architecture/` para referências arquiteturais ainda não reclassificadas.
 
 ---
 

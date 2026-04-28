@@ -2,7 +2,7 @@
 
 ## 1) Síntese dos requisitos internos obrigatórios (base de decisão)
 
-Leitura consolidada de `docs/AGENTS.md`, `docs/workflow-engine.md` e `docs/process-document.md`:
+Leitura consolidada de `docs/AGENTS.md`, `docs/skills/workflow-engine-skill.md` e `docs/skills/process-document-skill.md`:
 
 - O sistema é **processual orientado a estados**, e não CRUD.
 - Princípios inegociáveis: orientação a estados, imutabilidade pós-assinatura, determinismo temporal, regras no backend, auditoria obrigatória.
