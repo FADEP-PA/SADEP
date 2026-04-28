@@ -3,9 +3,29 @@
 **Status:** Backlog operacional do frontend  
 **Versão:** 1.0.0  
 **Data:** 2026-04-15  
+**Sincronização mais recente com o código:** 2026-04-28
 **Escopo:** Lista de tasks fechadas para evolução imediata do frontend  
 **Responsável principal:** Dev frontend  
 **Regra de uso:** marcar a task como concluída somente após implementação validada
+
+---
+
+## Estado observado em 2026-04-28
+
+Esta revisão compara o backlog com o código atual do frontend.
+
+### Já observado no código
+- `/servidor-estagiario` já usa `InternServerWorkspace` com snapshot operacional do backend, assinatura da avaliação da chefia, autoavaliação e histórico recente.
+- `/chefia-imediata` já usa `SupervisorEvaluationWorkspace` com rascunho, submissão, retificação e assinatura da autoavaliação.
+- `/cesad-comissao` já usa `CesadStageReadWorkspace` consumindo a leitura consolidada da etapa em modo somente leitura.
+- `/admin` e `/homologacao-autoridade` já deixaram de usar placeholder genérico e passaram a ter painéis próprios de apoio.
+- `npm run frontend:typecheck` e `npm run frontend:build` passaram nesta revisão.
+
+### Consequência para o backlog
+- A FT-07 foi marcada como concluída porque o workspace real da CESAD já existe e consome o endpoint de leitura consolidada.
+- As FT-08 a FT-13 continuam abertas porque a CESAD ainda concentra a maior parte da UI em um componente grande; a próxima melhoria é extrair componentes reutilizáveis.
+- As FT-04, FT-05 e FT-06 continuam abertas como tarefas de refinamento, não como criação das jornadas do zero.
+- A FT-17 continua aberta porque a homologação tem painel de apoio, mas ainda pode ser melhor preparada como estrutura de expansão.
 
 ---
 
@@ -143,7 +163,7 @@
 
 ## Bloco 3 — CESAD: transformar placeholder em área funcional
 
-### [ ] FT-07 — Implementar workspace real da CESAD em `/cesad-comissao`
+### [x] FT-07 — Implementar workspace real da CESAD em `/cesad-comissao`
 **Objetivo:** transformar a área CESAD em painel funcional de leitura da etapa.
 
 **Escopo:**
@@ -169,6 +189,15 @@
 
 **Dependência:**
 - backend da Task 10A concluído
+
+**Evidência observada em 2026-04-28:**
+- rota `/cesad-comissao` renderiza `CesadStageReadWorkspace`;
+- o componente consome `getCesadStageReadSnapshot`;
+- a tela exibe processo, servidor, etapa, status, avaliações, documentos, assinaturas, histórico e warnings em modo leitura;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
+
+**Observação:**
+- a extração dos componentes reutilizáveis da CESAD permanece aberta nas FT-08 a FT-13.
 
 ---
 
@@ -380,23 +409,19 @@
 
 ---
 
-## Ordem recomendada de execução
+## Ordem recomendada de execução a partir de 2026-04-28
 
-1. FT-01 — Padronizar semântica visual dos status  
-2. FT-02 — Criar componentes reutilizáveis de estados visuais  
-3. FT-03 — Revisar loading, erro e sucesso nas telas operacionais atuais  
+1. FT-08 a FT-13 — Extrair componentes reutilizáveis da área CESAD
+2. FT-14 — Criar timeline visual das 4 etapas
+3. FT-15 — Criar visualização padronizada de documentos por etapa
 4. FT-04 — Refinar a tela `/processos`  
 5. FT-05 — Refinar a jornada da chefia imediata  
 6. FT-06 — Refinar a jornada do servidor estagiário  
-7. FT-07 — Implementar workspace real da CESAD em `/cesad-comissao`  
-8. FT-08 a FT-13 — Componentes reutilizáveis da área CESAD  
-9. FT-14 — Criar timeline visual das 4 etapas  
-10. FT-15 — Criar visualização padronizada de documentos por etapa  
-11. FT-16 — Preparar layout base do futuro parecer CESAD de etapa  
-12. FT-17 — Preparar a área `/homologacao-autoridade`  
-13. FT-18 — Revisar consistência textual  
-14. FT-19 — Revisar responsividade  
-15. FT-20 — Revisar shell autenticado
+7. FT-16 — Preparar layout base do futuro parecer CESAD de etapa
+8. FT-17 — Preparar a área `/homologacao-autoridade`
+9. FT-18 — Revisar consistência textual
+10. FT-19 — Revisar responsividade
+11. FT-20 — Revisar shell autenticado
 
 ---
 
