@@ -117,12 +117,12 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 **BLOCO 3 — Hardening Operacional e Dívida Técnica Imediata**
 
 ## Task ativa
-**Nenhuma task ativa formal após a conclusão da BE-OPS-01 sem confirmação humana**
+**Nenhuma task ativa formal após a conclusão da BE-TECH-01 sem confirmação humana**
 
 ## Próxima candidata recomendada
 **BE-ARCH-01 — Revisar estratégia de autenticação web**
 
-A próxima ação recomendada para a `BE-ARCH-01` é diagnóstico/varredura arquitetural, não implementação direta. A task permanece `PLANNED` até confirmação humana explícita.
+A próxima ação recomendada para a `BE-ARCH-01` é diagnóstico/varredura arquitetural, não implementação direta. A task permanece `PLANNED` até confirmação humana explícita. Essa próxima frente não deve reabrir a `BE-OPS-01` nem a `BE-TECH-01`, nem confundir o hardening já aplicado de `JWT_SECRET` e segredos locais com um redesenho mais amplo de sessão/autenticação web.
 
 ## Contexto atual
 A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
@@ -135,11 +135,13 @@ A `BE-OPS-02` foi aprovada e mitigou a instabilidade operacional do `prisma gene
 
 A `BE-OPS-04` foi aprovada e consolidou o fluxo explícito de build e start de produção do backend. O backend passou a usar `npm run backend:build` para compilar `@aep-pa/contracts`, executar `prisma generate` e compilar a aplicação com `tsc -p tsconfig.app.json`; `npm run backend:start:prod` passou a executar o artefato compilado com Node, mantendo `start:dev` separado no fluxo de desenvolvimento.
 
+A `BE-TECH-01` foi aprovada e removeu a configuração Prisma depreciada baseada em `package.json#prisma`, migrando o seed para `apps/backend/prisma.config.ts` sem alterar o fluxo funcional do backend. O bootstrap local oficial, o uso de `db push`, o guard operacional do Prisma no Windows, o seed endurecido com `DEV_SEED_PASSWORD` e a limitação histórica de `prisma migrate dev` permaneceram separados e preservados.
+
 No eixo de alinhamento backend/frontend, ficou registrada como necessidade futura a exposição de um snapshot operacional mais rico e role-scoped para o servidor, reduzindo heurísticas hoje existentes no frontend. Para essa futura frente, já está fechada a seguinte regra de negócio sobre leitura do parecer CESAD pelo servidor:
 - nas etapas **1, 2 e 3**, o servidor poderá visualizar o parecer CESAD após sua **conclusão** e **assinatura integral**;
 - na etapa **4**, o servidor somente poderá visualizar o parecer CESAD após sua **conclusão**, **assinatura integral** e **notificação formal**.
 
-A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. A próxima candidata recomendada no roadmap é a `BE-ARCH-01`, iniciando por diagnóstico/varredura arquitetural e dependendo de confirmação humana antes de implementação.
+A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Após a conclusão da `BE-TECH-01`, a próxima candidata recomendada no roadmap segue sendo a `BE-ARCH-01`, iniciando por diagnóstico/varredura arquitetural e dependendo de confirmação humana antes de implementação.
 
 ---
 
@@ -557,19 +559,34 @@ Dar maturidade operacional aos pacotes compartilhados do monorepo, especialmente
 
 ## BE-TECH-01 — Migrar a configuração depreciada do Prisma
 
-- **Status:** PLANNED
+- **Status:** DONE
 - **Prioridade:** Média
 - **Responsável atual:** —
 - **Auditoria necessária:** Não obrigatória
-- **Commit associado:** —
+- **Commit associado:** `chore(backend): migrate prisma config`
 - **Dependências:** Nenhuma
 
 **Observações**
-- warnings continuam aparecendo nos testes
+- `apps/backend/prisma.config.ts` foi criado
+- o seed foi migrado do antigo `package.json#prisma` para `prisma.config.ts`
+- o bloco `package.json#prisma` foi removido de `apps/backend/package.json`
+- os scripts atuais do backend foram preservados
+- `npm run backend:bootstrap` continua sendo o fluxo oficial local
+- `prisma db push --schema prisma/schema.prisma --skip-generate` continua sendo o fluxo local oficial nesta etapa
+- `DEV_SEED_PASSWORD` continua obrigatório para o seed local
+- o guard operacional do Prisma no Windows foi preservado
+- `dotenv` foi declarado explicitamente no workspace backend
+- a documentação operacional foi atualizada em `README.md`, `apps/backend/README.md` e `docs/setup/local-setup.md`
+- o warning de `package.json#prisma` deixou de aparecer em `npm run prisma:generate --workspace @aep-pa/backend`
+- validações passaram: `npm run prisma:generate --workspace @aep-pa/backend`, `npm run backend:bootstrap` com `DEV_SEED_PASSWORD` configurado, `npm run db:check --workspace @aep-pa/backend`, `npm run typecheck --workspace @aep-pa/backend`, `npm run typecheck:spec --workspace @aep-pa/backend`, `npm run test --workspace @aep-pa/backend`, `npm run backend:build` e `node -e "require.resolve('prisma/config')"`
+- validações negativas/limitações preservadas: `npm run backend:bootstrap` falhou corretamente sem `DEV_SEED_PASSWORD`; `npm run backend:build` foi inicialmente bloqueado pelo guard do Windows enquanto um processo de teste ainda encerrava; `npm run prisma:migrate:dev --workspace @aep-pa/backend` continuou falhando por limitação histórica conhecida de SQLite/shadow database na migration `20260415113000_increment_10b_cesad_stage_opinion_artifact`
 - `prisma migrate dev` permanece impedido por migration histórica anterior no shadow database SQLite: `20260415113000_increment_10b_cesad_stage_opinion_artifact`
 - a falha decorre do uso de `ALTER TABLE ... ADD CONSTRAINT` nessa migration histórica
 - as migrations recentes do macrobloco CESAD foram validadas isoladamente e não são as causadoras
-- essa task deve cobrir a migração de `package.json#prisma` para `prisma.config.ts`, sem confundir isso com o lock operacional do generate em Windows
+- não houve alteração em `schema.prisma`
+- não houve alteração em migrations históricas
+- não houve correção da limitação de `prisma:migrate:dev`
+- não houve alteração em workflow, CESAD, autenticação, permissões, contratos ou frontend
 
 ---
 

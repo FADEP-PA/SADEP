@@ -74,6 +74,17 @@ Este documento **não substitui** o tracker backend.
 - upgrade controlado do Next.js no frontend de `15.3.0` para `15.5.15` → build passou
 - `npm audit` após upgrade do Next.js → removeu a vulnerabilidade crítica associada ao Next.js
 - `npm audit --omit=dev` após atualização segura de NestJS/Prisma transitivos → restaram apenas 2 vulnerabilidades moderadas associadas a `next`/`postcss`
+- `npm run prisma:generate --workspace @aep-pa/backend` após migração para `prisma.config.ts` → passou sem warning de `package.json#prisma`
+- `npm run backend:bootstrap` após a `BE-TECH-01`, com `DEV_SEED_PASSWORD` configurado → passou
+- `npm run db:check --workspace @aep-pa/backend` após a `BE-TECH-01` → passou
+- `npm run typecheck --workspace @aep-pa/backend` após a `BE-TECH-01` → passou
+- `npm run typecheck:spec --workspace @aep-pa/backend` após a `BE-TECH-01` → passou
+- `npm run test --workspace @aep-pa/backend` após a `BE-TECH-01` → passou
+- `npm run backend:build` após liberação esperada do guard do Windows → passou
+- `node -e "require.resolve('prisma/config')"` → passou
+- validação negativa sem `DEV_SEED_PASSWORD` no bootstrap pós-`BE-TECH-01` → falhou corretamente com mensagem clara
+- `npm run backend:build` na primeira tentativa após os testes → foi bloqueado corretamente pelo guard do Windows enquanto processo Node de teste ainda encerrava
+- `npm run prisma:migrate:dev --workspace @aep-pa/backend` após a `BE-TECH-01` → continuou falhando pela limitação histórica conhecida de SQLite/shadow database na migration `20260415113000_increment_10b_cesad_stage_opinion_artifact`
 - `git diff --check` → passou
 
 ## Conclusão técnica desta rodada
@@ -86,6 +97,12 @@ Este documento **não substitui** o tracker backend.
 - a `BE-OPS-02` foi aprovada e mitigou a instabilidade do `prisma generate` em ambiente Windows com guarda operacional específica;
 - a `BE-OPS-04` foi aprovada e consolidou o fluxo explícito de build/start de produção do backend;
 - a `BE-OPS-01` foi aprovada e removeu credenciais previsíveis de desenvolvimento;
+- a `BE-TECH-01` foi aprovada e removeu a configuração Prisma depreciada baseada em `package.json#prisma`;
+- `apps/backend/prisma.config.ts` passou a centralizar a configuração Prisma do backend, incluindo o seed apontando para `prisma/seed.ts`;
+- os scripts atuais do backend foram preservados;
+- o `backend:bootstrap` continuou como fluxo oficial;
+- o uso local de `db push` continuou como solução operacional nesta etapa;
+- o warning de `package.json#prisma` deixou de aparecer em `npm run prisma:generate --workspace @aep-pa/backend`;
 - o hardening mínimo de `JWT_SECRET` foi aplicado: segredo obrigatório, sem fallback fraco e com mínimo de 32 caracteres;
 - o seed local passou a depender de `DEV_SEED_PASSWORD`, preservando usuários/e-mails/roles previsíveis para desenvolvimento;
 - o seed de desenvolvimento passou a ser bloqueado em `NODE_ENV=production`;
@@ -100,7 +117,7 @@ Este documento **não substitui** o tracker backend.
 - as próximas lacunas prioritárias do frontend são validação visual em navegador, investigação da instabilidade histórica do dev server, gates de qualidade e preparação das áreas ainda dependentes de API;
 - a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
-- a próxima candidata recomendada no roadmap backend é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e não por implementação direta, sem reabrir bootstrap, produção, domínio CESAD ou Prisma config.
+- a próxima candidata recomendada no roadmap backend é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e não por implementação direta, sem reabrir a `BE-OPS-01`, a `BE-TECH-01`, bootstrap, produção, domínio CESAD ou Prisma config.
 
 ---
 
@@ -296,27 +313,36 @@ A frente de credenciais previsíveis de desenvolvimento foi saneada pela `BE-OPS
 
 ---
 
-# Problemas atuais de maior prioridade
-
-## 1. Configuração Prisma depreciada
+## Configuração Prisma depreciada foi resolvida
 
 ### Descrição
-O projeto ainda utiliza configuração em `package.json#prisma`. O Prisma atual já emite aviso de depreciação e indica migração para `prisma.config.ts`.
+A configuração Prisma depreciada baseada em `package.json#prisma` foi removida do backend sem alterar o fluxo funcional aprovado do projeto.
 
 ### Evidências
-- os testes exibiram aviso deprecado do Prisma para `package.json#prisma`
+- `package.json#prisma` foi removido de `apps/backend/package.json`;
+- `apps/backend/prisma.config.ts` foi criado;
+- o seed configurado no Prisma passou a apontar para `prisma/seed.ts`;
+- os scripts atuais do backend foram preservados;
+- `npm run backend:bootstrap` continuou como fluxo oficial;
+- `prisma db push --schema prisma/schema.prisma --skip-generate` continuou como solução local nesta etapa;
+- o warning de `package.json#prisma` deixou de aparecer em `npm run prisma:generate --workspace @aep-pa/backend`.
 
 ### Impacto
-- débito técnico de configuração
-- risco de quebra em upgrade futuro para Prisma 7
-- ruído recorrente na esteira local
+- removeu o warning recorrente de configuração depreciada do Prisma;
+- reduziu o débito técnico de configuração sem reabrir bootstrap, seed ou guard do Windows;
+- manteve separada a limitação histórica de `prisma:migrate:dev` em SQLite/shadow database.
+
+### Limitação preservada
+- `npm run prisma:migrate:dev --workspace @aep-pa/backend` continua falhando por limitação histórica conhecida da migration `20260415113000_increment_10b_cesad_stage_opinion_artifact`, fora do escopo da `BE-TECH-01`.
 
 ### Status no tracker
-- corresponde à task **`BE-TECH-01 — Migrar a configuração depreciada do Prisma`**
+- corresponde à task **`BE-TECH-01 — Migrar a configuração depreciada do Prisma`**, agora concluída no `backend-implementation-tracker.md`
 
 ---
 
-## 2. Vulnerabilidades abertas em dependências
+# Problemas atuais de maior prioridade
+
+## 1. Vulnerabilidades abertas em dependências
 
 ### Descrição
 O `npm install` reportou vulnerabilidades em dependências do workspace. Ainda não foi feita classificação formal entre dependência de runtime, dev-only e transitiva.
@@ -539,11 +565,17 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
 
 ## Backend / Arquitetura e técnica
 
-- [ ] `{BACK}` **BE-TECH-01** — Migrar a configuração Prisma deprecada
-  - Como corrigir:
-    - remover uso de `package.json#prisma`;
-    - criar `prisma.config.ts`;
-    - ajustar scripts e documentação.
+- [x] `{BACK}` **BE-TECH-01** — Migrar a configuração Prisma deprecada
+  - Como foi corrigido:
+    - removeu o uso de `package.json#prisma`;
+    - criou `apps/backend/prisma.config.ts`;
+    - migrou o seed do Prisma para `prisma.config.ts`;
+    - preservou os scripts atuais do backend;
+    - preservou `npm run backend:bootstrap` como fluxo oficial;
+    - preservou `db push` como fluxo local oficial nesta etapa;
+    - preservou `DEV_SEED_PASSWORD` no seed local e o guard operacional do Prisma no Windows;
+    - declarou `dotenv` explicitamente no workspace backend;
+    - atualizou a documentação operacional sem alterar schema, migrations ou fluxo funcional.
 
 - [ ] `{BACK}` **BE-ARCH-01** — Revisar estratégia de autenticação web
   - Como corrigir:
@@ -673,6 +705,7 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
 - o problema operacional do `prisma generate` em Windows foi mitigado pela `BE-OPS-02`;
 - o fluxo explícito de build/start de produção do backend foi resolvido pela `BE-OPS-04`;
 - a `BE-OPS-01` resolveu o hardening operacional de credenciais previsíveis de desenvolvimento;
+- a `BE-TECH-01` resolveu a configuração Prisma depreciada, sem corrigir a limitação histórica de `prisma:migrate:dev`;
 - a próxima candidata recomendada é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e dependendo de confirmação humana antes de implementação;
 - a `ALIGN-05` saneou a principal heurística do workspace do servidor sem reabrir blocos já aprovados;
-- permanecem abertas lacunas em frentes como administração, homologação, dependências, Prisma config, autenticação web ampla e arquitetura/segurança mapeadas.
+- permanecem abertas lacunas em frentes como administração, homologação, dependências, autenticação web ampla e arquitetura/segurança mapeadas.
