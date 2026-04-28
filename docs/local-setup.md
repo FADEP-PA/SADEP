@@ -165,7 +165,7 @@ npm run db:check --workspace @aep-pa/backend
 Se houver erro de build inconsistente, limpe os artefatos do frontend:
 
 ```powershell
-Remove-Item apps\frontend\.next -Recurse -Force
+npm run frontend:clean
 ```
 
 Depois suba o frontend novamente:
@@ -187,6 +187,12 @@ Checklist mínimo para validar o ambiente:
 - backend respondendo em `3000`
 - frontend respondendo em `3001`
 - login funcionando com `admin@aep-pa.local` e a senha definida em `DEV_SEED_PASSWORD`
+
+Para validar o frontend antes de considerar uma alteração segura:
+
+```powershell
+npm run frontend:check
+```
 
 ## Observação operacional
 

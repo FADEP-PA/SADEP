@@ -68,6 +68,8 @@ Este documento **não substitui** o tracker backend.
 - `npm run typecheck --workspace @aep-pa/frontend` → passou
 - `npm run frontend:build` → passou
 - `npm run frontend:typecheck` → passou
+- `npm run frontend:clean` → passou
+- `npm run frontend:check` → passou
 - configuração explícita de `outputFileTracingRoot` no Next.js → removeu o aviso de raiz inferida por lockfiles externos no build
 - upgrade controlado do Next.js no frontend de `15.3.0` para `15.5.15` → build passou
 - `npm audit` após upgrade do Next.js → removeu a vulnerabilidade crítica associada ao Next.js; permanecem vulnerabilidades altas e moderadas em outras dependências/transitivas
@@ -90,6 +92,7 @@ Este documento **não substitui** o tracker backend.
 - o frontend compila e teve as FT-01 a FT-15 do roadmap operacional atualizadas como concluídas no código atual;
 - o frontend passou a usar `next@15.5.15`, removendo a vulnerabilidade crítica anteriormente associada ao `next@15.3.0`;
 - o frontend passou a ter script explícito de typecheck no workspace e atalhos raiz `frontend:build` e `frontend:typecheck`;
+- o frontend passou a ter comando operacional `frontend:clean` para limpar artefatos locais do Next e comando `frontend:check` para validar typecheck + build;
 - o build do frontend passou a ter raiz de tracing explícita no monorepo, evitando o aviso de inferência incorreta por lockfiles externos;
 - a rota administrativa deixou de usar o placeholder genérico e passou a ter painel próprio de apoio, ainda sem backend administrativo dedicado;
 - a rota de homologação deixou de usar o placeholder genérico e passou a ter painel próprio de conferência, ainda sem backend decisório dedicado;
@@ -452,21 +455,22 @@ O backend agora possui build compilado e start de produção explícitos.
 
 # Dev experience
 
-## 13. Instabilidade observada no frontend em modo dev
+## 13. Instabilidade observada no frontend em modo dev foi mitigada operacionalmente
 
 ### Descrição
 O `build` do frontend passou, mas o log de desenvolvimento registra falhas de hot reload, carga de chunks e respostas `500`/`404` em assets do Next.
 O aviso de build sobre raiz inferida incorretamente por lockfiles externos foi mitigado com `outputFileTracingRoot` explícito.
+Também foi adicionado um comando seguro de limpeza dos artefatos locais do frontend para reduzir falso positivo causado por cache ou chunks corrompidos.
 
 ### Impacto
 - perda de produtividade em desenvolvimento
 - maior ocorrência de falso positivo de regressão visual ou de runtime
 
 ### Status no tracker
-- permanece como problema transversal
+- mitigado operacionalmente no frontend
 - ainda não convertido em task backend
-- parcialmente mitigado no eixo de build do frontend; falhas históricas de hot reload/dev server ainda exigem validação específica em modo desenvolvimento
-- no roadmap frontend, a investigação operacional está registrada como FT-22
+- parcialmente mitigado no eixo de build do frontend e no procedimento de limpeza local
+- no roadmap frontend, a investigação operacional foi registrada como FT-22 e concluída no escopo frontend
 
 ---
 
@@ -586,6 +590,7 @@ O aviso de build sobre raiz inferida incorretamente por lockfiles externos foi m
     - `apps/frontend` passou a expor `npm run typecheck --workspace @aep-pa/frontend`;
     - a raiz passou a expor `npm run frontend:build`;
     - a raiz passou a expor `npm run frontend:typecheck`;
+    - a raiz passou a expor `npm run frontend:check`, validando typecheck + build do frontend;
     - ainda faltam agregadores completos de `build`, `test`, `lint` e `typecheck` para todo o monorepo.
 
 ## Frontend
@@ -615,19 +620,19 @@ O aviso de build sobre raiz inferida incorretamente por lockfiles externos foi m
   - Referência no roadmap frontend:
     - FT-21.
 
-- [ ] `{FRONT}` Investigar instabilidade do frontend em modo dev
-  - Como corrigir:
-    - reproduzir ou descartar falhas históricas de hot reload, chunks e cache do Next;
-    - documentar procedimento de limpeza quando necessário;
-    - avaliar script operacional para reduzir falso positivo de ambiente quebrado.
+- [x] `{FRONT}` Investigar instabilidade do frontend em modo dev
+  - Como foi corrigido:
+    - criado comando `npm run frontend:clean` para limpar `.next` e `tsconfig.tsbuildinfo`;
+    - documentado procedimento de limpeza em `docs/local-setup.md`;
+    - validado fluxo `frontend:clean` seguido de `frontend:check`.
   - Referência no roadmap frontend:
     - FT-22.
 
-- [ ] `{FRONT}` Consolidar gates de qualidade do frontend
-  - Como corrigir:
-    - manter `frontend:typecheck` e `frontend:build` como validação mínima;
-    - mapear ausência de lint/test frontend;
-    - avaliar scripts agregadores na raiz do monorepo.
+- [x] `{FRONT}` Consolidar gates de qualidade do frontend
+  - Como foi corrigido:
+    - criado script `check` no workspace do frontend;
+    - criado atalho raiz `npm run frontend:check`;
+    - documentado comando mínimo de validação do frontend.
   - Referência no roadmap frontend:
     - FT-23.
 
