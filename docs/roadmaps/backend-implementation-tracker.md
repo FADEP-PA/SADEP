@@ -120,9 +120,9 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 **Nenhuma task ativa formal após a conclusão da BE-TECH-01 sem confirmação humana**
 
 ## Próxima candidata recomendada
-**BE-ARCH-01B — Revalidar usuário atual no backend**
+**BE-ARCH-01C — Compartilhar contratos de auth/session**
 
-A varredura arquitetural da `BE-ARCH-01` foi concluída e a `BE-ARCH-01A` foi fechada como decisão documental/aprovada. A próxima ação recomendada passa a ser a `BE-ARCH-01B — Revalidar usuário atual no backend`, já madura para prompt de implementação com escopo limitado: revalidar o usuário atual no banco a cada request autenticada e preparar `/auth/me` para refletir leitura viva da sessão, sem reabrir a `BE-OPS-01`, a `BE-TECH-01` nem antecipar refresh token, cookies, revogação, rotação ou logout server-side.
+A varredura arquitetural da `BE-ARCH-01` foi concluída, a `BE-ARCH-01A` foi fechada como decisão documental/aprovada e a `BE-ARCH-01B` foi implementada, auditada e aprovada com revalidação backend do usuário autenticado. A próxima ação recomendada passa a ser a `BE-ARCH-01C — Compartilhar contratos de auth/session`, começando por análise/varredura curta dos contratos atuais entre `packages/contracts`, backend e frontend antes de nova implementação.
 
 ## Contexto atual
 A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
@@ -141,7 +141,7 @@ No eixo de alinhamento backend/frontend, ficou registrada como necessidade futur
 - nas etapas **1, 2 e 3**, o servidor poderá visualizar o parecer CESAD após sua **conclusão** e **assinatura integral**;
 - na etapa **4**, o servidor somente poderá visualizar o parecer CESAD após sua **conclusão**, **assinatura integral** e **notificação formal**.
 
-A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Com a `BE-ARCH-01A` fechada como decisão documental/aprovada, a próxima ação recomendada no roadmap passa a ser a `BE-ARCH-01B`, mantendo `refresh token`, cookies, revogação, rotação e logout server-side fora da próxima implementação da frente.
+A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Com a `BE-ARCH-01A` fechada como decisão documental/aprovada e a `BE-ARCH-01B` aprovada, a próxima ação recomendada no roadmap passa a ser a `BE-ARCH-01C`, mantendo refresh token, cookies HttpOnly, revogação, rotação e logout server-side fora da próxima implementação da frente.
 
 ---
 
@@ -552,17 +552,28 @@ Definir fluxo claro de build compilada e start de produção para o backend.
 - a estratégia atual permanece aceitável apenas para desenvolvimento local/MVP assistido e não é suficiente para homologação/produção institucional
 
 **Próxima ação recomendada**
-- executar `BE-ARCH-01B — Revalidar usuário atual no backend`
-- a `BE-ARCH-01B` já está madura para prompt de implementação com escopo limitado
-- o foco imediato da `BE-ARCH-01B` deve ser revalidar usuário existente/ativo/role válida em requests autenticadas e preparar `/auth/me` como leitura viva da sessão
+- executar `BE-ARCH-01C — Compartilhar contratos de auth/session`
+- a `BE-ARCH-01C` deve começar por análise/varredura curta dos contratos atuais de autenticação e sessão entre `packages/contracts`, backend e frontend
+- o foco imediato da `BE-ARCH-01C` deve ser consolidar tipos compartilhados de auth/session sem reabrir a semântica já aprovada da sessão web
 - `BE-ARCH-01C` a `BE-ARCH-01F` permanecem posteriores e não devem ser marcadas como concluídas nesta etapa
 
 **Subtasks planejadas**
 - [x] **BE-ARCH-01A — Fechar semântica de sessão web**
   - Decisão documental/aprovada: manter bearer JWT temporariamente com expiração de `1h`, evoluir `/auth/me` para leitura viva do usuário atual, exigir revalidação backend de usuário existente/ativo/role válida, invalidar sessão com `401` quando o usuário estiver inexistente/inativo/inconsistente e manter refresh token, cookies HttpOnly, revogação, rotação e logout server-side fora desta etapa.
 
-- [ ] **BE-ARCH-01B — Revalidar usuário atual no backend**
-  - Fazer requests autenticadas consultarem usuário vivo no banco, validando existência, `isActive` e role válida/atual antes de aceitar a sessão, com `401` para sessão inválida e escopo limitado já maduro para implementação.
+- [x] **BE-ARCH-01B — Revalidar usuário atual no backend**
+  - **Status:** APPROVED
+  - **Commit associado:** `feat(auth): revalidate authenticated users`
+  - A `AuthService` passou a resolver o usuário vivo a partir do payload JWT, consultando o banco por `sub` e validando existência, `isActive` e role persistida válida.
+  - O `JwtAuthGuard` passou a validar o JWT e, em seguida, revalidar o usuário atual no banco antes de injetar `request.user`.
+  - Usuário inexistente, inativo ou com divergência relevante de role entre token e banco passou a invalidar a sessão com `401`.
+  - O endpoint `/auth/me` deixou de ser mero eco do payload e passou a refletir o estado persistido atual do usuário autenticado.
+  - `request.user` permaneceu restrito ao contrato compatível `sub`, `email`, `name` e `role`, sem expor campos internos.
+  - Houve cobertura unitária e integrada para `AuthService`, `/auth/me` e `/auth/admin-check`, com inclusão explícita de `auth.service.spec.ts` na suíte Jest.
+  - Validações executadas/aprovadas: `npm run typecheck --workspace @aep-pa/backend`, `npm run typecheck:spec --workspace @aep-pa/backend`, `npm run test --workspace @aep-pa/backend`, `npm run backend:build` e `npm run db:check --workspace @aep-pa/backend`.
+  - Observação operacional: o `backend:build` exigiu nova tentativa após a liberação esperada do guard do Windows enquanto um processo Node de testes ainda encerrava.
+  - Observação de teste: logs `401` e `403` durante a suíte integrada eram esperados, pois os testes exercitam fluxos negativos e terminaram com sucesso.
+  - Fora do escopo preservado: refresh token, cookies HttpOnly, revogação, logout server-side, rotação, alteração de storage frontend, alteração em `packages/contracts`, alteração em seed, alteração em roles existentes, autorização CESAD, workflow, Prisma schema e migrations.
 
 - [ ] **BE-ARCH-01C — Compartilhar contratos de auth/session**
   - Consolidar tipos como `AuthenticatedUserRef`, `LoginRequest`, `LoginResponse` e eventual `SessionReadResponse` em `packages/contracts`, reduzindo duplicação backend/frontend.
