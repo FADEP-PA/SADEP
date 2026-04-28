@@ -143,6 +143,40 @@ function normalizePayload(form: EvaluationFormState): UpsertSupervisorEvaluation
   };
 }
 
+function getEvaluationFormIssues(form: EvaluationFormState) {
+  const issues: string[] = [];
+
+  if (!form.summary.trim()) {
+    issues.push('Informe o resumo da avaliacao.');
+  }
+
+  if (!form.generalComments.trim()) {
+    issues.push('Informe os comentarios gerais da avaliacao.');
+  }
+
+  if (form.criteria.length === 0) {
+    issues.push('Adicione pelo menos um criterio avaliativo.');
+  }
+
+  form.criteria.forEach((criterion, index) => {
+    const criterionNumber = index + 1;
+
+    if (!criterion.code.trim()) {
+      issues.push(`Preencha o codigo do criterio ${criterionNumber}.`);
+    }
+
+    if (!criterion.label.trim()) {
+      issues.push(`Preencha o titulo do criterio ${criterionNumber}.`);
+    }
+
+    if (!Number.isFinite(Number(criterion.rating)) || criterion.rating < 1 || criterion.rating > 5) {
+      issues.push(`A nota do criterio ${criterionNumber} deve estar entre 1 e 5.`);
+    }
+  });
+
+  return issues;
+}
+
 function renderEvaluationStatus(status: SupervisorEvaluationStatus | undefined) {
   return (
     <StatusBadge
@@ -222,12 +256,14 @@ export function SupervisorEvaluationWorkspace() {
   const canSubmit = snapshot?.canSubmit ?? false;
   const canRectify = snapshot?.canRectify ?? false;
   const isLocked = Boolean(snapshot) && !canEditDraft && !canRectify;
+  const canShowFormIssues = Boolean(snapshot) && !isLocked && (canEditDraft || canRectify);
   const canSignSelfEvaluation = Boolean(
     snapshot?.process.status === ProcessStatus.AGUARDANDO_ASSINATURA &&
       selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED &&
       selfEvaluation.documentContext?.supervisorSignaturePending === true,
   );
   const activeMutationFeedback = activeMutation ? getMutationFeedback(activeMutation) : null;
+  const validationIssues = useMemo(() => getEvaluationFormIssues(form), [form]);
 
   const summaryItems = useMemo(
     () => [
@@ -633,6 +669,15 @@ export function SupervisorEvaluationWorkspace() {
                 title="Retificacao liberada"
                 tone="warning"
                 description="A avaliacao ja foi submetida e ainda aguarda assinatura. Ajuste os campos necessarios e use o botao de retificacao para registrar uma nova versao."
+              />
+            ) : null}
+
+            {canShowFormIssues && validationIssues.length > 0 ? (
+              <FeedbackAlert
+                title="Campos pendentes na avaliacao"
+                tone="warning"
+                description="Complete os pontos abaixo para reduzir falhas ao salvar, submeter ou retificar a ficha."
+                details={validationIssues.slice(0, 6)}
               />
             ) : null}
 

@@ -128,7 +128,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-05 — Refinar a jornada da chefia imediata
+### [x] FT-05 — Refinar a jornada da chefia imediata
 **Objetivo:** melhorar usabilidade da avaliação da chefia.
 
 **Escopo:**
@@ -147,6 +147,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 - recurso por etapa
 - resposta a despacho recursal
 - reavaliação substitutiva
+
+**Evidência observada em 2026-04-28:**
+- `SupervisorEvaluationWorkspace` já organiza status do processo, rascunho, submissão, retificação, bloqueios e assinatura da autoavaliação;
+- a tela passou a exibir pendências do formulário antes da tentativa de salvar, submeter ou retificar;
+- a validação visual reaproveita os mesmos campos obrigatórios já exigidos na montagem do payload;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 
