@@ -22,10 +22,10 @@ Esta revisão compara o backlog com o código atual do frontend.
 - `npm run frontend:typecheck` e `npm run frontend:build` passaram nesta revisão.
 
 ### Consequência para o backlog
-- A FT-07 foi marcada como concluída porque o workspace real da CESAD já existe e consome o endpoint de leitura consolidada.
-- As FT-08 a FT-13 continuam abertas porque a CESAD ainda concentra a maior parte da UI em um componente grande; a próxima melhoria é extrair componentes reutilizáveis.
-- As FT-04, FT-05 e FT-06 continuam abertas como tarefas de refinamento, não como criação das jornadas do zero.
-- A FT-17 continua aberta porque a homologação tem painel de apoio, mas ainda pode ser melhor preparada como estrutura de expansão.
+- As FT-01 a FT-15 estão concluídas no código atual e foram validadas por `npm run frontend:typecheck` e `npm run frontend:build`.
+- A validação automática não substitui a validação visual em navegador com backend local e dados reais de seed.
+- A próxima prioridade do frontend deve ser reduzir risco de regressão percebida: validar visualmente os fluxos principais, investigar a instabilidade histórica do dev server e consolidar scripts de qualidade.
+- As próximas features de tela ficam melhor posicionadas depois dessa checagem: homologação, preparação do futuro parecer CESAD e polimento responsivo/textual.
 
 ---
 
@@ -215,7 +215,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 - validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 **Observação:**
-- a extração dos componentes reutilizáveis da CESAD permanece aberta nas FT-08 a FT-13.
+- a extração dos componentes reutilizáveis da CESAD foi concluída nas FT-08 a FT-13.
 
 ---
 
@@ -475,19 +475,122 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
+## Bloco 6 — Validação, estabilidade e redução de risco
+
+### [ ] FT-21 — Validar visualmente os fluxos principais com backend local
+**Objetivo:** confirmar em navegador que as telas operacionais continuam funcionais além do build/typecheck.
+
+**Escopo:**
+- validar login e navegação autenticada
+- abrir `/processos`
+- abrir `/servidor-estagiario`
+- abrir `/chefia-imediata`
+- abrir `/cesad-comissao`
+- abrir `/admin`
+- abrir `/homologacao-autoridade`
+- registrar erros de console, falhas de rede e quebras visuais relevantes
+- confirmar comportamento com dados locais de seed ou processo técnico configurado
+
+**Fora do escopo:**
+- criar feature nova
+- alterar contrato de backend
+- redesenhar telas
+
+---
+
+### [ ] FT-22 — Investigar instabilidade do frontend em modo dev
+**Objetivo:** reduzir falsos alarmes e perda de produtividade causados por hot reload, chunks e cache do Next.
+
+**Escopo:**
+- reproduzir ou invalidar as falhas históricas de `MODULE_NOT_FOUND`, chunks `/_next/static`, `404` e `500`
+- definir procedimento seguro de limpeza quando o dev server corromper cache local
+- avaliar script operacional de limpeza do frontend, se necessário
+- documentar a forma recomendada de subir o frontend localmente
+
+**Fora do escopo:**
+- trocar framework
+- mexer em regra de negócio
+- tratar problemas de API como se fossem problema de Next
+
+---
+
+### [ ] FT-23 — Consolidar gates de qualidade do frontend
+**Objetivo:** deixar claro o mínimo de validação antes de considerar uma edição segura.
+
+**Escopo:**
+- revisar scripts disponíveis no workspace do frontend
+- manter `frontend:typecheck` e `frontend:build` como gates mínimos
+- avaliar inclusão de scripts agregadores na raiz
+- mapear ausência de lint/test frontend como risco explícito
+
+**Fora do escopo:**
+- implantar CI completa
+- escrever suite ampla de testes de interface
+- alterar backend
+
+---
+
+### [ ] FT-24 — Reduzir dependência operacional de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`
+**Objetivo:** preparar as telas para depender menos de ID manual de processo em desenvolvimento.
+
+**Escopo:**
+- localizar telas que dependem do ID técnico manual
+- documentar quando esse ID é apenas conveniência local
+- avaliar tela/listagem/atalho quando houver contrato backend suficiente
+- evitar inferência de processo no cliente sem endpoint adequado
+
+**Fora do escopo:**
+- criar endpoint backend novo
+- inventar seleção de processo sem contrato
+- mudar regra de acesso por perfil
+
+---
+
+### [ ] FT-25 — Triar vulnerabilidades e dependências que afetam o frontend
+**Objetivo:** separar risco real de frontend de vulnerabilidades transitivas ou major upgrades inseguros.
+
+**Escopo:**
+- revisar `npm audit` com foco no que impacta runtime/build do frontend
+- classificar o caso `next`/`postcss` sem aplicar downgrade inseguro
+- separar pendências de backend/Nest/Prisma das pendências de frontend
+- registrar recomendação de upgrade ou aceite temporário de risco
+
+**Fora do escopo:**
+- aplicar `npm audit fix --force` sem análise
+- fazer downgrade de framework para satisfazer sugestão automática
+- resolver vulnerabilidades backend dentro de task frontend
+
+---
+
+### [ ] FT-26 — Limpar scaffolds e placeholders legados do frontend
+**Objetivo:** remover ou justificar componentes antigos que já não representam rotas reais.
+
+**Escopo:**
+- verificar uso de componentes de placeholder por perfil
+- confirmar se `RolePlaceholderPage`, `RolePlaceholderSection` e cards similares ainda são usados
+- remover código morto somente quando não houver referência real
+- atualizar documentação quando algum placeholder permanecer intencional
+
+**Fora do escopo:**
+- remover rotas públicas
+- apagar estrutura que ainda é usada por navegação real
+- substituir feature pendente por texto genérico
+
+---
+
 ## Ordem recomendada de execução a partir de 2026-04-28
 
-1. FT-08 a FT-13 — Extrair componentes reutilizáveis da área CESAD
-2. FT-14 — Criar timeline visual das 4 etapas
-3. FT-15 — Criar visualização padronizada de documentos por etapa
-4. FT-04 — Refinar a tela `/processos`  
-5. FT-05 — Refinar a jornada da chefia imediata  
-6. FT-06 — Refinar a jornada do servidor estagiário  
-7. FT-16 — Preparar layout base do futuro parecer CESAD de etapa
-8. FT-17 — Preparar a área `/homologacao-autoridade`
-9. FT-18 — Revisar consistência textual
-10. FT-19 — Revisar responsividade
-11. FT-20 — Revisar shell autenticado
+1. FT-21 — Validar visualmente os fluxos principais com backend local
+2. FT-22 — Investigar instabilidade do frontend em modo dev
+3. FT-23 — Consolidar gates de qualidade do frontend
+4. FT-25 — Triar vulnerabilidades e dependências que afetam o frontend
+5. FT-17 — Preparar a área `/homologacao-autoridade`
+6. FT-16 — Preparar layout base do futuro parecer CESAD de etapa
+7. FT-18 — Revisar consistência textual
+8. FT-19 — Revisar responsividade
+9. FT-20 — Revisar shell autenticado
+10. FT-24 — Reduzir dependência operacional de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`
+11. FT-26 — Limpar scaffolds e placeholders legados do frontend
 
 ---
 

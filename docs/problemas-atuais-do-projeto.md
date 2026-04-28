@@ -1,6 +1,6 @@
 # Problemas atuais do projeto AEP-PA
 
-**Atualizado em:** 27/04/2026
+**Atualizado em:** 28/04/2026
 **Função deste documento:** painel transversal de problemas ativos do projeto  
 **Escopo:** backend, frontend, infraestrutura, build, DX e lacunas estruturais gerais
 
@@ -87,12 +87,13 @@ Este documento **não substitui** o tracker backend.
 - o seed local passou a depender de `DEV_SEED_PASSWORD`, preservando usuários/e-mails/roles previsíveis para desenvolvimento;
 - o seed de desenvolvimento passou a ser bloqueado em `NODE_ENV=production`;
 - `.env.example` e documentação local foram atualizados para orientar o novo fluxo de bootstrap e login manual;
-- o frontend compila, mas continua com lacunas funcionais e áreas placeholder;
+- o frontend compila e teve as FT-01 a FT-15 do roadmap operacional atualizadas como concluídas no código atual;
 - o frontend passou a usar `next@15.5.15`, removendo a vulnerabilidade crítica anteriormente associada ao `next@15.3.0`;
 - o frontend passou a ter script explícito de typecheck no workspace e atalhos raiz `frontend:build` e `frontend:typecheck`;
 - o build do frontend passou a ter raiz de tracing explícita no monorepo, evitando o aviso de inferência incorreta por lockfiles externos;
 - a rota administrativa deixou de usar o placeholder genérico e passou a ter painel próprio de apoio, ainda sem backend administrativo dedicado;
 - a rota de homologação deixou de usar o placeholder genérico e passou a ter painel próprio de conferência, ainda sem backend decisório dedicado;
+- as próximas lacunas prioritárias do frontend são validação visual em navegador, investigação da instabilidade histórica do dev server, gates de qualidade e preparação das áreas ainda dependentes de API;
 - a `ALIGN-05` foi aprovada e saneou a principal lacuna de API do workspace do servidor, criando um snapshot operacional role-scoped;
 - ainda podem restar lacunas em outras frentes, especialmente administração e homologação;
 - a próxima candidata recomendada no roadmap backend é a `BE-ARCH-01`, começando por diagnóstico/varredura arquitetural e não por implementação direta, sem reabrir bootstrap, produção, domínio CESAD ou Prisma config.
@@ -348,13 +349,13 @@ A autenticação usa token bearer próprio, sem refresh token, sem revogação e
 
 ---
 
-## 7. Frontend ainda depende de lacunas de API
+## 7. Frontend ainda depende de lacunas de API em áreas específicas
 
 ### Descrição
-Algumas jornadas do frontend ainda usam mensagens, inferências e comportamento de contorno porque a API não expõe todos os dados necessários para leitura operacional completa da etapa. A principal lacuna do workspace do servidor foi saneada pela `ALIGN-05`.
+Algumas áreas do frontend ainda usam mensagens de espera e comportamento de contorno porque a API não expõe todos os dados necessários para funcionalidade completa. A principal lacuna do workspace do servidor foi saneada pela `ALIGN-05`, e a leitura consolidada CESAD está madura. As lacunas restantes se concentram principalmente em administração, homologação e no futuro fluxo de parecer CESAD editável.
 
 ### Impacto
-- uso de heurística no cliente
+- uso de estados de apoio no cliente enquanto contratos dedicados não existem
 - maior risco de inconsistências entre regra de negócio e interface
 - bloqueio parcial para evolução de áreas ainda sem contrato suficiente, especialmente administração e homologação
 
@@ -366,7 +367,7 @@ A dor principal do workspace do servidor foi resolvida com snapshot operacional 
 
 ---
 
-## 8. Rotas importantes do frontend ainda estão em placeholder
+## 8. Rotas administrativas ainda não têm funcionalidade real completa
 
 ### Descrição
 As áreas de administração e homologação já deixaram o placeholder genérico, mas ainda não possuem backend dedicado para entregar funcionalidade equivalente ao restante do fluxo.
@@ -380,6 +381,7 @@ As áreas de administração e homologação já deixaram o placeholder genéric
 - hoje não está no roadmap backend como task específica
 - permanece como backlog transversal do projeto
 - parcialmente mitigado no frontend pela substituição dos placeholders genéricos das rotas `/admin` e `/homologacao-autoridade`
+- no roadmap frontend, a preparação visual de homologação está registrada como FT-17
 
 ---
 
@@ -464,6 +466,7 @@ O aviso de build sobre raiz inferida incorretamente por lockfiles externos foi m
 - permanece como problema transversal
 - ainda não convertido em task backend
 - parcialmente mitigado no eixo de build do frontend; falhas históricas de hot reload/dev server ainda exigem validação específica em modo desenvolvimento
+- no roadmap frontend, a investigação operacional está registrada como FT-22
 
 ---
 
@@ -479,7 +482,7 @@ O aviso de build sobre raiz inferida incorretamente por lockfiles externos foi m
 6. Expor snapshot operacional do servidor e flags de autoavaliação
 7. Limpar passivos de segurança e configuração
 8. Reduzir lacunas entre API e frontend
-9. Fechar áreas placeholder
+9. Validar visualmente fluxos principais do frontend
 10. Consolidar arquitetura de monorepo e produção
 
 ---
@@ -597,11 +600,52 @@ O aviso de build sobre raiz inferida incorretamente por lockfiles externos foi m
     - a vulnerabilidade crítica associada ao Next.js deixou de aparecer no `npm audit`.
 
 - [ ] `{FRONT}` Remover dependências de heurística no cliente onde a API já puder atender
-- [ ] `{FRONT}` Implementar as rotas placeholder de administração e homologação
+- [ ] `{FRONT}` Preparar administração e homologação para funcionalidade completa
   - Progresso parcial:
     - rota `/admin` deixou de usar `RolePlaceholderPage` e passou a ter painel administrativo próprio;
     - rota `/homologacao-autoridade` deixou de usar `RolePlaceholderPage` e passou a ter painel próprio de conferência;
     - funcionalidades reais de gestão administrativa e homologação ainda dependem de APIs dedicadas.
+
+- [ ] `{FRONT}` Validar visualmente os fluxos principais com backend local
+  - Como corrigir:
+    - abrir as principais rotas autenticadas em navegador;
+    - validar login, navegação, carregamento de dados e mensagens de erro;
+    - registrar quebras visuais, erros de console e falhas de rede;
+    - usar dados locais de seed ou processo técnico configurado.
+  - Referência no roadmap frontend:
+    - FT-21.
+
+- [ ] `{FRONT}` Investigar instabilidade do frontend em modo dev
+  - Como corrigir:
+    - reproduzir ou descartar falhas históricas de hot reload, chunks e cache do Next;
+    - documentar procedimento de limpeza quando necessário;
+    - avaliar script operacional para reduzir falso positivo de ambiente quebrado.
+  - Referência no roadmap frontend:
+    - FT-22.
+
+- [ ] `{FRONT}` Consolidar gates de qualidade do frontend
+  - Como corrigir:
+    - manter `frontend:typecheck` e `frontend:build` como validação mínima;
+    - mapear ausência de lint/test frontend;
+    - avaliar scripts agregadores na raiz do monorepo.
+  - Referência no roadmap frontend:
+    - FT-23.
+
+- [ ] `{FRONT}` Triar vulnerabilidades e dependências que afetam o frontend
+  - Como corrigir:
+    - classificar achados de `npm audit` entre frontend, backend, dev-only e transitivos;
+    - evitar downgrade ou `audit fix --force` sem análise;
+    - registrar recomendação objetiva de upgrade ou aceite temporário de risco.
+  - Referência no roadmap frontend:
+    - FT-25.
+
+- [ ] `{FRONT}` Limpar scaffolds e placeholders legados do frontend
+  - Como corrigir:
+    - verificar se componentes antigos de placeholder ainda são usados;
+    - remover apenas código morto confirmado;
+    - manter documentação clara quando algum scaffold permanecer intencional.
+  - Referência no roadmap frontend:
+    - FT-26.
 
 ---
 
