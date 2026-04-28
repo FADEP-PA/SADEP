@@ -15,6 +15,7 @@ import {
   getStageInstructionStatusTone,
   getSupervisorEvaluationStatusTone,
 } from '@/features/process/components/process-formatters';
+import { StageTimeline, type StageTimelineItem } from '@/features/process/components/stage-timeline';
 import {
   getHttpErrorDetails,
   getRequestErrorMessage,
@@ -42,6 +43,37 @@ import { StageSummaryCard } from './stage-summary-card';
 
 function getInitialStageSequence() {
   return '1';
+}
+
+function buildStageTimelineItems(snapshot: CesadStageReadSnapshotRef): StageTimelineItem[] {
+  const totalStages = Math.max(snapshot.stage.totalStages, snapshot.stage.sequence);
+  const stageInstructionStatus = snapshot.documentationStatus.stageInstructionStatus;
+
+  return Array.from({ length: totalStages }, (_, index) => {
+    const sequence = index + 1;
+    const isCurrentStage = sequence === snapshot.stage.sequence;
+
+    if (isCurrentStage) {
+      return {
+        sequence,
+        title: snapshot.stage.stageCode,
+        statusLabel: formatStageInstructionStatus(stageInstructionStatus),
+        tone: getStageInstructionStatusTone(stageInstructionStatus),
+        description:
+          'Etapa aberta nesta consulta consolidada, com status documental retornado pelo backend.',
+        isActive: true,
+      };
+    }
+
+    return {
+      sequence,
+      title: `Etapa ${sequence}`,
+      statusLabel: 'Fora da consulta atual',
+      tone: 'neutral',
+      description:
+        'Consulte esta etapa para exibir o status documental informado pelo backend.',
+    };
+  });
 }
 
 export function CesadStageReadWorkspace() {
@@ -281,6 +313,12 @@ export function CesadStageReadWorkspace() {
                   <p>Eventos auditaveis retornados para apoiar a reconstrucao da etapa.</p>
                 </article>
               </div>
+
+              <StageTimeline
+                title="Linha do tempo do processo"
+                description="A CESAD visualiza a etapa aberta nesta consulta; as demais etapas permanecem sem status inferido pelo frontend."
+                items={buildStageTimelineItems(snapshot)}
+              />
 
               <div className="cesad-stage-read__hero">
                 <ProcessHeaderCard snapshot={snapshot} />

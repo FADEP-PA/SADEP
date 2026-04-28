@@ -329,7 +329,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ## Bloco 4 — Preparação dos próximos fluxos do backend
 
-### [ ] FT-14 — Criar timeline visual das 4 etapas
+### [x] FT-14 — Criar timeline visual das 4 etapas
 **Objetivo:** preparar componente reutilizável para exibir progresso por etapas.
 
 **Escopo:**
@@ -341,6 +341,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 **Fora do escopo:**
 - cálculo de status no frontend
 - timeline jurídica completa sem backend correspondente
+
+**Evidência observada em 2026-04-28:**
+- componente reutilizável criado em `apps/frontend/src/features/process/components/stage-timeline.tsx`;
+- `/cesad-comissao` passou a usar a timeline para exibir a etapa em foco dentro do total de etapas informado pelo backend;
+- etapas fora da consulta atual não recebem status inferido pelo frontend;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 
