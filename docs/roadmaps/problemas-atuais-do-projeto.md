@@ -628,7 +628,7 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
 - [x] `{FRONT}` Investigar instabilidade do frontend em modo dev
   - Como foi corrigido:
     - criado comando `npm run frontend:clean` para limpar `.next` e `tsconfig.tsbuildinfo`;
-    - documentado procedimento de limpeza em `docs/local-setup.md`;
+    - documentado procedimento de limpeza em `docs/setup/local-setup.md`;
     - validado fluxo `frontend:clean` seguido de `frontend:check`.
   - Referência no roadmap frontend:
     - FT-22.

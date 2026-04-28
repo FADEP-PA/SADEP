@@ -1,4 +1,6 @@
-# Pesquisa comparativa de referências arquiteturais — AEP-PA (MVP)
+# ADR-001 — Estratégia de Workflow Engine para o MVP do AEP-PA
+
+> Este documento foi reclassificado como ADR durante a Fase 5 da sanitização documental, por registrar a decisão arquitetural de usar workflow próprio com state machine no backend para o MVP.
 
 ## 1) Síntese dos requisitos internos obrigatórios (base de decisão)
 
@@ -243,4 +245,3 @@ Conclusão de governança técnica: qualquer referência externa só é válida 
 - Adoção integral de suíte BPM pesada.
 - Dependência de motor em stack distinta (Go/Java) sem necessidade imediata.
 - Plataformas de automação genérica como núcleo do processo jurídico.
-

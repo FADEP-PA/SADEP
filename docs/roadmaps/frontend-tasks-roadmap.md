@@ -537,7 +537,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 **Evidência observada em 2026-04-28:**
 - criado script `check` no workspace `@aep-pa/frontend`, encadeando `typecheck` e `build`;
 - criado atalho raiz `npm run frontend:check`;
-- `docs/local-setup.md` passou a registrar o comando mínimo de validação do frontend;
+- `docs/setup/local-setup.md` passou a registrar o comando mínimo de validação do frontend;
 - validação executada: `npm run frontend:check`.
 
 ---

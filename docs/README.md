@@ -63,15 +63,17 @@ Regra de uso:
 
 ### Setup e DX
 
-- [`local-setup.md`](./local-setup.md): fluxo padrão de instalação, preparo e execução local do projeto.
+- [`setup/local-setup.md`](./setup/local-setup.md): fluxo padrão de instalação, preparo e execução local do projeto e referência principal de setup e DX.
 
 ---
 
 ### Arquitetura e referências
 
-- [`architecture/repository-structure.md`](./architecture/repository-structure.md): organização base do monorepo e distribuição inicial de apps e packages.
-- [`pesquisa-comparativa-referencias-mvp.md`](./pesquisa-comparativa-referencias-mvp.md): estudo comparativo e referência arquitetural de apoio ao MVP.
-- [`architecture/`](./architecture/): área atual para referências e documentos arquiteturais ainda não convertidos para uma taxonomia final.
+- [`architecture/README.md`](./architecture/README.md): porta de entrada para referências arquiteturais, estrutura do monorepo e organização das ADRs.
+- [`architecture/adr/README.md`](./architecture/adr/README.md): índice das decisões arquiteturais formais do projeto.
+- [`architecture/adr/adr-001-workflow-engine-strategy.md`](./architecture/adr/adr-001-workflow-engine-strategy.md): ADR que registra a decisão de adotar workflow próprio com state machine no backend para o MVP, sem engine BPM externa no início.
+- [`architecture/repository-structure.md`](./architecture/repository-structure.md): referência arquitetural da estrutura inicial do monorepo; pode ser atualizada em task futura quando houver evolução estrutural relevante.
+- [`architecture/`](./architecture/): área de referências arquiteturais, estrutura do monorepo e ADRs formais do projeto.
 
 ---
 
@@ -164,8 +166,19 @@ Ler:
 Ler:
 
 - [`../AGENTS.md`](../AGENTS.md)
-- [`local-setup.md`](./local-setup.md)
+- [`setup/local-setup.md`](./setup/local-setup.md)
 - [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md)
+
+---
+
+### Task de arquitetura
+
+Ler:
+
+- [`../AGENTS.md`](../AGENTS.md)
+- [`architecture/README.md`](./architecture/README.md)
+- [`architecture/adr/README.md`](./architecture/adr/README.md)
+- ADRs relacionadas ao tema, quando aplicável
 
 ---
 
@@ -177,7 +190,7 @@ Após cada implementação aprovada, deve-se avaliar atualização de:
 - [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md), quando a task for frontend;
 - [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md), quando houver impacto transversal;
 - documentos normativos, somente quando houver decisão de negócio ou arquitetura consolidada;
-- [`local-setup.md`](./local-setup.md), quando houver mudança de setup, scripts ou DX.
+- [`setup/local-setup.md`](./setup/local-setup.md), quando houver mudança de setup, scripts ou DX.
 
 ---
 
@@ -227,7 +240,8 @@ Após cada implementação aprovada, deve-se avaliar atualização de:
 ### Fase 5 — Arquitetura, setup e limpeza final
 
 - organizar setup, arquitetura, pesquisa comparativa e placeholders;
-- transformar referência arquitetural em ADR, quando aplicável;
+- transformar pesquisa comparativa em ADR;
+- preservar placeholders úteis;
 - atualizar links internos finais.
 
 ---
