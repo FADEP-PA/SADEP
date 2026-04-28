@@ -156,7 +156,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-06 — Refinar a jornada do servidor estagiário
+### [x] FT-06 — Refinar a jornada do servidor estagiário
 **Objetivo:** melhorar a leitura documental e a experiência da assinatura.
 
 **Escopo:**
@@ -170,6 +170,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 - recurso de etapa
 - notificação final
 - recurso final
+
+**Evidência observada em 2026-04-28:**
+- `InternServerWorkspace` já consome snapshot operacional do backend com etapa atual, documentos, assinatura da avaliação da chefia, autoavaliação e histórico recente;
+- a tela passou a exibir pendência visual quando o texto principal da autoavaliação ainda não foi preenchido;
+- a melhoria preserva as capacidades retornadas pelo backend e não cria ação nova;
+- validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
 
 ---
 

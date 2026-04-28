@@ -121,6 +121,16 @@ function normalizeSelfEvaluationPayload(
   };
 }
 
+function getSelfEvaluationFormIssues(form: SelfEvaluationFormState) {
+  const issues: string[] = [];
+
+  if (!form.selfReflection.trim()) {
+    issues.push('Preencha o texto principal da autoavaliacao antes de enviar.');
+  }
+
+  return issues;
+}
+
 function getCommissionStepDescription(status: ProcessStatus) {
   if (status === ProcessStatus.EM_ANALISE_CESAD) {
     return 'Em analise pela comissao.';
@@ -212,6 +222,10 @@ export function InternServerWorkspace() {
   const canSubmitSelfEvaluation =
     Boolean(workspace?.capabilities.canSubmitSelfEvaluation) &&
     selfEvaluationForm.selfReflection.trim().length > 0;
+  const selfEvaluationFormIssues = useMemo(
+    () => getSelfEvaluationFormIssues(selfEvaluationForm),
+    [selfEvaluationForm],
+  );
   const lastHistoryEntries = useMemo(
     () => (snapshot ? [...snapshot.history].slice(-4).reverse() : []),
     [snapshot],
@@ -1011,6 +1025,15 @@ export function InternServerWorkspace() {
                 </div>
 
                 <div className="self-evaluation-form">
+                  {canEditSelfEvaluation && selfEvaluationFormIssues.length > 0 ? (
+                    <FeedbackAlert
+                      title="Autoavaliacao pendente"
+                      tone="warning"
+                      description="Complete o texto principal para liberar o envio da autoavaliacao."
+                      details={selfEvaluationFormIssues}
+                    />
+                  ) : null}
+
                   <label className="field-group" htmlFor="self-evaluation-reflection">
                     <span>Texto principal da autoavaliacao</span>
                     <textarea
