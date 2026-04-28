@@ -10,8 +10,8 @@ Este repositório deve ser utilizado na branch `develop`.
 
 O guia completo de instalação, preparação do banco local, credenciais de desenvolvimento e execução de backend e frontend está disponível em:
 
-- [docs/local-setup.md](C:\Users\SEDUC\Documents\GitHub\AEP-PA\docs\local-setup.md)
-- [Guia de instalação e execução local](docs/local-setup.md)
+- [docs/setup/local-setup.md](docs/setup/local-setup.md)
+- [Guia de instalação e execução local](docs/setup/local-setup.md)
 
 ## Resumo rápido
 
@@ -38,6 +38,8 @@ DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
 `JWT_SECRET` deve ser explicito e ter pelo menos 32 caracteres. `DEV_SEED_PASSWORD` e a senha local usada pelo seed de desenvolvimento.
 
 O bootstrap local executa, nesta ordem: `prisma generate`, preparação mínima de compatibilidade do SQLite local, `prisma db push --schema prisma/schema.prisma --skip-generate`, seed de desenvolvimento e checagem mínima do banco. O fluxo local atual usa `db push` de forma explícita por compatibilidade com o estado atual das migrations do repositório.
+
+A configuração Prisma do backend agora fica em `apps/backend/prisma.config.ts`. O seed configurado no Prisma aponta para `prisma/seed.ts`, enquanto `DATABASE_URL` continua no `schema.prisma` nesta etapa.
 
 No Windows, o `prisma generate` possui uma guarda operacional que bloqueia a execução quando detecta processos Node relacionados ao backend, testes ou Prisma que possam estar segurando `query_engine-windows.dll.node`. Feche esses processos antes de rodar o bootstrap; se o erro `EPERM` persistir sem processos relacionados, verifique OneDrive, antivírus ou indexação.
 

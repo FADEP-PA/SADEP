@@ -58,6 +58,8 @@ Esse é o fluxo oficial de preparo local do backend nesta etapa. Ele executa, em
 - seed de desenvolvimento
 - checagem mínima do banco
 
+A configuração Prisma do backend agora fica em `apps/backend/prisma.config.ts`. Nela, o schema continua apontando para `prisma/schema.prisma` e o seed configurado no Prisma aponta para `prisma/seed.ts`, sem alterar o fluxo oficial do projeto.
+
 O projeto usa `db push` como solução operacional local compatível com o estado atual do repositório. `migrate dev` não é o caminho principal local nesta etapa, pois há limitação conhecida em migration histórica no shadow database SQLite.
 
 No Windows, o passo `prisma generate` executa uma guarda operacional antes de gerar o Prisma Client. Se houver processos Node relacionados ao backend, testes ou Prisma em execução, o comando falha cedo e lista os PIDs/command lines relevantes para evitar `EPERM` ao atualizar o engine `query_engine-windows.dll.node`. Feche esses processos e rode o bootstrap novamente.
@@ -180,6 +182,7 @@ Checklist mínimo para validar o ambiente:
 
 - `npm install` executado com sucesso
 - `apps/backend/.env` criado com `JWT_SECRET` e `DEV_SEED_PASSWORD`
+- `apps/backend/prisma.config.ts` presente com schema e seed do backend
 - `npm run backend:bootstrap` executado com sucesso
 - Prisma Client gerado
 - banco sincronizado com `db push`
