@@ -59,6 +59,50 @@ type EvaluationDraft = {
   expandedFactorIds: string[];
 };
 
+type PreviousEvaluationItem = {
+  stageLabel: string;
+  conclusionDate: string;
+  statusLabel: string;
+  actionLabel: string;
+};
+
+const PREVIOUS_EVALUATION_HISTORY: Record<string, PreviousEvaluationItem[]> = {
+  'SUP-001': [
+    {
+      stageLabel: '1ª etapa',
+      conclusionDate: '15/02/2024',
+      statusLabel: 'Concluída',
+      actionLabel: 'Visualizar PDF',
+    },
+    {
+      stageLabel: '2ª etapa',
+      conclusionDate: '20/08/2024',
+      statusLabel: 'Concluída',
+      actionLabel: 'Visualizar PDF',
+    },
+    {
+      stageLabel: '3ª etapa',
+      conclusionDate: '10/02/2025',
+      statusLabel: 'Concluída',
+      actionLabel: 'Visualizar PDF',
+    },
+  ],
+  'SUP-002': [
+    {
+      stageLabel: '2ª etapa',
+      conclusionDate: '21/04/2024',
+      statusLabel: 'Concluída',
+      actionLabel: 'Visualizar PDF',
+    },
+    {
+      stageLabel: '3ª etapa',
+      conclusionDate: '09/09/2024',
+      statusLabel: 'Concluída',
+      actionLabel: 'Visualizar PDF',
+    },
+  ],
+};
+
 const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
   {
     id: 'SUP-001',
@@ -330,6 +374,7 @@ export function SupervisorEvaluationWorkspace() {
     STATUS_FILTERS.map((item) => item.id),
   );
   const [activeEvaluation, setActiveEvaluation] = useState<EvaluationDraft | null>(null);
+  const [previousReviewRow, setPreviousReviewRow] = useState<SupervisorDashboardRow | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmittingEvaluation, setIsSubmittingEvaluation] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
@@ -359,6 +404,14 @@ export function SupervisorEvaluationWorkspace() {
     }
 
     setActiveEvaluation(createEvaluationDraft(row));
+  }
+
+  function openPreviousEvaluations(row: SupervisorDashboardRow) {
+    setPreviousReviewRow(row);
+  }
+
+  function closePreviousEvaluations() {
+    setPreviousReviewRow(null);
   }
 
   function toggleFactor(factorId: string) {
@@ -766,24 +819,6 @@ export function SupervisorEvaluationWorkspace() {
           </div>
         ) : (
           <div className="supervisor-dashboard">
-            <section className="supervisor-dashboard__hero">
-              <div className="supervisor-dashboard__hero-copy">
-                <h3>Painel da chefia</h3>
-                <p>Escola Estadual X - Gestao: Maria Oliveira (Diretora)</p>
-              </div>
-
-              <div className="supervisor-dashboard__hero-metrics">
-                <div className="supervisor-dashboard__hero-metric">
-                  <span>Servidores na unidade</span>
-                  <strong>4</strong>
-                </div>
-                <div className="supervisor-dashboard__hero-metric supervisor-dashboard__hero-metric--alert">
-                  <span>Avaliacoes pendentes</span>
-                  <strong>{pendingCount}</strong>
-                </div>
-              </div>
-            </section>
-
             <section className="supervisor-dashboard__table-card">
               <div className="supervisor-dashboard__table-header">
                 <div>Servidor</div>
@@ -815,7 +850,11 @@ export function SupervisorEvaluationWorkspace() {
                     <div className="supervisor-dashboard__cell">{row.deadline}</div>
                     <div className="supervisor-dashboard__cell supervisor-dashboard__cell--center">
                       {row.canReviewPrevious ? (
-                        <button type="button" className="secondary-button supervisor-dashboard__ghost-action">
+                        <button
+                          type="button"
+                          className="secondary-button supervisor-dashboard__ghost-action"
+                          onClick={() => openPreviousEvaluations(row)}
+                        >
                           Visualizar
                         </button>
                       ) : (
@@ -854,6 +893,46 @@ export function SupervisorEvaluationWorkspace() {
                 ))}
               </div>
             </section>
+
+            {previousReviewRow ? (
+              <div className="previous-evaluations-modal">
+                <div className="previous-evaluations-modal__backdrop" onClick={closePreviousEvaluations} />
+                <div className="previous-evaluations-modal__content">
+                  <header className="previous-evaluations-modal__header">
+                    <h2>AVALIAÇÕES ANTERIORES DO SERVIDOR</h2>
+                    <p>
+                      {previousReviewRow.serverName} • Matrícula: {previousReviewRow.registration}
+                    </p>
+                  </header>
+
+                  <div className="previous-evaluations-modal__table">
+                    <div className="previous-evaluations-modal__row previous-evaluations-modal__row--header">
+                      <span>Etapa</span>
+                      <span>Data de conclusão</span>
+                      <span>Ação</span>
+                    </div>
+                    {(PREVIOUS_EVALUATION_HISTORY[previousReviewRow.id] ?? []).map((historyItem) => (
+                      <div key={historyItem.stageLabel} className="previous-evaluations-modal__row">
+                        <div>
+                          <strong>{historyItem.stageLabel}</strong>
+                          <span>{historyItem.statusLabel.toLowerCase()}</span>
+                        </div>
+                        <span>{historyItem.conclusionDate}</span>
+                        <button type="button" className="supervisor-dashboard__primary-action">
+                          {historyItem.actionLabel}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="previous-evaluations-modal__footer">
+                    <button type="button" className="supervisor-dashboard__primary-action" onClick={closePreviousEvaluations}>
+                      Fechar visualização
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </PageSection>
