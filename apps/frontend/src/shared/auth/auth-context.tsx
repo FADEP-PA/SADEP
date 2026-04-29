@@ -68,6 +68,10 @@ function getRedirectPathForValidationFailure(pathname: string, error: unknown) {
   return DEFAULT_PUBLIC_REDIRECT;
 }
 
+function isUnauthorizedError(error: unknown) {
+  return error instanceof HttpError && error.status === 401;
+}
+
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
@@ -101,13 +105,20 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setBootstrapError(null);
       setAuthRedirectPath(null);
     } catch (error) {
-      clearSession();
-      setSession(null);
-      setStatus('anonymous');
       setBootstrapError(getSessionValidationErrorMessage(error));
-      setAuthRedirectPath(getRedirectPathForValidationFailure(pathname, error));
+
+      if (isUnauthorizedError(error)) {
+        setSession(null);
+        setStatus('anonymous');
+        setAuthRedirectPath(SESSION_EXPIRED_REDIRECT);
+        return;
+      }
+
+      setSession(storedSession);
+      setStatus('authenticated');
+      setAuthRedirectPath(null);
     }
-  }, [pathname]);
+  }, []);
 
   useEffect(() => {
     void bootstrapSession();
@@ -177,11 +188,17 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setBootstrapError(null);
       setAuthRedirectPath(null);
     } catch (error) {
-      clearSession();
-      setSession(null);
-      setStatus('anonymous');
       setBootstrapError(getSessionValidationErrorMessage(error));
-      setAuthRedirectPath(getRedirectPathForValidationFailure(pathname, error));
+
+      if (isUnauthorizedError(error)) {
+        setSession(null);
+        setStatus('anonymous');
+        setAuthRedirectPath(getRedirectPathForValidationFailure(pathname, error));
+        return;
+      }
+
+      setStatus('authenticated');
+      setAuthRedirectPath(null);
     }
   }, [pathname, session]);
 
