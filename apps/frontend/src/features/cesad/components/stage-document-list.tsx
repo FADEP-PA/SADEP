@@ -49,9 +49,14 @@ function getStageLinkModeLabel(document: CesadStageReadSnapshotRef['documents'][
 function mapDocumentToOverviewItem(
   document: CesadStageReadSnapshotRef['documents'][number],
 ): StageDocumentOverviewItem {
+  const documentTitle = formatDocumentType({
+    documentType: document.documentType,
+    opinionScope: 'STAGE',
+  });
+
   return {
     id: document.documentType,
-    title: formatDocumentType(document.documentType),
+    title: documentTitle,
     eyebrow: document.exists ? 'Documento localizado' : 'Documento ausente',
     statusLabel: document.exists
       ? formatDocumentStatus(document.documentStatus)
@@ -70,7 +75,7 @@ function mapDocumentToOverviewItem(
       <SignatureTimeline signatures={document.signatures} />
     ) : (
       <MissingDocumentState
-        title={`${formatDocumentType(document.documentType)} ausente`}
+        title={`${documentTitle} ausente`}
         description={
           document.missingReason ??
           'O backend sinalizou ausência deste documento no escopo da etapa.'

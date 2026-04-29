@@ -92,6 +92,17 @@ const CESAD_STAGE_OPINION_STATUS_LABELS: Record<CesadStageOpinionStatus, string>
   [CesadStageOpinionStatus.COMPLETED]: 'Concluido',
 };
 
+const OFFICIAL_PROCESS_TIME_ZONE = 'America/Belem';
+const OFFICIAL_PROCESS_TIME_ZONE_LABEL = 'Belem';
+
+type DocumentTypeFormatInput =
+  | string
+  | undefined
+  | {
+      documentType: string | DocumentType | undefined;
+      opinionScope?: 'STAGE' | 'FINAL_CONCLUSIVE' | null;
+    };
+
 export function formatProcessStatus(status: string | undefined) {
   if (!status) {
     return 'Nao informado';
@@ -137,9 +148,30 @@ export function formatRole(role: string | null | undefined) {
   return ROLE_LABELS[role as UserRole] ?? role;
 }
 
-export function formatDocumentType(type: string | undefined) {
+export function formatDocumentType(input: DocumentTypeFormatInput) {
+  const type =
+    typeof input === 'object' && input !== null && 'documentType' in input
+      ? input.documentType
+      : input;
+  const opinionScope =
+    typeof input === 'object' && input !== null && 'documentType' in input
+      ? input.opinionScope
+      : null;
+
   if (!type) {
     return 'Nao informado';
+  }
+
+  if (type === DocumentType.CESAD_OPINION) {
+    if (opinionScope === 'STAGE') {
+      return 'Parecer CESAD da etapa';
+    }
+
+    if (opinionScope === 'FINAL_CONCLUSIVE') {
+      return 'Parecer CESAD conclusivo final';
+    }
+
+    return 'Parecer CESAD';
   }
 
   return DOCUMENT_TYPE_LABELS[type as DocumentType] ?? type;
@@ -292,8 +324,8 @@ export function formatDateTime(value: string | null | undefined) {
   return new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'short',
     timeStyle: 'short',
-    timeZone: 'UTC',
-  }).format(parsed);
+    timeZone: OFFICIAL_PROCESS_TIME_ZONE,
+  }).format(parsed) + ` (${OFFICIAL_PROCESS_TIME_ZONE_LABEL})`;
 }
 
 export function getLastHistoryEntry(history: WorkflowHistoryItem[]) {

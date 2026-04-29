@@ -18,7 +18,14 @@ function formatDocumentTypes(documentTypes: CesadStageReadSnapshotRef['documenta
     return 'Nenhum documento obrigatório informado';
   }
 
-  return documentTypes.map((documentType) => formatDocumentType(documentType)).join(', ');
+  return documentTypes
+    .map((documentType) =>
+      formatDocumentType({
+        documentType,
+        opinionScope: 'STAGE',
+      }),
+    )
+    .join(', ');
 }
 
 export function StageSummaryCard({ snapshot }: StageSummaryCardProps) {
