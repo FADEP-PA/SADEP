@@ -42,6 +42,7 @@ import {
   getSignatureStatusTone,
   getSupervisorEvaluationStatusTone,
 } from './process-formatters';
+import { AppealStatusPanel } from './appeal-status-panel';
 
 const ALLOWED_ROLES = [UserRole.INTERN_SERVER];
 
@@ -1110,6 +1111,8 @@ export function InternServerWorkspace() {
                 </div>
               </section>
             )}
+
+            <AppealStatusPanel workspace={snapshot.workspace} />
 
             <section className="operations-card">
               <div className="operations-card__header">
