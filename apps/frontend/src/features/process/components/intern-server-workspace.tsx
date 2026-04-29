@@ -7,7 +7,7 @@ import {
   type InternServerWorkspaceSnapshotRef,
   type ProcessAction,
 } from '@aep-pa/contracts';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { WorkflowHistoryItem } from '@/features/dashboard/types/process-dashboard-types';
 import { getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '@/shared/api/http-error';
@@ -25,9 +25,7 @@ import { AuthGuard } from '@/shared/auth/auth-guard';
 import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
-import { KeyValueList } from '@/shared/ui/key-value-list';
-import { ProcessRequestFeedback } from '@/shared/ui/process-request-feedback';
-import { StatusBadge } from '@/shared/ui/status-badge';
+import { StatusBadge, type StatusBadgeTone } from '@/shared/ui/status-badge';
 
 import {
   formatDateTime,
@@ -42,9 +40,15 @@ import {
   getSignatureStatusTone,
   getSupervisorEvaluationStatusTone,
 } from './process-formatters';
-import { AppealStatusPanel } from './appeal-status-panel';
 
 const ALLOWED_ROLES = [UserRole.INTERN_SERVER];
+const TOTAL_STAGES = 4;
+const STAGE_PERIODS = [
+  '01/01/2023 - 30/06/2023',
+  '01/07/2023 - 31/12/2023',
+  '01/01/2024 - 30/06/2024',
+  '01/07/2024 - 31/12/2024',
+] as const;
 
 type OperationFeedback = {
   title: string;
@@ -68,6 +72,28 @@ type InternProcessSnapshot = {
 };
 
 type ActionOperation = 'sign-supervisor' | 'save-self-draft' | 'submit-self-evaluation' | null;
+
+type StageDocumentItem = {
+  label: string;
+  tone: 'default' | 'muted';
+};
+
+type StageCardViewModel = {
+  sequence: number;
+  title: string;
+  period: string;
+  statusLabel: string;
+  statusTone: StatusBadgeTone;
+  markerLabel: string;
+  markerClassName: string;
+  documents: StageDocumentItem[];
+  primaryAction?: {
+    label: string;
+    kind?: 'primary' | 'secondary';
+    disabled?: boolean;
+    onClick?: () => void;
+  };
+};
 
 function createEmptySelfEvaluationForm(): SelfEvaluationFormState {
   return {
@@ -97,7 +123,7 @@ function getInitialProcessId() {
 
 function getDisplayName(name: string | undefined) {
   if (!name || name.trim().length === 0) {
-    return 'Servidor autenticado';
+    return 'Joao da Silva';
   }
 
   return name.trim();
@@ -132,44 +158,6 @@ function getSelfEvaluationFormIssues(form: SelfEvaluationFormState) {
   return issues;
 }
 
-function getCommissionStepDescription(status: ProcessStatus) {
-  if (status === ProcessStatus.EM_ANALISE_CESAD) {
-    return 'Em analise pela comissao.';
-  }
-
-  if (
-    status === ProcessStatus.PARECER_EMITIDO ||
-    status === ProcessStatus.HOMOLOGADO ||
-    status === ProcessStatus.NOTIFICADO ||
-    status === ProcessStatus.CIENTE ||
-    status === ProcessStatus.ENCERRADO
-  ) {
-    return 'Parecer da comissao concluido.';
-  }
-
-  return 'Aguardando o encerramento documental da etapa atual.';
-}
-
-function getResultStepDescription(status: ProcessStatus) {
-  if (status === ProcessStatus.HOMOLOGADO) {
-    return 'Resultado homologado e pronto para atos finais.';
-  }
-
-  if (status === ProcessStatus.NOTIFICADO) {
-    return 'Resultado notificado ao servidor.';
-  }
-
-  if (status === ProcessStatus.CIENTE) {
-    return 'Ciencia registrada no processo.';
-  }
-
-  if (status === ProcessStatus.ENCERRADO) {
-    return 'Processo encerrado com o resultado consolidado.';
-  }
-
-  return 'Resultado final ainda nao consolidado.';
-}
-
 function getActionOperationCopy(operation: ActionOperation) {
   if (operation === 'sign-supervisor') {
     return {
@@ -181,7 +169,7 @@ function getActionOperationCopy(operation: ActionOperation) {
   if (operation === 'save-self-draft') {
     return {
       title: 'Salvando autoavaliacao',
-      description: 'O rascunho da autoavaliacao esta sendo persistido para continuar o preenchimento depois.',
+      description: 'O rascunho da autoavaliacao esta sendo salvo para continuar o preenchimento depois.',
     };
   }
 
@@ -195,14 +183,310 @@ function getActionOperationCopy(operation: ActionOperation) {
   return null;
 }
 
+function getTopStatusBadge(snapshot: InternProcessSnapshot | null, canSignSupervisorEvaluation: boolean, canEditSelfEvaluation: boolean) {
+  if (!snapshot) {
+    return {
+      label: 'Aguardando sua assinatura',
+      tone: 'warning' as const,
+    };
+  }
+
+  if (canSignSupervisorEvaluation) {
+    return {
+      label: 'Aguardando sua assinatura',
+      tone: 'warning' as const,
+    };
+  }
+
+  if (canEditSelfEvaluation) {
+    return {
+      label: 'Autoavaliacao disponivel',
+      tone: 'info' as const,
+    };
+  }
+
+  return {
+    label: formatProcessStatus(snapshot.workflow.status),
+    tone: getProcessStatusTone(snapshot.workflow.status),
+  };
+}
+
+function getCurrentStageStatus(snapshot: InternProcessSnapshot, canSignSupervisorEvaluation: boolean, canEditSelfEvaluation: boolean) {
+  if (canSignSupervisorEvaluation) {
+    return {
+      label: 'Aguardando sua assinatura',
+      tone: 'warning' as const,
+    };
+  }
+
+  if (canEditSelfEvaluation) {
+    return {
+      label: 'Prazo em curso',
+      tone: 'info' as const,
+    };
+  }
+
+  if (snapshot.workflow.status === ProcessStatus.EM_ANALISE_CESAD) {
+    return {
+      label: 'Em analise pela comissao',
+      tone: 'info' as const,
+    };
+  }
+
+  if (
+    [
+      ProcessStatus.PARECER_EMITIDO,
+      ProcessStatus.HOMOLOGADO,
+      ProcessStatus.NOTIFICADO,
+      ProcessStatus.CIENTE,
+      ProcessStatus.ENCERRADO,
+    ].includes(snapshot.workflow.status)
+  ) {
+    return {
+      label: 'Homologada',
+      tone: 'success' as const,
+    };
+  }
+
+  return {
+    label: 'Prazo em curso',
+    tone: 'neutral' as const,
+  };
+}
+
+function createDemoStageCards(): StageCardViewModel[] {
+  return [
+    {
+      sequence: 1,
+      title: '1a Etapa',
+      period: STAGE_PERIODS[0],
+      statusLabel: 'Homologada',
+      statusTone: 'success',
+      markerLabel: '✓',
+      markerClassName: 'intern-stage-card__marker intern-stage-card__marker--done',
+      documents: [
+        { label: 'Avaliacao da chefia', tone: 'default' },
+        { label: 'Autoavaliacao', tone: 'default' },
+        { label: 'Parecer da comissao', tone: 'default' },
+      ],
+    },
+    {
+      sequence: 2,
+      title: '2a Etapa',
+      period: STAGE_PERIODS[1],
+      statusLabel: 'Homologada',
+      statusTone: 'success',
+      markerLabel: '✓',
+      markerClassName: 'intern-stage-card__marker intern-stage-card__marker--done',
+      documents: [
+        { label: 'Avaliacao da chefia', tone: 'default' },
+        { label: 'Autoavaliacao', tone: 'default' },
+        { label: 'Parecer da comissao', tone: 'default' },
+      ],
+    },
+    {
+      sequence: 3,
+      title: '3a Etapa',
+      period: STAGE_PERIODS[2],
+      statusLabel: 'Em analise pela comissao',
+      statusTone: 'info',
+      markerLabel: '3',
+      markerClassName: 'intern-stage-card__marker intern-stage-card__marker--current',
+      documents: [
+        { label: 'Avaliacao da chefia', tone: 'default' },
+        { label: 'Autoavaliacao', tone: 'default' },
+        { label: 'Parecer ainda nao emitido', tone: 'muted' },
+      ],
+    },
+    {
+      sequence: 4,
+      title: '4a Etapa',
+      period: STAGE_PERIODS[3],
+      statusLabel: 'Prazo em curso',
+      statusTone: 'neutral',
+      markerLabel: '4',
+      markerClassName: 'intern-stage-card__marker intern-stage-card__marker--future',
+      documents: [],
+      primaryAction: {
+        label: 'Realizar autoavaliacao',
+        kind: 'primary',
+      },
+    },
+  ];
+}
+
+function buildStageCards(
+  snapshot: InternProcessSnapshot | null,
+  canSignSupervisorEvaluation: boolean,
+  canEditSelfEvaluation: boolean,
+  activeOperation: ActionOperation,
+  onSignSupervisorEvaluation: () => void,
+  onToggleSelfEvaluation: () => void,
+): StageCardViewModel[] {
+  if (!snapshot) {
+    return createDemoStageCards().map((item) =>
+      item.primaryAction
+        ? {
+            ...item,
+            primaryAction: {
+              ...item.primaryAction,
+              onClick: onToggleSelfEvaluation,
+            },
+          }
+        : item,
+    );
+  }
+
+  const currentStageSequence = Math.min(
+    Math.max(snapshot.workspace.currentStage.sequence, 1),
+    TOTAL_STAGES,
+  );
+  const currentStageStatus = getCurrentStageStatus(snapshot, canSignSupervisorEvaluation, canEditSelfEvaluation);
+
+  return Array.from({ length: TOTAL_STAGES }, (_, index) => {
+    const sequence = index + 1;
+    const isPastStage = sequence < currentStageSequence;
+    const isCurrentStage = sequence === currentStageSequence;
+
+    if (isPastStage) {
+      return {
+        sequence,
+        title: `${sequence}a Etapa`,
+        period: STAGE_PERIODS[index] ?? 'Periodo institucional',
+        statusLabel: 'Homologada',
+        statusTone: 'success',
+        markerLabel: '✓',
+        markerClassName: 'intern-stage-card__marker intern-stage-card__marker--done',
+        documents: [
+          { label: 'Avaliacao da chefia', tone: 'default' },
+          { label: 'Autoavaliacao', tone: 'default' },
+          { label: 'Parecer da comissao', tone: 'default' },
+        ],
+      };
+    }
+
+    if (isCurrentStage) {
+      const documents: StageDocumentItem[] = [
+        {
+          label: snapshot.supervisorEvaluation
+            ? 'Avaliacao da chefia'
+            : snapshot.supervisorEvaluationWarning ?? 'Avaliacao da chefia',
+          tone: snapshot.supervisorEvaluation ? 'default' : 'muted',
+        },
+        {
+          label:
+            snapshot.selfEvaluation || canEditSelfEvaluation
+              ? 'Autoavaliacao'
+              : snapshot.selfEvaluationWarning ?? 'Autoavaliacao',
+          tone: snapshot.selfEvaluation || canEditSelfEvaluation ? 'default' : 'muted',
+        },
+        {
+          label: snapshot.workspace.cesadOpinionAccess.canView
+            ? 'Parecer da comissao'
+            : 'Parecer ainda nao emitido',
+          tone: snapshot.workspace.cesadOpinionAccess.canView ? 'default' : 'muted',
+        },
+      ];
+
+      let primaryAction: StageCardViewModel['primaryAction'];
+
+      if (canSignSupervisorEvaluation) {
+        primaryAction = {
+          label: activeOperation === 'sign-supervisor' ? 'Assinando...' : 'Assinar avaliacao da chefia',
+          kind: 'primary',
+          disabled: activeOperation !== null,
+          onClick: onSignSupervisorEvaluation,
+        };
+      } else if (canEditSelfEvaluation || snapshot.selfEvaluation?.status === SelfEvaluationStatus.DRAFT) {
+        primaryAction = {
+          label: canEditSelfEvaluation ? 'Realizar autoavaliacao' : 'Consultar autoavaliacao',
+          kind: 'primary',
+          onClick: onToggleSelfEvaluation,
+        };
+      }
+
+      return {
+        sequence,
+        title: `${sequence}a Etapa`,
+        period: STAGE_PERIODS[index] ?? 'Periodo institucional',
+        statusLabel: currentStageStatus.label,
+        statusTone: currentStageStatus.tone,
+        markerLabel: String(sequence),
+        markerClassName: 'intern-stage-card__marker intern-stage-card__marker--current',
+        documents,
+        primaryAction,
+      };
+    }
+
+    return {
+      sequence,
+      title: `${sequence}a Etapa`,
+      period: STAGE_PERIODS[index] ?? 'Periodo institucional',
+      statusLabel: sequence === currentStageSequence + 1 ? 'Prazo em curso' : 'Aguardando etapa',
+      statusTone: 'neutral',
+      markerLabel: String(sequence),
+      markerClassName: 'intern-stage-card__marker intern-stage-card__marker--future',
+      documents: [],
+    };
+  });
+}
+
+function StageCard({ item }: { item: StageCardViewModel }) {
+  return (
+    <article className="intern-stage-card">
+      <div className="intern-stage-card__main">
+        <div className={item.markerClassName}>{item.markerLabel}</div>
+
+        <div className="intern-stage-card__body">
+          <div className="intern-stage-card__identity">
+            <div className="intern-stage-card__title-row">
+              <strong>{item.title}</strong>
+              <StatusBadge label={item.statusLabel} tone={item.statusTone} />
+            </div>
+
+            <p>
+              <span>Periodo:</span> {item.period}
+            </p>
+          </div>
+
+          <div className="intern-stage-card__documents">
+            {item.documents.map((document) => (
+              <span
+                key={`${item.sequence}-${document.label}`}
+                className={
+                  document.tone === 'muted'
+                    ? 'intern-document-chip intern-document-chip--muted'
+                    : 'intern-document-chip'
+                }
+              >
+                {document.label}
+              </span>
+            ))}
+
+            {item.primaryAction ? (
+              <button
+                type="button"
+                className={item.primaryAction.kind === 'secondary' ? 'secondary-button' : undefined}
+                onClick={item.primaryAction.onClick}
+                disabled={item.primaryAction.disabled}
+              >
+                {item.primaryAction.label}
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export function InternServerWorkspace() {
   const { session } = useAuth();
-  const [processId, setProcessId] = useState(getInitialProcessId);
+  const [processId] = useState(getInitialProcessId);
   const [snapshot, setSnapshot] = useState<InternProcessSnapshot | null>(null);
   const [selfEvaluationForm, setSelfEvaluationForm] = useState<SelfEvaluationFormState>(
     createEmptySelfEvaluationForm,
   );
-  const [recentProcessIds, setRecentProcessIds] = useState<string[]>([]);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
   const [loadErrorStatus, setLoadErrorStatus] = useState<number | null>(null);
@@ -213,201 +497,78 @@ export function InternServerWorkspace() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeOperation, setActiveOperation] = useState<ActionOperation>(null);
   const [isSelfEvaluationExpanded, setIsSelfEvaluationExpanded] = useState(false);
+  const [hasAttemptedInitialLoad, setHasAttemptedInitialLoad] = useState(false);
 
   const displayName = getDisplayName(session?.user.name);
-  const workspace = snapshot?.workspace;
-  const supervisorDocumentContext = workspace?.supervisorEvaluation?.documentContext;
-  const selfEvaluationDocumentContext = workspace?.selfEvaluation?.documentContext;
-  const canSignSupervisorEvaluation = workspace?.capabilities.canSignSupervisorEvaluation ?? false;
-  const canEditSelfEvaluation = workspace?.capabilities.canEditSelfEvaluation ?? false;
-  const canSubmitSelfEvaluation =
-    Boolean(workspace?.capabilities.canSubmitSelfEvaluation) &&
-    selfEvaluationForm.selfReflection.trim().length > 0;
+  const heroIdentity = useMemo(
+    () => ({
+      roleLabel: 'Professor Nivel II',
+      lotacao: 'Escola Estadual Paulo Freire',
+      modelLabel: 'Caso 2 - 4 Etapas',
+    }),
+    [],
+  );
+  const canSignSupervisorEvaluation = snapshot?.workspace.capabilities.canSignSupervisorEvaluation ?? false;
+  const canEditSelfEvaluation = snapshot?.workspace.capabilities.canEditSelfEvaluation ?? false;
   const selfEvaluationFormIssues = useMemo(
     () => getSelfEvaluationFormIssues(selfEvaluationForm),
     [selfEvaluationForm],
   );
   const lastHistoryEntries = useMemo(
-    () => (snapshot ? [...snapshot.history].slice(-4).reverse() : []),
+    () => (snapshot ? [...snapshot.history].slice(-3).reverse() : []),
     [snapshot],
   );
-  const heroHighlights = useMemo(
-    () =>
-      !snapshot
-        ? []
-        : [
-            {
-              label: 'Assinatura da chefia',
-              value: canSignSupervisorEvaluation
-                ? 'Disponivel agora'
-                : supervisorDocumentContext
-                  ? 'Ja tratada'
-                  : 'Aguardando liberacao',
-              description: canSignSupervisorEvaluation
-                ? 'O documento da chefia ja pode ser confirmado pelo servidor.'
-                : 'A liberacao depende do documento formal da etapa.',
-            },
-            {
-              label: 'Autoavaliacao',
-              value: snapshot.selfEvaluation
-                ? formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)
-                : canEditSelfEvaluation
-                  ? 'Liberada'
-                  : 'Nao iniciada',
-              description: snapshot.selfEvaluation
-                ? 'Seu texto ja esta vinculado ao processo atual.'
-                : 'O campo abre depois da assinatura da avaliacao da chefia.',
-            },
-            {
-              label: 'Historico recente',
-              value: lastHistoryEntries.length > 0 ? `${lastHistoryEntries.length} registros` : 'Sem eventos',
-              description:
-                lastHistoryEntries.length > 0
-                  ? 'As ultimas movimentacoes auditaveis aparecem logo abaixo.'
-                  : 'Assim que houver novas movimentacoes, elas aparecem neste painel.',
-            },
-          ],
-    [
-      canEditSelfEvaluation,
-      canSignSupervisorEvaluation,
-      lastHistoryEntries.length,
-      snapshot,
-      snapshot?.selfEvaluation,
-      supervisorDocumentContext,
-    ],
+  const topStatusBadge = useMemo(
+    () => getTopStatusBadge(snapshot, canSignSupervisorEvaluation, canEditSelfEvaluation),
+    [canEditSelfEvaluation, canSignSupervisorEvaluation, snapshot],
   );
-  const processSummaryItems = useMemo(() => {
-    if (!snapshot) {
-      return [];
+  const stageCards = useMemo(
+    () =>
+      buildStageCards(
+        snapshot,
+        canSignSupervisorEvaluation,
+        canEditSelfEvaluation,
+        activeOperation,
+        () => void handleSignSupervisorEvaluation(),
+        () => setIsSelfEvaluationExpanded((current) => !current),
+      ),
+    [activeOperation, canEditSelfEvaluation, canSignSupervisorEvaluation, snapshot],
+  );
+  const activeOperationCopy = getActionOperationCopy(activeOperation);
+  const currentStageSequence = snapshot?.workspace.currentStage.sequence ?? 4;
+  const currentStagePeriod =
+    STAGE_PERIODS[Math.min(Math.max(currentStageSequence - 1, 0), TOTAL_STAGES - 1)];
+  const canPersistSelfEvaluation = Boolean(snapshot && canEditSelfEvaluation);
+
+  useEffect(() => {
+    if (!session?.accessToken || hasAttemptedInitialLoad || processId.trim().length === 0) {
+      return;
     }
 
-    return [
-      { label: 'processo', value: snapshot.workflow.id },
-      {
-        label: 'etapa atual',
-        value: `${snapshot.workspace.currentStage.sequence}/${snapshot.workspace.currentStage.totalStages} - ${snapshot.workspace.currentStage.stageCode}`,
-      },
-      {
-        label: 'status macro',
-        value: formatProcessStatus(snapshot.workflow.status),
-      },
-      {
-        label: 'avaliacao da chefia',
-        value: snapshot.supervisorEvaluation
-          ? formatSupervisorEvaluationStatus(snapshot.supervisorEvaluation.status)
-          : 'Ainda nao liberada',
-      },
-      {
-        label: 'autoavaliacao',
-        value: snapshot.selfEvaluation
-          ? formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)
-          : 'Ainda nao iniciada',
-      },
-      {
-        label: 'ult. movimentacao',
-        value: lastHistoryEntries[0] ? formatDateTime(lastHistoryEntries[0].occurredAt) : 'Sem eventos',
-      },
-    ];
-  }, [lastHistoryEntries, snapshot]);
+    setHasAttemptedInitialLoad(true);
+    setIsLoading(true);
+    setLoadErrorMessage(null);
+    setLoadErrorDetails([]);
+    setLoadErrorStatus(null);
 
-  const flowCards = useMemo(() => {
-    const status = snapshot?.workflow.status;
-    const selfEvaluationStatus = snapshot?.selfEvaluation?.status;
+    void loadProcessSnapshot(processId.trim())
+      .catch((error) => {
+        const payload =
+          typeof error === 'object' && error && 'payload' in error
+            ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
+            : undefined;
 
-    return [
-      {
-        index: '01',
-        title: 'Avaliacao da chefia',
-        statusLabel: snapshot?.supervisorEvaluation
-          ? formatSupervisorEvaluationStatus(snapshot.supervisorEvaluation.status)
-          : 'Aguardando liberacao',
-        description: snapshot?.supervisorEvaluation
-          ? `Status atual: ${formatSupervisorEvaluationStatus(snapshot.supervisorEvaluation.status)}.`
-          : snapshot?.supervisorEvaluationWarning ??
-            'A ficha da chefia ainda nao foi exibida para consulta do servidor.',
-        tone: snapshot?.supervisorEvaluation ? getSupervisorEvaluationStatusTone(snapshot.supervisorEvaluation.status) : 'neutral',
-        isActive: status === ProcessStatus.EM_AVALIACAO || canSignSupervisorEvaluation,
-      },
-      {
-        index: '02',
-        title: 'Assinaturas e autoavaliacao',
-        statusLabel: selfEvaluationStatus
-          ? formatSupervisorEvaluationStatus(selfEvaluationStatus)
-          : canEditSelfEvaluation
-            ? 'Disponivel'
-            : 'Aguardando etapa',
-        description: selfEvaluationStatus
-          ? `Autoavaliacao ${formatSupervisorEvaluationStatus(selfEvaluationStatus).toLowerCase()}.`
-          : canEditSelfEvaluation
-            ? 'Sua autoavaliacao ja pode ser preenchida e enviada.'
-            : 'Aguardando a assinatura da avaliacao da chefia para liberar a autoavaliacao.',
-        tone: selfEvaluationStatus ? getSupervisorEvaluationStatusTone(selfEvaluationStatus) : canEditSelfEvaluation ? 'info' : 'neutral',
-        isActive: status === ProcessStatus.AGUARDANDO_ASSINATURA,
-      },
-      {
-        index: '03',
-        title: 'Comissao / CESAD',
-        statusLabel:
-          status === ProcessStatus.EM_ANALISE_CESAD
-            ? 'Em analise'
-            : status &&
-                [
-                  ProcessStatus.PARECER_EMITIDO,
-                  ProcessStatus.HOMOLOGADO,
-                  ProcessStatus.NOTIFICADO,
-                  ProcessStatus.CIENTE,
-                  ProcessStatus.ENCERRADO,
-                ].includes(status)
-              ? 'Concluida'
-              : 'Aguardando',
-        description: status ? getCommissionStepDescription(status) : 'Aguardando andamento da etapa.',
-        tone:
-          status === ProcessStatus.EM_ANALISE_CESAD
-            ? 'warning'
-            : status &&
-                [
-                  ProcessStatus.PARECER_EMITIDO,
-                  ProcessStatus.HOMOLOGADO,
-                  ProcessStatus.NOTIFICADO,
-                  ProcessStatus.CIENTE,
-                  ProcessStatus.ENCERRADO,
-                ].includes(status)
-              ? 'success'
-              : 'neutral',
-        isActive:
-          status === ProcessStatus.EM_ANALISE_CESAD || status === ProcessStatus.PARECER_EMITIDO,
-      },
-      {
-        index: '04',
-        title: 'Resultado final',
-        statusLabel:
-          status &&
-          [
-            ProcessStatus.HOMOLOGADO,
-            ProcessStatus.NOTIFICADO,
-            ProcessStatus.CIENTE,
-            ProcessStatus.ENCERRADO,
-          ].includes(status)
-            ? 'Consolidado'
-            : 'Em preparacao',
-        description: status ? getResultStepDescription(status) : 'Aguardando consolidacao do resultado.',
-        tone:
-          status &&
-          [
-            ProcessStatus.HOMOLOGADO,
-            ProcessStatus.NOTIFICADO,
-            ProcessStatus.CIENTE,
-            ProcessStatus.ENCERRADO,
-          ].includes(status)
-            ? 'success'
-            : 'neutral',
-        isActive:
-          status === ProcessStatus.HOMOLOGADO ||
-          status === ProcessStatus.NOTIFICADO ||
-          status === ProcessStatus.CIENTE,
-      },
-    ] as const;
-  }, [canEditSelfEvaluation, canSignSupervisorEvaluation, snapshot]);
+        setSnapshot(null);
+        setSelfEvaluationForm(createEmptySelfEvaluationForm());
+        setIsSelfEvaluationExpanded(false);
+        setLoadErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar o processo informado.'));
+        setLoadErrorDetails(getHttpErrorDetails(payload));
+        setLoadErrorStatus(isHttpErrorStatus(error, 404) ? 404 : isHttpErrorStatus(error, 403) ? 403 : null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [hasAttemptedInitialLoad, processId, session?.accessToken]);
 
   async function loadProcessSnapshot(activeProcessId: string, success?: OperationFeedback) {
     if (!session?.accessToken) {
@@ -427,70 +588,24 @@ export function InternServerWorkspace() {
       supervisorEvaluation: workspaceSnapshot.supervisorEvaluation,
       supervisorEvaluationWarning: workspaceSnapshot.capabilities.canViewSupervisorEvaluation
         ? null
-        : 'A avaliacao da chefia sera exibida aqui quando estiver liberada no snapshot operacional do servidor.',
+        : 'A avaliacao da chefia sera exibida quando estiver liberada no fluxo da etapa.',
       selfEvaluation: workspaceSnapshot.selfEvaluation,
       selfEvaluationWarning:
         workspaceSnapshot.capabilities.canViewSelfEvaluation ||
         workspaceSnapshot.capabilities.canEditSelfEvaluation
           ? null
-          : 'A autoavaliacao sera liberada conforme as regras operacionais calculadas pelo backend.',
+          : 'A autoavaliacao sera liberada conforme as regras calculadas pelo backend.',
     };
 
     setSnapshot(nextSnapshot);
     setSelfEvaluationForm(buildSelfEvaluationForm(nextSnapshot.selfEvaluation));
     setIsSelfEvaluationExpanded(
       Boolean(
-        nextSnapshot.workflow.status === ProcessStatus.AGUARDANDO_ASSINATURA &&
-          nextSnapshot.workspace.capabilities.canEditSelfEvaluation,
+        nextSnapshot.workspace.capabilities.canEditSelfEvaluation ||
+          nextSnapshot.selfEvaluation?.status === SelfEvaluationStatus.DRAFT,
       ),
     );
-    setRecentProcessIds((current) =>
-      [normalizedProcessId, ...current.filter((item) => item !== normalizedProcessId)].slice(0, 4),
-    );
     setSuccessFeedback(success ?? null);
-  }
-
-  async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!session?.accessToken || processId.trim().length === 0) {
-      setLoadErrorMessage('Informe um identificador de processo para consultar sua area.');
-      setLoadErrorDetails([]);
-      setLoadErrorStatus(null);
-      setSuccessFeedback(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setLoadErrorMessage(null);
-    setLoadErrorDetails([]);
-    setLoadErrorStatus(null);
-    setActionErrorMessage(null);
-    setActionErrorDetails([]);
-    setSuccessFeedback(null);
-
-    try {
-      await loadProcessSnapshot(processId.trim(), {
-        title: 'Processo carregado',
-        description:
-          'A leitura do servidor foi atualizada com etapa atual, documentos, autoavaliacao e flags operacionais.',
-      });
-    } catch (error) {
-      const payload =
-        typeof error === 'object' && error && 'payload' in error
-          ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
-          : undefined;
-
-      setSnapshot(null);
-      setSelfEvaluationForm(createEmptySelfEvaluationForm());
-      setIsSelfEvaluationExpanded(false);
-      setLoadErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar o processo informado.'));
-      setLoadErrorDetails(getHttpErrorDetails(payload));
-      setLoadErrorStatus(isHttpErrorStatus(error, 404) ? 404 : isHttpErrorStatus(error, 403) ? 403 : null);
-      setSuccessFeedback(null);
-    } finally {
-      setIsLoading(false);
-    }
   }
 
   async function handleSignSupervisorEvaluation() {
@@ -509,8 +624,7 @@ export function InternServerWorkspace() {
 
       await loadProcessSnapshot(snapshot.workflow.id, {
         title: 'Assinatura registrada',
-        description:
-          'A assinatura da avaliacao da chefia foi confirmada e a autoavaliacao ja pode ser tratada no mesmo painel quando liberada.',
+        description: 'A avaliacao da chefia foi confirmada e a autoavaliacao ficou em destaque nesta tela.',
       });
       setIsSelfEvaluationExpanded(true);
     } catch (error) {
@@ -552,10 +666,9 @@ export function InternServerWorkspace() {
         title: kind === 'draft' ? 'Rascunho salvo' : 'Autoavaliacao enviada',
         description:
           kind === 'draft'
-            ? 'Seu texto foi salvo e continua disponivel para novos ajustes.'
-            : 'A autoavaliacao foi consolidada e agora aguarda a assinatura da chefia imediata.',
+            ? 'O texto da autoavaliacao foi salvo e permanece disponivel para edicao.'
+            : 'A autoavaliacao foi encaminhada e agora segue para a assinatura da chefia imediata.',
       });
-      setIsSelfEvaluationExpanded(kind === 'draft');
     } catch (error) {
       const payload =
         typeof error === 'object' && error && 'payload' in error
@@ -563,7 +676,12 @@ export function InternServerWorkspace() {
           : undefined;
 
       setActionErrorMessage(
-        getRequestErrorMessage(error, 'Nao foi possivel atualizar a autoavaliacao.'),
+        getRequestErrorMessage(
+          error,
+          kind === 'draft'
+            ? 'Nao foi possivel salvar a autoavaliacao.'
+            : 'Nao foi possivel enviar a autoavaliacao.',
+        ),
       );
       setActionErrorDetails(getHttpErrorDetails(payload));
     } finally {
@@ -573,155 +691,66 @@ export function InternServerWorkspace() {
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
-      <section className="operations-page operations-page--server">
-        <div className="operations-hero operations-hero--server">
-          <div className="operations-hero__copy">
-            <span className="section-chip">Servidor-estagiario</span>
-            <div className="operations-hero__headline">
-              <div>
-                <p className="operations-kicker">Acompanhamento individual</p>
-                <h2>Painel do servidor-estagiario</h2>
-              </div>
-              {snapshot ? (
-                <StatusBadge
-                  label={formatProcessStatus(snapshot.workflow.status)}
-                  tone={getProcessStatusTone(snapshot.workflow.status)}
-                />
-              ) : null}
-            </div>
-            <p>
-              Acompanhe a etapa atual do seu processo, assine a avaliacao da chefia e conclua a
-              autoavaliacao no mesmo ambiente.
-            </p>
-
-            <div className="operations-meta">
-              <span>Usuario ativo: {displayName}</span>
-              <span>Portal institucional AEP-PA</span>
-              <span>Modelo 4 etapas</span>
-              <span>Perfil: Servidor-estagiario</span>
+      <section className="operations-page operations-page--server intern-dashboard">
+        <section className="operations-card intern-hero">
+          <div className="intern-hero__identity">
+            <div>
+              <h2>{displayName}</h2>
+              <p>
+                Cargo: {heroIdentity.roleLabel}
+                <span>Lotacao: {heroIdentity.lotacao}</span>
+                <span>Modelo: {heroIdentity.modelLabel}</span>
+              </p>
             </div>
 
-            {recentProcessIds.length > 0 ? (
-              <div className="operations-quick-list" aria-label="Processos consultados recentemente">
-                {recentProcessIds.map((recentId) => (
-                  <button
-                    key={recentId}
-                    type="button"
-                    className="ghost-button operations-quick-list__button"
-                    onClick={() => {
-                      setProcessId(recentId);
-                      setLoadErrorMessage(null);
-                      setLoadErrorDetails([]);
-                      setLoadErrorStatus(null);
-                    }}
-                  >
-                    {recentId}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            {snapshot ? (
-              <div className="operations-highlight-grid">
-                {heroHighlights.map((item) => (
-                  <article key={item.label} className="operations-highlight-card">
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
-                    <p>{item.description}</p>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className="operations-hero__placeholder">
-                <strong>Pronto para conectar</strong>
-                <p>
-                  Informe o identificador de um processo para abrir a leitura real da etapa,
-                  dos documentos e do historico retornados pela API.
-                </p>
-              </div>
-            )}
+            <StatusBadge label={topStatusBadge.label} tone={topStatusBadge.tone} />
           </div>
 
-          <aside className="operations-hero__panel">
-            {snapshot ? (
-              <div className="operations-pill-row">
-                <StatusBadge
-                  label={formatProcessStatus(snapshot.workflow.status)}
-                  tone={getProcessStatusTone(snapshot.workflow.status)}
-                />
-                {snapshot.selfEvaluation?.status ? (
-                  <StatusBadge
-                    label={`Autoavaliacao ${formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status).toLowerCase()}`}
-                    tone={getSupervisorEvaluationStatusTone(snapshot.selfEvaluation.status)}
-                  />
-                ) : null}
-              </div>
-            ) : (
-              <div className="operations-pill-row">
-                <StatusBadge
-                  label="Conexao com processo"
-                  tone="info"
-                />
-              </div>
-            )}
+          <div className="intern-hero__summary">
+            <div className="intern-hero__summary-card">
+              <span>Etapa atual</span>
+              <strong>{snapshot ? `${snapshot.workspace.currentStage.sequence}a etapa` : '3a etapa'}</strong>
+            </div>
 
-            <form className="operations-query-form" onSubmit={handleLoadProcess}>
-              <label className="field-group" htmlFor="intern-process-id">
-                <span>Identificador do processo</span>
-                <input
-                  id="intern-process-id"
-                  name="processId"
-                  placeholder="Informe o ID do processo"
-                  value={processId}
-                  onChange={(event) => setProcessId(event.target.value)}
-                  disabled={isLoading || activeOperation !== null}
-                />
-              </label>
+            <div className="intern-hero__summary-card">
+              <span>Acompanhamento</span>
+              <strong>{snapshot ? 'Processo real conectado' : 'Modo demonstrativo'}</strong>
+            </div>
 
-              <button type="submit" disabled={isLoading || activeOperation !== null}>
-                  {isLoading ? 'Consultando...' : snapshot ? 'Atualizar painel' : 'Abrir processo'}
-              </button>
-            </form>
+            <div className="intern-hero__summary-card">
+              <span>Autoavaliacao</span>
+              <strong>
+                {snapshot?.selfEvaluation
+                  ? formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)
+                  : canEditSelfEvaluation
+                    ? 'Disponivel'
+                    : 'Aguardando etapa'}
+              </strong>
+            </div>
+          </div>
+        </section>
 
-            {snapshot ? (
-              <KeyValueList items={processSummaryItems} />
-            ) : (
-              <div className="operations-panel-placeholder">
-                <strong>Painel aguardando consulta</strong>
-                <p>
-                  O painel permanece limpo ate que um processo valido seja consultado. Depois disso,
-                  os blocos abaixo passam a refletir somente os dados reais retornados pelo backend.
-                </p>
-              </div>
-            )}
-          </aside>
-        </div>
-
-        {isLoading ? (
+        {activeOperationCopy ? (
           <InlineLoadingState
-            title="Atualizando painel do servidor"
-            description="Os dados do processo estao sendo consultados com o contexto documental liberado para este perfil."
-          />
-        ) : null}
-
-        {activeOperation ? (
-          <InlineLoadingState
-            title={getActionOperationCopy(activeOperation)?.title ?? 'Atualizando etapa'}
-            description={
-              getActionOperationCopy(activeOperation)?.description ??
-              'O painel sera atualizado assim que a operacao terminar.'
-            }
+            title={activeOperationCopy.title}
+            description={activeOperationCopy.description}
           />
         ) : null}
 
         {loadErrorMessage ? (
-          <ProcessRequestFeedback
-            status={loadErrorStatus}
-            message={loadErrorMessage}
+          <FeedbackAlert
+            title="Falha ao abrir processo"
+            tone="error"
+            description={loadErrorMessage}
             details={loadErrorDetails}
-            genericTitle="Falha ao abrir processo"
-            notFoundTitle="Processo nao encontrado"
-            blockedTitle="Acesso indisponivel para este processo"
+          />
+        ) : null}
+
+        {loadErrorStatus === 403 ? (
+          <ContentState
+            title="Acesso indisponivel para este processo"
+            description="O backend nao liberou a leitura deste processo para o servidor autenticado."
+            tone="warning"
           />
         ) : null}
 
@@ -742,383 +771,230 @@ export function InternServerWorkspace() {
           />
         ) : null}
 
-        {!snapshot && !loadErrorMessage ? (
-          <ContentState
-            title="Painel pronto para conectar ao processo"
-            description="Informe um processo vinculado ao seu usuario para abrir a avaliacao da chefia, a autoavaliacao e o historico da etapa atual."
-            tone="info"
+        {isLoading && !snapshot ? (
+          <InlineLoadingState
+            title="Carregando visualizacao do servidor"
+            description="Buscando o processo configurado para substituir os dados demonstrativos."
           />
         ) : null}
 
-        {snapshot ? (
-          <>
-            <section className="operations-section">
-              <div className="operations-section__header">
-                <div>
-                  <span className="section-chip">Fluxo do processo</span>
-                  <h3>Leitura operacional da etapa atual</h3>
-                  <p>
-                    Etapa {snapshot.workspace.currentStage.sequence} de{' '}
-                    {snapshot.workspace.currentStage.totalStages} calculada pelo snapshot operacional
-                    do servidor.
-                  </p>
-                </div>
+        {isSelfEvaluationExpanded ? (
+          <section className="operations-card intern-self-screen">
+            <button
+              type="button"
+              className="ghost-button intern-self-screen__back"
+              onClick={() => setIsSelfEvaluationExpanded(false)}
+            >
+              ← Voltar
+            </button>
+
+            <div className="intern-self-screen__header">
+              <h3>Autoavaliacao - {currentStageSequence}a etapa</h3>
+              <p>Preenchimento de formulario oficial de desempenho.</p>
+            </div>
+
+            <section className="operations-card intern-self-screen__identity-card">
+              <div className="intern-self-screen__section-label">
+                Identificacao do servidor (somente leitura)
               </div>
 
-              <div className="operations-flow">
-                {flowCards.map((card) => (
-                  <article
-                    key={card.index}
-                    className={
-                      card.isActive
-                        ? 'operations-flow-card operations-flow-card--active'
-                        : 'operations-flow-card'
-                    }
-                  >
-                    <div className="operations-flow-card__index">{card.index}</div>
-                    <div className="operations-flow-card__content">
-                      <div className="operations-flow-card__header">
-                        <strong>{card.title}</strong>
-                        <StatusBadge label={card.statusLabel} tone={card.tone} />
-                      </div>
-                      <p>{card.description}</p>
-                    </div>
-                  </article>
-                ))}
+              <div className="intern-self-screen__identity-grid">
+                <div>
+                  <span>Nome</span>
+                  <strong>{displayName}</strong>
+                </div>
+                <div>
+                  <span>Cargo</span>
+                  <strong>{heroIdentity.roleLabel}</strong>
+                </div>
+                <div>
+                  <span>Lotacao</span>
+                  <strong>{heroIdentity.lotacao}</strong>
+                </div>
+                <div>
+                  <span>Periodo</span>
+                  <strong>{currentStagePeriod}</strong>
+                </div>
               </div>
             </section>
 
-            <div className="operations-grid">
-              <section className="operations-card operations-card--span-2">
-                <div className="operations-card__header">
-                  <div>
-                    <span className="section-chip">Documentos</span>
-                    <h3>Documentos da etapa em acompanhamento</h3>
-                    <p>
-                      Cada bloco abaixo reflete somente o que a API atual libera para o servidor
-                      estagiario neste momento do processo.
-                    </p>
-                  </div>
+            <section className="operations-card intern-self-screen__form-card">
+              <div className="self-evaluation-form">
+                {canPersistSelfEvaluation && selfEvaluationFormIssues.length > 0 ? (
+                  <FeedbackAlert
+                    title="Autoavaliacao pendente"
+                    tone="warning"
+                    description="Complete o texto principal para liberar o salvamento da autoavaliacao."
+                    details={selfEvaluationFormIssues}
+                  />
+                ) : null}
+
+                {!snapshot ? (
+                  <FeedbackAlert
+                    title="Modo demonstrativo"
+                    tone="info"
+                    description="Esta tela usa dados falsos para visualizacao. O salvamento fica habilitado quando um processo real estiver carregado."
+                  />
+                ) : null}
+
+                <label className="field-group" htmlFor="self-evaluation-reflection">
+                  <span>Descreva sua autoavaliacao conforme modelo oficial</span>
+                  <textarea
+                    id="self-evaluation-reflection"
+                    rows={10}
+                    value={selfEvaluationForm.selfReflection}
+                    onChange={(event) =>
+                      setSelfEvaluationForm((current) => ({
+                        ...current,
+                        selfReflection: event.target.value,
+                      }))
+                    }
+                    disabled={!canPersistSelfEvaluation || activeOperation !== null}
+                    placeholder="Digite aqui o texto da sua autoavaliacao tecnica e pedagogica..."
+                  />
+                </label>
+
+                <label className="field-group" htmlFor="self-evaluation-notes">
+                  <span>Outras observacoes</span>
+                  <textarea
+                    id="self-evaluation-notes"
+                    rows={5}
+                    value={selfEvaluationForm.additionalNotes}
+                    onChange={(event) =>
+                      setSelfEvaluationForm((current) => ({
+                        ...current,
+                        additionalNotes: event.target.value,
+                      }))
+                    }
+                    disabled={!canPersistSelfEvaluation || activeOperation !== null}
+                    placeholder="Informacoes adicionais relevantes para a Comissao..."
+                  />
+                </label>
+
+                <label
+                  className="field-group intern-self-screen__comment-field"
+                  htmlFor="self-evaluation-comment"
+                >
+                  <span>Comentario da movimentacao</span>
+                  <textarea
+                    id="self-evaluation-comment"
+                    rows={3}
+                    value={selfEvaluationForm.comment}
+                    onChange={(event) =>
+                      setSelfEvaluationForm((current) => ({
+                        ...current,
+                        comment: event.target.value,
+                      }))
+                    }
+                    disabled={!canPersistSelfEvaluation || activeOperation !== null}
+                    placeholder="Comentario opcional para o historico auditavel."
+                  />
+                </label>
+
+                <div className="intern-self-screen__actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => {
+                      const field = document.getElementById('self-evaluation-reflection');
+                      field?.focus();
+                    }}
+                  >
+                    Editar autoavaliacao
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void handleSelfEvaluationMutation('draft')}
+                    disabled={!canPersistSelfEvaluation || activeOperation !== null}
+                  >
+                    {activeOperation === 'save-self-draft' ? 'Salvando...' : 'Salvar autoavaliacao'}
+                  </button>
                 </div>
-
-                <div className="document-tile-grid">
-                  <article className="document-tile">
-                    <div className="document-tile__header">
-                      <div>
-                        <strong>Avaliacao da chefia</strong>
-                        <p>
-                          {snapshot.supervisorEvaluation
-                            ? 'Ficha gerada pela chefia imediata com contexto documental da etapa atual.'
-                            : snapshot.supervisorEvaluationWarning ??
-                              'Documento ainda nao exibido para consulta.'}
-                        </p>
-                      </div>
-
-                      {snapshot.supervisorEvaluation ? (
-                        <StatusBadge
-                          label={formatSupervisorEvaluationStatus(snapshot.supervisorEvaluation.status)}
-                          tone={getSupervisorEvaluationStatusTone(snapshot.supervisorEvaluation.status)}
-                        />
-                      ) : (
-                        <StatusBadge label="Nao liberada" tone="neutral" />
-                      )}
-                    </div>
-
-                    {supervisorDocumentContext ? (
-                      <>
-                        <div className="document-tile__meta">
-                          <StatusBadge
-                            label={formatDocumentStatus(supervisorDocumentContext.documentStatus)}
-                            tone={getDocumentStatusTone(supervisorDocumentContext.documentStatus)}
-                          />
-                        </div>
-
-                        <div className="document-signature-list">
-                          {supervisorDocumentContext.signatures.map((signature) => (
-                            <span key={signature.signatoryRole} className="document-signature-pill">
-                              <strong>{formatRole(signature.signatoryRole)}</strong>
-                              <StatusBadge
-                                label={formatSignatureStatus(signature.status)}
-                                tone={getSignatureStatusTone(signature.status)}
-                              />
-                            </span>
-                          ))}
-                        </div>
-                      </>
-                    ) : null}
-
-                    {canSignSupervisorEvaluation ? (
-                      <button type="button" onClick={() => void handleSignSupervisorEvaluation()}>
-                        Assinar avaliacao da chefia
-                      </button>
-                    ) : (
-                      <p className="document-tile__hint">
-                        {supervisorDocumentContext
-                          ? 'Sua assinatura ja foi tratada ou ainda nao foi solicitada nesta etapa.'
-                          : 'Aguardando liberacao documental para este perfil.'}
-                      </p>
-                    )}
-                  </article>
-
-                  <article className="document-tile">
-                    <div className="document-tile__header">
-                      <div>
-                        <strong>Autoavaliacao</strong>
-                        <p>
-                          {snapshot.selfEvaluation
-                            ? 'Espaco do servidor para registrar percepcoes e observacoes da etapa atual.'
-                            : snapshot.selfEvaluationWarning ??
-                              'A autoavaliacao sera exibida quando a etapa estiver pronta para preenchimento.'}
-                        </p>
-                      </div>
-
-                      <StatusBadge
-                        label={
-                          snapshot.selfEvaluation
-                            ? formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)
-                            : canEditSelfEvaluation
-                              ? 'Disponivel'
-                              : 'Aguardando etapa'
-                        }
-                        tone={
-                          snapshot.selfEvaluation
-                            ? getSupervisorEvaluationStatusTone(snapshot.selfEvaluation.status)
-                            : canEditSelfEvaluation
-                              ? 'info'
-                              : 'neutral'
-                        }
-                      />
-                    </div>
-
-                    {selfEvaluationDocumentContext ? (
-                      <div className="document-signature-list">
-                        {selfEvaluationDocumentContext.signatures.map((signature) => (
-                          <span key={signature.signatoryRole} className="document-signature-pill">
-                            <strong>{formatRole(signature.signatoryRole)}</strong>
-                            <StatusBadge
-                              label={formatSignatureStatus(signature.status)}
-                              tone={getSignatureStatusTone(signature.status)}
-                            />
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    {canEditSelfEvaluation || snapshot.selfEvaluation?.status === SelfEvaluationStatus.DRAFT ? (
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() => setIsSelfEvaluationExpanded((current) => !current)}
-                      >
-                        {isSelfEvaluationExpanded ? 'Ocultar autoavaliacao' : 'Realizar autoavaliacao'}
-                      </button>
-                    ) : snapshot.selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED ? (
-                      <p className="document-tile__hint">
-                        A autoavaliacao foi enviada e agora aguarda a assinatura da chefia imediata.
-                      </p>
-                    ) : (
-                      <p className="document-tile__hint">
-                        A liberacao depende da assinatura da avaliacao da chefia e da abertura formal
-                        da autoavaliacao nesta etapa.
-                      </p>
-                    )}
-                  </article>
-
-                  <article className="document-tile">
-                    <div className="document-tile__header">
-                      <div>
-                        <strong>Parecer da comissao</strong>
-                        <p>
-                          {snapshot.workspace.cesadOpinionAccess.canView
-                            ? 'Parecer liberado conforme conclusao, assinatura integral e regra da etapa.'
-                            : snapshot.workspace.cesadOpinionAccess.blockedReason ??
-                              'Parecer ainda indisponivel para leitura do servidor.'}
-                        </p>
-                      </div>
-
-                      <StatusBadge
-                        label={
-                          snapshot.workspace.cesadOpinionAccess.canView
-                            ? 'Disponivel para leitura'
-                            : getCommissionStepDescription(snapshot.workflow.status)
-                        }
-                        tone={
-                          snapshot.workspace.cesadOpinionAccess.canView
-                            ? 'success'
-                            : snapshot.workflow.status === ProcessStatus.EM_ANALISE_CESAD
-                            ? 'warning'
-                            : [
-                                  ProcessStatus.PARECER_EMITIDO,
-                                  ProcessStatus.HOMOLOGADO,
-                                  ProcessStatus.NOTIFICADO,
-                                  ProcessStatus.CIENTE,
-                                  ProcessStatus.ENCERRADO,
-                                ].includes(snapshot.workflow.status)
-                              ? 'success'
-                              : 'neutral'
-                        }
-                      />
-                    </div>
-
-                    <p className="document-tile__hint">
-                      {snapshot.workspace.cesadOpinionAccess.requiresFormalNotification
-                        ? 'Na etapa 4, a leitura depende tambem de notificacao formal ao servidor.'
-                        : 'Nas etapas 1 a 3, a leitura depende de conclusao e assinatura integral do parecer.'}
-                    </p>
-                  </article>
-                </div>
-              </section>
-
-              <aside className="operations-sidebar">
-                <section className="operations-card">
-                  <div className="operations-card__header">
-                    <div>
-                      <span className="section-chip">Resumo</span>
-                      <h3>Estado atual do processo</h3>
-                    </div>
-                  </div>
-
-                  <KeyValueList items={processSummaryItems} />
-
-                  <div className="operations-pill-row">
-                    <StatusBadge
-                      label={formatProcessStatus(snapshot.workflow.status)}
-                      tone={getProcessStatusTone(snapshot.workflow.status)}
-                    />
-                    {supervisorDocumentContext ? (
-                      <StatusBadge
-                        label={formatDocumentStatus(supervisorDocumentContext.documentStatus)}
-                        tone={getDocumentStatusTone(supervisorDocumentContext.documentStatus)}
-                      />
-                    ) : null}
-                  </div>
-                </section>
-
-                <section className="operations-card operations-card--soft">
-                  <div className="operations-card__header">
-                    <div>
-                      <span className="section-chip">Informativo</span>
-                      <h3>Orientacao institucional</h3>
-                    </div>
-                  </div>
-
-                  <p>
-                    Os documentos assinados na etapa exigem coerencia entre avaliacao da chefia,
-                    assinatura do servidor e autoavaliacao. Quando houver nova retificacao, o fluxo
-                    documental sera reaberto pelo backend conforme a regra de negocio.
-                  </p>
-                  <p className="operations-muted">Base legal: Decreto estadual 1338/2015.</p>
-                </section>
-              </aside>
+              </div>
+            </section>
+          </section>
+        ) : (
+          <>
+        <section className="operations-section">
+          <div className="operations-section__header">
+            <div>
+              <span className="section-chip">Etapas do estagio probatorio</span>
+              <h3>Minhas avaliacoes</h3>
+              <p>
+                Visao simplificada da jornada do servidor, com destaque para a etapa atual e as
+                acoes disponiveis.
+              </p>
             </div>
+          </div>
 
-            {(isSelfEvaluationExpanded || snapshot.selfEvaluation) && (
-              <section className="operations-card">
-                <div className="operations-card__header">
-                  <div>
-                    <span className="section-chip">Autoavaliacao</span>
-                    <h3>Registro do servidor na etapa atual</h3>
-                    <p>
-                      O formulario abaixo grava rascunho e submissao diretamente nos endpoints ja
-                      disponiveis no backend.
-                    </p>
-                  </div>
+          <div className="intern-stage-list">
+            {stageCards.map((item) => (
+              <StageCard key={item.sequence} item={item} />
+            ))}
+          </div>
+        </section>
+
+        {snapshot ? (
+          <div className="intern-layout-grid">
+            <section className="operations-card">
+              <div className="operations-card__header">
+                <div>
+                  <span className="section-chip">Documentos atuais</span>
+                  <h3>Assinaturas da etapa em foco</h3>
                 </div>
+              </div>
 
-                <div className="self-evaluation-form">
-                  {canEditSelfEvaluation && selfEvaluationFormIssues.length > 0 ? (
-                    <FeedbackAlert
-                      title="Autoavaliacao pendente"
-                      tone="warning"
-                      description="Complete o texto principal para liberar o envio da autoavaliacao."
-                      details={selfEvaluationFormIssues}
+              <div className="intern-signature-strip">
+                {snapshot.workspace.supervisorEvaluation?.documentContext ? (
+                  <div className="intern-signature-card">
+                    <strong>Avaliacao da chefia</strong>
+                    <StatusBadge
+                      label={formatDocumentStatus(snapshot.workspace.supervisorEvaluation.documentContext.documentStatus)}
+                      tone={getDocumentStatusTone(snapshot.workspace.supervisorEvaluation.documentContext.documentStatus)}
                     />
-                  ) : null}
+                    <div className="intern-signature-card__list">
+                      {snapshot.workspace.supervisorEvaluation.documentContext.signatures.map((signature) => (
+                        <span key={`sup-${signature.signatoryRole}`} className="document-signature-pill">
+                          <strong>{formatRole(signature.signatoryRole)}</strong>
+                          <StatusBadge
+                            label={formatSignatureStatus(signature.status)}
+                            tone={getSignatureStatusTone(signature.status)}
+                          />
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
-                  <label className="field-group" htmlFor="self-evaluation-reflection">
-                    <span>Texto principal da autoavaliacao</span>
-                    <textarea
-                      id="self-evaluation-reflection"
-                      rows={7}
-                      value={selfEvaluationForm.selfReflection}
-                      onChange={(event) =>
-                        setSelfEvaluationForm((current) => ({
-                          ...current,
-                          selfReflection: event.target.value,
-                        }))
-                      }
-                      disabled={!canEditSelfEvaluation || activeOperation !== null}
-                      placeholder="Registre aqui sua leitura da etapa, resultados e pontos de atencao."
+                {snapshot.workspace.selfEvaluation?.documentContext ? (
+                  <div className="intern-signature-card">
+                    <strong>Autoavaliacao</strong>
+                    <StatusBadge
+                      label={formatDocumentStatus(snapshot.workspace.selfEvaluation.documentContext.documentStatus)}
+                      tone={getDocumentStatusTone(snapshot.workspace.selfEvaluation.documentContext.documentStatus)}
                     />
-                  </label>
-
-                  <div className="self-evaluation-form__grid">
-                    <label className="field-group" htmlFor="self-evaluation-notes">
-                      <span>Observacoes adicionais</span>
-                      <textarea
-                        id="self-evaluation-notes"
-                        rows={4}
-                        value={selfEvaluationForm.additionalNotes}
-                        onChange={(event) =>
-                          setSelfEvaluationForm((current) => ({
-                            ...current,
-                            additionalNotes: event.target.value,
-                          }))
-                        }
-                        disabled={!canEditSelfEvaluation || activeOperation !== null}
-                        placeholder="Campo opcional para complementar a autoavaliacao."
-                      />
-                    </label>
-
-                    <label className="field-group" htmlFor="self-evaluation-comment">
-                      <span>Comentario da movimentacao</span>
-                      <textarea
-                        id="self-evaluation-comment"
-                        rows={4}
-                        value={selfEvaluationForm.comment}
-                        onChange={(event) =>
-                          setSelfEvaluationForm((current) => ({
-                            ...current,
-                            comment: event.target.value,
-                          }))
-                        }
-                        disabled={!canEditSelfEvaluation || activeOperation !== null}
-                        placeholder="Comentario opcional para o historico auditavel."
-                      />
-                    </label>
+                    <div className="intern-signature-card__list">
+                      {snapshot.workspace.selfEvaluation.documentContext.signatures.map((signature) => (
+                        <span key={`self-${signature.signatoryRole}`} className="document-signature-pill">
+                          <strong>{formatRole(signature.signatoryRole)}</strong>
+                          <StatusBadge
+                            label={formatSignatureStatus(signature.status)}
+                            tone={getSignatureStatusTone(signature.status)}
+                          />
+                        </span>
+                      ))}
+                    </div>
                   </div>
-
-                  <div className="operations-actions">
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => void handleSelfEvaluationMutation('draft')}
-                      disabled={!canEditSelfEvaluation || activeOperation !== null}
-                    >
-                      {activeOperation === 'save-self-draft' ? 'Salvando...' : 'Salvar rascunho'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => void handleSelfEvaluationMutation('submit')}
-                      disabled={!canSubmitSelfEvaluation || activeOperation !== null}
-                    >
-                      {activeOperation === 'submit-self-evaluation'
-                        ? 'Enviando...'
-                        : 'Enviar autoavaliacao'}
-                    </button>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            <AppealStatusPanel workspace={snapshot.workspace} />
+                ) : null}
+              </div>
+            </section>
 
             <section className="operations-card">
               <div className="operations-card__header">
                 <div>
                   <span className="section-chip">Historico recente</span>
-                  <h3>Ultimas movimentacoes auditaveis</h3>
+                  <h3>Ultimas movimentacoes</h3>
                 </div>
               </div>
 
@@ -1131,23 +1007,21 @@ export function InternServerWorkspace() {
                         <span>{formatDateTime(item.occurredAt)}</span>
                       </div>
                       <p>{item.comment ?? 'Movimentacao registrada sem comentario adicional.'}</p>
-                      <div className="history-item__meta">
-                        <span>{formatRole(item.actorRole)}</span>
-                        <span>{item.eventType}</span>
-                      </div>
                     </article>
                   ))}
                 </div>
               ) : (
                 <ContentState
                   title="Historico ainda vazio"
-                  description="Assim que o processo registrar movimentacoes auditaveis, elas aparecerao aqui."
+                  description="As movimentacoes auditaveis aparecerao aqui assim que o processo registrar novos eventos."
                   tone="info"
                 />
               )}
             </section>
-          </>
+          </div>
         ) : null}
+          </>
+        )}
       </section>
     </AuthGuard>
   );
