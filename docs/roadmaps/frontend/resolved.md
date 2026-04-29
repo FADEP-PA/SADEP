@@ -1,6 +1,6 @@
 # Frontend — Itens Resolvidos
 
-Este arquivo resume itens frontend ja concluidos ou resolvidos, sem substituir o historico completo em [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md).
+Este arquivo resume itens frontend ja concluidos ou resolvidos. O antigo roadmap frontend permanece como indice de compatibilidade em [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md).
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
@@ -18,7 +18,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - **Status documental:** concluidas no roadmap legado.
 - `FT-22` investigou a instabilidade do frontend em modo dev e consolidou o uso de limpeza de artefatos quando necessario.
 - `FT-23` consolidou gates minimos de qualidade do frontend, incluindo `frontend:check`.
-- O historico completo permanece no roadmap legado.
+- A leitura de transicao permanece no indice de compatibilidade do roadmap legado.
 
 ## FT-17 — Area de homologacao
 
@@ -38,5 +38,4 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Ela nao deve ser interpretada como integracao backend real da chefia.
 - A integracao real de `/chefia-imediata` continua pendente em [`./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md`](./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md).
 
-Para detalhes, evidencias e ordem operacional completa, consultar [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md).
-
+Para a leitura de transicao e links modulares, consultar [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md).

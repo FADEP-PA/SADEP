@@ -22,7 +22,7 @@ Os itens abaixo podem ser avaliados futuramente para arquivamento, desde que os 
 ## Cross-cutting
 
 - `DX-01`;
-- problemas resolvidos antigos registrados em [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md).
+- problemas resolvidos antigos resumidos nos indices modulares e em [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md).
 
 ## Cuidados para DOC-R4
 
@@ -30,4 +30,3 @@ Os itens abaixo podem ser avaliados futuramente para arquivamento, desde que os 
 - Nao arquivar `BE-SEC-03`, pois continua critica e pendente.
 - Nao tratar `/chefia-imediata` como integrada; `FE-CHEFIA-01` continua ativa.
 - Nao misturar `DX-01` resolvida com `DX-POSTCSS-01`, que permanece alerta pendente.
-

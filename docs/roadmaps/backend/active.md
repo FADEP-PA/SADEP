@@ -1,6 +1,6 @@
 # Backend — Painel Ativo
 
-Este painel resume os itens backend ativos, retomaveis ou pendentes. O historico completo permanece em [`../backend-implementation-tracker.md`](../backend-implementation-tracker.md).
+Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tracker backend permanece como indice de compatibilidade em [`../backend-implementation-tracker.md`](../backend-implementation-tracker.md).
 
 ## Retomavel
 

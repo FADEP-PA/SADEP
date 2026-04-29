@@ -2,7 +2,7 @@
 
 Esta pasta concentra a visao modular do roadmap backend do AEP-PA.
 
-O documento legado [`../backend-implementation-tracker.md`](../backend-implementation-tracker.md) continua sendo a fonte de transicao nesta fase. Ele preserva o historico detalhado, evidencias, validacoes e ordem operacional mais completa.
+O documento legado [`../backend-implementation-tracker.md`](../backend-implementation-tracker.md) continua existindo como indice de compatibilidade. A leitura operacional deve comecar por este diretorio modular.
 
 ## Arquivos
 
@@ -23,7 +23,7 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 ## Regras de transicao
 
 - Esta fase nao altera status de tasks.
-- Tasks concluidas continuam no tracker legado ate fase posterior.
+- Tasks concluidas ficam resumidas em [`resolved.md`](./resolved.md) ate fase posterior de arquivamento.
 - `resolved.md` resume itens concluidos, mas nao substitui o tracker legado.
 - Arquivamento real de historico fica fora da DOC-R3.
 - Arquivos detalhados das frentes ativas principais comecam a ser criados na DOC-R2, sem alterar status.

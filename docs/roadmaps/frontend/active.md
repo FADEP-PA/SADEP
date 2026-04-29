@@ -1,6 +1,6 @@
 # Frontend — Painel Ativo
 
-Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmente. O historico completo permanece em [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md).
+Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmente. O antigo roadmap frontend permanece como indice de compatibilidade em [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md).
 
 ## Ativos / pendentes
 

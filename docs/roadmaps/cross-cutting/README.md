@@ -2,7 +2,7 @@
 
 Esta pasta concentra problemas e frentes transversais do AEP-PA.
 
-O documento legado [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md) continua sendo a fonte de transicao nesta fase. Ele preserva historico detalhado, problemas resolvidos, riscos, evidencias e mapeamentos entre backend, frontend e DX.
+O documento legado [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md) continua existindo como indice de compatibilidade. A leitura operacional deve comecar por este diretorio modular.
 
 ## Arquivos
 

@@ -33,15 +33,18 @@ O `AGENTS.md` na raiz é a instrução padrão que agentes devem encontrar por d
 ### Roadmaps operacionais
 
 - [`roadmaps/README.md`](./roadmaps/README.md): índice específico dos roadmaps operacionais e da convivência entre os documentos de acompanhamento.
-- [`roadmaps/backend-implementation-tracker.md`](./roadmaps/backend-implementation-tracker.md): tracker oficial das implementações de backend e da ordem operacional das tasks backend.
-- [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md): backlog operacional e ordem de execução das tasks frontend.
-- [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md): painel transversal de problemas ativos do projeto; registra riscos e impedimentos amplos e não substitui os roadmaps.
+- [`roadmaps/backend/active.md`](./roadmaps/backend/active.md): painel operacional backend ativo, retomável ou pendente.
+- [`roadmaps/frontend/active.md`](./roadmaps/frontend/active.md): painel operacional frontend ativo, pendente ou resolvido operacionalmente.
+- [`roadmaps/cross-cutting/active-problems.md`](./roadmaps/cross-cutting/active-problems.md): painel vivo de problemas transversais ativos.
+- [`roadmaps/backend-implementation-tracker.md`](./roadmaps/backend-implementation-tracker.md): índice de compatibilidade do antigo tracker backend.
+- [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md): índice de compatibilidade do antigo roadmap frontend.
+- [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md): índice de compatibilidade do antigo painel transversal.
 
 Regra de uso:
 
-- o tracker backend governa a ordem das tasks backend;
-- o roadmap frontend governa o backlog frontend;
-- o painel transversal registra problemas amplos e não substitui os roadmaps.
+- os painéis modulares em `roadmaps/backend/`, `roadmaps/frontend/` e `roadmaps/cross-cutting/` devem ser consultados primeiro;
+- os três arquivos legados reduzidos permanecem como índices de compatibilidade e preservam rastreabilidade por links;
+- problemas transversais não substituem os roadmaps operacionais por área.
 
 ---
 
@@ -85,7 +88,7 @@ Regra de uso:
 - [`archive/sprints/sprint-3b-frontend-flow.md`](./archive/sprints/sprint-3b-frontend-flow.md): referência visual e funcional de sprint preservada como histórico.
 - [`wireframes/`](./wireframes/): área de referência visual das telas e fluxos operacionais.
 
-O roadmap vivo do frontend é `docs/roadmaps/frontend-tasks-roadmap.md`. Documentos arquivados são históricos ou referenciais e não prevalecem sobre roadmaps vivos nem sobre documentos normativos de domínio e workflow.
+O painel vivo do frontend é `docs/roadmaps/frontend/active.md`; `docs/roadmaps/frontend-tasks-roadmap.md` permanece como índice de compatibilidade. Documentos arquivados são históricos ou referenciais e não prevalecem sobre roadmaps vivos nem sobre documentos normativos de domínio e workflow.
 
 ---
 

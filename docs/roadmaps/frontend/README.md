@@ -2,7 +2,7 @@
 
 Esta pasta concentra a visao modular do roadmap frontend do AEP-PA.
 
-O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md) continua sendo a fonte de transicao nesta fase. Ele preserva historico detalhado, evidencias, ressalvas e ordem operacional do backlog frontend.
+O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md) continua existindo como indice de compatibilidade. A leitura operacional deve comecar por este diretorio modular.
 
 ## Arquivos
 
@@ -21,7 +21,7 @@ O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md
 ## Regras de transicao
 
 - Esta fase nao altera status de tasks.
-- Tasks concluidas continuam no roadmap legado ate fase posterior.
+- Tasks concluidas ficam resumidas em [`resolved.md`](./resolved.md) ate fase posterior de arquivamento.
 - `resolved.md` resume itens concluidos, com cuidado especial para itens parcialmente resolvidos como `FT-05`/chefia.
 - Arquivamento real de historico fica fora da DOC-R3.
 - Arquivos detalhados das frentes ativas principais comecam a ser criados na DOC-R2, sem alterar status.

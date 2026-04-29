@@ -1,6 +1,6 @@
 # Problemas Transversais Resolvidos
 
-Este arquivo resume problemas transversais resolvidos ou mitigados, sem substituir o painel legado em [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md).
+Este arquivo resume problemas transversais resolvidos ou mitigados. O antigo painel transversal permanece como indice de compatibilidade em [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md).
 
 Esta separacao nao altera status, nao move documentos legados e nao arquiva historico. Problemas ativos continuam em [`./active-problems.md`](./active-problems.md).
 
@@ -35,7 +35,6 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 
 ## Problemas antigos resolvidos
 
-O painel legado tambem registra grupos de problemas resolvidos, incluindo identidade canonica, signatarios esperados, bootstrap local, preflight de banco, guard operacional do Prisma no Windows, build/start de producao e hardening de credenciais de desenvolvimento.
+Os indices modulares tambem registram grupos de problemas resolvidos, incluindo identidade canonica, signatarios esperados, bootstrap local, preflight de banco, guard operacional do Prisma no Windows, build/start de producao e hardening de credenciais de desenvolvimento.
 
-Para detalhes e evidencias completas, consultar [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md).
-
+Para a leitura de transicao e links modulares, consultar [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md).

@@ -39,7 +39,7 @@ O tracker backend registra `BE-TECH-02` como planejada. O painel transversal ind
 
 ## Evidencias / referencias
 
-- O tracker backend registra `BE-TECH-02` como `PLANNED`.
+- O indice backend e o painel ativo registram `BE-TECH-02` como pendente / arquitetura futura.
 - O painel transversal relaciona a frente a worker e cron.
 
 ## Validacoes esperadas
@@ -51,4 +51,3 @@ O tracker backend registra `BE-TECH-02` como planejada. O painel transversal ind
 ## Proxima acao
 
 Executar varredura curta de worker/cron.
-

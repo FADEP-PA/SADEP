@@ -1,6 +1,6 @@
 # Problemas Ativos Transversais
 
-Este painel resume problemas ativos ou alertas transversais. O historico completo permanece em [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md).
+Este painel resume problemas ativos ou alertas transversais. O antigo painel transversal permanece como indice de compatibilidade em [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md).
 
 ## Seguranca
 

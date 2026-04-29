@@ -14,18 +14,18 @@ A partir da DOC-R1, os roadmaps passam a ter uma estrutura modular inicial por a
 
 ## Fontes de transicao
 
-Os documentos abaixo continuam existindo e permanecem como fontes de transicao durante a modularizacao:
+Os documentos abaixo continuam existindo como indices de compatibilidade durante a modularizacao:
 
-- [`backend-implementation-tracker.md`](./backend-implementation-tracker.md): governa a ordem das tasks backend, suas dependencias e a task ativa autorizada.
-- [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md): governa a evolucao de telas, UX, DX e integracao frontend no backlog operacional atual.
-- [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md): registra problemas amplos do projeto, incluindo backend, frontend, infraestrutura, build e DX.
+- [`backend-implementation-tracker.md`](./backend-implementation-tracker.md): indice de compatibilidade do antigo tracker backend.
+- [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md): indice de compatibilidade do antigo roadmap frontend.
+- [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md): indice de compatibilidade do antigo painel transversal.
 
 ## Regra de convivencia entre os roadmaps
 
-- o tracker backend governa a ordem das tasks backend;
-- o roadmap frontend governa a evolucao operacional do frontend;
-- o painel transversal registra problemas amplos do projeto;
-- o painel transversal nao substitui os roadmaps operacionais;
+- [`backend/active.md`](./backend/active.md) resume o estado operacional backend;
+- [`frontend/active.md`](./frontend/active.md) resume o estado operacional frontend;
+- [`cross-cutting/active-problems.md`](./cross-cutting/active-problems.md) resume problemas transversais ativos;
+- os indices legados reduzidos nao substituem os paineis modulares;
 - problemas transversais so entram no tracker backend quando forem convertidos em task backend explicita;
 - tasks frontend so devem ser marcadas como concluidas apos validacao visual e funcional, nao apenas geracao de codigo.
 

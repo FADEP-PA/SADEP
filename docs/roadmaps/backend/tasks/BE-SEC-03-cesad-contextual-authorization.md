@@ -41,7 +41,7 @@ O problema esta registrado como frente separada da `BE-ARCH-01D`. A autorizacao 
 
 ## Evidencias / referencias
 
-- O tracker backend registra `BE-SEC-03` como `PLANNED` de prioridade alta.
+- O indice backend e o painel ativo registram `BE-SEC-03` como pendente critico.
 - O painel transversal registra o achado CESAD separadamente da estrategia de sessao.
 
 ## Validacoes esperadas
@@ -54,4 +54,3 @@ O problema esta registrado como frente separada da `BE-ARCH-01D`. A autorizacao 
 ## Proxima acao
 
 Executar varredura tecnica especifica dos endpoints CESAD sensiveis antes de qualquer implementacao.
-

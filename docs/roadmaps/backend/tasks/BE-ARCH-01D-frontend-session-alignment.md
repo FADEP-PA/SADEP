@@ -61,5 +61,4 @@ O backend ja revalida usuario vivo em requests autenticadas e os contratos minim
 
 ## Proxima acao
 
-Gerar prompt de implementacao da `BE-ARCH-01D` apos a `DOC-R2`, se a frente for priorizada.
-
+Gerar prompt de implementacao da `BE-ARCH-01D` apos a validacao final da modularizacao, se a frente for priorizada.

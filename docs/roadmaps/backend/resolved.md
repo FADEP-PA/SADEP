@@ -1,6 +1,6 @@
 # Backend — Itens Resolvidos
 
-Este arquivo resume itens backend ja concluidos ou resolvidos, sem substituir o historico completo em [`../backend-implementation-tracker.md`](../backend-implementation-tracker.md).
+Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker backend permanece como indice de compatibilidade em [`../backend-implementation-tracker.md`](../backend-implementation-tracker.md).
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
@@ -50,5 +50,4 @@ Os blocos abaixo aparecem como concluidos no tracker legado e devem ser tratados
 - `BE-IDENT-01`;
 - `BE-STR-01`.
 
-Para detalhes, commits associados e validacoes completas, consultar [`../backend-implementation-tracker.md`](../backend-implementation-tracker.md).
-
+Para a leitura de transicao e links modulares, consultar [`../backend-implementation-tracker.md`](../backend-implementation-tracker.md).
