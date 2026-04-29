@@ -12,13 +12,17 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 
 ## Itens ativos ou retomaveis
 
-- `BE-ARCH-01D` — alinhar frontend de sessao.
 - `BE-ARCH-01E` — definir estrategia de producao para refresh/revogacao.
 - `BE-ARCH-01F` — auditar e testar eventos de autenticacao.
 - `BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo.
 - `BE-ARCH-02` — fortalecer pacotes compartilhados do monorepo.
 - `BE-TECH-02` — revisar estrutura de workspaces, worker e cron.
 - `BE-FLOW-*` — backlog processual documentado no tracker legado.
+
+## Concluido recente
+
+- `BE-ARCH-01D` — alinhamento minimo de sessao frontend concluido/aprovado; commit funcional aprovado `fix(frontend): align session invalidation`.
+- `BE-ARCH-01E` e `BE-ARCH-01F` permanecem pendentes, portanto a frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida.
 
 ## Regras de transicao
 

@@ -4,6 +4,15 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 
 ## Ativos / pendentes
 
+### BE-ARCH-01D — Alinhamento minimo de sessao frontend
+
+- **Status operacional:** concluido / aprovado na frente backend/frontend de sessao.
+- O frontend agora nao revalida `/auth/me` em toda troca de rota.
+- `401` foi centralizado e tratado com invalidacao idempotente para o MVP.
+- `403` preserva sessao e continua como falta de permissao.
+- Falhas nao-401 no bootstrap/refresh nao limpam sessao indevidamente.
+- Validacao manual em navegador permanece recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
+
 ### [FE-CHEFIA-01 — Integracao real da chefia imediata](./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md)
 
 - `/chefia-imediata` esta demonstrativa/local.

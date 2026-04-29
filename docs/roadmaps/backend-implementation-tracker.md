@@ -23,15 +23,17 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | Roadmap frontend modular | [`frontend/active.md`](./frontend/active.md) |
 | Roadmap frontend legado | [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md) |
 
-## Frente backend ativa ou retomável
+## Frente backend/frontend concluida recente
 
 ### [`BE-ARCH-01D — Alinhar frontend de sessão`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md)
 
-- **Status:** retomável / pendente.
-- **Escopo resumido:** sessão frontend, bootstrap, `/auth/me`, `401`, `403`, invalidadores e UX mínima.
+- **Status:** concluída / aprovada.
+- **Commit funcional aprovado:** `fix(frontend): align session invalidation`.
+- **Escopo entregue:** sessão frontend, bootstrap sem revalidacao por troca de rota, `/auth/me`, `401` idempotente, `403`, invalidadores e UX mínima.
 - **Fora do escopo:** backend, contracts, refresh token, cookies, revogação, logout server-side, CESAD, workflow e regras processuais.
+- **Ressalva:** validacao manual em navegador ainda recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
-Esta frente não está concluída. A revalidação operacional do ambiente frontend pela `FT-27/DX-01` permite retomá-la com escopo reduzido.
+Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao frontend. A frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida, pois `BE-ARCH-01E` e `BE-ARCH-01F` permanecem pendentes.
 
 ## Frentes backend pendentes
 
@@ -65,7 +67,7 @@ Este índice não repete o histórico completo desses itens.
 Relações principais:
 
 - `BE-SEC-03` permanece problema ativo crítico.
-- `BE-ARCH-01D` permanece retomável e pendente.
+- `BE-ARCH-01D` foi concluida/mitigada no recorte minimo de sessao frontend.
 - `BE-TECH-01`, `BE-ARCH-01B` e `BE-ARCH-01C` aparecem como resolvidos/mitigados nos documentos transversais.
 - `DX-POSTCSS-01` não é item backend, mas pode afetar a cadência frontend.
 
@@ -74,9 +76,9 @@ Relações principais:
 - Consultar primeiro [`backend/active.md`](./backend/active.md) para o estado operacional backend.
 - Consultar [`backend/resolved.md`](./backend/resolved.md) para itens concluídos ou resolvidos.
 - Consultar [`backend/tasks/`](./backend/tasks/) para frentes ativas específicas.
-- Não tratar `BE-ARCH-01D`, `BE-SEC-03`, `BE-ARCH-02` ou `BE-TECH-02` como concluídas.
+- Não tratar `BE-SEC-03`, `BE-ARCH-02` ou `BE-TECH-02` como concluídas.
 - Não confundir `BE-ARCH-01C` concluída com encerramento da `BE-ARCH-02`.
-- Não confundir `BE-ARCH-01D` com implementação de refresh token, cookies ou revogação.
+- Não confundir `BE-ARCH-01D` concluida com implementação de refresh token, cookies ou revogação; esses temas seguem pendentes em `BE-ARCH-01E`.
 - O histórico detalhado anterior foi substituído por links de transição e resumos modulares.
 
 ## Fora do escopo deste índice

@@ -33,6 +33,19 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - A duplicacao basica de contratos de auth/session entre backend e frontend foi mitigada.
 - `AuthenticatedUserRef`, `LoginRequest` e `LoginResponse` foram introduzidos em `packages/contracts`.
 
+## BE-ARCH-01D — Sessao frontend alinhada
+
+- **Status documental:** resolvida/concluida no recorte minimo de sessao frontend.
+- **Commit funcional aprovado:** `fix(frontend): align session invalidation`.
+- O risco de revalidacao excessiva de `/auth/me` em toda troca de rota foi mitigado.
+- `401` foi centralizado no `http-client` com invalidacao idempotente para o MVP.
+- `403` foi preservado como falta de permissao, sem limpeza de sessao.
+- Falhas nao-401 no bootstrap/refresh nao apagam sessao local indevidamente.
+- `localStorage` e `sessionStorage` seguem limpos por `clearSession()` em sessao invalida.
+- A estrategia de producao com refresh/revogacao permanece pendente em `BE-ARCH-01E`.
+- Auditoria/testes de eventos de autenticacao permanecem pendentes em `BE-ARCH-01F`.
+- Validacao manual em navegador ainda e recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
+
 ## Problemas antigos resolvidos
 
 Os indices modulares tambem registram grupos de problemas resolvidos, incluindo identidade canonica, signatarios esperados, bootstrap local, preflight de banco, guard operacional do Prisma no Windows, build/start de producao e hardening de credenciais de desenvolvimento.

@@ -33,7 +33,9 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 
 ### Sessão/auth
 
-- [`BE-ARCH-01D — Alinhar frontend de sessão`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md): retomável e pendente; não está concluída.
+- [`BE-ARCH-01D — Alinhar frontend de sessão`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md): concluída/mitigada no recorte mínimo de sessão frontend; commit funcional aprovado `fix(frontend): align session invalidation`.
+- `BE-ARCH-01E`: pendente; estratégia futura de produção para refresh/revogação.
+- `BE-ARCH-01F`: pendente; auditoria e testes de eventos de autenticação.
 
 ### DX/infra
 
@@ -47,6 +49,7 @@ O resumo operacional dos problemas resolvidos fica em [`cross-cutting/resolved-p
 - `BE-TECH-01`: configuração Prisma depreciada resolvida.
 - `BE-ARCH-01B`: risco de confiar apenas no payload do token mitigado.
 - `BE-ARCH-01C`: duplicação básica de contratos auth/session mitigada.
+- `BE-ARCH-01D`: revalidação excessiva de sessão frontend, `401` não idempotente e falhas não-401 apagando sessão foram mitigadas no recorte mínimo.
 
 ## Candidatos a arquivamento futuro
 
@@ -61,7 +64,7 @@ O arquivamento real ocorrerá em fase posterior. Este índice não move document
 - Itens parcialmente resolvidos devem manter ressalva explícita.
 - `/chefia-imediata` não deve ser lida como integração backend real concluída.
 - `DX-POSTCSS-01` não deve ser confundido com `DX-01`, que foi resolvido operacionalmente quanto ao ambiente local.
-- `BE-ARCH-01D` está retomável, mas não concluída.
+- `BE-ARCH-01D` está concluída/mitigada, sem encerrar `BE-ARCH-01E`, `BE-ARCH-01F` ou a frente maior `BE-ARCH-01`.
 - `BE-SEC-03` permanece crítica e pendente.
 
 ## Fora do escopo deste índice

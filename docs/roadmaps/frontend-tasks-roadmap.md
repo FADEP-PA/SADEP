@@ -51,9 +51,11 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 
 [`BE-ARCH-01D — Alinhar frontend de sessão`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md) impacta diretamente o frontend, mas a coordenação principal está no arquivo próprio da frente backend/frontend de sessão.
 
-- **Status:** retomável / pendente.
-- **Escopo futuro:** sessão, bootstrap, `/auth/me`, `401`, `403`, invalidadores e UX mínima.
+- **Status:** concluída / aprovada.
+- **Commit funcional aprovado:** `fix(frontend): align session invalidation`.
+- **Escopo entregue:** sessão, bootstrap sem revalidacao por troca de rota, `/auth/me`, `401` idempotente, `403`, invalidadores e UX mínima.
 - **Fora do escopo:** refresh token, cookies, revogação, logout server-side, backend, contracts, CESAD, workflow e regras processuais.
+- **Ressalva:** validacao manual em navegador ainda recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
 ## Itens frontend resolvidos
 
@@ -98,7 +100,7 @@ Relações principais:
 - Não confundir `FT-27/DX-01` resolvida com `DX-POSTCSS-01`.
 - Não confundir `FT-05` histórica com integração real da chefia.
 - Não tratar UI de homologação preparada em `FT-17` como fluxo backend completo.
-- `BE-ARCH-01D` é retomável, mas não concluída.
+- `BE-ARCH-01D` está concluída no recorte mínimo de sessão frontend; `BE-ARCH-01E` e `BE-ARCH-01F` permanecem pendentes.
 
 ## Fora do escopo deste índice
 

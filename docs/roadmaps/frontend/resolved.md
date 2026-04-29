@@ -20,6 +20,17 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - `FT-23` consolidou gates minimos de qualidade do frontend, incluindo `frontend:check`.
 - A leitura de transicao permanece no indice de compatibilidade do roadmap legado.
 
+## BE-ARCH-01D — Alinhamento minimo de sessao frontend
+
+- **Status documental:** concluida/aprovada na frente backend/frontend de sessao.
+- **Commit funcional aprovado:** `fix(frontend): align session invalidation`.
+- O frontend deixou de revalidar `/auth/me` em toda troca de rota.
+- `401` foi centralizado e tratado com invalidacao idempotente para o MVP.
+- `403` preserva sessao e continua como falta de permissao.
+- Falhas nao-401 no bootstrap/refresh nao limpam sessao indevidamente.
+- `AuthSession`, `rememberMe`, contratos de auth e storage atual foram preservados.
+- Validacao manual em navegador ainda e recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
+
 ## FT-17 — Area de homologacao
 
 - **Status documental:** concluida no roadmap legado como painel preparado.

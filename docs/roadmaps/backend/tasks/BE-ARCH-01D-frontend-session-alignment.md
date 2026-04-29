@@ -2,7 +2,7 @@
 
 ## Status
 
-Retomavel / pendente.
+Concluida / aprovada.
 
 ## Area
 
@@ -17,48 +17,87 @@ Backend/frontend, integracao e sessao.
 
 ## Contexto
 
-A frente `BE-ARCH-01D` continua necessaria para alinhar a sessao do frontend. O ambiente frontend ja foi reconciliado pela `FT-27/DX-01`, entao a tarefa pode ser retomada com escopo reduzido.
+A frente `BE-ARCH-01D` alinhou a sessao do frontend ao comportamento consolidado nas subtasks `BE-ARCH-01A`, `BE-ARCH-01B` e `BE-ARCH-01C`.
+
+Commit funcional aprovado:
+
+```bash
+fix(frontend): align session invalidation
+```
 
 ## Estado atual
 
-O backend ja revalida usuario vivo em requests autenticadas e os contratos minimos de auth/session ja foram compartilhados. Os achados atuais estao concentrados no comportamento de sessao do frontend.
+Implementada, auditada e aprovada para commit.
 
-## Escopo previsto
+O backend ja revalida usuario vivo em requests autenticadas e os contratos minimos de auth/session ja foram compartilhados. O frontend foi ajustado no recorte minimo de sessao, sem introduzir refresh token, cookies, revogacao ou logout server-side.
 
-- bootstrap de sessao;
-- consumo de `/auth/me`;
-- tratamento idempotente de `401`;
-- preservacao de `403`;
-- invalidadores de sessao;
-- UX minima de sessao expirada;
-- evitar limpeza indevida de sessao em falhas nao-401.
+## Escopo realizado
+
+- bootstrap de sessao sem revalidar `/auth/me` em toda troca de rota;
+- consumo de `/auth/me` preservado para atualizar `session.user` com a leitura viva do usuario atual;
+- tratamento de `401` centralizado no `http-client`;
+- invalidacao de sessao idempotente para evitar multiplos redirects concorrentes no MVP;
+- limpeza de `localStorage` e `sessionStorage` via `clearSession()`;
+- preservacao de `403` como falta de permissao, sem limpar sessao;
+- preservacao da sessao local em falhas nao-401 durante bootstrap/refresh;
+- inclusao de `/login` como rota publica defensiva/equivalente futura;
+- preservacao de `AuthSession`, `rememberMe`, contratos de auth e storage atual.
 
 ## Fora do escopo
 
 - backend;
 - contracts;
+- Prisma;
+- migrations;
 - refresh token;
 - cookies;
 - revogacao;
 - logout server-side;
+- payload JWT;
+- contrato real de `/auth/login`;
+- contrato real de `/auth/me`;
 - CESAD;
 - workflow;
 - homologacao;
-- regras processuais.
+- regras processuais;
+- `/chefia-imediata`.
 
 ## Evidencias / referencias
 
 - `FT-27/DX-01` regularizou o ambiente frontend com `next@15.5.15`.
-- O tracker backend registra a `BE-ARCH-01D` como retomavel e restrita a sessao.
+- O tracker backend registra a `BE-ARCH-01D` como frente backend/frontend restrita a sessao.
 - O painel transversal separa `BE-SEC-03` como problema de autorizacao contextual, nao de sessao.
+- Auditoria tecnica aprovou a implementacao para commit com ressalva operacional de validacao manual em navegador.
 
-## Validacoes esperadas
+## Evidencias da implementacao aprovada
 
-- `npm run frontend:check`;
-- `npm run build --workspace @aep-pa/frontend`;
-- `npm run typecheck --workspace @aep-pa/frontend`;
-- validacao manual minima de login, logout, `/sessao-expirada`, `401` e `403`.
+- Bootstrap deixou de depender de `pathname`.
+- `/auth/me` continua atualizando `session.user`.
+- `401` foi centralizado no `http-client`.
+- Invalidacao de sessao tornou-se idempotente para o MVP.
+- `clearSession()` limpa `localStorage` e `sessionStorage`.
+- `403` preserva a sessao e segue como falta de permissao.
+- Falhas nao-401 preservam a sessao local.
+- `/login` foi incluida como rota publica defensiva.
+
+## Validacoes executadas
+
+- `npm run typecheck --workspace @aep-pa/frontend` — passou.
+- `npm run build --workspace @aep-pa/frontend` — passou.
+- `npm run frontend:check` — passou.
+- `git diff --check` — passou, com apenas avisos de line endings do Git.
+- Busca por refresh token, cookies, revogacao e logout server-side — sem implementacao nova.
+- `git diff --name-only -- docs/roadmaps` durante a implementacao funcional — vazio.
+
+## Ressalva operacional
+
+Validacao manual em navegador ainda e recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages. Essa ressalva nao bloqueou a aprovacao tecnica.
+
+## Frentes relacionadas pendentes
+
+- `BE-ARCH-01E` — definir estrategia futura de producao para refresh/revogacao.
+- `BE-ARCH-01F` — auditar e testar eventos de autenticacao.
 
 ## Proxima acao
 
-Gerar prompt de implementacao da `BE-ARCH-01D` apos a validacao final da modularizacao, se a frente for priorizada.
+Manter `BE-ARCH-01E` e `BE-ARCH-01F` como proximas frentes pendentes da familia de autenticacao. A frente maior `BE-ARCH-01` nao deve ser tratada como totalmente concluida enquanto essas subtasks permanecerem abertas.
