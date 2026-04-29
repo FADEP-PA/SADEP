@@ -200,7 +200,7 @@ function createEvaluationDraft(row: SupervisorDashboardRow): EvaluationDraft {
         score: 0,
       })),
     })),
-    expandedFactorIds: FACTOR_TEMPLATES.map((factor) => factor.id),
+    expandedFactorIds: [],
   };
 }
 
@@ -244,13 +244,18 @@ function getStageClassName(status: SupervisorDashboardStatus) {
   return 'supervisor-dashboard__stage-chip';
 }
 
-function formatScoreRange(score: number) {
-  return score === 0 ? '0-100' : String(score);
-}
-
 function calculateFactorAverage(factor: EvaluationFactorDraft) {
   const total = factor.items.reduce((sum, item) => sum + item.score, 0);
   return total / factor.items.length;
+}
+
+function calculateOverallAverage(factors: EvaluationFactorDraft[]) {
+  if (factors.length === 0) {
+    return 0;
+  }
+
+  const total = factors.reduce((sum, factor) => sum + calculateFactorAverage(factor), 0);
+  return total / factors.length;
 }
 
 function EvaluationFactorCard({
@@ -325,6 +330,9 @@ export function SupervisorEvaluationWorkspace() {
     STATUS_FILTERS.map((item) => item.id),
   );
   const [activeEvaluation, setActiveEvaluation] = useState<EvaluationDraft | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isSubmittingEvaluation, setIsSubmittingEvaluation] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   const filteredRows = useMemo(
     () => DASHBOARD_ROWS.filter((row) => selectedFilters.includes(row.status)),
@@ -410,11 +418,67 @@ export function SupervisorEvaluationWorkspace() {
           {
             id: `obs-${nextIndex}`,
             monthLabel: `Observacao ${nextIndex}`,
-            description: 'Registro mensal de acompanhamento pedagógico e funcional.',
+            description: '',
           },
         ],
       };
     });
+  }
+
+  function updateMonthlyObservationDescription(id: string, description: string) {
+    setActiveEvaluation((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        monthlyObservations: current.monthlyObservations.map((observation) =>
+          observation.id === id ? { ...observation, description } : observation,
+        ),
+      };
+    });
+  }
+
+  function removeMonthlyObservation(id: string) {
+    setActiveEvaluation((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        monthlyObservations: current.monthlyObservations.filter((observation) => observation.id !== id),
+      };
+    });
+  }
+
+  async function handleSaveDraft() {
+    if (!activeEvaluation) {
+      return;
+    }
+
+    setIsSavingDraft(true);
+    setFeedbackMessage(null);
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    setIsSavingDraft(false);
+    setFeedbackMessage('Rascunho salvo localmente.');
+  }
+
+  async function handleSubmitEvaluation() {
+    if (!activeEvaluation) {
+      return;
+    }
+
+    setIsSubmittingEvaluation(true);
+    setFeedbackMessage(null);
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    setIsSubmittingEvaluation(false);
+    setFeedbackMessage('Avaliacao encaminhada para assinatura da chefia immediata.');
   }
 
   const pendingCount = DASHBOARD_ROWS.filter((row) =>
@@ -551,8 +615,24 @@ export function SupervisorEvaluationWorkspace() {
                 <div className="evaluation-detail__observation-list">
                   {activeEvaluation.monthlyObservations.map((observation) => (
                     <article key={observation.id} className="evaluation-detail__observation-item">
-                      <strong>{observation.monthLabel}</strong>
-                      <p>{observation.description}</p>
+                      <div className="evaluation-detail__observation-row">
+                        <strong>{observation.monthLabel}</strong>
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() => removeMonthlyObservation(observation.id)}
+                        >
+                          Remover
+                        </button>
+                      </div>
+                      <textarea
+                        value={observation.description}
+                        onChange={(event) =>
+                          updateMonthlyObservationDescription(observation.id, event.target.value)
+                        }
+                        rows={4}
+                        placeholder="Descreva a observacao mensal do periodo..."
+                      />
                     </article>
                   ))}
                 </div>
@@ -633,6 +713,55 @@ export function SupervisorEvaluationWorkspace() {
                 />
                 <small>{activeEvaluation.generalComments.length} / 450 caracteres</small>
               </label>
+            </section>
+
+            <section className="evaluation-detail__card evaluation-detail__summary-card">
+              <div className="evaluation-detail__section-title">Resumo da avaliacao</div>
+              <div className="evaluation-detail__summary-grid">
+                <div>
+                  <span>Media geral dos fatores</span>
+                  <strong>{calculateOverallAverage(activeEvaluation.factors).toFixed(1)}</strong>
+                </div>
+                <div>
+                  <span>Fatores avaliados</span>
+                  <strong>{activeEvaluation.factors.length}</strong>
+                </div>
+                <div>
+                  <span>Itens pontuados</span>
+                  <strong>{activeEvaluation.factors.reduce((sum, factor) => sum + factor.items.length, 0)}</strong>
+                </div>
+                <div>
+                  <span>Observacoes mensais</span>
+                  <strong>{activeEvaluation.monthlyObservations.length}</strong>
+                </div>
+                <div>
+                  <span>Parecer da chefia</span>
+                  <strong>{activeEvaluation.generalComments.trim().length > 0 ? 'Preenchido' : 'Vazio'}</strong>
+                </div>
+              </div>
+
+              {feedbackMessage ? (
+                <div className="evaluation-detail__feedback">{feedbackMessage}</div>
+              ) : null}
+
+              <div className="evaluation-detail__actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={isSavingDraft || isSubmittingEvaluation}
+                  onClick={handleSaveDraft}
+                >
+                  {isSavingDraft ? 'Salvando...' : 'Salvar rascunho'}
+                </button>
+                <button
+                  type="button"
+                  className="warning-button"
+                  disabled={isSubmittingEvaluation || isSavingDraft}
+                  onClick={handleSubmitEvaluation}
+                >
+                  {isSubmittingEvaluation ? 'Submetendo...' : 'Enviar para assinatura'}
+                </button>
+              </div>
             </section>
           </div>
         ) : (

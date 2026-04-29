@@ -5284,6 +5284,72 @@ h3,
   gap: 0.2rem;
 }
 
+.evaluation-detail__summary-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.evaluation-detail__summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.evaluation-detail__summary-grid div {
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(19, 51, 93, 0.08);
+  border-radius: 1rem;
+  background: #f7fafe;
+}
+
+.evaluation-detail__summary-grid span {
+  color: #8ea2be;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.evaluation-detail__summary-grid strong {
+  display: block;
+  margin-top: 0.45rem;
+  color: #173d74;
+  font-size: 1.55rem;
+}
+
+.evaluation-detail__feedback {
+  padding: 1rem 1.2rem;
+  border-radius: 1rem;
+  background: #e9f7f3;
+  color: #1f624b;
+  font-weight: 700;
+}
+
+.evaluation-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.evaluation-detail__observation-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.evaluation-detail__observation-item textarea {
+  width: 100%;
+  min-height: 5rem;
+  padding: 1rem;
+  border: 1px solid rgba(19, 51, 93, 0.12);
+  border-radius: 1rem;
+  background: #ffffff;
+  color: #1f425e;
+  resize: vertical;
+  font-size: 0.95rem;
+}
+
 .supervisor-evaluation-status-panel {
   padding: 1rem 1.1rem;
   border-radius: 1.2rem;
