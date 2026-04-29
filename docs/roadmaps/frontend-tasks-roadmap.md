@@ -10,13 +10,24 @@
 
 ---
 
+## Regularização mínima em 2026-04-29
+
+A varredura técnica geral pós-implementações recentes registrou ressalvas que devem prevalecer sobre leituras anteriores deste roadmap até nova validação:
+
+- `/chefia-imediata` está atualmente demonstrativa/local e não deve ser tratada como integração backend real. A evidência observada inclui dados locais, uso de `setTimeout` e mensagens como "rascunho salvo localmente".
+- Tarefas como `FT-05` ou `ALIGN-02`, quando interpretadas como integração real da chefia com backend, ficam pendentes de revalidação e não devem ser usadas como prova de integração backend concluída.
+- A `BE-ARCH-01D` continua necessária, mas está temporariamente pausada até revalidação do ambiente frontend. O escopo futuro deve ficar restrito a sessão: bootstrap, `/auth/me`, `401` idempotente, preservação de `403`, invalidadores, falhas não-401 sem limpeza indevida de sessão e UX mínima de sessão expirada.
+- Os achados atuais de sessão incluem bootstrap por rota, limpeza de sessão em falhas não-401 e ausência de idempotência/single-flight para `401`; `403` permanece separado de `401`.
+- Há desalinhamento entre o Next declarado no `package.json`/lock e o Next efetivamente executado no build. A varredura registrou `npm ls next` em estado inválido, com `next@15.3.0` instalado apesar de `15.5.15` declarado.
+- A modularização documental ampla deve ocorrer somente depois desta regularização mínima e da revalidação do ambiente frontend.
+
 ## Estado observado em 2026-04-28
 
 Esta revisão compara o backlog com o código atual do frontend.
 
 ### Já observado no código
 - `/servidor-estagiario` já usa `InternServerWorkspace` com snapshot operacional do backend, assinatura da avaliação da chefia, autoavaliação e histórico recente.
-- `/chefia-imediata` já usa `SupervisorEvaluationWorkspace` com rascunho, submissão, retificação e assinatura da autoavaliação.
+- `/chefia-imediata` usa `SupervisorEvaluationWorkspace`, mas a regularização de 2026-04-29 reclassificou a tela como demonstrativa/local; não considerar como integração backend real sem nova validação.
 - `/cesad-comissao` já usa `CesadStageReadWorkspace` consumindo a leitura consolidada da etapa em modo somente leitura.
 - `/admin` já deixou de usar placeholder genérico e passou a ter painel próprio de apoio.
 - `/homologacao-autoridade` já deixou de usar placeholder genérico e passou a ter workspace próprio com fila, leitura do parecer conclusivo final, documentos e decisão homologatória bloqueada quando o backend ainda não expõe contrato suficiente.
@@ -154,6 +165,11 @@ Esta revisão compara o backlog com o código atual do frontend.
 - a tela passou a exibir pendências do formulário antes da tentativa de salvar, submeter ou retificar;
 - a validação visual reaproveita os mesmos campos obrigatórios já exigidos na montagem do payload;
 - validações executadas: `npm run frontend:typecheck` e `npm run frontend:build`.
+
+**Ressalva de regularização em 2026-04-29:**
+- a rota `/chefia-imediata` foi reclassificada como demonstrativa/local pela varredura técnica geral;
+- há evidências de dados locais, `setTimeout` e mensagem "rascunho salvo localmente";
+- esta task não deve ser lida como integração backend real da chefia sem nova validação.
 
 ---
 
@@ -587,6 +603,11 @@ Esta revisão compara o backlog com o código atual do frontend.
 - tentativa controlada de upgrade para Next 16 não removeu o alerta porque a dependência transitiva continuou em `postcss@8.4.31`; o projeto foi mantido em `next@15.5.15`;
 - validações executadas: `npm run typecheck --workspace @aep-pa/backend`, `npm run test --workspace @aep-pa/backend`, `npm run backend:build` e `npm run frontend:check`.
 
+**Ressalva de regularização em 2026-04-29:**
+- o `package.json`/lock declaram Next `15.5.15`, mas o build observado executou Next `15.3.0`;
+- `npm ls next --workspace @aep-pa/frontend` retornou estado inválido;
+- é necessária task própria para reconciliar dependências locais do frontend antes de confiar no estado efetivo da versão instalada.
+
 ---
 
 ### [ ] FT-26 — Limpar scaffolds e placeholders legados do frontend
@@ -605,7 +626,25 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
+### [ ] FT-27 — Reconciliar dependências locais do frontend
+**Objetivo:** alinhar dependências instaladas do frontend ao `package.json` e ao lockfile.
+
+**Escopo:**
+- regularizar `node_modules` sem alterar código funcional;
+- confirmar a versão efetiva do Next executada pelo build;
+- repetir `npm run frontend:check`, `npm run build --workspace @aep-pa/frontend` e `npm audit` após a regularização;
+- registrar se o desalinhamento `next@15.3.0` instalado versus `next@15.5.15` declarado foi eliminado.
+
+**Fora do escopo:**
+- aplicar downgrade de Next;
+- aplicar `npm audit fix --force`;
+- alterar backend, contracts, autenticação ou regras de negócio.
+
+---
+
 ## Ordem recomendada de execução a partir de 2026-04-28
+
+Antes da ordem abaixo, executar a `FT-27` para regularizar o ambiente frontend e revalidar os gates.
 
 1. FT-21 — Validar visualmente os fluxos principais com backend local
 2. FT-16 — Preparar layout base do futuro parecer CESAD de etapa
