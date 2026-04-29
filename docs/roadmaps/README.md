@@ -2,43 +2,65 @@
 
 ## Finalidade
 
-Esta pasta reúne os documentos operacionais de planejamento, acompanhamento e priorização prática do AEP-PA.
+Esta pasta reune os documentos operacionais de planejamento, acompanhamento e priorizacao pratica do AEP-PA.
 
-Ela existe para separar com clareza:
+A partir da DOC-R1, os roadmaps passam a ter uma estrutura modular inicial por area, sem mover nem arquivar os documentos legados.
 
-- o tracker backend;
-- o roadmap frontend;
-- o painel transversal de problemas do projeto.
+## Estrutura modular
 
-## Documentos desta pasta
+- [`backend/`](./backend/): visao modular do roadmap backend.
+- [`frontend/`](./frontend/): visao modular do roadmap frontend.
+- [`cross-cutting/`](./cross-cutting/): painel modular de problemas e frentes transversais.
 
-- [`backend-implementation-tracker.md`](./backend-implementation-tracker.md): governa a ordem das tasks backend, suas dependências e a task ativa autorizada.
-- [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md): governa a evolução de telas, UX, DX e integração frontend no backlog operacional atual.
+## Fontes de transicao
+
+Os documentos abaixo continuam existindo e permanecem como fontes de transicao durante a modularizacao:
+
+- [`backend-implementation-tracker.md`](./backend-implementation-tracker.md): governa a ordem das tasks backend, suas dependencias e a task ativa autorizada.
+- [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md): governa a evolucao de telas, UX, DX e integracao frontend no backlog operacional atual.
 - [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md): registra problemas amplos do projeto, incluindo backend, frontend, infraestrutura, build e DX.
 
-## Regra de convivência entre os roadmaps
+## Regra de convivencia entre os roadmaps
 
 - o tracker backend governa a ordem das tasks backend;
-- o roadmap frontend governa a evolução operacional do frontend;
+- o roadmap frontend governa a evolucao operacional do frontend;
 - o painel transversal registra problemas amplos do projeto;
-- o painel transversal não substitui os roadmaps operacionais;
-- problemas transversais só entram no tracker backend quando forem convertidos em task backend explícita;
-- tasks frontend só devem ser marcadas como concluídas após validação visual e funcional, não apenas geração de código.
+- o painel transversal nao substitui os roadmaps operacionais;
+- problemas transversais so entram no tracker backend quando forem convertidos em task backend explicita;
+- tasks frontend so devem ser marcadas como concluidas apos validacao visual e funcional, nao apenas geracao de codigo.
+
+## Fases da modularizacao
+
+- `DOC-R1` — criar estrutura modular e indices.
+- `DOC-R2` — migrar itens ativos para arquivos proprios.
+- `DOC-R3` — separar resolvidos e candidatos a archive.
+- `DOC-R4` — reduzir arquivos legados e atualizar links.
+- `DOC-R5` — validar documentacao final.
+
+## Criterios de ciclo de vida
+
+Criar arquivo de task quando houver escopo proprio, implementacao futura, validacoes proprias, risco relevante ou historico grande demais para permanecer somente em indice.
+
+Manter em `active.md` quando o item exige acao, esta planejado, pausado, retomavel ou bloqueia priorizacao.
+
+Mover para archive somente quando o item estiver implementado, validado, documentado, sem acao imediata e preservavel por link historico.
+
+Criar ADR quando houver decisao duravel de arquitetura, impacto em backend, frontend, contracts ou workflow, e necessidade de preservar a decisao fora do roadmap operacional.
 
 ## Quando atualizar cada documento
 
-- atualizar [`backend-implementation-tracker.md`](./backend-implementation-tracker.md) quando houver implementação backend aprovada, auditoria, mudança de task ativa autorizada ou consolidação operacional backend aprovada por humano;
-- atualizar [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md) quando houver implementação frontend validada visual e funcionalmente, sem marcar conclusão apenas por geração de código;
-- atualizar [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md) quando houver impacto transversal, risco relevante, impedimento amplo ou dependência estrutural que não caiba apenas em um roadmap específico.
+- atualizar [`backend-implementation-tracker.md`](./backend-implementation-tracker.md) quando houver implementacao backend aprovada, auditoria, mudanca de task ativa autorizada ou consolidacao operacional backend aprovada por humano;
+- atualizar [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md) quando houver implementacao frontend validada visual e funcionalmente, sem marcar conclusao apenas por geracao de codigo;
+- atualizar [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md) quando houver impacto transversal, risco relevante, impedimento amplo ou dependencia estrutural que nao caiba apenas em um roadmap especifico.
 
-## Regra de aprovação humana
+## Regra de aprovacao humana
 
-- alterações de status devem respeitar aprovação humana;
-- o agente não deve marcar task backend ou frontend como concluída sem validação adequada e confirmação humana;
-- ajustes documentais de caminho, índice ou organização não autorizam mudança de status operacional.
+- alteracoes de status devem respeitar aprovacao humana;
+- o agente nao deve marcar task backend ou frontend como concluida sem validacao adequada e confirmacao humana;
+- ajustes documentais de caminho, indice ou organizacao nao autorizam mudanca de status operacional.
 
-## Relação com docs/README.md
+## Relacao com docs/README.md
 
-O índice global da documentação permanece em [`../README.md`](../README.md).
+O indice global da documentacao permanece em [`../README.md`](../README.md).
 
-Este README complementa o índice global com a organização específica dos roadmaps operacionais.
+Este README complementa o indice global com a organizacao especifica dos roadmaps operacionais.
