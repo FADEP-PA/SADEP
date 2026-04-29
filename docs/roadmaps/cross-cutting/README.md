@@ -7,6 +7,8 @@ O documento legado [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-
 ## Arquivos
 
 - [`active-problems.md`](./active-problems.md): painel vivo de problemas ativos ou alertas relevantes.
+- [`resolved-problems.md`](./resolved-problems.md): resumo de problemas transversais resolvidos ou mitigados.
+- [`archive-candidates.md`](./archive-candidates.md): lista preparatoria de candidatos a arquivamento futuro.
 - [`tasks/`](./tasks/): area que comeca a receber arquivos proprios de problemas ou tasks transversais principais.
 
 ## Categorias sugeridas
@@ -21,5 +23,7 @@ O documento legado [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-
 ## Regras de transicao
 
 - Esta fase nao marca problemas como resolvidos.
-- Problemas resolvidos serao separados em fase posterior.
+- `active-problems.md` e o painel vivo de problemas ativos.
+- `resolved-problems.md` registra problemas ja resolvidos ou mitigados.
+- `archive-candidates.md` prepara a fase futura de arquivamento sem mover arquivos.
 - Arquivos detalhados das frentes transversais principais comecam a ser criados na DOC-R2, sem alterar status.

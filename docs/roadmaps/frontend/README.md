@@ -7,6 +7,7 @@ O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md
 ## Arquivos
 
 - [`active.md`](./active.md): painel operacional curto dos itens frontend ativos, pendentes ou resolvidos operacionalmente.
+- [`resolved.md`](./resolved.md): resumo dos itens frontend concluidos ou resolvidos.
 - [`tasks/`](./tasks/): area que comeca a receber arquivos proprios das tasks ativas principais.
 
 ## Pontos de atencao
@@ -21,4 +22,6 @@ O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md
 
 - Esta fase nao altera status de tasks.
 - Tasks concluidas continuam no roadmap legado ate fase posterior.
+- `resolved.md` resume itens concluidos, com cuidado especial para itens parcialmente resolvidos como `FT-05`/chefia.
+- Arquivamento real de historico fica fora da DOC-R3.
 - Arquivos detalhados das frentes ativas principais comecam a ser criados na DOC-R2, sem alterar status.

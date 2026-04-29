@@ -29,8 +29,8 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 
 ## Resolvido operacionalmente
 
-### FT-27 / DX-01 — Reconciliar dependencias locais do frontend
+### [FT-27 / DX-01 — Reconciliar dependencias locais do frontend](./resolved.md#ft-27--dx-01--reconciliar-dependencias-locais-do-frontend)
 
 - Resolvido operacionalmente quanto ao desalinhamento local do Next.
-- O historico detalhado permanece no roadmap legado ate fase posterior.
+- O resumo operacional fica em [`resolved.md`](./resolved.md), e o historico detalhado permanece no roadmap legado ate fase posterior.
 - A pendencia `postcss`/audit permanece separada e nao deve ser confundida com o `DX-01` local ja regularizado.

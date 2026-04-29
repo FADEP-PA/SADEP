@@ -20,7 +20,7 @@ Este painel resume problemas ativos ou alertas transversais. O historico complet
 ## DX / infra
 
 - [`DX-POSTCSS-01` — alerta de audit `postcss`/`next`](./tasks/DX-POSTCSS-01-audit-postcss-next.md) permanece como pendencia separada.
-- `DX-01` — desalinhamento local do Next foi resolvido operacionalmente e nao deve ser confundido com o alerta `postcss`.
+- `DX-01` foi resolvido operacionalmente e fica resumido em [`resolved-problems.md`](./resolved-problems.md#dx-01--desalinhamento-local-do-next); nao confundir com o alerta ativo `DX-POSTCSS-01`.
 
 ## Qualidade
 

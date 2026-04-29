@@ -33,7 +33,7 @@ Os documentos abaixo continuam existindo e permanecem como fontes de transicao d
 
 - `DOC-R1` — criou a estrutura modular e indices.
 - `DOC-R2` — cria arquivos proprios para itens ativos principais.
-- `DOC-R3` — separar resolvidos e candidatos a archive.
+- `DOC-R3` — separa resolvidos e candidatos a archive, sem mover arquivos legados nem arquivar historicos.
 - `DOC-R4` — reduzir arquivos legados e atualizar links.
 - `DOC-R5` — validar documentacao final.
 

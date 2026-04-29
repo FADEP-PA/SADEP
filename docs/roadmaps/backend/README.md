@@ -7,6 +7,7 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 ## Arquivos
 
 - [`active.md`](./active.md): painel operacional curto dos itens backend ativos, retomaveis ou pendentes.
+- [`resolved.md`](./resolved.md): resumo dos itens backend concluidos ou resolvidos.
 - [`tasks/`](./tasks/): area que comeca a receber arquivos proprios das tasks ativas principais.
 
 ## Itens ativos ou retomaveis
@@ -23,5 +24,6 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 
 - Esta fase nao altera status de tasks.
 - Tasks concluidas continuam no tracker legado ate fase posterior.
-- Arquivamento de historico fica fora da DOC-R1.
+- `resolved.md` resume itens concluidos, mas nao substitui o tracker legado.
+- Arquivamento real de historico fica fora da DOC-R3.
 - Arquivos detalhados das frentes ativas principais comecam a ser criados na DOC-R2, sem alterar status.
