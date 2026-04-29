@@ -460,15 +460,16 @@ A dor principal do workspace do servidor foi resolvida com snapshot operacional 
 As áreas de administração e homologação já deixaram o placeholder genérico, mas ainda não possuem backend dedicado para entregar funcionalidade equivalente ao restante do fluxo.
 
 ### Impacto
-- painéis de administração e homologação ainda limitados a apoio, atalhos e leitura da sessão
+- painel administrativo ainda limitado a apoio, atalhos e leitura da sessão
+- painel de homologação já tem estrutura de fila, parecer final, documentos e decisão controlada, mas ainda sem ato homologatório real persistido
 - ações reais de gestão administrativa e decisão homologatória seguem dependentes de contratos backend
-- diferença parcial entre navegação exposta e funcionalidade real disponível
+- a navegação institucional já não expõe mais atalho para `/processos` em perfis sem permissão, mas a funcionalidade dessas áreas ainda é parcial
 
 ### Status no tracker
 - hoje não está no roadmap backend como task específica
 - permanece como backlog transversal do projeto
 - parcialmente mitigado no frontend pela substituição dos placeholders genéricos das rotas `/admin` e `/homologacao-autoridade`
-- no roadmap frontend, a preparação visual de homologação está registrada como FT-17
+- a preparação visual de homologação foi concluída no roadmap frontend como FT-17
 
 ---
 
@@ -713,7 +714,8 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
 - [ ] `{FRONT}` Preparar administração e homologação para funcionalidade completa
   - Progresso parcial:
     - rota `/admin` deixou de usar `RolePlaceholderPage` e passou a ter painel administrativo próprio;
-    - rota `/homologacao-autoridade` deixou de usar `RolePlaceholderPage` e passou a ter painel próprio de conferência;
+    - rota `/homologacao-autoridade` deixou de usar `RolePlaceholderPage` e passou a ter workspace próprio com fila, leitura do parecer conclusivo final, documentos e decisão homologatória controlada;
+    - atalhos institucionais para `/processos` foram alinhados com os perfis que o frontend e o backend realmente autorizam;
     - funcionalidades reais de gestão administrativa e homologação ainda dependem de APIs dedicadas.
 
 - [ ] `{FRONT}` Validar visualmente os fluxos principais com backend local

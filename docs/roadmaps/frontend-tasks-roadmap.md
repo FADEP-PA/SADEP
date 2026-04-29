@@ -3,7 +3,7 @@
 **Status:** Backlog operacional do frontend  
 **Versão:** 1.0.0  
 **Data:** 2026-04-15  
-**Sincronização mais recente com o código:** 2026-04-28
+**Sincronização mais recente com o código:** 2026-04-29
 **Escopo:** Lista de tasks fechadas para evolução imediata do frontend  
 **Responsável principal:** Dev frontend  
 **Regra de uso:** marcar a task como concluída somente após implementação validada
@@ -18,7 +18,8 @@ Esta revisão compara o backlog com o código atual do frontend.
 - `/servidor-estagiario` já usa `InternServerWorkspace` com snapshot operacional do backend, assinatura da avaliação da chefia, autoavaliação e histórico recente.
 - `/chefia-imediata` já usa `SupervisorEvaluationWorkspace` com rascunho, submissão, retificação e assinatura da autoavaliação.
 - `/cesad-comissao` já usa `CesadStageReadWorkspace` consumindo a leitura consolidada da etapa em modo somente leitura.
-- `/admin` e `/homologacao-autoridade` já deixaram de usar placeholder genérico e passaram a ter painéis próprios de apoio.
+- `/admin` já deixou de usar placeholder genérico e passou a ter painel próprio de apoio.
+- `/homologacao-autoridade` já deixou de usar placeholder genérico e passou a ter workspace próprio com fila, leitura do parecer conclusivo final, documentos e decisão homologatória bloqueada quando o backend ainda não expõe contrato suficiente.
 - `npm run frontend:typecheck` e `npm run frontend:build` passaram nesta revisão.
 
 ### Consequência para o backlog
@@ -406,7 +407,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-17 — Preparar a área `/homologacao-autoridade` como painel pronto para expansão
+### [x] FT-17 — Preparar a área `/homologacao-autoridade` como painel pronto para expansão
 **Objetivo:** deixar a área de homologação menos genérica e mais alinhada ao fluxo futuro.
 
 **Escopo:**
@@ -421,6 +422,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 - homologação funcional
 - recurso final
 - notificação real
+
+**Evidência observada em 2026-04-29:**
+- a rota `/homologacao-autoridade` passou a usar `HomologationAuthorityWorkspace` em vez de placeholder genérico;
+- a tela agora organiza fila apta à homologação, leitura do parecer conclusivo final, documentos exigidos, decisão homologatória controlada e comunicação final;
+- os estados bloqueados permanecem explícitos quando ainda faltam contratos backend para decisão real, sem expor texto genérico de “pendência de API” ao usuário final;
+- validação executada: `npm run check --workspace @aep-pa/frontend`.
 
 ---
 
@@ -601,13 +608,12 @@ Esta revisão compara o backlog com o código atual do frontend.
 ## Ordem recomendada de execução a partir de 2026-04-28
 
 1. FT-21 — Validar visualmente os fluxos principais com backend local
-2. FT-17 — Preparar a área `/homologacao-autoridade`
-3. FT-16 — Preparar layout base do futuro parecer CESAD de etapa
-4. FT-18 — Revisar consistência textual
-5. FT-19 — Revisar responsividade
-6. FT-20 — Revisar shell autenticado
-7. FT-24 — Reduzir dependência operacional de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`
-8. FT-26 — Limpar scaffolds e placeholders legados do frontend
+2. FT-16 — Preparar layout base do futuro parecer CESAD de etapa
+3. FT-18 — Revisar consistência textual
+4. FT-19 — Revisar responsividade
+5. FT-20 — Revisar shell autenticado
+6. FT-24 — Reduzir dependência operacional de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`
+7. FT-26 — Limpar scaffolds e placeholders legados do frontend
 
 ---
 
