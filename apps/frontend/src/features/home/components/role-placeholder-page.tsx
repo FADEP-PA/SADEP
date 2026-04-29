@@ -5,7 +5,7 @@ import type { UserRole } from '@aep-pa/contracts';
 
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { useAuth } from '@/shared/auth/auth-context';
-import { getRolePresentation } from '@/shared/rbac/role-catalog';
+import { canAccessProcessWorkspace, getRolePresentation } from '@/shared/rbac/role-catalog';
 import { InfoCard } from '@/shared/ui/info-card';
 import { KeyValueList } from '@/shared/ui/key-value-list';
 import { PageSection } from '@/shared/ui/page-section';
@@ -26,6 +26,9 @@ export function RolePlaceholderPage({
   const { session } = useAuth();
   const activeRole = session?.user.role;
   const rolePresentation = activeRole ? getRolePresentation(activeRole) : null;
+  const processWorkspaceAvailable = activeRole
+    ? canAccessProcessWorkspace(activeRole)
+    : false;
   const highlightDescriptions = [
     'Area preparada para cards, filtros e acompanhamentos operacionais sem perder a clareza institucional.',
     'Base pronta para receber leitura documental, status decisorio e trilha auditavel do modulo.',
@@ -46,9 +49,11 @@ export function RolePlaceholderPage({
               </p>
 
               <div className="portal-hero__actions">
-                <Link href="/processos" className="secondary-button portal-link-button">
-                  Consultar processos
-                </Link>
+                {processWorkspaceAvailable ? (
+                  <Link href="/processos" className="secondary-button portal-link-button">
+                    Consultar processos
+                  </Link>
+                ) : null}
                 <Link href="/perfil" className="ghost-button portal-link-button">
                   Ver sessao
                 </Link>

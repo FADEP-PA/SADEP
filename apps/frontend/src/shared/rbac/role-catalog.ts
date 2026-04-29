@@ -60,3 +60,11 @@ export function getRolePresentation(role: UserRole) {
 export function getRoleCatalogEntries() {
   return Object.values(ROLE_CATALOG);
 }
+
+export function canAccessProcessWorkspace(role: UserRole) {
+  return (
+    role === UserRole.INTERN_SERVER ||
+    role === UserRole.CESAD_MEMBER ||
+    role === UserRole.COMMISSION_ASSISTANT
+  );
+}

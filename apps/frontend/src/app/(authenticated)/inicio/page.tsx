@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 import { useAuth } from '@/shared/auth/auth-context';
-import { getRolePresentation } from '@/shared/rbac/role-catalog';
+import { canAccessProcessWorkspace, getRolePresentation } from '@/shared/rbac/role-catalog';
 import { InfoCard } from '@/shared/ui/info-card';
 import { KeyValueList } from '@/shared/ui/key-value-list';
 
@@ -31,6 +31,21 @@ const governanceHighlights = [
 export default function TechnicalHomePage() {
   const { session } = useAuth();
   const rolePresentation = session ? getRolePresentation(session.user.role) : null;
+  const processWorkspaceAvailable = session
+    ? canAccessProcessWorkspace(session.user.role)
+    : false;
+  const primaryLinkHref = processWorkspaceAvailable
+    ? '/processos'
+    : rolePresentation?.homePath ?? '/perfil';
+  const primaryLinkLabel = processWorkspaceAvailable
+    ? 'Abrir processos'
+    : 'Ir para minha area';
+  const secondaryLinkHref = processWorkspaceAvailable
+    ? rolePresentation?.homePath ?? '/perfil'
+    : '/perfil';
+  const secondaryLinkLabel = processWorkspaceAvailable
+    ? 'Ir para minha area'
+    : 'Ver sessao';
 
   return (
     <section className="portal-dashboard">
@@ -44,11 +59,11 @@ export default function TechnicalHomePage() {
           </p>
 
           <div className="portal-hero__actions">
-            <Link href="/processos" className="secondary-button portal-link-button">
-              Abrir processos
+            <Link href={primaryLinkHref} className="secondary-button portal-link-button">
+              {primaryLinkLabel}
             </Link>
-            <Link href={rolePresentation?.homePath ?? '/perfil'} className="ghost-button portal-link-button">
-              Ir para minha area
+            <Link href={secondaryLinkHref} className="ghost-button portal-link-button">
+              {secondaryLinkLabel}
             </Link>
           </div>
         </article>
@@ -83,8 +98,8 @@ export default function TechnicalHomePage() {
           </p>
 
           <div className="portal-spotlight__actions">
-            <Link href="/processos" className="secondary-button portal-link-button">
-              Consultar processo
+            <Link href={primaryLinkHref} className="secondary-button portal-link-button">
+              {processWorkspaceAvailable ? 'Consultar processo' : primaryLinkLabel}
             </Link>
             <Link href="/perfil" className="ghost-button portal-link-button">
               Ver sessao
