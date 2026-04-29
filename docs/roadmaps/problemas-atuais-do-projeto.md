@@ -101,19 +101,26 @@ A varredura técnica geral pós-implementações recentes confirmou que backend,
 - **Evidência:** a varredura identificou uso de dados locais, `setTimeout` e mensagem "rascunho salvo localmente".
 - **Próxima ação:** reclassificar a tarefa frontend relacionada como pendente de revalidação e planejar integração real da chefia.
 
-**DX-01 — Dependências frontend desalinhadas**
+**DX-01 — Dependências frontend desalinhadas (resolvido operacionalmente)**
 
 - **Severidade:** alta
 - **Área:** DX/infra
-- **Descrição:** o Next declarado no `package.json`/lock difere do Next efetivamente executado no build local.
-- **Evidência:** `package.json`/lock declaram `next@15.5.15`, o build observado executou Next `15.3.0` e `npm ls next --workspace @aep-pa/frontend` retornou estado inválido.
-- **Próxima ação:** rodar `npm install`, revalidar `npm run frontend:check`, `npm run build --workspace @aep-pa/frontend` e repetir `npm audit`.
+- **Descrição:** o desalinhamento local do Next foi resolvido operacionalmente pela `FT-27`.
+- **Evidência antes:** `package.json`/lock declaravam `next@15.5.15`, o build executava Next `15.3.0` e `npm ls next` retornava `next@15.3.0 invalid: "15.5.15"`.
+- **Evidência depois:** após `npm install` na raiz, `npm ls next` passou com `next@15.5.15`, `frontend:check`, build e typecheck do frontend passaram usando `Next.js 15.5.15`, e não houve diff versionado.
+- **Status:** resolvido operacionalmente quanto ao ambiente local. O audit `next`/`postcss` permanece como pendência separada de dependência/segurança.
+
+**Pendência separada — audit `postcss` via `next`**
+
+- `npm audit --omit=dev` ainda aponta 2 vulnerabilidades moderadas em `postcss <8.5.10` via `next`.
+- A correção automática sugerida exige `npm audit fix --force` e instalaria `next@9.3.3`, portanto não é solução aceitável neste projeto.
+- Essa pendência não deve bloquear a retomada da `BE-ARCH-01D`, salvo decisão futura explícita.
 
 **FE-SESSION-01/02/03 — Sessão frontend**
 
 - **Severidade:** alta
 - **Área:** frontend/auth
-- **Descrição:** a `BE-ARCH-01D` continua necessária, mas deve permanecer pausada até revalidação do ambiente frontend.
+- **Descrição:** a `BE-ARCH-01D` continua necessária e pode ser retomada após a revalidação operacional do ambiente frontend pela `FT-27`.
 - **Evidência:** achados atuais incluem bootstrap por rota, limpeza de sessão em falhas não-401 e ausência de idempotência/single-flight para `401`; `403` permanece separado de `401`.
 - **Próxima ação:** retomar a `BE-ARCH-01D` somente com escopo reduzido a sessão, bootstrap, `/auth/me`, `401`, `403`, invalidadores e UX mínima.
 
@@ -147,7 +154,7 @@ Os itens abaixo parecem tecnicamente resolvidos pela varredura, mas não devem s
 - o seed de desenvolvimento passou a ser bloqueado em `NODE_ENV=production`;
 - `.env.example` e documentação local foram atualizados para orientar o novo fluxo de bootstrap e login manual;
 - o frontend compila e teve as FT-01 a FT-15 do roadmap operacional atualizadas como concluídas no código atual;
-- o `package.json`/lock do frontend registram `next@15.5.15`, mas a varredura de 2026-04-29 detectou ambiente local desalinhado executando Next `15.3.0`; portanto, a conclusão operacional sobre a versão efetiva depende de `npm install` e revalidação;
+- o `package.json`/lock do frontend registram `next@15.5.15`; a varredura de 2026-04-29 detectou ambiente local desalinhado executando Next `15.3.0`, mas a `FT-27` executou `npm install` na raiz e revalidou `next@15.5.15` como versão efetiva sem diff versionado;
 - o frontend passou a ter script explícito de typecheck no workspace e atalhos raiz `frontend:build` e `frontend:typecheck`;
 - o frontend passou a ter comando operacional `frontend:clean` para limpar artefatos locais do Next e comando `frontend:check` para validar typecheck + build;
 - o build do frontend passou a ter raiz de tracing explícita no monorepo, evitando o aviso de inferência incorreta por lockfiles externos;
@@ -159,7 +166,7 @@ Os itens abaixo parecem tecnicamente resolvidos pela varredura, mas não devem s
 - a varredura arquitetural da `BE-ARCH-01` foi concluída e a semântica incremental da sessão web foi fechada documentalmente na `BE-ARCH-01A`;
 - a `BE-ARCH-01B` foi concluída e mitigou o risco de o backend confiar apenas no payload do token até sua expiração, passando a revalidar usuário vivo em requests autenticadas e a tratar sessão inválida com `401`;
 - a `BE-ARCH-01C` foi concluída e mitigou a duplicação básica de contratos de auth/session entre backend e frontend, introduzindo `AuthenticatedUserRef`, `LoginRequest` e `LoginResponse` em `packages/contracts` sem alterar comportamento funcional;
-- a `BE-ARCH-01D` continua necessária, mas foi pausada temporariamente até revalidação do ambiente frontend; quando retomada, deve ficar restrita a sessão, bootstrap, `/auth/me`, `401`, `403`, invalidadores e UX mínima, sem reabrir backend, contracts, CESAD, workflow, homologação ou regras processuais;
+- a `BE-ARCH-01D` continua necessária e pode ser retomada após a revalidação operacional do ambiente frontend pela `FT-27`; deve ficar restrita a sessão, bootstrap, `/auth/me`, `401`, `403`, invalidadores e UX mínima, sem reabrir backend, contracts, CESAD, workflow, homologação ou regras processuais;
 - o gap de autorização contextual CESAD por processo foi registrado separadamente como `BE-SEC-03`, por se tratar de problema de autorização contextual e não de estratégia de sessão.
 
 ---
@@ -184,7 +191,7 @@ Hoje o sistema:
 - ainda mantém problemas técnicos de Prisma/migrations fora do escopo já aprovado da `BE-OPS-03`.
 
 ### Consequência
-A varredura/diagnóstico arquitetural já foi concluída, a `BE-ARCH-01A` foi encerrada como decisão documental, a `BE-ARCH-01B` foi concluída com revalidação backend do usuário autenticado em cada request protegida e a `BE-ARCH-01C` centralizou os contratos mínimos de auth/session. A revisão ampla de autenticação web permanece aberta, mas a `BE-ARCH-01D` está pausada temporariamente até revalidação do ambiente frontend. Quando retomada, não deve incluir refresh token, cookies, revogação, logout server-side, rotação, backend, contracts, CESAD, workflow, homologação ou regras processuais.
+A varredura/diagnóstico arquitetural já foi concluída, a `BE-ARCH-01A` foi encerrada como decisão documental, a `BE-ARCH-01B` foi concluída com revalidação backend do usuário autenticado em cada request protegida e a `BE-ARCH-01C` centralizou os contratos mínimos de auth/session. A revisão ampla de autenticação web permanece aberta, e a `BE-ARCH-01D` pode ser retomada após a revalidação operacional do ambiente frontend pela `FT-27`. Quando retomada, não deve incluir refresh token, cookies, revogação, logout server-side, rotação, backend, contracts, CESAD, workflow, homologação ou regras processuais.
 
 ---
 
@@ -436,13 +443,13 @@ A autenticação atual usa bearer JWT stateless, já foi varrida arquiteturalmen
 - [x] **BE-ARCH-01A — Fechar semântica de sessão web**
 - [x] **BE-ARCH-01B — Revalidar usuário atual no backend**
 - [x] **BE-ARCH-01C — Compartilhar contratos de auth/session**
-- [ ] **BE-ARCH-01D — Alinhar frontend de sessão (necessária, pausada temporariamente)**
+- [ ] **BE-ARCH-01D — Alinhar frontend de sessão (necessária, retomável com escopo reduzido)**
 - [ ] **BE-ARCH-01E — Definir estratégia de produção para refresh/revogação**
 - [ ] **BE-ARCH-01F — Auditar e testar eventos de autenticação**
 
 ### Próxima ação recomendada
-- manter `BE-ARCH-01D` pausada até regularização/revalidação do ambiente frontend
-- quando retomada, a `BE-ARCH-01D` deve se restringir a bootstrap de sessão, `/auth/me`, tratamento idempotente de `401`, preservação de `403`, falhas não-401 sem limpeza indevida de sessão, invalidadores e UX mínima
+- retomar `BE-ARCH-01D` após a revalidação operacional do ambiente frontend pela `FT-27`
+- a `BE-ARCH-01D` deve se restringir a bootstrap de sessão, `/auth/me`, tratamento idempotente de `401`, preservação de `403`, falhas não-401 sem limpeza indevida de sessão, invalidadores e UX mínima
 - continuam pendentes `BE-ARCH-01D`, `BE-ARCH-01E` e `BE-ARCH-01F`
 
 ### Achado crítico separado
@@ -470,7 +477,7 @@ A autenticação atual usa bearer JWT stateless, já foi varrida arquiteturalmen
 - usuários seed com e-mails previsíveis e senha definida por `DEV_SEED_PASSWORD`
 
 ### Status no tracker
-- corresponde à frente **`BE-ARCH-01 — Revisar estratégia de autenticação web`**, ainda aberta, com `BE-ARCH-01A`, `BE-ARCH-01B` e `BE-ARCH-01C` concluídas e `BE-ARCH-01D` necessária, mas pausada temporariamente até revalidação do ambiente frontend
+- corresponde à frente **`BE-ARCH-01 — Revisar estratégia de autenticação web`**, ainda aberta, com `BE-ARCH-01A`, `BE-ARCH-01B` e `BE-ARCH-01C` concluídas e `BE-ARCH-01D` necessária, retomável após a revalidação operacional do ambiente frontend pela `FT-27`
 - o achado CESAD foi registrado separadamente como **`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`**
 
 ---
@@ -675,14 +682,14 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
     - manter a decisão da `BE-ARCH-01A` registrada: bearer JWT temporário, expiração de `1h`, `/auth/me` como leitura viva futura e `401` para sessão inválida;
     - manter a `BE-ARCH-01B` registrada como concluída/aprovada, com revalidação do usuário vivo no backend;
     - manter a `BE-ARCH-01C` registrada como concluída/aprovada, com contratos mínimos de auth/session compartilhados;
-    - manter a `BE-ARCH-01D` aberta e pausada temporariamente até revalidação do ambiente frontend;
-    - quando retomada, restringir a `BE-ARCH-01D` a bootstrap de sessão, `/auth/me`, `401`, `403`, invalidadores e UX mínima;
+    - manter a `BE-ARCH-01D` aberta e retomável após a revalidação operacional do ambiente frontend pela `FT-27`;
+    - restringir a `BE-ARCH-01D` a bootstrap de sessão, `/auth/me`, `401`, `403`, invalidadores e UX mínima;
     - manter refresh token, cookies, revogação, logout server-side, backend, contracts, CESAD, workflow, homologação e regras processuais fora da `BE-ARCH-01D`.
   - Subtasks planejadas:
     - [x] `BE-ARCH-01A` — fechar semântica de sessão web
     - [x] `BE-ARCH-01B` — revalidar usuário atual no backend
     - [x] `BE-ARCH-01C` — compartilhar contratos de auth/session
-    - [ ] `BE-ARCH-01D` — alinhar frontend de sessão (necessária, pausada temporariamente)
+    - [ ] `BE-ARCH-01D` — alinhar frontend de sessão (necessária, retomável com escopo reduzido)
     - [ ] `BE-ARCH-01E` — definir estratégia de produção para refresh/revogação
     - [ ] `BE-ARCH-01F` — auditar e testar eventos de autenticação
 
@@ -749,11 +756,16 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
     - não tratar `FT-05` ou `ALIGN-02` como integração backend real da chefia sem evidência posterior;
     - planejar a integração real da chefia com backend quando houver contrato e fluxo validados.
 
-- [ ] `{DX}` **DX-01 — Reconciliar dependências frontend desalinhadas**
-  - Como corrigir:
-    - rodar `npm install` para alinhar dependências instaladas ao `package.json` e lockfile;
-    - revalidar `npm run frontend:check`, `npm run build --workspace @aep-pa/frontend` e `npm audit`;
-    - confirmar se o Next efetivamente executado deixou de divergir do `next@15.5.15` declarado.
+- [x] `{DX}` **DX-01 — Reconciliar dependências frontend desalinhadas**
+  - Como foi corrigido:
+    - `npm install` foi executado na raiz para alinhar dependências instaladas ao `package.json` e lockfile;
+    - antes, `npm ls next` falhava com `next@15.3.0 invalid: "15.5.15"`;
+    - depois, `npm ls next` passou com `next@15.5.15`;
+    - `npm run frontend:check`, `npm run build --workspace @aep-pa/frontend` e `npm run typecheck --workspace @aep-pa/frontend` passaram usando `Next.js 15.5.15`;
+    - não houve alteração em arquivos versionados.
+  - Observação:
+    - `npm audit --omit=dev` ainda aponta 2 vulnerabilidades moderadas em `postcss <8.5.10` via `next`;
+    - a correção automática exigiria `npm audit fix --force` e instalaria `next@9.3.3`, portanto permanece fora do escopo e como pendência separada.
 
 - [x] `{FRONT}` Atualizar Next.js para versão corrigida
   - Como foi corrigido:
@@ -764,8 +776,9 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
     - `npm run build --workspace @aep-pa/frontend` passou;
     - a vulnerabilidade crítica associada ao Next.js deixou de aparecer no `npm audit`.
   - Ressalva de regularização em 2026-04-29:
-    - a instalação local observada está desalinhada e executou Next `15.3.0` apesar de `15.5.15` estar declarado;
-    - este item é candidato a arquivamento futuro apenas depois da regularização `DX-01`.
+    - a instalação local observada executava Next `15.3.0` apesar de `15.5.15` estar declarado;
+    - a regularização `DX-01` confirmou `next@15.5.15` como versão efetiva sem diff versionado;
+    - o alerta residual `postcss`/`next` permanece separado como pendência moderada de audit.
 
 - [ ] `{FRONT}` Remover dependências de heurística no cliente onde a API já puder atender
 - [ ] `{FRONT}` Preparar administração e homologação para funcionalidade completa
@@ -836,9 +849,9 @@ Também foi adicionado um comando seguro de limpeza dos artefatos locais do fron
 - a varredura da `BE-ARCH-01` foi concluída, a semântica incremental da sessão web foi fechada na `BE-ARCH-01A` e a frente segue aberta em subtasks planejadas;
 - a `BE-ARCH-01B` foi concluída e mitigou o risco de confiança exclusiva no payload do token;
 - a `BE-ARCH-01C` foi concluída e mitigou a duplicação básica de contratos de auth/session entre backend e frontend;
-- a `BE-ARCH-01D` continua necessária, mas está pausada temporariamente até revalidação do ambiente frontend e deve voltar com escopo reduzido de sessão;
+- a `BE-ARCH-01D` continua necessária e pode ser retomada após a revalidação operacional do ambiente frontend pela `FT-27`, sempre com escopo reduzido de sessão;
 - `FE-CHEFIA-01` registra que `/chefia-imediata` está demonstrativa/local e não deve ser tratada como integração backend real;
-- `DX-01` registra o desalinhamento entre Next declarado e Next efetivamente executado no ambiente frontend;
+- `DX-01` registra que o desalinhamento entre Next declarado e Next efetivamente executado no ambiente frontend foi resolvido operacionalmente sem diff versionado;
 - o achado de autorização contextual CESAD por processo foi registrado separadamente como `BE-SEC-03`;
 - a `ALIGN-05` saneou a principal heurística do workspace do servidor sem reabrir blocos já aprovados;
 - permanecem abertas lacunas em frentes como administração, homologação, dependências, autenticação web ampla e arquitetura/segurança mapeadas.

@@ -120,11 +120,11 @@ Essa ordem reduz risco de regressão e evita construir regras institucionais ou 
 **Nenhuma task ativa formal após a conclusão da BE-ARCH-01C sem confirmação humana**
 
 ## Próxima candidata recomendada
-**BE-ARCH-01D — Alinhar frontend de sessão (pausada temporariamente)**
+**BE-ARCH-01D — Alinhar frontend de sessão (retomável com escopo reduzido)**
 
 A varredura arquitetural da `BE-ARCH-01` foi concluída, a `BE-ARCH-01A` foi fechada como decisão documental/aprovada, a `BE-ARCH-01B` foi implementada, auditada e aprovada com revalidação backend do usuário autenticado, e a `BE-ARCH-01C` foi implementada/aprovada com centralização dos contratos mínimos de auth/session em `packages/contracts`.
 
-A varredura técnica geral de 2026-04-29 confirmou que a `BE-ARCH-01D` continua necessária, mas deve permanecer pausada até revalidação do ambiente frontend. O motivo da pausa é que o frontend recebeu novas implementações em paralelo e a varredura identificou necessidade de regularizar/revalidar dependências locais, além de divergências entre documentação e código real em telas como `/chefia-imediata`.
+A varredura técnica geral de 2026-04-29 confirmou que a `BE-ARCH-01D` continua necessária. A pausa temporária por revalidação do ambiente frontend foi removida após a `FT-27/DX-01`: `npm install` foi executado na raiz, `npm ls next` passou com `next@15.5.15`, `frontend:check`, build e typecheck do frontend passaram usando `Next.js 15.5.15`, e não houve alteração em arquivos versionados. A `BE-ARCH-01D` pode ser retomada com escopo reduzido.
 
 Escopo futuro reduzido da `BE-ARCH-01D`:
 
@@ -148,7 +148,7 @@ Fora do escopo da `BE-ARCH-01D`:
 - homologação;
 - regras processuais.
 
-Antes de implementar a `BE-ARCH-01D`, recomenda-se regularizar/revalidar o ambiente frontend e repetir os gates de sessão/build relevantes.
+Antes de implementar a `BE-ARCH-01D`, preservar essa revalidação como pré-condição atendida e não ampliar o escopo além de sessão.
 
 ## Contexto atual
 A `BE-STR-01` foi aprovada e consolidou a modelagem dos signatários esperados do parecer CESAD como snapshot persistido no nível do `CesadStageOpinion`.
@@ -167,7 +167,7 @@ No eixo de alinhamento backend/frontend, ficou registrada como necessidade futur
 - nas etapas **1, 2 e 3**, o servidor poderá visualizar o parecer CESAD após sua **conclusão** e **assinatura integral**;
 - na etapa **4**, o servidor somente poderá visualizar o parecer CESAD após sua **conclusão**, **assinatura integral** e **notificação formal**.
 
-A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Com a `BE-ARCH-01A` fechada como decisão documental/aprovada, a `BE-ARCH-01B` aprovada e a `BE-ARCH-01C` concluída/aprovada, a `BE-ARCH-01D` permanece necessária, mas pausada temporariamente até revalidação do ambiente frontend, mantendo refresh token, cookies HttpOnly, revogação, rotação e logout server-side fora da próxima implementação da frente.
+A `BE-OPS-01` foi aprovada e concluiu o hardening operacional de credenciais previsíveis de desenvolvimento, sem reabrir o bootstrap local, a mitigação do `prisma generate` no Windows, o fluxo de build/start de produção, o domínio CESAD ou a estratégia ampla de autenticação web. Com a `BE-ARCH-01A` fechada como decisão documental/aprovada, a `BE-ARCH-01B` aprovada e a `BE-ARCH-01C` concluída/aprovada, a `BE-ARCH-01D` permanece necessária e retomável após a revalidação operacional do ambiente frontend pela `FT-27`, mantendo refresh token, cookies HttpOnly, revogação, rotação e logout server-side fora da próxima implementação da frente.
 
 ---
 
@@ -578,8 +578,8 @@ Definir fluxo claro de build compilada e start de produção para o backend.
 - a estratégia atual permanece aceitável apenas para desenvolvimento local/MVP assistido e não é suficiente para homologação/produção institucional
 
 **Próxima ação recomendada**
-- manter `BE-ARCH-01D — Alinhar frontend de sessão` pausada temporariamente até regularização/revalidação do ambiente frontend
-- quando retomada, a `BE-ARCH-01D` deve ter escopo reduzido a bootstrap de sessão, `/auth/me`, tratamento idempotente de `401`, preservação de `403`, falhas não-401 sem limpeza indevida de sessão e UX mínima de sessão expirada
+- retomar `BE-ARCH-01D — Alinhar frontend de sessão` com escopo reduzido, pois o ambiente frontend foi revalidado pela `FT-27/DX-01`
+- a `BE-ARCH-01D` deve ter escopo reduzido a bootstrap de sessão, `/auth/me`, tratamento idempotente de `401`, preservação de `403`, falhas não-401 sem limpeza indevida de sessão, invalidadores e UX mínima de sessão expirada
 - o foco imediato da `BE-ARCH-01D` deve ser alinhar a sessão do frontend sem reabrir backend, contracts, CESAD, workflow, homologação, regras processuais, refresh token, cookies, revogação ou logout server-side
 - `BE-ARCH-01E` e `BE-ARCH-01F` permanecem posteriores e não devem ser marcadas como concluídas nesta etapa
 
@@ -618,11 +618,11 @@ Definir fluxo claro de build compilada e start de produção para o backend.
   - Fora do escopo preservado: `SessionReadResponse`, `expiresAt`, refresh token, cookies HttpOnly, revogação, logout server-side, auditoria, alteração de storage frontend, alteração de UI, refactor amplo de `packages/contracts`, `BE-ARCH-02`, CESAD, workflow, Prisma e migrations.
 
 - [ ] **BE-ARCH-01D — Alinhar frontend de sessão**
-  - Status operacional: pausada temporariamente até revalidação do ambiente frontend.
-  - Motivo: novas implementações frontend foram incorporadas em paralelo e a varredura técnica geral encontrou divergências de sessão, documentação/código e dependências locais.
-  - Escopo futuro reduzido: bootstrap de sessão, `/auth/me`, tratamento idempotente de `401`, preservação de `403`, falhas não-401 sem limpeza indevida de sessão e UX mínima de sessão expirada.
+  - Status operacional: retomável com escopo reduzido após revalidação do ambiente frontend pela `FT-27/DX-01`.
+  - Evidência de revalidação: `npm install` executado na raiz; `npm ls next` passou com `next@15.5.15`; `frontend:check`, build e typecheck do frontend passaram usando `Next.js 15.5.15`; não houve alteração em arquivos versionados.
+  - Escopo futuro reduzido: bootstrap de sessão, `/auth/me`, tratamento idempotente de `401`, preservação de `403`, falhas não-401 sem limpeza indevida de sessão, invalidadores e UX mínima de sessão expirada.
   - Fora do escopo: backend, contracts, refresh token, cookies, revogação, logout server-side, CESAD, workflow, homologação e regras processuais.
-  - Antes da implementação: regularizar/revalidar o ambiente frontend e repetir os gates relevantes.
+  - Antes da implementação: manter a frente restrita a sessão e não reabrir decisões já estabilizadas por `BE-ARCH-01A`, `BE-ARCH-01B`, `BE-ARCH-01C` e `FT-27/DX-01`.
 
 - [ ] **BE-ARCH-01E — Definir estratégia de produção para refresh/revogação**
   - Avaliar refresh token, revogação, logout server-side, rotação e cookies HttpOnly para homologação/produção.

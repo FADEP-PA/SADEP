@@ -16,10 +16,10 @@ A varredura técnica geral pós-implementações recentes registrou ressalvas qu
 
 - `/chefia-imediata` está atualmente demonstrativa/local e não deve ser tratada como integração backend real. A evidência observada inclui dados locais, uso de `setTimeout` e mensagens como "rascunho salvo localmente".
 - Tarefas como `FT-05` ou `ALIGN-02`, quando interpretadas como integração real da chefia com backend, ficam pendentes de revalidação e não devem ser usadas como prova de integração backend concluída.
-- A `BE-ARCH-01D` continua necessária, mas está temporariamente pausada até revalidação do ambiente frontend. O escopo futuro deve ficar restrito a sessão: bootstrap, `/auth/me`, `401` idempotente, preservação de `403`, invalidadores, falhas não-401 sem limpeza indevida de sessão e UX mínima de sessão expirada.
+- A `BE-ARCH-01D` continua necessária e pode ser retomada após a regularização operacional da `FT-27`, mantendo escopo restrito a sessão: bootstrap, `/auth/me`, `401` idempotente, preservação de `403`, invalidadores, falhas não-401 sem limpeza indevida de sessão e UX mínima de sessão expirada.
 - Os achados atuais de sessão incluem bootstrap por rota, limpeza de sessão em falhas não-401 e ausência de idempotência/single-flight para `401`; `403` permanece separado de `401`.
-- Há desalinhamento entre o Next declarado no `package.json`/lock e o Next efetivamente executado no build. A varredura registrou `npm ls next` em estado inválido, com `next@15.3.0` instalado apesar de `15.5.15` declarado.
-- A modularização documental ampla deve ocorrer somente depois desta regularização mínima e da revalidação do ambiente frontend.
+- O desalinhamento local entre Next declarado e Next efetivo foi resolvido operacionalmente pela `FT-27`: antes havia `next@15.3.0` instalado apesar de `15.5.15` declarado; depois de `npm install`, `npm ls next` passou com `next@15.5.15`.
+- A modularização documental ampla continua fora desta regularização pontual.
 
 ## Estado observado em 2026-04-28
 
@@ -603,10 +603,11 @@ Esta revisão compara o backlog com o código atual do frontend.
 - tentativa controlada de upgrade para Next 16 não removeu o alerta porque a dependência transitiva continuou em `postcss@8.4.31`; o projeto foi mantido em `next@15.5.15`;
 - validações executadas: `npm run typecheck --workspace @aep-pa/backend`, `npm run test --workspace @aep-pa/backend`, `npm run backend:build` e `npm run frontend:check`.
 
-**Ressalva de regularização em 2026-04-29:**
-- o `package.json`/lock declaram Next `15.5.15`, mas o build observado executou Next `15.3.0`;
-- `npm ls next --workspace @aep-pa/frontend` retornou estado inválido;
-- é necessária task própria para reconciliar dependências locais do frontend antes de confiar no estado efetivo da versão instalada.
+**Regularização operacional em 2026-04-29:**
+- a `FT-27` executou `npm install` na raiz e reconciliou o ambiente local;
+- antes da regularização, o `package.json`/lock declaravam Next `15.5.15`, mas o build observado executava Next `15.3.0` e `npm ls next` retornava estado inválido;
+- depois da regularização, `npm ls next` passou com `next@15.5.15`, `frontend:check`, build e typecheck passaram usando `Next.js 15.5.15`;
+- o alerta `next`/`postcss` permanece como pendência separada de audit, sem correção automática segura e sem bloquear a retomada da `BE-ARCH-01D`.
 
 ---
 
@@ -626,7 +627,7 @@ Esta revisão compara o backlog com o código atual do frontend.
 
 ---
 
-### [ ] FT-27 — Reconciliar dependências locais do frontend
+### [x] FT-27 — Reconciliar dependências locais do frontend
 **Objetivo:** alinhar dependências instaladas do frontend ao `package.json` e ao lockfile.
 
 **Escopo:**
@@ -640,11 +641,21 @@ Esta revisão compara o backlog com o código atual do frontend.
 - aplicar `npm audit fix --force`;
 - alterar backend, contracts, autenticação ou regras de negócio.
 
+**Evidência observada em 2026-04-29:**
+- `npm install` foi executado na raiz do monorepo;
+- antes da instalação, `npm ls next` falhava com `next@15.3.0 invalid: "15.5.15"`;
+- depois da instalação, `npm ls next` passou com `next@15.5.15`;
+- `npm run frontend:check` passou usando `Next.js 15.5.15`;
+- `npm run build --workspace @aep-pa/frontend` passou usando `Next.js 15.5.15`;
+- `npm run typecheck --workspace @aep-pa/frontend` passou;
+- nenhum arquivo versionado foi alterado, incluindo `package.json`, `package-lock.json` e `apps/frontend/next-env.d.ts`;
+- o ambiente frontend ficou apto para retomar a `BE-ARCH-01D` com escopo reduzido.
+
 ---
 
 ## Ordem recomendada de execução a partir de 2026-04-28
 
-Antes da ordem abaixo, executar a `FT-27` para regularizar o ambiente frontend e revalidar os gates.
+A `FT-27` foi executada e regularizou o ambiente frontend. A ordem abaixo pode ser retomada, preservando a `BE-ARCH-01D` como frente separada de sessão.
 
 1. FT-21 — Validar visualmente os fluxos principais com backend local
 2. FT-16 — Preparar layout base do futuro parecer CESAD de etapa
