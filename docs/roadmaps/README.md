@@ -31,8 +31,8 @@ Os documentos abaixo continuam existindo e permanecem como fontes de transicao d
 
 ## Fases da modularizacao
 
-- `DOC-R1` — criar estrutura modular e indices.
-- `DOC-R2` — migrar itens ativos para arquivos proprios.
+- `DOC-R1` — criou a estrutura modular e indices.
+- `DOC-R2` — cria arquivos proprios para itens ativos principais.
 - `DOC-R3` — separar resolvidos e candidatos a archive.
 - `DOC-R4` — reduzir arquivos legados e atualizar links.
 - `DOC-R5` — validar documentacao final.

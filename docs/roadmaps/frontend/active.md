@@ -4,12 +4,12 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 
 ## Ativos / pendentes
 
-### FE-CHEFIA-01 — Integracao real da chefia imediata
+### [FE-CHEFIA-01 — Integracao real da chefia imediata](./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md)
 
 - `/chefia-imediata` esta demonstrativa/local.
 - Nao tratar a tela como integracao backend real concluida sem nova validacao.
 
-### FT-24 — Reduzir dependencia de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`
+### [FT-24 — Reduzir dependencia de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./tasks/FT-24-process-selection-technical-id.md)
 
 - Preparar telas para depender menos de ID tecnico manual de processo em desenvolvimento.
 
@@ -34,4 +34,3 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - Resolvido operacionalmente quanto ao desalinhamento local do Next.
 - O historico detalhado permanece no roadmap legado ate fase posterior.
 - A pendencia `postcss`/audit permanece separada e nao deve ser confundida com o `DX-01` local ja regularizado.
-

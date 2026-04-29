@@ -7,7 +7,7 @@ O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md
 ## Arquivos
 
 - [`active.md`](./active.md): painel operacional curto dos itens frontend ativos, pendentes ou resolvidos operacionalmente.
-- [`tasks/`](./tasks/): area reservada para arquivos proprios de tasks em fases posteriores da modularizacao.
+- [`tasks/`](./tasks/): area que comeca a receber arquivos proprios das tasks ativas principais.
 
 ## Pontos de atencao
 
@@ -21,5 +21,4 @@ O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md
 
 - Esta fase nao altera status de tasks.
 - Tasks concluidas continuam no roadmap legado ate fase posterior.
-- Arquivos detalhados por task serao criados somente em fase posterior, como DOC-R2.
-
+- Arquivos detalhados das frentes ativas principais comecam a ser criados na DOC-R2, sem alterar status.

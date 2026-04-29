@@ -19,10 +19,9 @@ Este painel resume problemas ativos ou alertas transversais. O historico complet
 
 ## DX / infra
 
-- `DX-POSTCSS-01` — alerta de audit `postcss`/`next` permanece como pendencia separada.
+- [`DX-POSTCSS-01` — alerta de audit `postcss`/`next`](./tasks/DX-POSTCSS-01-audit-postcss-next.md) permanece como pendencia separada.
 - `DX-01` — desalinhamento local do Next foi resolvido operacionalmente e nao deve ser confundido com o alerta `postcss`.
 
 ## Qualidade
 
 - Ausencia de testes frontend permanece como risco ou candidata futura de quality gate quando formalizada.
-

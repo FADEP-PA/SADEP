@@ -7,7 +7,7 @@ O documento legado [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-
 ## Arquivos
 
 - [`active-problems.md`](./active-problems.md): painel vivo de problemas ativos ou alertas relevantes.
-- [`tasks/`](./tasks/): area reservada para arquivos proprios de problemas ou tasks transversais em fases posteriores.
+- [`tasks/`](./tasks/): area que comeca a receber arquivos proprios de problemas ou tasks transversais principais.
 
 ## Categorias sugeridas
 
@@ -22,5 +22,4 @@ O documento legado [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-
 
 - Esta fase nao marca problemas como resolvidos.
 - Problemas resolvidos serao separados em fase posterior.
-- Arquivos detalhados por problema ou task transversal serao criados somente em fase posterior, como DOC-R2.
-
+- Arquivos detalhados das frentes transversais principais comecam a ser criados na DOC-R2, sem alterar status.
