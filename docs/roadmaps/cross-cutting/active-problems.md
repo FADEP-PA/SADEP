@@ -8,7 +8,7 @@ Este painel resume problemas ativos ou alertas transversais. O antigo painel tra
 
 ## Frontend / integracao
 
-- `FE-CHEFIA-01` — `/chefia-imediata` demonstrativa/local; nao tratar como integracao backend real concluida sem nova validacao.
+- `FE-CHEFIA-01` — `/chefia-imediata` parcialmente integrada ao workspace real por `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`; fallback demonstrativo e validacao manual ainda pendentes.
 - `FT-24` — dependencia operacional de process id tecnico ainda deve ser reduzida.
 
 ## Sessao / auth

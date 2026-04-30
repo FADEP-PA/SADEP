@@ -1,9 +1,25 @@
 'use client';
 
-import { UserRole } from '@aep-pa/contracts';
-import { useMemo, useState } from 'react';
+import {
+  ProcessStatus,
+  UserRole,
+  type SupervisorEvaluationWithDocumentContextRef,
+} from '@aep-pa/contracts';
+import { useEffect, useMemo, useState } from 'react';
 
+import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
+import {
+  getSupervisorEvaluationWorkspaceSnapshot,
+  rectifySupervisorEvaluation,
+  saveSupervisorEvaluationDraft,
+  submitSupervisorEvaluation,
+  type SupervisorEvaluationWorkspaceSnapshot,
+  type UpsertSupervisorEvaluationInput,
+} from '@/shared/api/services/processes-service';
+import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
+import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { PageSection } from '@/shared/ui/page-section';
 
 const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
@@ -29,6 +45,7 @@ type SupervisorDashboardRow = {
   supervisorName: string;
   supervisorRole: string;
   trackingPeriod: string;
+  source?: 'demo' | 'real';
 };
 
 type EvaluationFactorItemDraft = {
@@ -58,6 +75,8 @@ type EvaluationDraft = {
   factors: EvaluationFactorDraft[];
   expandedFactorIds: string[];
 };
+
+type OperationMode = 'draft' | 'submit';
 
 type PreviousEvaluationItem = {
   stageLabel: string;
@@ -228,12 +247,59 @@ const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: st
   },
 ];
 
-function createEvaluationDraft(row: SupervisorDashboardRow): EvaluationDraft {
+function getInitialProcessId() {
+  return process.env.NEXT_PUBLIC_TECHNICAL_PROCESS_ID?.trim() || '';
+}
+
+function toDashboardStatus(status: ProcessStatus): SupervisorDashboardStatus {
+  if (status === ProcessStatus.EM_AVALIACAO) {
+    return 'EM_AVALIACAO';
+  }
+
+  if (status === ProcessStatus.AGUARDANDO_ASSINATURA || status === ProcessStatus.ASSINADO) {
+    return 'AGUARDANDO_ASSINATURA';
+  }
+
+  if (status === ProcessStatus.EM_ANALISE_CESAD || status === ProcessStatus.PARECER_EMITIDO) {
+    return 'EM_ANALISE_CESAD';
+  }
+
+  return 'CONCLUIDO';
+}
+
+function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot): SupervisorDashboardRow {
+  const canAct = snapshot.canEditDraft || snapshot.canSubmit || snapshot.canRectify;
+
+  return {
+    id: snapshot.process.id,
+    serverName: 'Processo configurado',
+    registration: snapshot.process.id,
+    role: 'Servidor em avaliacao',
+    exerciseStart: '-',
+    status: toDashboardStatus(snapshot.process.status),
+    stageLabel: 'Etapa atual',
+    deadline: 'Conforme workflow',
+    canReviewPrevious: false,
+    actionLabel: canAct ? 'Avaliar' : 'Visualizar',
+    actionDisabled: false,
+    supervisorName: 'Chefia autenticada',
+    supervisorRole: 'Chefia imediata',
+    trackingPeriod: 'Processo real',
+    source: 'real',
+  };
+}
+
+function createEvaluationDraft(
+  row: SupervisorDashboardRow,
+  evaluation?: SupervisorEvaluationWithDocumentContextRef | null,
+): EvaluationDraft {
+  const storedCriteria = evaluation?.content.criteria ?? [];
+
   return {
     row,
-    unitCompetencies: '',
+    unitCompetencies: evaluation?.summary ?? '',
     serverAssignments: '',
-    generalComments: '',
+    generalComments: evaluation?.generalComments ?? '',
     monthlyObservations: [],
     factors: FACTOR_TEMPLATES.map((factor) => ({
       id: factor.id,
@@ -241,10 +307,45 @@ function createEvaluationDraft(row: SupervisorDashboardRow): EvaluationDraft {
       items: factor.items.map((item) => ({
         id: item.id,
         label: item.label,
-        score: 0,
+        score: storedCriteria.find((criterion) => criterion.code === item.id)?.rating ?? 1,
       })),
     })),
     expandedFactorIds: [],
+  };
+}
+
+function buildSupervisorEvaluationPayload(
+  draft: EvaluationDraft,
+  mode: OperationMode,
+): UpsertSupervisorEvaluationInput {
+  const summaryParts = [draft.unitCompetencies.trim(), draft.serverAssignments.trim()].filter(Boolean);
+  const summary = summaryParts.join('\n\n');
+  const generalComments = draft.generalComments.trim();
+
+  if (!summary) {
+    throw new Error('Informe as competencias da unidade ou as atribuicoes do servidor antes de salvar.');
+  }
+
+  if (!generalComments) {
+    throw new Error('Informe o parecer da chefia antes de salvar.');
+  }
+
+  return {
+    summary,
+    generalComments,
+    content: {
+      criteria: draft.factors.flatMap((factor) =>
+        factor.items.map((item) => ({
+          code: item.id,
+          label: item.label,
+          rating: Math.min(5, Math.max(1, item.score)),
+        })),
+      ),
+    },
+    comment:
+      mode === 'submit'
+        ? 'Avaliacao da chefia encaminhada para formalizacao documental.'
+        : 'Rascunho da avaliacao da chefia salvo pela interface.',
   };
 }
 
@@ -343,12 +444,12 @@ function EvaluationFactorCard({
               <div className="evaluation-detail__score-input-wrap">
                 <input
                   type="number"
-                  min={0}
-                  max={100}
+                  min={1}
+                  max={5}
                   value={item.score}
                   onChange={(event) => onScoreChange(item.id, Number(event.target.value || 0))}
                 />
-                <span>Pontos</span>
+                <span>Nota</span>
               </div>
             </div>
           ))}
@@ -370,19 +471,72 @@ function EvaluationFactorCard({
 }
 
 export function SupervisorEvaluationWorkspace() {
+  const { session } = useAuth();
+  const configuredProcessId = getInitialProcessId();
   const [selectedFilters, setSelectedFilters] = useState<SupervisorDashboardStatus[]>(
     STATUS_FILTERS.map((item) => item.id),
   );
   const [activeEvaluation, setActiveEvaluation] = useState<EvaluationDraft | null>(null);
   const [previousReviewRow, setPreviousReviewRow] = useState<SupervisorDashboardRow | null>(null);
+  const [workspaceSnapshot, setWorkspaceSnapshot] = useState<SupervisorEvaluationWorkspaceSnapshot | null>(null);
+  const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
+  const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
+  const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmittingEvaluation, setIsSubmittingEvaluation] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
+
+  const dashboardRows = useMemo(
+    () => (workspaceSnapshot ? [createRealDashboardRow(workspaceSnapshot), ...DASHBOARD_ROWS] : DASHBOARD_ROWS),
+    [workspaceSnapshot],
+  );
 
   const filteredRows = useMemo(
-    () => DASHBOARD_ROWS.filter((row) => selectedFilters.includes(row.status)),
-    [selectedFilters],
+    () => dashboardRows.filter((row) => selectedFilters.includes(row.status)),
+    [dashboardRows, selectedFilters],
   );
+
+  useEffect(() => {
+    if (!session?.accessToken || configuredProcessId.length === 0) {
+      return;
+    }
+
+    void loadSupervisorWorkspace(configuredProcessId);
+  }, [configuredProcessId, session?.accessToken]);
+
+  async function loadSupervisorWorkspace(processId: string) {
+    if (!session?.accessToken) {
+      return;
+    }
+
+    setIsLoadingWorkspace(true);
+    setLoadErrorMessage(null);
+    setLoadErrorDetails([]);
+
+    try {
+      const snapshot = await getSupervisorEvaluationWorkspaceSnapshot(processId, session.accessToken);
+      setWorkspaceSnapshot(snapshot);
+      setActiveEvaluation((current) => {
+        if (!current || current.row.source !== 'real') {
+          return current;
+        }
+
+        return createEvaluationDraft(createRealDashboardRow(snapshot), snapshot.supervisorEvaluation);
+      });
+    } catch (error) {
+      const payload =
+        typeof error === 'object' && error && 'payload' in error
+          ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
+          : undefined;
+
+      setWorkspaceSnapshot(null);
+      setLoadErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar o workspace real da chefia.'));
+      setLoadErrorDetails(getHttpErrorDetails(payload));
+    } finally {
+      setIsLoadingWorkspace(false);
+    }
+  }
 
   function toggleFilter(filterId: SupervisorDashboardStatus) {
     setSelectedFilters((current) => {
@@ -403,7 +557,13 @@ export function SupervisorEvaluationWorkspace() {
       return;
     }
 
-    setActiveEvaluation(createEvaluationDraft(row));
+    setActionErrorMessage(null);
+    setFeedbackMessage(null);
+    setActiveEvaluation(
+      row.source === 'real' && workspaceSnapshot
+        ? createEvaluationDraft(row, workspaceSnapshot.supervisorEvaluation)
+        : createEvaluationDraft(row),
+    );
   }
 
   function openPreviousEvaluations(row: SupervisorDashboardRow) {
@@ -445,7 +605,7 @@ export function SupervisorEvaluationWorkspace() {
                   item.id === itemId
                     ? {
                         ...item,
-                        score: Math.min(100, Math.max(0, score)),
+                        score: Math.min(5, Math.max(1, score)),
                       }
                     : item,
                 ),
@@ -513,11 +673,37 @@ export function SupervisorEvaluationWorkspace() {
 
     setIsSavingDraft(true);
     setFeedbackMessage(null);
+    setActionErrorMessage(null);
 
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    if (activeEvaluation.row.source !== 'real') {
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-    setIsSavingDraft(false);
-    setFeedbackMessage('Rascunho salvo localmente.');
+      setIsSavingDraft(false);
+      setFeedbackMessage('Rascunho salvo localmente.');
+      return;
+    }
+
+    try {
+      if (!session?.accessToken || !workspaceSnapshot) {
+        throw new Error('Sessao ou processo real indisponivel para salvar a avaliacao.');
+      }
+
+      if (!workspaceSnapshot.canEditDraft) {
+        throw new Error('O backend nao liberou salvamento de rascunho para o estado atual do processo.');
+      }
+
+      await saveSupervisorEvaluationDraft(
+        workspaceSnapshot.process.id,
+        session.accessToken,
+        buildSupervisorEvaluationPayload(activeEvaluation, 'draft'),
+      );
+      await loadSupervisorWorkspace(workspaceSnapshot.process.id);
+      setFeedbackMessage('Rascunho salvo no processo real pelo backend.');
+    } catch (error) {
+      setActionErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel salvar o rascunho da avaliacao.'));
+    } finally {
+      setIsSavingDraft(false);
+    }
   }
 
   async function handleSubmitEvaluation() {
@@ -527,16 +713,51 @@ export function SupervisorEvaluationWorkspace() {
 
     setIsSubmittingEvaluation(true);
     setFeedbackMessage(null);
+    setActionErrorMessage(null);
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (activeEvaluation.row.source !== 'real') {
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-    setIsSubmittingEvaluation(false);
-    setFeedbackMessage('Avaliacao encaminhada para assinatura da chefia immediata.');
+      setIsSubmittingEvaluation(false);
+      setFeedbackMessage('Avaliacao encaminhada para assinatura da chefia immediata.');
+      return;
+    }
+
+    try {
+      if (!session?.accessToken || !workspaceSnapshot) {
+        throw new Error('Sessao ou processo real indisponivel para enviar a avaliacao.');
+      }
+
+      const payload = buildSupervisorEvaluationPayload(activeEvaluation, 'submit');
+
+      if (workspaceSnapshot.canRectify) {
+        await rectifySupervisorEvaluation(workspaceSnapshot.process.id, session.accessToken, payload);
+        setFeedbackMessage('Avaliacao retificada no processo real pelo backend.');
+      } else {
+        if (!workspaceSnapshot.canSubmit) {
+          throw new Error('O backend nao liberou envio da avaliacao para o estado atual do processo.');
+        }
+
+        await submitSupervisorEvaluation(workspaceSnapshot.process.id, session.accessToken, payload);
+        setFeedbackMessage('Avaliacao enviada para formalizacao documental pelo backend.');
+      }
+
+      await loadSupervisorWorkspace(workspaceSnapshot.process.id);
+    } catch (error) {
+      setActionErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel enviar a avaliacao da chefia.'));
+    } finally {
+      setIsSubmittingEvaluation(false);
+    }
   }
 
   const pendingCount = DASHBOARD_ROWS.filter((row) =>
     ['EM_AVALIACAO', 'AGUARDANDO_ASSINATURA'].includes(row.status),
   ).length;
+  const isRealEvaluation = activeEvaluation?.row.source === 'real';
+  const canSaveActiveDraft = !isRealEvaluation || Boolean(workspaceSnapshot?.canEditDraft);
+  const canSubmitActiveEvaluation =
+    !isRealEvaluation || Boolean(workspaceSnapshot?.canSubmit || workspaceSnapshot?.canRectify);
+  const submitButtonLabel = workspaceSnapshot?.canRectify ? 'Retificar avaliacao' : 'Enviar para assinatura';
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
@@ -549,6 +770,30 @@ export function SupervisorEvaluationWorkspace() {
             : 'Visualizacao demonstrativa da unidade escolar com lista de servidores e situacao atual das avaliacoes.'
         }
       >
+        {configuredProcessId.length === 0 ? (
+          <FeedbackAlert
+            title="Processo real nao configurado"
+            tone="info"
+            description="A tela permanece em modo demonstrativo ate existir um processo definido para validacao local."
+          />
+        ) : null}
+
+        {isLoadingWorkspace ? (
+          <InlineLoadingState
+            title="Carregando workspace real da chefia"
+            description="Consultando o backend para substituir dados locais quando o processo estiver disponivel para a chefia autenticada."
+          />
+        ) : null}
+
+        {loadErrorMessage ? (
+          <FeedbackAlert
+            title="Falha ao carregar processo da chefia"
+            tone="error"
+            description={loadErrorMessage}
+            details={loadErrorDetails}
+          />
+        ) : null}
+
         {activeEvaluation ? (
           <div className="evaluation-detail">
             <button
@@ -797,11 +1042,19 @@ export function SupervisorEvaluationWorkspace() {
                 <div className="evaluation-detail__feedback">{feedbackMessage}</div>
               ) : null}
 
+              {actionErrorMessage ? (
+                <FeedbackAlert
+                  title="Operacao nao concluida"
+                  tone="error"
+                  description={actionErrorMessage}
+                />
+              ) : null}
+
               <div className="evaluation-detail__actions">
                 <button
                   type="button"
                   className="secondary-button"
-                  disabled={isSavingDraft || isSubmittingEvaluation}
+                  disabled={isSavingDraft || isSubmittingEvaluation || !canSaveActiveDraft}
                   onClick={handleSaveDraft}
                 >
                   {isSavingDraft ? 'Salvando...' : 'Salvar rascunho'}
@@ -809,10 +1062,10 @@ export function SupervisorEvaluationWorkspace() {
                 <button
                   type="button"
                   className="warning-button"
-                  disabled={isSubmittingEvaluation || isSavingDraft}
+                  disabled={isSubmittingEvaluation || isSavingDraft || !canSubmitActiveEvaluation}
                   onClick={handleSubmitEvaluation}
                 >
-                  {isSubmittingEvaluation ? 'Submetendo...' : 'Enviar para assinatura'}
+                  {isSubmittingEvaluation ? 'Submetendo...' : submitButtonLabel}
                 </button>
               </div>
             </section>

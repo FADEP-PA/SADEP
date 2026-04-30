@@ -15,8 +15,10 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 
 ### [FE-CHEFIA-01 — Integracao real da chefia imediata](./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md)
 
-- `/chefia-imediata` esta demonstrativa/local.
-- Nao tratar a tela como integracao backend real concluida sem nova validacao.
+- **Status operacional:** parcialmente integrada.
+- `/chefia-imediata` consome o workspace real quando `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` esta configurado.
+- A tela ainda preserva fallback demonstrativo e nao deve ser tratada como integracao backend real concluida sem validacao manual.
+- Proxima acao: validar com backend local, usuario de chefia e processo vinculado a essa chefia.
 
 ### [FT-24 — Reduzir dependencia de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./tasks/FT-24-process-selection-technical-id.md)
 
