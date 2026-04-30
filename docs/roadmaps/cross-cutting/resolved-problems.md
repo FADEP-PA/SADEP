@@ -46,6 +46,15 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - Auditoria/testes de eventos de autenticacao permanecem pendentes em `BE-ARCH-01F`.
 - Validacao manual em navegador ainda e recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
+## BE-ARCH-01E2 — Modelagem persistente de sessao/refresh
+
+- **Status documental:** resolvida/mitigada no recorte de modelagem.
+- **Commit funcional aprovado:** `feat(auth): model user sessions`.
+- O gap de modelagem persistente para refresh/revogacao foi mitigado com a entidade Prisma `UserSession`.
+- A modelagem inclui relacao `User -> sessions`, `refreshTokenHash` unico, `familyId`, campos de expiracao, rotacao, revogacao, uso e metadados.
+- A migration `20260430120000_add_user_session` foi criada e auditada.
+- A implementacao funcional de refresh, cookies, rotacao real, revogacao real, logout server-side, frontend e auditoria formal ainda nao foi feita e permanece nas proximas subtasks.
+
 ## Problemas antigos resolvidos
 
 Os indices modulares tambem registram grupos de problemas resolvidos, incluindo identidade canonica, signatarios esperados, bootstrap local, preflight de banco, guard operacional do Prisma no Windows, build/start de producao e hardening de credenciais de desenvolvimento.

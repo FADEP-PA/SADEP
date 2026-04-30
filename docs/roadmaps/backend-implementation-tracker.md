@@ -23,6 +23,16 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | Roadmap frontend modular | [`frontend/active.md`](./frontend/active.md) |
 | Roadmap frontend legado | [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md) |
 
+## Frente backend concluida recente
+
+### BE-ARCH-01E2 — Modelar sessao e refresh token
+
+- **Status:** concluida / auditada / aprovada.
+- **Commit funcional aprovado:** `feat(auth): model user sessions`.
+- **Escopo entregue:** `UserSession`, relacao `User -> sessions`, `refreshTokenHash` unico, `familyId`, campos de expiracao, rotacao, revogacao, uso e metadados, e migration `20260430120000_add_user_session`.
+- **Fora do escopo:** refresh real, endpoints, cookies, CORS, frontend, contracts, auditoria formal, revogacao real, rotacao real e logout server-side.
+- **Proxima etapa:** `BE-ARCH-01E3` — implementar refresh, rotacao e logout server-side.
+
 ## Frente backend/frontend concluida recente
 
 ### [`BE-ARCH-01D — Alinhar frontend de sessão`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md)
@@ -40,7 +50,9 @@ Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao fr
 - [`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): pendente crítico; não é problema de sessão, mas de autorização contextual por processo, comissão e etapa.
 - [`BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo`](./backend/tasks/BE-ARCH-02-shared-packages.md): pendente; `BE-ARCH-01C` resolveu contratos mínimos de auth/session, mas não encerrou a dívida estrutural dos packages.
 - [`BE-TECH-02 — Revisar worker e cron`](./backend/tasks/BE-TECH-02-worker-cron.md): pendente / arquitetura futura; decidir se haverá escopo mínimo real ou se a promessa deve sair da arquitetura imediata.
-- `BE-ARCH-01E`: pendente; definir estratégia futura de produção para refresh/revogação.
+- `BE-ARCH-01E3`: pendente; implementar refresh, rotacao e logout server-side.
+- `BE-ARCH-01E4`: pendente; alinhar frontend para access token em memoria e refresh silencioso.
+- `BE-ARCH-01E5`: pendente; hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F`: pendente; auditar e testar eventos de autenticação.
 - `BE-FLOW-*`: backlog processual; consultar [`backend/active.md`](./backend/active.md) para o resumo atual sem detalhamento nesta fase.
 
@@ -54,6 +66,7 @@ Itens principais já registrados como resolvidos ou concluídos:
 - `BE-ARCH-01A`;
 - `BE-ARCH-01B`;
 - `BE-ARCH-01C`;
+- `BE-ARCH-01E2`;
 - grupos concluídos no legado: `BE-OPS-*`, `BE-QUAL-*`, `BE-SEC-01/02`, `CESAD-DOM-*`, `BE-IDENT-01` e `BE-STR-01`.
 
 Este índice não repete o histórico completo desses itens.
@@ -68,6 +81,7 @@ Relações principais:
 
 - `BE-SEC-03` permanece problema ativo crítico.
 - `BE-ARCH-01D` foi concluida/mitigada no recorte minimo de sessao frontend.
+- `BE-ARCH-01E2` foi concluida/mitigada no recorte de modelagem persistente de sessao/refresh.
 - `BE-TECH-01`, `BE-ARCH-01B` e `BE-ARCH-01C` aparecem como resolvidos/mitigados nos documentos transversais.
 - `DX-POSTCSS-01` não é item backend, mas pode afetar a cadência frontend.
 
@@ -78,7 +92,7 @@ Relações principais:
 - Consultar [`backend/tasks/`](./backend/tasks/) para frentes ativas específicas.
 - Não tratar `BE-SEC-03`, `BE-ARCH-02` ou `BE-TECH-02` como concluídas.
 - Não confundir `BE-ARCH-01C` concluída com encerramento da `BE-ARCH-02`.
-- Não confundir `BE-ARCH-01D` concluida com implementação de refresh token, cookies ou revogação; esses temas seguem pendentes em `BE-ARCH-01E`.
+- Não confundir `BE-ARCH-01E2` concluida com implementação de refresh token funcional, cookies ou revogação; esses temas seguem pendentes em `BE-ARCH-01E3`, `BE-ARCH-01E4`, `BE-ARCH-01E5` e `BE-ARCH-01F`.
 - O histórico detalhado anterior foi substituído por links de transição e resumos modulares.
 
 ## Fora do escopo deste índice

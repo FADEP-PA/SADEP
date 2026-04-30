@@ -4,6 +4,14 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Concluido recente
 
+### BE-ARCH-01E2 — Modelar sessao e refresh token
+
+- **Status operacional:** concluida / auditada / aprovada.
+- **Commit funcional aprovado:** `feat(auth): model user sessions`.
+- **Escopo entregue:** modelagem persistente `UserSession`, relacao `User -> sessions`, `refreshTokenHash` unico, `familyId`, campos de expiracao, rotacao, revogacao, uso e metadados, alem da migration `20260430120000_add_user_session`.
+- **Fora do escopo entregue:** refresh real, cookies, CORS, endpoints, logout server-side, frontend, contracts e auditoria formal.
+- **Observacao:** a `BE-ARCH-01E1` foi concluida com a [`ADR-002`](../../architecture/adr/adr-002-session-refresh-revocation-strategy.md); a `BE-ARCH-01E2` entregou a modelagem estrutural; a proxima etapa funcional da frente `BE-ARCH-01E` e `BE-ARCH-01E3`.
+
 ### [BE-ARCH-01D — Alinhar frontend de sessao](./tasks/BE-ARCH-01D-frontend-session-alignment.md)
 
 - **Status operacional:** concluida / aprovada.
@@ -14,7 +22,9 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Pendentes relevantes
 
-- `BE-ARCH-01E` — definir estrategia de producao para refresh/revogacao; decisao arquitetural inicial registrada em [`../../architecture/adr/adr-002-session-refresh-revocation-strategy.md`](../../architecture/adr/adr-002-session-refresh-revocation-strategy.md), com implementacao ainda pendente.
+- `BE-ARCH-01E3` — implementar refresh, rotacao e logout server-side sobre a modelagem `UserSession`.
+- `BE-ARCH-01E4` — alinhar frontend para access token em memoria e refresh silencioso.
+- `BE-ARCH-01E5` — hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F` — auditar e testar eventos de autenticacao.
 - [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md).
 - [`BE-ARCH-02` — fortalecer pacotes compartilhados do monorepo](./tasks/BE-ARCH-02-shared-packages.md).

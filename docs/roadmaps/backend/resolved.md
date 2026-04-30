@@ -53,6 +53,23 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - `BE-ARCH-01E` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 - Validacao manual em navegador ainda e recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
+## BE-ARCH-01E2 — Modelar sessao e refresh token
+
+- **Status documental:** concluida / auditada / aprovada.
+- **Commit funcional aprovado:** `feat(auth): model user sessions`.
+- Criou a entidade Prisma `UserSession`.
+- Adicionou a relacao `User -> sessions`.
+- Modelou `refreshTokenHash` como unico para refresh token futuro persistido apenas como hash.
+- Modelou `familyId` para agrupar geracoes da mesma sessao logica/dispositivo.
+- Preparou campos para expiracao, rotacao, revogacao, uso e metadados: `expiresAt`, `revokedAt`, `revokedReason`, `rotatedAt`, `replacedBySessionId`, `lastUsedAt`, `ipAddress`, `userAgent` e `metadata`.
+- Criou indices em `userId`, `familyId`, `[userId, familyId]`, `expiresAt` e `revokedAt`.
+- Criou a migration versionada `20260430120000_add_user_session`.
+- A auditoria confirmou que `replacedBySessionId` permaneceu `String?`, sem self-relation inicial, e que nao foram criados enum Prisma de revogacao nem modelos `RefreshToken`, `SessionEvent`, `RevokedToken` ou `TokenFamily`.
+- Validacoes aprovadas: `npm run prisma:generate --workspace @aep-pa/backend`, `npm run db:check --workspace @aep-pa/backend`, `npm run typecheck --workspace @aep-pa/backend`, `npm run typecheck:spec --workspace @aep-pa/backend`, `npm run test --workspace @aep-pa/backend`, `npm run backend:build`, `npm run backend:bootstrap` e `git diff --check`.
+- A validacao `npx prisma migrate diff` continua falhando por limitacao historica P3006 em migration antiga com `ALTER TABLE ... ADD CONSTRAINT` no SQLite shadow DB; a falha e preexistente, nao foi causada pela migration nova e nao bloqueia esta task porque o fluxo oficial local com `db push` passou.
+- Nao implementou refresh real, endpoints, cookies, CORS, frontend, contracts, auditoria formal, rotacao real, revogacao real ou logout server-side.
+- `BE-ARCH-01E3`, `BE-ARCH-01E4`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+
 ## Outros concluidos no legado
 
 Os blocos abaixo aparecem como concluidos no tracker legado e devem ser tratados como historico ate a fase de arquivamento:
