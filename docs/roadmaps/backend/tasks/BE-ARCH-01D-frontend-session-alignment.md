@@ -95,9 +95,10 @@ Validacao manual em navegador ainda e recomendada para login, logout, reload aut
 
 ## Frentes relacionadas pendentes
 
-- `BE-ARCH-01E` — definir estrategia futura de producao para refresh/revogacao.
+- `BE-ARCH-01E4` — alinhar frontend para access token em memoria e refresh silencioso.
+- `BE-ARCH-01E5` — hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F` — auditar e testar eventos de autenticacao.
 
 ## Proxima acao
 
-Manter `BE-ARCH-01E` e `BE-ARCH-01F` como proximas frentes pendentes da familia de autenticacao. A frente maior `BE-ARCH-01` nao deve ser tratada como totalmente concluida enquanto essas subtasks permanecerem abertas.
+Manter `BE-ARCH-01E4`, `BE-ARCH-01E5` e `BE-ARCH-01F` como proximas frentes pendentes da familia de autenticacao. A frente maior `BE-ARCH-01` nao deve ser tratada como totalmente concluida enquanto essas subtasks permanecerem abertas.

@@ -13,6 +13,13 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - Falhas nao-401 no bootstrap/refresh nao limpam sessao indevidamente.
 - Validacao manual em navegador permanece recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
+### BE-ARCH-01E4 — Alinhar frontend ao refresh server-side
+
+- **Status operacional:** pendente.
+- O backend agora possui refresh, rotacao e logout server-side implementados e aprovados na `BE-ARCH-01E3`.
+- O frontend ainda nao consome esse fluxo e segue preservado no comportamento atual.
+- A proxima task relacionada a sessao frontend deve tratar access token em memoria, `credentials: include`, refresh silencioso, single-flight contra refresh storm e logout chamando `POST /auth/logout`.
+
 ### [FE-CHEFIA-01 — Integracao real da chefia imediata](./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md)
 
 - **Status operacional:** parcialmente integrada.

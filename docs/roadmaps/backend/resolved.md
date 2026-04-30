@@ -50,7 +50,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Preservou sessao local em falhas nao-401 durante bootstrap/refresh.
 - Manteve `AuthSession`, `rememberMe`, contratos de auth e storage atual.
 - Nao implementou refresh token, cookies, revogacao nem logout server-side.
-- `BE-ARCH-01E` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- `BE-ARCH-01E4`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 - Validacao manual em navegador ainda e recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
 ## BE-ARCH-01E2 — Modelar sessao e refresh token
@@ -68,7 +68,22 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Validacoes aprovadas: `npm run prisma:generate --workspace @aep-pa/backend`, `npm run db:check --workspace @aep-pa/backend`, `npm run typecheck --workspace @aep-pa/backend`, `npm run typecheck:spec --workspace @aep-pa/backend`, `npm run test --workspace @aep-pa/backend`, `npm run backend:build`, `npm run backend:bootstrap` e `git diff --check`.
 - A validacao `npx prisma migrate diff` continua falhando por limitacao historica P3006 em migration antiga com `ALTER TABLE ... ADD CONSTRAINT` no SQLite shadow DB; a falha e preexistente, nao foi causada pela migration nova e nao bloqueia esta task porque o fluxo oficial local com `db push` passou.
 - Nao implementou refresh real, endpoints, cookies, CORS, frontend, contracts, auditoria formal, rotacao real, revogacao real ou logout server-side.
-- `BE-ARCH-01E3`, `BE-ARCH-01E4`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- A implementacao funcional ficou fora da `BE-ARCH-01E2` e foi entregue depois na `BE-ARCH-01E3`; `BE-ARCH-01E4`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes, e a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+
+## BE-ARCH-01E3 — Implementar refresh, rotacao e logout server-side
+
+- **Status documental:** concluida / auditada / aprovada.
+- **Commit funcional aprovado:** `feat(auth): add refresh token sessions`.
+- O login passou a criar `UserSession` sem alterar o body de `LoginResponse`.
+- O refresh token passou a ser opaco, gerado sem claims/JWT/JSON, transportado em cookie `HttpOnly` e nunca retornado em JSON.
+- Apenas o `refreshTokenHash` HMAC-SHA-256 e persistido; o token puro nao e salvo.
+- `POST /auth/refresh` foi implementado sem exigir bearer token; valida cookie, sessao, expiracao, revogacao, usuario ativo e role emitida.
+- O refresh rotaciona a sessao em transacao, cria nova linha com o mesmo `familyId`, marca a sessao anterior como `ROTATED`, preenche `rotatedAt` e `replacedBySessionId`, seta novo cookie e retorna o `LoginResponse` atual com novo access token.
+- Reuso de refresh token rotacionado/revogado revoga sessoes ativas da mesma familia com `REUSE_DETECTED` e retorna `401` generico.
+- `POST /auth/logout` foi implementado de forma idempotente, revogando a sessao quando encontrada e limpando o cookie sempre.
+- O bearer JWT atual, `/auth/me`, `/auth/admin-check`, frontend existente, contracts, Prisma schema/migrations, workflow, CESAD, permissoes e regras processuais foram preservados.
+- Validacoes aprovadas: `npm run prisma:generate --workspace @aep-pa/backend`, `npm run db:check --workspace @aep-pa/backend`, `npm run typecheck --workspace @aep-pa/backend`, `npm run typecheck:spec --workspace @aep-pa/backend`, `npm run test --workspace @aep-pa/backend`, `npm run backend:build` e `git diff --check`.
+- A auditoria formal de eventos de autenticacao permanece pendente para `BE-ARCH-01F`; `BE-ARCH-01E4` e `BE-ARCH-01E5` tambem permanecem pendentes, e a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ## Outros concluidos no legado
 

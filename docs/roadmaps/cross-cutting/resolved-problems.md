@@ -53,7 +53,17 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - O gap de modelagem persistente para refresh/revogacao foi mitigado com a entidade Prisma `UserSession`.
 - A modelagem inclui relacao `User -> sessions`, `refreshTokenHash` unico, `familyId`, campos de expiracao, rotacao, revogacao, uso e metadados.
 - A migration `20260430120000_add_user_session` foi criada e auditada.
-- A implementacao funcional de refresh, cookies, rotacao real, revogacao real, logout server-side, frontend e auditoria formal ainda nao foi feita e permanece nas proximas subtasks.
+- A implementacao funcional de refresh, cookies, rotacao real, revogacao real e logout server-side ficou fora da `BE-ARCH-01E2` e foi entregue depois na `BE-ARCH-01E3`; frontend, hardening operacional amplo e auditoria formal permanecem nas subtasks posteriores.
+
+## BE-ARCH-01E3 — Refresh, rotacao e logout server-side
+
+- **Status documental:** resolvida/mitigada no recorte backend.
+- **Commit funcional aprovado:** `feat(auth): add refresh token sessions`.
+- O gap backend de refresh, rotacao e logout server-side foi mitigado.
+- O login cria `UserSession`, o refresh token e opaco, o hash HMAC-SHA-256 e persistido em `refreshTokenHash` e o transporte usa cookie `HttpOnly`.
+- `POST /auth/refresh` e `POST /auth/logout` foram implementados; refresh rotaciona a sessao e reuso revoga sessoes ativas da familia.
+- O frontend ainda nao foi migrado para o novo fluxo; `BE-ARCH-01E4` permanece pendente.
+- Hardening operacional amplo e auditoria formal permanecem pendentes em `BE-ARCH-01E5` e `BE-ARCH-01F`.
 
 ## Problemas antigos resolvidos
 
