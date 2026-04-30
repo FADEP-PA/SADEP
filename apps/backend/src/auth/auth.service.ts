@@ -1,13 +1,16 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserRole } from '@aep-pa/contracts';
 import type { LoginResponse } from '@aep-pa/contracts';
+import { Prisma } from '@prisma/client';
 
 import { AppLogger } from '../common/logging/app-logger.service';
 import { AppConfigService } from '../config/app-config.service';
 import { verifyPassword } from '../common/security/password-hasher';
 import { PrismaService } from '../infrastructure/database/prisma.service';
+import { RefreshTokenService } from './refresh-token.service';
+import { REFRESH_TOKEN_REVOKED_REASON } from './session.constants';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
 type JwtHeader = {
@@ -28,15 +31,42 @@ type PersistedAuthenticatedUser = {
   isActive: boolean;
 };
 
+type SessionRequestContext = {
+  ipAddress?: string | null;
+  userAgent?: string | null;
+};
+
+type LoginWithRefreshSession = LoginResponse & {
+  refreshExpiresAt: Date;
+  refreshToken: string;
+};
+
+type PersistedUserSessionWithUser = {
+  id: string;
+  userId: string;
+  familyId: string;
+  expiresAt: Date;
+  revokedAt: Date | null;
+  revokedReason: string | null;
+  replacedBySessionId: string | null;
+  metadata: Prisma.JsonValue | null;
+  user: PersistedAuthenticatedUser;
+};
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly appConfigService: AppConfigService,
+    private readonly refreshTokenService: RefreshTokenService,
     private readonly logger: AppLogger,
   ) {}
 
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login(
+    email: string,
+    password: string,
+    context: SessionRequestContext = {},
+  ): Promise<LoginWithRefreshSession> {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await this.prismaService.user.findUnique({ where: { email: normalizedEmail } });
 
@@ -61,10 +91,149 @@ export class AuthService {
 
     this.logger.log(`Login succeeded for ${user.email}`);
 
+    const refreshSession = await this.createRefreshSession(user.id, authenticatedUser, context);
+
     return {
       accessToken: this.signToken(authenticatedUser),
+      refreshExpiresAt: refreshSession.expiresAt,
+      refreshToken: refreshSession.token,
       user: authenticatedUser,
     };
+  }
+
+  async refresh(
+    refreshToken: string | null,
+    context: SessionRequestContext = {},
+  ): Promise<LoginWithRefreshSession> {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Invalid refresh session');
+    }
+
+    const refreshTokenHash = this.refreshTokenService.hashToken(refreshToken);
+    const session = await this.prismaService.userSession.findUnique({
+      where: { refreshTokenHash },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (!session) {
+      throw new UnauthorizedException('Invalid refresh session');
+    }
+
+    if (this.isRotatedOrReusedSession(session)) {
+      await this.revokeActiveSessionFamily(session.familyId, REFRESH_TOKEN_REVOKED_REASON.REUSE_DETECTED);
+      throw new UnauthorizedException('Invalid refresh session');
+    }
+
+    if (session.revokedAt || session.expiresAt <= new Date()) {
+      throw new UnauthorizedException('Invalid refresh session');
+    }
+
+    const authenticatedUser = this.resolveUserFromSession(session);
+    const nextRefreshToken = this.refreshTokenService.generateToken();
+    const nextRefreshTokenHash = this.refreshTokenService.hashToken(nextRefreshToken);
+    const nextSessionId = randomUUID();
+    const now = new Date();
+    const nextExpiresAt = this.calculateRefreshExpiresAt(now);
+
+    try {
+      await this.prismaService.$transaction(async (transaction) => {
+        const rotationResult = await transaction.userSession.updateMany({
+          where: {
+            id: session.id,
+            revokedAt: null,
+            replacedBySessionId: null,
+          },
+          data: {
+            lastUsedAt: now,
+            replacedBySessionId: nextSessionId,
+            revokedAt: now,
+            revokedReason: REFRESH_TOKEN_REVOKED_REASON.ROTATED,
+            rotatedAt: now,
+          },
+        });
+
+        if (rotationResult.count !== 1) {
+          await transaction.userSession.updateMany({
+            where: {
+              familyId: session.familyId,
+              revokedAt: null,
+            },
+            data: {
+              revokedAt: now,
+              revokedReason: REFRESH_TOKEN_REVOKED_REASON.REUSE_DETECTED,
+            },
+          });
+          throw new UnauthorizedException('Invalid refresh session');
+        }
+
+        await transaction.userSession.create({
+          data: {
+            id: nextSessionId,
+            userId: session.userId,
+            refreshTokenHash: nextRefreshTokenHash,
+            familyId: session.familyId,
+            expiresAt: nextExpiresAt,
+            ipAddress: normalizeNullableString(context.ipAddress),
+            userAgent: normalizeNullableString(context.userAgent),
+            metadata: this.buildSessionMetadata(authenticatedUser),
+          },
+        });
+      });
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      if (this.isPrismaUniqueConstraintError(error)) {
+        throw new UnauthorizedException('Invalid refresh session');
+      }
+
+      throw error;
+    }
+
+    return {
+      accessToken: this.signToken(authenticatedUser),
+      refreshExpiresAt: nextExpiresAt,
+      refreshToken: nextRefreshToken,
+      user: authenticatedUser,
+    };
+  }
+
+  async logout(refreshToken: string | null): Promise<void> {
+    if (!refreshToken) {
+      return;
+    }
+
+    const refreshTokenHash = this.refreshTokenService.hashToken(refreshToken);
+    const session = await this.prismaService.userSession.findUnique({
+      where: { refreshTokenHash },
+      select: { id: true },
+    });
+
+    if (!session) {
+      return;
+    }
+
+    await this.prismaService.userSession.updateMany({
+      where: {
+        id: session.id,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+        revokedReason: REFRESH_TOKEN_REVOKED_REASON.LOGOUT,
+      },
+    });
   }
 
   verifyToken(token: string): AuthenticatedUser {
@@ -154,7 +323,7 @@ export class AuthService {
     const payload: JwtPayload = {
       ...user,
       iat: nowInSeconds,
-      exp: nowInSeconds + 60 * 60,
+      exp: nowInSeconds + this.appConfigService.accessTokenTtlSeconds,
     };
 
     const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
@@ -242,4 +411,99 @@ export class AuthService {
       role: this.toUserRole(user.role),
     };
   }
+
+  private async createRefreshSession(
+    userId: string,
+    authenticatedUser: AuthenticatedUser,
+    context: SessionRequestContext,
+  ): Promise<{ expiresAt: Date; token: string }> {
+    const token = this.refreshTokenService.generateToken();
+    const refreshTokenHash = this.refreshTokenService.hashToken(token);
+    const expiresAt = this.calculateRefreshExpiresAt();
+
+    await this.prismaService.userSession.create({
+      data: {
+        userId,
+        refreshTokenHash,
+        familyId: randomUUID(),
+        expiresAt,
+        ipAddress: normalizeNullableString(context.ipAddress),
+        userAgent: normalizeNullableString(context.userAgent),
+        metadata: this.buildSessionMetadata(authenticatedUser),
+      },
+    });
+
+    return { expiresAt, token };
+  }
+
+  private calculateRefreshExpiresAt(from = new Date()): Date {
+    return new Date(from.getTime() + this.appConfigService.refreshTokenTtlSeconds * 1000);
+  }
+
+  private resolveUserFromSession(session: PersistedUserSessionWithUser): AuthenticatedUser {
+    if (!session.user.isActive) {
+      this.logger.warn(`Refresh session rejected because user ${session.userId} is inactive`);
+      throw new UnauthorizedException('Invalid refresh session');
+    }
+
+    const issuedRole = this.readIssuedRole(session.metadata);
+    const currentRole = this.toUserRole(session.user.role);
+
+    if (!issuedRole || issuedRole !== currentRole) {
+      this.logger.warn(`Refresh session rejected because role changed for user ${session.userId}`);
+      throw new UnauthorizedException('Invalid refresh session');
+    }
+
+    return this.toAuthenticatedUser(session.user);
+  }
+
+  private buildSessionMetadata(user: AuthenticatedUser): Prisma.InputJsonValue {
+    return {
+      issuedRole: user.role,
+    };
+  }
+
+  private readIssuedRole(metadata: Prisma.JsonValue | null): UserRole | null {
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+      return null;
+    }
+
+    const issuedRole = (metadata as Record<string, Prisma.JsonValue>).issuedRole;
+
+    if (typeof issuedRole !== 'string') {
+      return null;
+    }
+
+    return this.toUserRole(issuedRole);
+  }
+
+  private isRotatedOrReusedSession(session: PersistedUserSessionWithUser): boolean {
+    return (
+      session.revokedReason === REFRESH_TOKEN_REVOKED_REASON.ROTATED ||
+      session.revokedReason === REFRESH_TOKEN_REVOKED_REASON.REUSE_DETECTED ||
+      Boolean(session.replacedBySessionId)
+    );
+  }
+
+  private async revokeActiveSessionFamily(familyId: string, revokedReason: string): Promise<void> {
+    await this.prismaService.userSession.updateMany({
+      where: {
+        familyId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+        revokedReason,
+      },
+    });
+  }
+
+  private isPrismaUniqueConstraintError(error: unknown): boolean {
+    return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+  }
+}
+
+function normalizeNullableString(value: string | null | undefined): string | null {
+  const normalizedValue = value?.trim();
+  return normalizedValue ? normalizedValue : null;
 }

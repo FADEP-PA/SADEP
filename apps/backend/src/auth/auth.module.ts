@@ -7,6 +7,7 @@ import { PrismaService } from '../infrastructure/database/prisma.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RefreshTokenService } from './refresh-token.service';
 import { RolesGuard } from './guards/roles.guard';
 
 @Module({
@@ -14,6 +15,7 @@ import { RolesGuard } from './guards/roles.guard';
   providers: [
     AuthService,
     JwtAuthGuard,
+    RefreshTokenService,
     RolesGuard,
     PrismaService,
     AppConfigService,

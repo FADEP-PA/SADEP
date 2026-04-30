@@ -36,13 +36,16 @@ Edite `apps\backend\.env` antes do bootstrap e defina os valores locais obrigato
 
 ```env
 JWT_SECRET=aep-pa-local-jwt-secret-com-mais-de-32-caracteres-2026
+REFRESH_TOKEN_HMAC_SECRET=aep-pa-local-refresh-secret-com-mais-de-32-caracteres-2026
 DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
 ```
 
 - `JWT_SECRET` e obrigatorio e deve ter pelo menos 32 caracteres.
+- `REFRESH_TOKEN_HMAC_SECRET` assina o hash do refresh token opaco e deve ter pelo menos 32 caracteres.
 - `DEV_SEED_PASSWORD` e obrigatorio para o seed local.
 - Os usuarios seed mantem e-mails previsiveis; a senha de todos passa a ser o valor de `DEV_SEED_PASSWORD`.
 - Nao ha mais senha fixa versionada para usuarios seed.
+- Em desenvolvimento local, os defaults de sessao usam `ACCESS_TOKEN_TTL=1h`, `REFRESH_TOKEN_TTL=7d`, cookie `HttpOnly` em `/auth`, `COOKIE_SECURE=false` e `COOKIE_SAMESITE=lax`.
 
 ### 2. Executar o bootstrap determinístico do backend
 
@@ -182,6 +185,7 @@ Checklist mínimo para validar o ambiente:
 
 - `npm install` executado com sucesso
 - `apps/backend/.env` criado com `JWT_SECRET` e `DEV_SEED_PASSWORD`
+- `REFRESH_TOKEN_HMAC_SECRET` definido no ambiente local
 - `apps/backend/prisma.config.ts` presente com schema e seed do backend
 - `npm run backend:bootstrap` executado com sucesso
 - Prisma Client gerado

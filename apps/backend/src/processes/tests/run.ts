@@ -1,6 +1,7 @@
 process.env.NODE_ENV = 'test';
 process.env.PORT = '3000';
 process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters';
+process.env.REFRESH_TOKEN_HMAC_SECRET = 'test-refresh-secret-with-at-least-32-characters';
 
 async function main() {
   const [

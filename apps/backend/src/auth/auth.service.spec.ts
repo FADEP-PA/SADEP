@@ -7,6 +7,7 @@ import { hashPassword } from '../common/security/password-hasher';
 import { AppLogger } from '../common/logging/app-logger.service';
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../infrastructure/database/prisma.service';
+import { RefreshTokenService } from './refresh-token.service';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
@@ -15,13 +16,20 @@ describe('AuthService', () => {
     user: {
       findUnique: jest.Mock;
     };
+    userSession: {
+      create: jest.Mock;
+    };
   };
   let logger: jest.Mocked<Pick<AppLogger, 'log' | 'warn'>>;
+  let appConfigService: AppConfigService;
 
   beforeEach(() => {
     prismaService = {
       user: {
         findUnique: jest.fn(),
+      },
+      userSession: {
+        create: jest.fn(),
       },
     };
 
@@ -30,9 +38,17 @@ describe('AuthService', () => {
       warn: jest.fn(),
     };
 
+    appConfigService = {
+      accessTokenTtlSeconds: 60 * 60,
+      jwtSecret: 'unit-test-secret-with-at-least-32-characters',
+      refreshTokenHmacSecret: 'unit-test-refresh-secret-with-at-least-32-characters',
+      refreshTokenTtlSeconds: 7 * 24 * 60 * 60,
+    } as AppConfigService;
+
     service = new AuthService(
       prismaService as unknown as PrismaService,
-      { jwtSecret: 'unit-test-secret-with-at-least-32-characters' } as AppConfigService,
+      appConfigService,
+      new RefreshTokenService(appConfigService),
       logger as unknown as AppLogger,
     );
   });
@@ -59,6 +75,17 @@ describe('AuthService', () => {
       role: UserRole.CESAD_MEMBER,
     });
     expect(service.verifyToken(result.accessToken)).toEqual(result.user);
+    expect(prismaService.userSession.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        expiresAt: expect.any(Date),
+        familyId: expect.any(String),
+        metadata: { issuedRole: UserRole.CESAD_MEMBER },
+        refreshTokenHash: expect.stringMatching(/^rt_hmac_sha256:v1:/),
+        userId: 'user-123',
+      }),
+    });
+    expect(result.refreshToken).toEqual(expect.any(String));
+    expect(result.refreshExpiresAt).toEqual(expect.any(Date));
   });
 
   it('resolves the authenticated user from current persisted data', async () => {
