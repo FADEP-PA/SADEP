@@ -138,12 +138,38 @@ model User {
   evaluationProcesses      EvaluationProcess[]    @relation("EvaluationProcessEvaluatedUser")
   auditEvents              AuditEvent[]           @relation("AuditEventActor")
   signatureRecords         SignatureRecord[]      @relation("SignatureRecordSignatory")
+  sessions                 UserSession[]
   supervisorEvaluations    SupervisorEvaluation[] @relation("SupervisorEvaluationEvaluator")
   responsibleProcessStages ProcessStage[]         @relation("ProcessStageResponsibleSupervisor")
   selfEvaluations          SelfEvaluation[]       @relation("SelfEvaluationAuthor")
   cesadStageOpinions       CesadStageOpinion[]    @relation("CesadStageOpinionAuthor")
   cesadCommissionMembers   CesadCommissionMember[]
   cesadStageOpinionExpectedSigners CesadStageOpinionExpectedSigner[] @relation("CesadStageOpinionExpectedSignerActingUser")
+}
+
+model UserSession {
+  id                  String    @id @default(cuid())
+  userId              String
+  refreshTokenHash    String    @unique
+  familyId            String
+  expiresAt           DateTime
+  revokedAt           DateTime?
+  revokedReason       String?
+  rotatedAt           DateTime?
+  replacedBySessionId String?
+  lastUsedAt          DateTime?
+  ipAddress           String?
+  userAgent           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  metadata            Json?
+  user                User      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([userId, familyId])
+  @@index([expiresAt])
+  @@index([revokedAt])
 }
 
 model EvaluationProcess {
