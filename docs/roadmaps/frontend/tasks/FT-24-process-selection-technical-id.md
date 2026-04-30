@@ -2,7 +2,7 @@
 
 ## Status
 
-Pendente.
+Ativo / parcialmente mitigado.
 
 ## Area
 
@@ -16,11 +16,18 @@ Frontend e integracao backend/frontend.
 
 ## Contexto
 
-O frontend ainda depende de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` em fluxos operacionais. Isso pode ser aceitavel para demonstracao, mas nao para fluxo real.
+O frontend ainda depende de identificador tecnico de processo em fluxos operacionais. Isso pode ser aceitavel para demonstracao, mas nao para fluxo real.
 
 ## Estado atual
 
-O roadmap frontend mantem `FT-24` como pendente para reduzir dependencia operacional de ID tecnico manual de processo em desenvolvimento.
+O roadmap frontend mantem `FT-24` como frente ativa para reduzir dependencia operacional de ID tecnico manual de processo em desenvolvimento.
+
+Atualizacao de 2026-04-30:
+
+- `/chefia-imediata` deixou de depender exclusivamente de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`;
+- a rota agora permite informar o identificador de processo na propria tela;
+- `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` permanece apenas como preenchimento inicial opcional;
+- a solucao ainda nao substitui uma listagem segura de processos por perfil.
 
 ## Escopo previsto
 
@@ -48,5 +55,4 @@ O roadmap frontend mantem `FT-24` como pendente para reduzir dependencia operaci
 
 ## Proxima acao
 
-Executar varredura de rotas e telas que usam `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
-
+Executar varredura restante de rotas que usam `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`, com foco em `/processos` e `/servidor-estagiario`, e definir se a proxima mitigacao sera entrada manual temporaria ou endpoint/listagem real por perfil.

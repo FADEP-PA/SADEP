@@ -28,8 +28,8 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 
 ### Frontend / integração
 
-- [`FE-CHEFIA-01 — Integração real da chefia imediata`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md): ativo e parcialmente integrado; `/chefia-imediata` consome workspace real por `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`, com fallback demonstrativo e validação manual pendentes.
-- [`FT-24 — Reduzir dependência de NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./frontend/tasks/FT-24-process-selection-technical-id.md): pendente.
+- [`FE-CHEFIA-01 — Integração real da chefia imediata`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md): ativo e parcialmente integrado; `/chefia-imediata` consome workspace real por processo informado na tela ou `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`, com validacao visual concluida e fallback demonstrativo ainda ativo.
+- [`FT-24 — Reduzir dependência de NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./frontend/tasks/FT-24-process-selection-technical-id.md): ativo e parcialmente mitigado em `/chefia-imediata`; pendente nas demais rotas.
 
 ### Sessão/auth
 

@@ -16,7 +16,7 @@ Frontend e integracao backend/frontend.
 
 ## Contexto
 
-`/chefia-imediata` nao deve ser tratada como integracao backend real concluida sem validacao. A tela ainda preserva dados demonstrativos como fallback, mas passou a consumir o workspace real da chefia quando houver `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` configurado.
+`/chefia-imediata` nao deve ser tratada como integracao backend real concluida sem validacao. A tela ainda preserva dados demonstrativos como fallback, mas passou a consumir o workspace real da chefia quando houver processo informado na tela ou `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` configurado.
 
 ## Estado atual
 
@@ -30,6 +30,13 @@ Atualizacao de 2026-04-30:
 - `Enviar para assinatura` usa `POST /processes/:id/supervisor-evaluation/submit` quando o backend libera `canSubmit`;
 - `Retificar avaliacao` usa `POST /processes/:id/supervisor-evaluation/rectify` quando o backend libera `canRectify`;
 - a UI respeita as capacidades retornadas pelo backend e nao executa transicao de workflow diretamente.
+
+Atualizacao complementar de 2026-04-30:
+
+- a tela passou a ter campo de consulta por identificador de processo;
+- `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` continua como valor inicial opcional, nao como unica forma de carregar workspace real;
+- validacao real em backend local passou com massa `local-fe-chefia-01`, usuario `supervisor@aep-pa.local`, rascunho salvo, envio concluido, processo em `AGUARDANDO_ASSINATURA`, documento `READY_FOR_SIGNATURE` e duas assinaturas esperadas.
+- validacao visual em navegador passou em modo `next start` na rota `/chefia-imediata`, com login de chefia, consulta do processo `local-fe-chefia-01` e exibicao da linha real em `AGUARDANDO ASSINATURA`.
 
 ## Escopo previsto
 
@@ -58,8 +65,9 @@ Atualizacao de 2026-04-30:
 - identificacao de dados locais e simulacoes concluida no recorte inicial;
 - `npm run frontend:typecheck` passou em 2026-04-30;
 - `npm run frontend:check` passou em 2026-04-30;
-- validacao manual da tela quando houver integracao real planejada.
+- validacao real via backend local passou em 2026-04-30;
+- validacao visual em navegador passou em 2026-04-30.
 
 ## Proxima acao
 
-Validar manualmente `/chefia-imediata` com backend local, usuario de chefia e `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` apontando para processo cuja etapa tenha `responsibleSupervisorUserId` vinculado ao usuario autenticado. Depois, decidir se a proxima entrega sera listagem real de processos da chefia ou reducao do fallback demonstrativo.
+Decidir se a proxima entrega sera listagem real de processos da chefia ou reducao do fallback demonstrativo.

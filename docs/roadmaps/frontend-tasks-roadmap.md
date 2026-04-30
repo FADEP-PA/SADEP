@@ -28,13 +28,14 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 ### [`FE-CHEFIA-01 — Integração real da chefia imediata`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md)
 
 - **Status:** ativo / parcialmente integrado.
-- `/chefia-imediata` consome o workspace real quando `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` está configurado.
-- Não tratar a tela como integração backend real concluída enquanto houver fallback demonstrativo e validação manual pendente.
+- `/chefia-imediata` consome o workspace real por processo informado na tela ou valor inicial de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
+- A validação visual em navegador passou com backend local, login de chefia e processo `local-fe-chefia-01`.
+- Não tratar a tela como integração backend real concluída enquanto houver fallback demonstrativo e ausência de listagem real de processos por perfil.
 
 ### [`FT-24 — Reduzir dependência de NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./frontend/tasks/FT-24-process-selection-technical-id.md)
 
-- **Status:** pendente.
-- Reduzir dependência de ID técnico fixo.
+- **Status:** ativo / parcialmente mitigado.
+- Reduzir dependência de ID técnico fixo; `/chefia-imediata` já permite consulta manual por processo.
 - Requer alinhamento backend/frontend sobre fonte real de processos disponíveis.
 
 ### Backlog frontend pendente
@@ -73,7 +74,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 ### Ressalvas importantes
 
 - `FT-05` pode ser preservada como histórico visual/estrutural da jornada da chefia, mas não deve ser lida como integração backend real da chefia.
-- A integração real de `/chefia-imediata` permanece pendente em [`FE-CHEFIA-01`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md).
+- A integração real de `/chefia-imediata` permanece parcial em [`FE-CHEFIA-01`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md).
 - `FT-17` indica painel preparado de homologação; não indica homologação backend funcional completa.
 
 ## Relação com backend e problemas transversais
@@ -88,7 +89,7 @@ Relações principais:
 - `DX-01` foi resolvido operacionalmente quanto ao desalinhamento local do Next.
 - `DX-POSTCSS-01` permanece alerta pendente e não deve ser confundido com `DX-01`.
 - Ausência de testes frontend permanece risco ou candidata futura de quality gate.
-- `/chefia-imediata` permanece problema frontend/integração ativo em `FE-CHEFIA-01`.
+- `/chefia-imediata` permanece frente frontend/integração ativa em `FE-CHEFIA-01`.
 
 ## Regras de leitura
 

@@ -5,7 +5,7 @@ import {
   UserRole,
   type SupervisorEvaluationWithDocumentContextRef,
 } from '@aep-pa/contracts';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import {
@@ -268,7 +268,13 @@ function toDashboardStatus(status: ProcessStatus): SupervisorDashboardStatus {
 }
 
 function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot): SupervisorDashboardRow {
-  const canAct = snapshot.canEditDraft || snapshot.canSubmit || snapshot.canRectify;
+  const actionLabel = snapshot.canRectify
+    ? 'Retificar'
+    : snapshot.canEditDraft
+      ? 'Editar rascunho'
+      : snapshot.canSubmit
+        ? 'Avaliar'
+        : 'Visualizar';
 
   return {
     id: snapshot.process.id,
@@ -280,7 +286,7 @@ function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot)
     stageLabel: 'Etapa atual',
     deadline: 'Conforme workflow',
     canReviewPrevious: false,
-    actionLabel: canAct ? 'Avaliar' : 'Visualizar',
+    actionLabel,
     actionDisabled: false,
     supervisorName: 'Chefia autenticada',
     supervisorRole: 'Chefia imediata',
@@ -479,6 +485,7 @@ export function SupervisorEvaluationWorkspace() {
   const [activeEvaluation, setActiveEvaluation] = useState<EvaluationDraft | null>(null);
   const [previousReviewRow, setPreviousReviewRow] = useState<SupervisorDashboardRow | null>(null);
   const [workspaceSnapshot, setWorkspaceSnapshot] = useState<SupervisorEvaluationWorkspaceSnapshot | null>(null);
+  const [processIdInput, setProcessIdInput] = useState(configuredProcessId);
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
@@ -531,11 +538,28 @@ export function SupervisorEvaluationWorkspace() {
           : undefined;
 
       setWorkspaceSnapshot(null);
+      setActiveEvaluation((current) => (current?.row.source === 'real' ? null : current));
       setLoadErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar o workspace real da chefia.'));
       setLoadErrorDetails(getHttpErrorDetails(payload));
     } finally {
       setIsLoadingWorkspace(false);
     }
+  }
+
+  function handleLoadWorkspace(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const normalizedProcessId = processIdInput.trim();
+
+    if (!normalizedProcessId) {
+      setLoadErrorMessage('Informe o identificador do processo para consultar o workspace real da chefia.');
+      setLoadErrorDetails([]);
+      setWorkspaceSnapshot(null);
+      setActiveEvaluation((current) => (current?.row.source === 'real' ? null : current));
+      return;
+    }
+
+    void loadSupervisorWorkspace(normalizedProcessId);
   }
 
   function toggleFilter(filterId: SupervisorDashboardStatus) {
@@ -770,11 +794,29 @@ export function SupervisorEvaluationWorkspace() {
             : 'Visualizacao demonstrativa da unidade escolar com lista de servidores e situacao atual das avaliacoes.'
         }
       >
-        {configuredProcessId.length === 0 ? (
+        <form className="inline-form inline-form--elevated" onSubmit={handleLoadWorkspace}>
+          <label className="field-group" htmlFor="supervisor-workspace-process-id">
+            <span>Identificador do processo</span>
+            <input
+              id="supervisor-workspace-process-id"
+              name="processId"
+              placeholder="Informe o ID do processo"
+              value={processIdInput}
+              onChange={(event) => setProcessIdInput(event.target.value)}
+              disabled={isLoadingWorkspace}
+            />
+          </label>
+
+          <button type="submit" disabled={isLoadingWorkspace}>
+            {isLoadingWorkspace ? 'Consultando processo...' : 'Consultar processo'}
+          </button>
+        </form>
+
+        {configuredProcessId.length === 0 && !workspaceSnapshot ? (
           <FeedbackAlert
             title="Processo real nao configurado"
             tone="info"
-            description="A tela permanece em modo demonstrativo ate existir um processo definido para validacao local."
+            description="A tela permanece em modo demonstrativo ate um processo real ser informado ou configurado para validacao local."
           />
         ) : null}
 
