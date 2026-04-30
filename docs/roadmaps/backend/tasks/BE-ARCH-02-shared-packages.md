@@ -41,6 +41,7 @@ O build de contracts foi ajustado o suficiente para runtime compilado, mas o ref
 
 - O tracker backend preserva `BE-ARCH-02` como frente planejada.
 - O painel transversal associa a frente a qualidade estrutural de packages e consumo.
+- A ADR de sessao [`../../../architecture/adr/adr-002-session-refresh-revocation-strategy.md`](../../../architecture/adr/adr-002-session-refresh-revocation-strategy.md) registra que contratos futuros de refresh/logout/sessao devem ser coordenados com `BE-ARCH-02`, sem bloquear a decisao arquitetural.
 
 ## Validacoes esperadas
 
@@ -53,4 +54,3 @@ O build de contracts foi ajustado o suficiente para runtime compilado, mas o ref
 ## Proxima acao
 
 Executar varredura especifica de packages, exports e consumo antes da implementacao.
-

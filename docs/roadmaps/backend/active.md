@@ -14,7 +14,7 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Pendentes relevantes
 
-- `BE-ARCH-01E` — definir estrategia de producao para refresh/revogacao.
+- `BE-ARCH-01E` — definir estrategia de producao para refresh/revogacao; decisao arquitetural inicial registrada em [`../../architecture/adr/adr-002-session-refresh-revocation-strategy.md`](../../architecture/adr/adr-002-session-refresh-revocation-strategy.md), com implementacao ainda pendente.
 - `BE-ARCH-01F` — auditar e testar eventos de autenticacao.
 - [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md).
 - [`BE-ARCH-02` — fortalecer pacotes compartilhados do monorepo](./tasks/BE-ARCH-02-shared-packages.md).
