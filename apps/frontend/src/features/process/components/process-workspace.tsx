@@ -77,7 +77,7 @@ export function ProcessWorkspace() {
   async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!session?.accessToken || processId.trim().length === 0) {
+    if (!session || processId.trim().length === 0) {
       setErrorMessage('Informe um identificador de processo para consultar os dados disponiveis.');
       setErrorDetails([]);
       setErrorStatus(null);
@@ -94,7 +94,6 @@ export function ProcessWorkspace() {
     try {
       const nextSnapshot = await getTechnicalProcessSnapshot(
         processId.trim(),
-        session.accessToken,
         session.user.role,
       );
       setSnapshot(nextSnapshot);

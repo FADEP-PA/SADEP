@@ -96,7 +96,7 @@ export function CesadStageReadWorkspace() {
     const normalizedProcessId = processId.trim();
     const parsedStageSequence = Number.parseInt(stageSequenceInput, 10);
 
-    if (!session?.accessToken || normalizedProcessId.length === 0) {
+    if (!session || normalizedProcessId.length === 0) {
       setErrorMessage('Informe um identificador de processo para consultar a etapa.');
       setErrorDetails([]);
       setErrorStatus(null);
@@ -119,7 +119,6 @@ export function CesadStageReadWorkspace() {
       const nextSnapshot = await getCesadStageReadSnapshot(
         normalizedProcessId,
         parsedStageSequence,
-        session.accessToken,
       );
       setSnapshot(nextSnapshot);
     } catch (error) {

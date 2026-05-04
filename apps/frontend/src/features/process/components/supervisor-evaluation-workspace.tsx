@@ -500,7 +500,7 @@ export function SupervisorEvaluationWorkspace() {
   );
 
   async function loadSupervisorWorkspace(processId: string) {
-    if (!session?.accessToken) {
+    if (!session) {
       return;
     }
 
@@ -509,7 +509,7 @@ export function SupervisorEvaluationWorkspace() {
     setLoadErrorDetails([]);
 
     try {
-      const snapshot = await getSupervisorEvaluationWorkspaceSnapshot(processId, session.accessToken);
+      const snapshot = await getSupervisorEvaluationWorkspaceSnapshot(processId);
       setWorkspaceSnapshot(snapshot);
       setActiveEvaluation((current) => {
         if (!current || current.row.source !== 'real') {
@@ -695,7 +695,7 @@ export function SupervisorEvaluationWorkspace() {
     }
 
     try {
-      if (!session?.accessToken || !workspaceSnapshot) {
+      if (!session || !workspaceSnapshot) {
         throw new Error('Sessao ou processo real indisponivel para salvar a avaliacao.');
       }
 
@@ -705,7 +705,6 @@ export function SupervisorEvaluationWorkspace() {
 
       await saveSupervisorEvaluationDraft(
         workspaceSnapshot.process.id,
-        session.accessToken,
         buildSupervisorEvaluationPayload(activeEvaluation, 'draft'),
       );
       await loadSupervisorWorkspace(workspaceSnapshot.process.id);
@@ -735,21 +734,21 @@ export function SupervisorEvaluationWorkspace() {
     }
 
     try {
-      if (!session?.accessToken || !workspaceSnapshot) {
+      if (!session || !workspaceSnapshot) {
         throw new Error('Sessao ou processo real indisponivel para enviar a avaliacao.');
       }
 
       const payload = buildSupervisorEvaluationPayload(activeEvaluation, 'submit');
 
       if (workspaceSnapshot.canRectify) {
-        await rectifySupervisorEvaluation(workspaceSnapshot.process.id, session.accessToken, payload);
+        await rectifySupervisorEvaluation(workspaceSnapshot.process.id, payload);
         setFeedbackMessage('Avaliacao retificada no processo real pelo backend.');
       } else {
         if (!workspaceSnapshot.canSubmit) {
           throw new Error('O backend nao liberou envio da avaliacao para o estado atual do processo.');
         }
 
-        await submitSupervisorEvaluation(workspaceSnapshot.process.id, session.accessToken, payload);
+        await submitSupervisorEvaluation(workspaceSnapshot.process.id, payload);
         setFeedbackMessage('Avaliacao enviada para formalizacao documental pelo backend.');
       }
 

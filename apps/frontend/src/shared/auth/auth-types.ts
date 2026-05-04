@@ -7,7 +7,6 @@ import type {
 export type AuthenticatedUser = AuthenticatedUserRef;
 
 export interface AuthSession {
-  accessToken: string;
   rememberMe: boolean;
   user: AuthenticatedUser;
 }
