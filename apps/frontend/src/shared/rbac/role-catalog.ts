@@ -1,4 +1,4 @@
-import { UserRole } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
 
 export type RolePresentation = {
   role: UserRole;

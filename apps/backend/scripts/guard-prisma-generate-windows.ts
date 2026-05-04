@@ -47,7 +47,7 @@ function main() {
 
   console.error('');
   console.error('Feche os terminais/processos de backend, testes ou comandos Prisma listados acima e rode novamente:');
-  console.error('  npm run prisma:generate --workspace @aep-pa/backend');
+  console.error('  npm run prisma:generate --workspace @sadep/backend');
   console.error('');
   console.error('Para inspecionar manualmente no PowerShell:');
   console.error('  Get-CimInstance Win32_Process -Filter "name = \'node.exe\'" | Select-Object ProcessId,CommandLine');
@@ -198,7 +198,7 @@ function classifyRisk(nodeProcess: NodeProcessInfo): RiskMatch | null {
 
   if (
     relatedToWorkspace &&
-    matchesAny(normalized, ['@aep-pa/backend']) &&
+    matchesAny(normalized, ['@sadep/backend']) &&
     matchesAny(normalized, ['start', 'test', 'bootstrap', 'prisma'])
   ) {
     return {

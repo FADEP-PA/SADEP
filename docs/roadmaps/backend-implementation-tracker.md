@@ -2,7 +2,7 @@
 
 ## Status deste documento
 
-Este arquivo era o tracker backend principal do AEP-PA. Durante a modularização documental, ele passou a funcionar como índice de compatibilidade para orientar a leitura da nova estrutura modular do roadmap backend.
+Este arquivo era o tracker backend principal do SADEP. Durante a modularização documental, ele passou a funcionar como índice de compatibilidade para orientar a leitura da nova estrutura modular do roadmap backend.
 
 O painel backend ativo agora é [`backend/active.md`](./backend/active.md). Itens backend resolvidos ficam em [`backend/resolved.md`](./backend/resolved.md). As principais frentes backend ativas ou pendentes possuem arquivos próprios em [`backend/tasks/`](./backend/tasks/).
 

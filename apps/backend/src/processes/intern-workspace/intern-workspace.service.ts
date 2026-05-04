@@ -34,7 +34,7 @@ import {
   SupervisorEvaluationStatus,
   type SupervisorEvaluationWithDocumentContextRef,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';

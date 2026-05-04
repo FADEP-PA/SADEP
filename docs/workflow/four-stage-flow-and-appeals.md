@@ -1,4 +1,4 @@
-# AEP-PA — Fluxo do Caso 2 com 4 Etapas e Regras de Recursos
+# SADEP — Fluxo do Caso 2 com 4 Etapas e Regras de Recursos
 
 **Status:** Aprovado para referência de projeto  
 **Versão:** 1.0.0  
@@ -10,7 +10,7 @@
 
 ## 1. Objetivo
 
-Este documento define o fluxo processual oficial do AEP-PA para o **Caso 2 com 4 etapas**, incluindo:
+Este documento define o fluxo processual oficial do SADEP para o **Caso 2 com 4 etapas**, incluindo:
 
 - estrutura do processo em etapas;
 - ciclo documental mínimo de cada etapa;
@@ -29,7 +29,7 @@ Este documento serve como referência normativa para implementação controlada 
 
 ### 2.1. Processo único com quatro etapas internas
 
-No Caso 2, o AEP-PA representa:
+No Caso 2, o SADEP representa:
 
 - **um único processo administrativo**;
 - com **quatro etapas avaliativas internas**;

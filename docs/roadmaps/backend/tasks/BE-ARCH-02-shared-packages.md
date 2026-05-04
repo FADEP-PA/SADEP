@@ -46,8 +46,8 @@ O build de contracts foi ajustado o suficiente para runtime compilado, mas o ref
 
 ## Validacoes esperadas
 
-- `npm run build --workspace @aep-pa/contracts`;
-- `node -e "require('@aep-pa/contracts')"`;
+- `npm run build --workspace @sadep/contracts`;
+- `node -e "require('@sadep/contracts')"`;
 - typecheck backend;
 - typecheck frontend;
 - build dos consumidores afetados.

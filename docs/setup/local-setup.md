@@ -1,6 +1,6 @@
 # Instalação e Execução Local
 
-Este documento descreve o fluxo padrão para instalar, preparar e executar o AEP-PA localmente na branch `develop`.
+Este documento descreve o fluxo padrão para instalar, preparar e executar o SADEP localmente na branch `develop`.
 
 ## Pré-requisitos
 
@@ -35,8 +35,8 @@ Copy-Item apps\backend\.env.example apps\backend\.env
 Edite `apps\backend\.env` antes do bootstrap e defina os valores locais obrigatorios:
 
 ```env
-JWT_SECRET=aep-pa-local-jwt-secret-com-mais-de-32-caracteres-2026
-REFRESH_TOKEN_HMAC_SECRET=aep-pa-local-refresh-secret-com-mais-de-32-caracteres-2026
+JWT_SECRET=sadep-local-jwt-secret-com-mais-de-32-caracteres-2026
+REFRESH_TOKEN_HMAC_SECRET=sadep-local-refresh-secret-com-mais-de-32-caracteres-2026
 DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
 ```
 
@@ -72,7 +72,7 @@ No Windows, o passo `prisma generate` executa uma guarda operacional antes de ge
 Se quiser apenas checar se o banco local está pronto:
 
 ```powershell
-npm run db:check --workspace @aep-pa/backend
+npm run db:check --workspace @sadep/backend
 ```
 
 ## Credenciais locais padrão
@@ -81,12 +81,12 @@ Após o seed, os usuários abaixo ficam disponíveis:
 
 | Perfil | E-mail | Senha |
 | --- | --- | --- |
-| Admin | `admin@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
-| Chefia | `supervisor@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
-| CESAD | `cesad@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
-| Assistente da Comissao | `assistant@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
-| Autoridade Homologadora | `authority@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
-| Servidor | `server@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| Admin | `admin@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Chefia | `supervisor@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| CESAD | `cesad@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Assistente da Comissao | `assistant@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Autoridade Homologadora | `authority@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Servidor | `server@sadep.local` | valor de `DEV_SEED_PASSWORD` |
 
 ## Execução do backend
 
@@ -139,7 +139,7 @@ Stop-Process -Id <PID> -Force
 
 O Prisma pode falhar no Windows ao atualizar `node_modules/.prisma/client/query_engine-windows.dll.node` quando algum processo Node relacionado ao backend, testes ou Prisma ainda está usando o engine nativo.
 
-Antes de executar `npm run backend:bootstrap` ou `npm run prisma:generate --workspace @aep-pa/backend`, feche terminais do backend, testes integrados/unitários e comandos Prisma concorrentes. O guard do projeto lista PIDs e command lines quando detecta risco provável, mas não encerra processos automaticamente.
+Antes de executar `npm run backend:bootstrap` ou `npm run prisma:generate --workspace @sadep/backend`, feche terminais do backend, testes integrados/unitários e comandos Prisma concorrentes. O guard do projeto lista PIDs e command lines quando detecta risco provável, mas não encerra processos automaticamente.
 
 Para inspecionar manualmente:
 
@@ -162,7 +162,7 @@ npm run backend:bootstrap
 Para validar apenas as precondições mínimas do banco:
 
 ```powershell
-npm run db:check --workspace @aep-pa/backend
+npm run db:check --workspace @sadep/backend
 ```
 
 ### Frontend com erro relacionado a `.next`
@@ -193,7 +193,7 @@ Checklist mínimo para validar o ambiente:
 - seed e `db:check` executados
 - backend respondendo em `3000`
 - frontend respondendo em `3001`
-- login funcionando com `admin@aep-pa.local` e a senha definida em `DEV_SEED_PASSWORD`
+- login funcionando com `admin@sadep.local` e a senha definida em `DEV_SEED_PASSWORD`
 
 Para validar o frontend antes de considerar uma alteração segura:
 

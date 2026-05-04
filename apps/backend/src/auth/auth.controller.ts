@@ -11,8 +11,8 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { UserRole } from '@aep-pa/contracts';
-import type { LoginRequest, LoginResponse } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
+import type { LoginRequest, LoginResponse } from '@sadep/contracts';
 
 import { AppConfigService } from '../config/app-config.service';
 import { AuthService } from './auth.service';

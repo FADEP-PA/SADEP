@@ -1,6 +1,6 @@
-# AEP-PA
+# SADEP
 
-Sistema de Avaliação de Estágio Probatório do Estado do Pará.
+Sistema de Avaliação de Desempenho de Estágio Probatório do Estado do Pará.
 
 ## Branch de referência
 
@@ -31,7 +31,7 @@ npm run backend:bootstrap
 Antes de executar o bootstrap, edite `apps\backend\.env` e defina os valores locais obrigatorios:
 
 ```env
-JWT_SECRET=aep-pa-local-jwt-secret-com-mais-de-32-caracteres-2026
+JWT_SECRET=sadep-local-jwt-secret-com-mais-de-32-caracteres-2026
 DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
 ```
 
@@ -68,12 +68,12 @@ Os usuarios seed continuam disponiveis com e-mails previsiveis para testes locai
 
 | Perfil | E-mail | Senha |
 | --- | --- | --- |
-| Admin | `admin@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
-| Chefia | `supervisor@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
-| CESAD | `cesad@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
-| Assistente da Comissao | `assistant@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
-| Autoridade Homologadora | `authority@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
-| Servidor | `server@aep-pa.local` | valor de `DEV_SEED_PASSWORD` |
+| Admin | `admin@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Chefia | `supervisor@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| CESAD | `cesad@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Assistente da Comissao | `assistant@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Autoridade Homologadora | `authority@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Servidor | `server@sadep.local` | valor de `DEV_SEED_PASSWORD` |
 
 ## Build e start de produção do backend
 

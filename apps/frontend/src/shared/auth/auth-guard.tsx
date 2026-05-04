@@ -1,6 +1,6 @@
 'use client';
 
-import type { UserRole } from '@aep-pa/contracts';
+import type { UserRole } from '@sadep/contracts';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 

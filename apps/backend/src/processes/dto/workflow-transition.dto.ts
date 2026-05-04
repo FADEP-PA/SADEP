@@ -1,4 +1,4 @@
-import { ProcessAction } from '@aep-pa/contracts';
+import { ProcessAction } from '@sadep/contracts';
 
 export type WorkflowTransitionRequestDto = {
   action: ProcessAction;

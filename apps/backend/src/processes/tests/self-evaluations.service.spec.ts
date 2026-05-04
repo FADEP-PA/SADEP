@@ -9,7 +9,7 @@ import {
   SelfEvaluationStatus,
   SignatureStatus,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import {
   authenticatedUser,

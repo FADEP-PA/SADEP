@@ -1,8 +1,8 @@
-# Evaluation Instruments — AEP-PA
+# Evaluation Instruments — SADEP
 
 ## Objetivo
 
-Documentar os **instrumentos oficiais de avaliação** utilizados no AEP-PA, com foco no **Caso 2 — modelo de 4 etapas**, de modo a orientar:
+Documentar os **instrumentos oficiais de avaliação** utilizados no SADEP, com foco no **Caso 2 — modelo de 4 etapas**, de modo a orientar:
 
 - modelagem de backend
 - regras de negócio
@@ -37,7 +37,7 @@ Não cobre ainda:
 
 ## Princípios de modelagem
 
-No AEP-PA, os instrumentos de avaliação devem ser entendidos em três camadas complementares:
+No SADEP, os instrumentos de avaliação devem ser entendidos em três camadas complementares:
 
 ### 1. Conteúdo funcional
 É o conteúdo preenchido pelos atores do processo, armazenado em entidades de domínio próprias, por exemplo:
@@ -248,7 +248,7 @@ A autoavaliação é artefato **distinto** da avaliação da chefia e não deve 
 
 ## Regra documental central do ciclo da etapa
 
-No fluxo do AEP-PA, a etapa somente deve ser considerada documentalmente completa quando houver:
+No fluxo do SADEP, a etapa somente deve ser considerada documentalmente completa quando houver:
 
 ### Documento 1 — Avaliação da chefia imediata
 Documento formal composto pelos anexos aplicáveis da etapa, com:
@@ -427,7 +427,7 @@ Esses pontos devem ser tratados em documentos e incrementos específicos.
 
 Este documento foi consolidado a partir de:
 
-- documentos de contexto do projeto AEP-PA
+- documentos de contexto do projeto SADEP
 - documentação funcional e arquitetural já existente
 - revisão do código atual do backend
 - anexos normativos do modelo de avaliação de **4 etapas — 2º caso**

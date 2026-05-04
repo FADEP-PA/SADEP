@@ -7,7 +7,7 @@ import {
   ProcessStatus,
   SupervisorEvaluationStatus,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import {
   authenticatedUser,

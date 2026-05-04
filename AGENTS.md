@@ -2,7 +2,7 @@
 
 ## 1. Objetivo do Projeto
 
-Este projeto implementa um Sistema de Avaliação de Estágio Probatório (AEP-PA), com foco em:
+Este projeto implementa um Sistema de Avaliação de Desempenho de Estágio Probatório (SADEP), com foco em:
 
 - segurança jurídica
 - rastreabilidade completa

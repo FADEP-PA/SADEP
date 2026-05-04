@@ -1,8 +1,8 @@
-# Roadmaps Operacionais — AEP-PA
+# Roadmaps Operacionais — SADEP
 
 ## Finalidade
 
-Esta pasta reune os documentos operacionais de planejamento, acompanhamento e priorizacao pratica do AEP-PA.
+Esta pasta reune os documentos operacionais de planejamento, acompanhamento e priorizacao pratica do SADEP.
 
 A partir da DOC-R1, os roadmaps passam a ter uma estrutura modular inicial por area, sem mover nem arquivar os documentos legados.
 

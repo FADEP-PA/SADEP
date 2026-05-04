@@ -1,4 +1,4 @@
-# ADR-001 — Estratégia de Workflow Engine para o MVP do AEP-PA
+# ADR-001 — Estratégia de Workflow Engine para o MVP do SADEP
 
 > Este documento foi reclassificado como ADR durante a Fase 5 da sanitização documental, por registrar a decisão arquitetural de usar workflow próprio com state machine no backend para o MVP.
 
@@ -20,7 +20,7 @@ Conclusão de governança técnica: qualquer referência externa só é válida 
 
 ## 2) Pesquisa comparativa dos projetos obrigatórios
 
-> Escala de aderência: **Alta / Média / Baixa** para o contexto AEP-PA (processo administrativo formal, jurídico, auditável).
+> Escala de aderência: **Alta / Média / Baixa** para o contexto SADEP (processo administrativo formal, jurídico, auditável).
 
 ### 2.1 WKS Platform
 - Repositório: <https://github.com/wks-platform>
@@ -165,7 +165,7 @@ Conclusão de governança técnica: qualquer referência externa só é válida 
 ### 3.2 n8n / Node-RED (comparativo negativo para este caso)
 - Valor: automação rápida.
 - Limite crítico: inadequados como núcleo jurídico-processual determinístico de estado.
-- Uso recomendado: evitar como motor central do AEP-PA.
+- Uso recomendado: evitar como motor central do SADEP.
 
 ### 3.3 Keycloak (RBAC/IAM)
 - Repositório: <https://github.com/keycloak/keycloak>

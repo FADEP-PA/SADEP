@@ -4,7 +4,7 @@ import type {
   SupervisorEvaluationWithDocumentContextRef,
   UserRole,
   AuditEventType,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 export type WorkflowResponse = {
   id: string;

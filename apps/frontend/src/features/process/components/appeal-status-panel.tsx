@@ -1,4 +1,4 @@
-import type { InternServerWorkspaceSnapshotRef } from '@aep-pa/contracts';
+import type { InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
 
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InfoCard } from '@/shared/ui/info-card';

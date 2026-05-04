@@ -1,1 +1,1 @@
-export type { AuthenticatedUserRef as AuthenticatedUser } from '@aep-pa/contracts';
+export type { AuthenticatedUserRef as AuthenticatedUser } from '@sadep/contracts';

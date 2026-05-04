@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { UserRole } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';

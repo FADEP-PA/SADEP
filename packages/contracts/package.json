@@ -1,5 +1,5 @@
 {
-  "name": "@aep-pa/contracts",
+  "name": "@sadep/contracts",
   "private": true,
   "version": "0.1.0",
   "main": "src/index.ts",

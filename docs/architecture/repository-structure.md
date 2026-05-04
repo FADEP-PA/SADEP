@@ -1,6 +1,6 @@
 # Estrutura inicial do repositório (MVP)
 
-Este documento registra a organização base do monorepo para o AEP-PA, com separação entre:
+Este documento registra a organização base do monorepo para o SADEP, com separação entre:
 
 - `apps/frontend` (interface por perfil)
 - `apps/backend` (domínio, workflow, aplicação, infraestrutura e API)

@@ -36,13 +36,13 @@ export function LoginPage() {
       <div className="login-screen__shell">
         <section className="login-screen__brand" aria-hidden="true">
           <p>Acesse o portal</p>
-          <h1>AEP-PA</h1>
+          <h1>SADEP</h1>
         </section>
 
         <section className="login-screen__card" aria-labelledby="login-title">
           <div className="login-screen__card-header">
             <p className="login-kicker">Login</p>
-            <h2 id="login-title">Acesso ao AEP-PA</h2>
+            <h2 id="login-title">Acesso ao SADEP</h2>
             <p className="login-screen__hint">Entre com suas credenciais.</p>
           </div>
 

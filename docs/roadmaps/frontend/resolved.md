@@ -45,7 +45,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - `session.accessToken` permanece temporariamente no contexto em memoria para compatibilidade com telas existentes.
 - O `http-client` ficou preparado para uso do token do store em memoria.
 - Nao alterou backend, contracts, Prisma, migrations, workflow, CESAD, permissoes ou regras processuais.
-- Validacoes aprovadas: `npm run typecheck --workspace @aep-pa/frontend`, `npm run build --workspace @aep-pa/frontend`, `npm run frontend:check` e `git diff --check`.
+- Validacoes aprovadas: `npm run typecheck --workspace @sadep/frontend`, `npm run build --workspace @sadep/frontend`, `npm run frontend:check` e `git diff --check`.
 - Ressalva nao bloqueante tratada pelo commit `fix(frontend): normalize public auth routes`: rotas públicas equivalentes sao normalizadas e `401 público` no bootstrap de `/auth/refresh` permanece como anonimo silencioso em rota publica.
 - `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 

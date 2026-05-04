@@ -1,6 +1,6 @@
 # Roadmap Frontend Modular
 
-Esta pasta concentra a visao modular do roadmap frontend do AEP-PA.
+Esta pasta concentra a visao modular do roadmap frontend do SADEP.
 
 O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md) continua existindo como indice de compatibilidade. A leitura operacional deve comecar por este diretorio modular.
 

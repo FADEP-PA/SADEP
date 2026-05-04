@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Estruturar e gerenciar documentos oficiais do processo administrativo do AEP-PA, com validade processual, rastreabilidade, vínculo com o workflow, suporte a assinaturas e aderência ao modelo do Caso 2 com 4 etapas.
+Estruturar e gerenciar documentos oficiais do processo administrativo do SADEP, com validade processual, rastreabilidade, vínculo com o workflow, suporte a assinaturas e aderência ao modelo do Caso 2 com 4 etapas.
 
 ---
 
@@ -24,7 +24,7 @@ Use esta skill para:
 
 ## Conceito central
 
-No AEP-PA, documento processual não é apenas arquivo PDF.
+No SADEP, documento processual não é apenas arquivo PDF.
 
 Um documento oficial pode existir primeiro como **artefato lógico do processo**, vinculado:
 
@@ -54,7 +54,7 @@ Regras:
 
 ## Regra estrutural do Caso 2
 
-No Caso 2, o AEP-PA representa:
+No Caso 2, o SADEP representa:
 
 - um único processo administrativo
 - quatro etapas internas obrigatórias
@@ -306,7 +306,7 @@ Todo documento processual deve se integrar a:
 ## Superação, substituição e histórico
 
 ### Princípio
-No AEP-PA, correção posterior relevante não deve ocorrer por sobrescrita silenciosa de documento oficial.
+No SADEP, correção posterior relevante não deve ocorrer por sobrescrita silenciosa de documento oficial.
 
 ### Estratégias admitidas
 Quando houver necessidade de correção formal, o sistema deve usar uma destas abordagens:

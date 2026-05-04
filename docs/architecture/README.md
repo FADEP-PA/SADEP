@@ -1,6 +1,6 @@
 # Arquitetura
 
-Esta pasta reúne referências arquiteturais, estrutura do monorepo e evolução estrutural do AEP-PA.
+Esta pasta reúne referências arquiteturais, estrutura do monorepo e evolução estrutural do SADEP.
 
 - decisões arquiteturais formais devem ficar em [`adr/`](./adr/)
 - a estrutura do monorepo permanece documentada em [`repository-structure.md`](./repository-structure.md)

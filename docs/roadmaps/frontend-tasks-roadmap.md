@@ -2,7 +2,7 @@
 
 ## Status deste documento
 
-Este arquivo era o roadmap frontend principal do AEP-PA. Durante a modularização documental, ele passou a funcionar como índice de compatibilidade para orientar a leitura da nova estrutura modular do roadmap frontend.
+Este arquivo era o roadmap frontend principal do SADEP. Durante a modularização documental, ele passou a funcionar como índice de compatibilidade para orientar a leitura da nova estrutura modular do roadmap frontend.
 
 O painel frontend ativo agora é [`frontend/active.md`](./frontend/active.md). Itens frontend resolvidos ficam em [`frontend/resolved.md`](./frontend/resolved.md). As principais tarefas frontend ativas ou pendentes possuem arquivos próprios em [`frontend/tasks/`](./frontend/tasks/).
 

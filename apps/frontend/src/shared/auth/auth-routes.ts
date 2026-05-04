@@ -1,4 +1,4 @@
-import { UserRole } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
 
 import { getRolePresentation } from '@/shared/rbac/role-catalog';
 

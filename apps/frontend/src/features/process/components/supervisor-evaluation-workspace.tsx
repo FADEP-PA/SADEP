@@ -4,7 +4,7 @@ import {
   ProcessStatus,
   UserRole,
   type SupervisorEvaluationWithDocumentContextRef,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';

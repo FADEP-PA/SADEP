@@ -1,4 +1,4 @@
-import { DocumentType, type CesadStageReadSnapshotRef } from '@aep-pa/contracts';
+import { DocumentType, type CesadStageReadSnapshotRef } from '@sadep/contracts';
 
 import {
   formatDateTime,

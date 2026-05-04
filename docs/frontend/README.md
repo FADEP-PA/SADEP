@@ -1,8 +1,8 @@
-# Frontend — AEP-PA
+# Frontend — SADEP
 
 ## Finalidade
 
-Esta pasta reúne diretrizes e referências vivas ou semivivas para o frontend do AEP-PA.
+Esta pasta reúne diretrizes e referências vivas ou semivivas para o frontend do SADEP.
 
 Ela funciona como ponto de entrada para leitura frontend sem competir com os roadmaps operacionais nem com os documentos normativos de domínio.
 

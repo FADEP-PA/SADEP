@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import { DocumentStatus, DocumentType, SignatureStatus, UserRole } from '@aep-pa/contracts';
+import { DocumentStatus, DocumentType, SignatureStatus, UserRole } from '@sadep/contracts';
 
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { ProcessesService } from '../processes.service';

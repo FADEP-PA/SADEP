@@ -9,7 +9,7 @@ import {
   SupervisorEvaluationStatus,
   UserRole,
   type CesadStageDocumentationStatusRef,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import type { WorkflowHistoryItem } from '../../dashboard/types/process-dashboard-types';
 import type { StatusBadgeTone } from '@/shared/ui/status-badge';

@@ -1,6 +1,6 @@
 # Contracts
 
-Pacote de vocabulário compartilhado do domínio AEP-PA e contratos compartilhados entre apps.
+Pacote de vocabulário compartilhado do domínio SADEP e contratos compartilhados entre apps.
 
 ## Implementado neste incremento
 
@@ -20,7 +20,7 @@ Este pacote concentra contratos compartilhados entre os apps, especialmente:
 Para permitir que o backend compilado rode com Node puro em produção, este pacote expõe um build CommonJS mínimo em `dist/` para chamadas `require()`:
 
 ```powershell
-npm run build --workspace @aep-pa/contracts
+npm run build --workspace @sadep/contracts
 ```
 
 Esse build compila apenas os contratos existentes e mantém o pacote pequeno. Ele não altera a modelagem dos contratos, não introduz nova arquitetura de pacotes compartilhados e não substitui uma revisão futura mais ampla do monorepo.

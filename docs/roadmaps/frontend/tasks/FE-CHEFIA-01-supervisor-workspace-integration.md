@@ -35,7 +35,7 @@ Atualizacao complementar de 2026-04-30:
 
 - a tela passou a ter campo de consulta por identificador de processo;
 - `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` continua como valor inicial opcional, nao como unica forma de carregar workspace real;
-- validacao real em backend local passou com massa `local-fe-chefia-01`, usuario `supervisor@aep-pa.local`, rascunho salvo, envio concluido, processo em `AGUARDANDO_ASSINATURA`, documento `READY_FOR_SIGNATURE` e duas assinaturas esperadas.
+- validacao real em backend local passou com massa `local-fe-chefia-01`, usuario `supervisor@sadep.local`, rascunho salvo, envio concluido, processo em `AGUARDANDO_ASSINATURA`, documento `READY_FOR_SIGNATURE` e duas assinaturas esperadas.
 - validacao visual em navegador passou em modo `next start` na rota `/chefia-imediata`, com login de chefia, consulta do processo `local-fe-chefia-01` e exibicao da linha real em `AGUARDANDO ASSINATURA`.
 
 ## Escopo previsto

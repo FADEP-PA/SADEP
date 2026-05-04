@@ -8,7 +8,7 @@ import {
   CesadStageOpinionStatus,
   ProcessStatus,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import {
   authenticatedUser,

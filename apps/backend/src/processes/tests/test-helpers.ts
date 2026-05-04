@@ -12,7 +12,7 @@ import {
   UserRole,
   ProcessAction,
   type SupervisorEvaluationContentInput,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import { hashPassword } from '../../common/security/password-hasher';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';

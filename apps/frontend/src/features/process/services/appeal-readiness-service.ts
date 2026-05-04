@@ -1,4 +1,4 @@
-import { ProcessStatus, type InternServerWorkspaceSnapshotRef } from '@aep-pa/contracts';
+import { ProcessStatus, type InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
 
 import type { StatusBadgeTone } from '@/shared/ui/status-badge';
 

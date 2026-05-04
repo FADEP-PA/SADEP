@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { UserRole } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
 
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { useAuth } from '@/shared/auth/auth-context';

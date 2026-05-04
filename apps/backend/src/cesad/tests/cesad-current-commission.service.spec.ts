@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-import { UserRole } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
 
 import { CesadCurrentCommissionService } from '../cesad-current-commission.service';
 import {

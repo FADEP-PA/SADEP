@@ -3,7 +3,7 @@ import {
   type SelfEvaluationRef,
   type SelfEvaluationDocumentContextRef,
   type SelfEvaluationWithDocumentContextRef,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 export interface UpsertSelfEvaluationDto {
   selfReflection: string;

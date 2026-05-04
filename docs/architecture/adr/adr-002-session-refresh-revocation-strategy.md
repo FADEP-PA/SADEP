@@ -45,7 +45,7 @@ Essa solução é aceitável para MVP/local assistido, mas não é suficiente pa
 
 ## Problema
 
-O AEP-PA é um sistema administrativo formal, com foco em segurança jurídica, rastreabilidade, regras centralizadas no backend e auditoria obrigatória.
+O SADEP é um sistema administrativo formal, com foco em segurança jurídica, rastreabilidade, regras centralizadas no backend e auditoria obrigatória.
 
 Para homologação e produção, a estratégia de sessão precisa permitir:
 
@@ -65,7 +65,7 @@ A estratégia atual com bearer JWT de 1 hora não atende todos esses requisitos.
 
 ## Decisão
 
-O AEP-PA adotará, para homologação/produção, uma estratégia híbrida com:
+O SADEP adotará, para homologação/produção, uma estratégia híbrida com:
 
 - access token curto em memória no frontend;
 - refresh token opaco em cookie `HttpOnly`;

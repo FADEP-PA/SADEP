@@ -3,12 +3,12 @@ import { Prisma, PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const EXPECTED_SEED_EMAILS = [
-  'admin@aep-pa.local',
-  'supervisor@aep-pa.local',
-  'cesad@aep-pa.local',
-  'assistant@aep-pa.local',
-  'authority@aep-pa.local',
-  'server@aep-pa.local',
+  'admin@sadep.local',
+  'supervisor@sadep.local',
+  'cesad@sadep.local',
+  'assistant@sadep.local',
+  'authority@sadep.local',
+  'server@sadep.local',
 ] as const;
 
 async function main() {

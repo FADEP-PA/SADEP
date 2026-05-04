@@ -3,7 +3,7 @@ import { CesadCommissionMemberRoleType as PrismaCesadCommissionMemberRoleType } 
 import {
   CesadCommissionMemberRoleType,
   type CesadCommissionMemberRef,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import type { CesadCommissionMember } from '../domain/cesad-commissions/cesad-commission-member.entity';
 import { PrismaService } from '../infrastructure/database/prisma.service';

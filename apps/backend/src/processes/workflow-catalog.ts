@@ -3,7 +3,7 @@ import {
   ProcessAction,
   ProcessStatus,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 export type WorkflowTransitionDefinition = {
   action: ProcessAction;

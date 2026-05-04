@@ -5,7 +5,7 @@ import {
   ProcessStatus,
   SignatureStatus,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import { PrismaService } from '../../infrastructure/database/prisma.service';

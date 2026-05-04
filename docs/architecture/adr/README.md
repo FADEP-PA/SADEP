@@ -1,6 +1,6 @@
 # ADRs — Architecture Decision Records
 
-Esta pasta reúne decisões arquiteturais relevantes do AEP-PA.
+Esta pasta reúne decisões arquiteturais relevantes do SADEP.
 
 ## ADRs registradas
 

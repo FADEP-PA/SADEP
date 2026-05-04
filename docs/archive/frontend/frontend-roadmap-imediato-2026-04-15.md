@@ -1,10 +1,10 @@
-# Frontend Roadmap Imediato — AEP-PA
+# Frontend Roadmap Imediato — SADEP
 
 **Status:** Diretriz operacional para desenvolvimento frontend  
 **Versão:** 1.0.0  
 **Data:** 2026-04-15  
 **Escopo:** Organizar o que o dev frontend já pode implementar agora, com base no que já existe no frontend e no backend atual  
-**Público-alvo:** Desenvolvedor frontend do AEP-PA
+**Público-alvo:** Desenvolvedor frontend do SADEP
 
 ---
 
@@ -467,7 +467,7 @@ Frontend pronto para acoplar os próximos incrementos do backend com menos retra
 3. **Não criar ação funcional sem endpoint correspondente**
 4. **Preferir componentes reutilizáveis**
 5. **Preparar layout futuro sem simular funcionalidade pronta**
-6. **Manter consistência com os contratos de `@aep-pa/contracts`**
+6. **Manter consistência com os contratos de `@sadep/contracts`**
 7. **Respeitar a segregação por perfil já existente**
 8. **Tratar warnings e bloqueios como parte da UX, não como erro visual**
 
@@ -475,7 +475,7 @@ Frontend pronto para acoplar os próximos incrementos do backend com menos retra
 
 ## 9. Conclusão
 
-O frontend do AEP-PA já possui base sólida e dois fluxos realmente operacionais: chefia imediata e servidor estagiário. O melhor uso do tempo do dev frontend agora não é “esperar o backend”, mas:
+O frontend do SADEP já possui base sólida e dois fluxos realmente operacionais: chefia imediata e servidor estagiário. O melhor uso do tempo do dev frontend agora não é “esperar o backend”, mas:
 
 - consolidar essas áreas;
 - transformar a área CESAD em leitura real;

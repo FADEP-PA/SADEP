@@ -1,8 +1,8 @@
-# Documentação do Projeto AEP-PA
+# Documentação do Projeto SADEP
 
 ## Objetivo
 
-O diretório `docs/` reúne a documentação oficial e de apoio do **AEP-PA — Sistema de Avaliação Especial de Estágio Probatório**.
+O diretório `docs/` reúne a documentação oficial e de apoio do **SADEP — Sistema de Avaliação de Desempenho de Estágio Probatório**.
 
 Nesta fase, os arquivos atuais permanecem majoritariamente em seus locais de origem e são classificados em grupos de uso:
 

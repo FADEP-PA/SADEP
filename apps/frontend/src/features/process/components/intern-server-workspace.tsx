@@ -6,7 +6,7 @@ import {
   UserRole,
   type InternServerWorkspaceSnapshotRef,
   type ProcessAction,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import type { WorkflowHistoryItem } from '@/features/dashboard/types/process-dashboard-types';

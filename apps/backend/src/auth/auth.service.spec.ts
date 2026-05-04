@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 
 import { UnauthorizedException } from '@nestjs/common';
-import { UserRole } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
 
 import { hashPassword } from '../common/security/password-hasher';
 import { AppLogger } from '../common/logging/app-logger.service';

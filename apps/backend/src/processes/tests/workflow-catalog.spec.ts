@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   ProcessAction,
   ProcessStatus,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import {
   getAvailableWorkflowTransitions,

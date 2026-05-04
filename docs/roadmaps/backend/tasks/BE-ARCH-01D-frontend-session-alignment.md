@@ -82,8 +82,8 @@ O backend ja revalida usuario vivo em requests autenticadas e os contratos minim
 
 ## Validacoes executadas
 
-- `npm run typecheck --workspace @aep-pa/frontend` — passou.
-- `npm run build --workspace @aep-pa/frontend` — passou.
+- `npm run typecheck --workspace @sadep/frontend` — passou.
+- `npm run build --workspace @sadep/frontend` — passou.
 - `npm run frontend:check` — passou.
 - `git diff --check` — passou, com apenas avisos de line endings do Git.
 - Busca por refresh token, cookies, revogacao e logout server-side — sem implementacao nova.

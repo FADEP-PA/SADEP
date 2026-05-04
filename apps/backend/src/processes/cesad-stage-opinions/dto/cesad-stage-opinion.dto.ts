@@ -2,7 +2,7 @@ import {
   CesadStageOpinionStatus,
   type CesadStageOpinionInput,
   type CesadStageOpinionRef,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 export interface UpsertCesadStageOpinionDto extends CesadStageOpinionInput {
   comment?: string;

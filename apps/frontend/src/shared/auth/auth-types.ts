@@ -2,7 +2,7 @@ import type {
   AuthenticatedUserRef,
   LoginRequest,
   LoginResponse as SharedLoginResponse,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 export type AuthenticatedUser = AuthenticatedUserRef;
 

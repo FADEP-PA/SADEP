@@ -9,7 +9,7 @@ export class HealthService {
   getStatus() {
     return {
       status: 'ok',
-      service: 'aep-pa-backend',
+      service: 'sadep-backend',
       environment: this.appConfigService.nodeEnv,
       timestamp: new Date().toISOString(),
     };

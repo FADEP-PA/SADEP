@@ -1,5 +1,5 @@
 import { UnauthorizedException } from '@nestjs/common';
-import { UserRole } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
 
 import { ProcessDocumentsController } from './process-documents.controller';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';

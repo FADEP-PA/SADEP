@@ -33,7 +33,7 @@ import {
   SupervisorEvaluationStatus,
   type SupervisorEvaluationRef,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { PrismaService } from '../infrastructure/database/prisma.service';

@@ -17,12 +17,12 @@ type DuplicateSignatureRecordRow = {
 };
 
 const KNOWN_USER_NAMES: Record<string, string> = {
-  'admin@aep-pa.local': 'Administrador AEP-PA',
-  'supervisor@aep-pa.local': 'Chefia Imediata AEP-PA',
-  'cesad@aep-pa.local': 'Membro CESAD AEP-PA',
-  'assistant@aep-pa.local': 'Assistente da Comissao AEP-PA',
-  'authority@aep-pa.local': 'Autoridade Homologadora AEP-PA',
-  'server@aep-pa.local': 'Servidor Estagiario AEP-PA',
+  'admin@sadep.local': 'Administrador SADEP',
+  'supervisor@sadep.local': 'Chefia Imediata SADEP',
+  'cesad@sadep.local': 'Membro CESAD SADEP',
+  'assistant@sadep.local': 'Assistente da Comissao SADEP',
+  'authority@sadep.local': 'Autoridade Homologadora SADEP',
+  'server@sadep.local': 'Servidor Estagiario SADEP',
 };
 
 async function main() {

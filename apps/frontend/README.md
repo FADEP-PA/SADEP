@@ -122,7 +122,7 @@ Convenções de UI:
   "accessToken": "jwt-ou-token-equivalente",
   "user": {
     "sub": "uuid-do-usuario",
-    "email": "usuario@aep-pa.local",
+    "email": "usuario@sadep.local",
     "role": "ADMIN"
   }
 }
@@ -133,7 +133,7 @@ Convenções de UI:
 ```json
 {
   "sub": "uuid-do-usuario",
-  "email": "usuario@aep-pa.local",
+  "email": "usuario@sadep.local",
   "role": "ADMIN"
 }
 ```

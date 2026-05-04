@@ -1,6 +1,6 @@
 # Roadmap Backend Modular
 
-Esta pasta concentra a visao modular do roadmap backend do AEP-PA.
+Esta pasta concentra a visao modular do roadmap backend do SADEP.
 
 O documento legado [`../backend-implementation-tracker.md`](../backend-implementation-tracker.md) continua existindo como indice de compatibilidade. A leitura operacional deve comecar por este diretorio modular.
 

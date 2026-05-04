@@ -1,5 +1,5 @@
-const SESSION_STORAGE_KEY = 'aep-pa:auth:session';
-const REMEMBER_ME_STORAGE_KEY = 'aep-pa:auth:remember-me';
+const SESSION_STORAGE_KEY = 'sadep:auth:session';
+const REMEMBER_ME_STORAGE_KEY = 'sadep:auth:remember-me';
 
 type StorageType = 'local' | 'session';
 

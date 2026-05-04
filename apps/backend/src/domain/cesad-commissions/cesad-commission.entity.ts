@@ -1,4 +1,4 @@
-import type { CesadCommissionStatus } from '@aep-pa/contracts';
+import type { CesadCommissionStatus } from '@sadep/contracts';
 
 export interface CesadCommission {
   id: string;

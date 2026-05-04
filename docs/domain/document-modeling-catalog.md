@@ -1,16 +1,16 @@
-# AEP-PA — Catálogo Oficial de Modelagem Documental
+# SADEP — Catálogo Oficial de Modelagem Documental
 
 **Status:** Aprovado para referência de projeto  
 **Versão:** 1.1.0  
 **Data:** 2026-03-27  
-**Escopo:** Diretriz oficial de modelagem documental do AEP-PA  
+**Escopo:** Diretriz oficial de modelagem documental do SADEP  
 **Aplicação:** Backend, frontend, workflow, geração documental, assinatura e auditoria
 
 ---
 
 ## 1. Objetivo
 
-Este documento define a modelagem documental oficial do AEP-PA no nível funcional, processual e arquitetural.
+Este documento define a modelagem documental oficial do SADEP no nível funcional, processual e arquitetural.
 
 Seu objetivo é estabelecer, de forma estável e auditável:
 
@@ -37,7 +37,7 @@ Este documento deve servir como referência para:
 
 ## 2. Escopo
 
-Este catálogo abrange os documentos formais do rito do AEP-PA, com foco no Caso 2 e no MVP orientado à segurança jurídica.
+Este catálogo abrange os documentos formais do rito do SADEP, com foco no Caso 2 e no MVP orientado à segurança jurídica.
 
 Inclui:
 
@@ -66,9 +66,9 @@ Este catálogo complementa esses artefatos, concentrando a visão documental ofi
 
 ## 3. Princípios estruturais da modelagem documental
 
-### 3.1. O AEP-PA é um sistema processual, não um repositório de anexos
+### 3.1. O SADEP é um sistema processual, não um repositório de anexos
 
-Os documentos do AEP-PA não devem ser tratados como arquivos soltos anexados manualmente ao processo, salvo casos excepcionais.
+Os documentos do SADEP não devem ser tratados como arquivos soltos anexados manualmente ao processo, salvo casos excepcionais.
 
 A regra principal do sistema é:
 
@@ -159,7 +159,7 @@ Nunca por sobrescrita silenciosa.
 
 ## 4. Ciclo de vida documental padrão
 
-O padrão recomendado para os documentos do AEP-PA é:
+O padrão recomendado para os documentos do SADEP é:
 
 1. **criação do conteúdo funcional**
 2. **edição / rascunho**, quando aplicável
@@ -208,7 +208,7 @@ Documento que perdeu vigência lógica por substituição formal, correção pos
 
 ### 6.1. Processo único com etapas internas
 
-No Caso 2, o AEP-PA representa:
+No Caso 2, o SADEP representa:
 
 - **um único processo administrativo**;
 - com **4 etapas avaliativas internas**;
@@ -254,7 +254,7 @@ Antes disso, o sistema não deve:
 Documento originado de formulário preenchido pela chefia imediata no sistema.
 
 #### Origem
-Conteúdo funcional preenchido manualmente no AEP-PA.
+Conteúdo funcional preenchido manualmente no SADEP.
 
 #### Artefato funcional sugerido
 `SupervisorEvaluation`
@@ -298,7 +298,7 @@ Já consolidado no backend.
 Documento originado de formulário preenchido pelo servidor-estagiário no sistema.
 
 #### Origem
-Conteúdo funcional preenchido manualmente no AEP-PA.
+Conteúdo funcional preenchido manualmente no SADEP.
 
 #### Artefato funcional sugerido
 `SelfEvaluation`
@@ -991,7 +991,7 @@ Cada `ProcessDocument` deve, idealmente, manter ou permitir derivar:
 
 Ficam considerados consolidados, para fins de continuidade do projeto:
 
-1. o AEP-PA produz seus documentos oficiais a partir de atos praticados dentro da aplicação;
+1. o SADEP produz seus documentos oficiais a partir de atos praticados dentro da aplicação;
 2. conteúdo funcional, documento processual e assinatura são camadas distintas;
 3. assinaturas recaem sobre documentos formais;
 4. nem todo documento nasce de formulário livre;

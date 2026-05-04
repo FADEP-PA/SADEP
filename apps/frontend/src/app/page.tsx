@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { LoginPage } from '@/features/auth/components/login-page';
 
 export const metadata: Metadata = {
-  title: 'AEP-PA | Login',
-  description: 'Tela de acesso ao sistema AEP-PA.',
+  title: 'SADEP | Login',
+  description: 'Tela de acesso ao sistema SADEP.',
 };
 
 export default function Home() {

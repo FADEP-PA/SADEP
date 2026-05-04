@@ -1,6 +1,6 @@
 # Backend (NestJS)
 
-Fundação técnica mínima do backend do AEP-PA para os próximos incrementos.
+Fundação técnica mínima do backend do SADEP para os próximos incrementos.
 
 ## Implementado neste incremento
 
@@ -34,7 +34,7 @@ Esse fluxo é de desenvolvimento local. Ele usa `ts-node` no `start:dev` e pode 
 Exemplo de valores locais para `apps/backend/.env`:
 
 ```env
-JWT_SECRET=aep-pa-local-jwt-secret-com-mais-de-32-caracteres-2026
+JWT_SECRET=sadep-local-jwt-secret-com-mais-de-32-caracteres-2026
 DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
 ```
 
@@ -48,17 +48,17 @@ No Windows, o `prisma generate` passa por uma guarda antes de atualizar o Prisma
 
 Para validar apenas as precondições mínimas do banco local sem subir o Nest:
 
-- `npm run db:check --workspace @aep-pa/backend`
+- `npm run db:check --workspace @sadep/backend`
 
 > Observação: para integração local com o frontend em `http://localhost:3001`, o backend agora usa `FRONTEND_ORIGIN` para responder corretamente ao preflight CORS (`OPTIONS`) em endpoints como `/auth/login`.
 
 ## Estratégia de testes e typecheck
 
-- `npm run test --workspace @aep-pa/backend` é o agregador oficial e executa a suíte integrada seguida da suíte unitária.
-- `npm run test:integration --workspace @aep-pa/backend` executa o runner customizado de processos em `src/processes/tests/run.ts`, usado para cenários funcionais/integrados de workflow, CESAD e avaliações.
-- `npm run test:unit --workspace @aep-pa/backend` executa o Jest, usado para specs unitárias e com mocks.
-- `npm run typecheck --workspace @aep-pa/backend` valida o código de aplicação pelo `tsconfig.app.json`.
-- `npm run typecheck:spec --workspace @aep-pa/backend` valida specs e helpers de teste pelo `tsconfig.spec.json`.
+- `npm run test --workspace @sadep/backend` é o agregador oficial e executa a suíte integrada seguida da suíte unitária.
+- `npm run test:integration --workspace @sadep/backend` executa o runner customizado de processos em `src/processes/tests/run.ts`, usado para cenários funcionais/integrados de workflow, CESAD e avaliações.
+- `npm run test:unit --workspace @sadep/backend` executa o Jest, usado para specs unitárias e com mocks.
+- `npm run typecheck --workspace @sadep/backend` valida o código de aplicação pelo `tsconfig.app.json`.
+- `npm run typecheck:spec --workspace @sadep/backend` valida specs e helpers de teste pelo `tsconfig.spec.json`.
 
 Os aliases `test:runner` e `test:jest` foram preservados por compatibilidade, apontando respectivamente para `test:integration` e `test:unit`.
 
@@ -74,11 +74,11 @@ npm run backend:start:prod
 No workspace do backend, os comandos equivalentes são:
 
 ```powershell
-npm run build --workspace @aep-pa/backend
-npm run start:prod --workspace @aep-pa/backend
+npm run build --workspace @sadep/backend
+npm run start:prod --workspace @sadep/backend
 ```
 
-O build do backend executa o build mínimo de `@aep-pa/contracts`, roda `prisma generate` e compila a aplicação com `tsc -p tsconfig.app.json`. Como o `rootDir` do backend aponta para a raiz do monorepo, o entrypoint compilado fica em `apps/backend/dist/apps/backend/src/main.js`; por isso `start` e `start:prod` executam esse caminho com `node`.
+O build do backend executa o build mínimo de `@sadep/contracts`, roda `prisma generate` e compila a aplicação com `tsc -p tsconfig.app.json`. Como o `rootDir` do backend aponta para a raiz do monorepo, o entrypoint compilado fica em `apps/backend/dist/apps/backend/src/main.js`; por isso `start` e `start:prod` executam esse caminho com `node`.
 
 O `start:prod` não executa bootstrap local, seed, `db push`, `db:check` nem `prisma generate`. Antes de iniciar em produção, as variáveis de ambiente devem estar definidas, o Prisma Client deve ter sido gerado no build e o banco de dados deve estar previamente preparado pelo processo operacional do ambiente.
 

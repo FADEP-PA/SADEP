@@ -1,9 +1,9 @@
 {
-  "name": "@aep-pa/backend",
+  "name": "@sadep/backend",
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "build": "npm run build --workspace @aep-pa/contracts && npm run prisma:generate && tsc -p tsconfig.app.json",
+    "build": "npm run build --workspace @sadep/contracts && npm run prisma:generate && tsc -p tsconfig.app.json",
     "start": "node dist/apps/backend/src/main.js",
     "start:prod": "node dist/apps/backend/src/main.js",
     "start:dev": "ts-node --transpile-only -r tsconfig-paths/register src/main.ts",
@@ -24,7 +24,7 @@
     "prisma:seed": "ts-node --transpile-only -r tsconfig-paths/register prisma/seed.ts"
   },
   "dependencies": {
-    "@aep-pa/contracts": "0.1.0",
+    "@sadep/contracts": "0.1.0",
     "@nestjs/common": "^11.1.6",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.6",

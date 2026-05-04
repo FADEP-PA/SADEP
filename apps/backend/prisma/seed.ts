@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { PrismaClient } from '@prisma/client';
-import { UserRole } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
 
 import { hashPassword } from '../src/common/security/password-hasher';
 
@@ -11,24 +11,24 @@ loadLocalEnvFile();
 const prisma = new PrismaClient();
 
 const users = [
-  { email: 'admin@aep-pa.local', name: 'Administrador AEP-PA', role: UserRole.ADMIN },
+  { email: 'admin@sadep.local', name: 'Administrador SADEP', role: UserRole.ADMIN },
   {
-    email: 'supervisor@aep-pa.local',
-    name: 'Chefia Imediata AEP-PA',
+    email: 'supervisor@sadep.local',
+    name: 'Chefia Imediata SADEP',
     role: UserRole.IMMEDIATE_SUPERVISOR,
   },
-  { email: 'cesad@aep-pa.local', name: 'Membro CESAD AEP-PA', role: UserRole.CESAD_MEMBER },
+  { email: 'cesad@sadep.local', name: 'Membro CESAD SADEP', role: UserRole.CESAD_MEMBER },
   {
-    email: 'assistant@aep-pa.local',
-    name: 'Assistente da Comissao AEP-PA',
+    email: 'assistant@sadep.local',
+    name: 'Assistente da Comissao SADEP',
     role: UserRole.COMMISSION_ASSISTANT,
   },
   {
-    email: 'authority@aep-pa.local',
-    name: 'Autoridade Homologadora AEP-PA',
+    email: 'authority@sadep.local',
+    name: 'Autoridade Homologadora SADEP',
     role: UserRole.HOMOLOGATION_AUTHORITY,
   },
-  { email: 'server@aep-pa.local', name: 'Servidor Estagiario AEP-PA', role: UserRole.INTERN_SERVER },
+  { email: 'server@sadep.local', name: 'Servidor Estagiario SADEP', role: UserRole.INTERN_SERVER },
 ];
 
 function loadLocalEnvFile() {

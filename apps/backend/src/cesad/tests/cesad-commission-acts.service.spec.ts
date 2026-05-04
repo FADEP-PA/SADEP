@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   CesadCommissionActType,
   type CesadCommissionActRef,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import { CesadCommissionActsService } from '../cesad-commission-acts.service';
 import {

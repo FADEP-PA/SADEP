@@ -3,7 +3,7 @@ import { CesadCommissionStatus as PrismaCesadCommissionStatus } from '@prisma/cl
 import {
   CesadCommissionStatus,
   type CesadCommissionRef,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import type { CesadCommission } from '../domain/cesad-commissions/cesad-commission.entity';
 import { PrismaService } from '../infrastructure/database/prisma.service';

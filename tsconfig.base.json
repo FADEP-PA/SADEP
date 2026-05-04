@@ -12,7 +12,7 @@
     "emitDecoratorMetadata": true,
     "baseUrl": ".",
     "paths": {
-      "@aep-pa/contracts": [
+      "@sadep/contracts": [
         "packages/contracts/src/index.ts"
       ]
     }

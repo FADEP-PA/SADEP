@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 
 import { NestFactory } from '@nestjs/core';
-import { CesadCommissionStatus, UserRole } from '@aep-pa/contracts';
+import { CesadCommissionStatus, UserRole } from '@sadep/contracts';
 
 import { AppModule } from '../../app/app.module';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';

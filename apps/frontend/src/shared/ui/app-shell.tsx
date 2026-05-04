@@ -25,7 +25,7 @@ type SidebarIconName =
   | 'chevron-left'
   | 'chevron-right';
 
-const SIDEBAR_STORAGE_KEY = 'aep-pa-sidebar-collapsed';
+const SIDEBAR_STORAGE_KEY = 'sadep-sidebar-collapsed';
 
 function SidebarIcon({ name }: { name: SidebarIconName }) {
   if (name === 'home') {
@@ -170,7 +170,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
               <img src="/brasao-para.svg" alt="" />
             </span>
             <span className="app-shell__brand-copy">
-              <strong>AEP-PA</strong>
+              <strong>SADEP</strong>
               <small>SEDUC/PA</small>
             </span>
           </Link>

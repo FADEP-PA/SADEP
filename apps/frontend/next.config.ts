@@ -7,7 +7,7 @@ const frontendDir = dirname(fileURLToPath(import.meta.url));
 const nextConfig: NextConfig = {
   outputFileTracingRoot: join(frontendDir, '../..'),
   reactStrictMode: true,
-  transpilePackages: ['@aep-pa/contracts'],
+  transpilePackages: ['@sadep/contracts'],
 };
 
 export default nextConfig;

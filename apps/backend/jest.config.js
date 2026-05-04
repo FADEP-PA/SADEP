@@ -13,6 +13,6 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleNameMapper: {
-    '^@aep-pa/contracts$': '<rootDir>/../../packages/contracts/src/index.ts',
+    '^@sadep/contracts$': '<rootDir>/../../packages/contracts/src/index.ts',
   },
 };

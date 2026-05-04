@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Criar e gerenciar fluxos processuais baseados em estados para o sistema AEP-PA, tratado como processo administrativo formal, com transições controladas, auditáveis e juridicamente coerentes.
+Criar e gerenciar fluxos processuais baseados em estados para o sistema SADEP, tratado como processo administrativo formal, com transições controladas, auditáveis e juridicamente coerentes.
 
 ---
 
@@ -89,7 +89,7 @@ Estado de fechamento do processo no fluxo regular.
 
 ## Regra estrutural do Caso 2
 
-No Caso 2, o AEP-PA representa:
+No Caso 2, o SADEP representa:
 
 - um único processo administrativo
 - quatro etapas internas obrigatórias

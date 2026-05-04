@@ -8,7 +8,7 @@ import {
   DocumentStatus,
   SignatureStatus,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 export type SupervisorEvaluationCriterionDto = SupervisorEvaluationCriterionInput;
 export type SupervisorEvaluationContentDto = SupervisorEvaluationContentInput;

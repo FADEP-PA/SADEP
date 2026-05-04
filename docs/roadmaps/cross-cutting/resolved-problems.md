@@ -72,7 +72,7 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - **Fix funcional aprovado:** `BE-ARCH-01E4A-FIX — fix(frontend): normalize public auth routes`.
 - O risco de access token persistido em `localStorage` ou `sessionStorage` foi mitigado.
 - O frontend passou a manter o access token em memoria, restaurar sessao via `POST /auth/refresh`, usar `credentials: include` em login/refresh/logout e chamar `POST /auth/logout` em modo best-effort.
-- `rememberMe` passou a ser preferencia local nao sensivel e o storage legado `aep-pa:auth:session` deixou de ser prova de sessao autenticada.
+- `rememberMe` passou a ser preferencia local nao sensivel e o storage legado `sadep:auth:session` deixou de ser prova de sessao autenticada.
 - O alerta de UX do `401 público` no bootstrap foi mitigado pela normalizacao de rotas públicas no helper de auth; rota publica equivalente permanece como anonimo silencioso.
 - A mitigacao ainda e parcial: retry automatico com single-flight e remocao dos consumidores remanescentes de `session.accessToken` ficam para `BE-ARCH-01E4B/C`.
 - Hardening operacional amplo e auditoria formal permanecem pendentes em `BE-ARCH-01E5` e `BE-ARCH-01F`; a frente maior `BE-ARCH-01` nao esta totalmente concluida.

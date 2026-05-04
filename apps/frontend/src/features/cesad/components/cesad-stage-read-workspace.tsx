@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { UserRole, type CesadStageReadSnapshotRef } from '@aep-pa/contracts';
+import { UserRole, type CesadStageReadSnapshotRef } from '@sadep/contracts';
 
 import {
   formatCesadStageOpinionStatus,

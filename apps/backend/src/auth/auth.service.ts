@@ -1,8 +1,8 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UserRole } from '@aep-pa/contracts';
-import type { LoginResponse } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
+import type { LoginResponse } from '@sadep/contracts';
 import { Prisma } from '@prisma/client';
 
 import { AppLogger } from '../common/logging/app-logger.service';

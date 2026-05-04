@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-import { CesadCommissionStatus } from '@aep-pa/contracts';
+import { CesadCommissionStatus } from '@sadep/contracts';
 
 import { CesadCommissionsService } from '../cesad-commissions.service';
 import {

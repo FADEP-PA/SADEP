@@ -1,6 +1,6 @@
 'use client';
 
-import { UserRole } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
 import { useEffect, useState } from 'react';
 
 import { formatDateTime } from '@/features/process/components/process-formatters';

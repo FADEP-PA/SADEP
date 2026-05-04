@@ -17,7 +17,7 @@ import {
   type CesadCurrentCommissionMemberRef,
   type CesadCurrentCommissionReadRef,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import type { CesadCommissionAct } from '../domain/cesad-commissions/cesad-commission-act.entity';
 import type { CesadCommissionMember } from '../domain/cesad-commissions/cesad-commission-member.entity';

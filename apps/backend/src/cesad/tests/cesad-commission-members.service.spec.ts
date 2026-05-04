@@ -4,7 +4,7 @@ import {
   CesadCommissionMemberRoleType,
   UserRole,
   type CesadCommissionMemberRef,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import { CesadCommissionMembersService } from '../cesad-commission-members.service';
 import {

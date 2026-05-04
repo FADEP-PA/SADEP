@@ -1,6 +1,6 @@
 'use client';
 
-import { UserRole } from '@aep-pa/contracts';
+import { UserRole } from '@sadep/contracts';
 import { useMemo, useState, type FormEvent } from 'react';
 
 import type { ProcessDashboardListItem, ProcessDashboardSnapshot } from '@/features/dashboard/types/process-dashboard-types';

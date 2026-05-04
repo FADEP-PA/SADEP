@@ -1,6 +1,6 @@
 'use client';
 
-import type { SupervisorEvaluationWithDocumentContextRef } from '@aep-pa/contracts';
+import type { SupervisorEvaluationWithDocumentContextRef } from '@sadep/contracts';
 
 import { InfoCard } from '@/shared/ui/info-card';
 import { KeyValueList } from '@/shared/ui/key-value-list';

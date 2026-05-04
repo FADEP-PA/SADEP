@@ -16,7 +16,7 @@ import {
   SupervisorEvaluationWithDocumentContextRef,
   SelfEvaluationWithDocumentContextRef,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 export type UpsertSupervisorEvaluationInput = {
   summary: string;

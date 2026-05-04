@@ -1,8 +1,8 @@
-# AuditEvent Semantics — AEP-PA
+# AuditEvent Semantics — SADEP
 
 ## Finalidade
 
-O `AuditEvent` é a trilha única de auditoria estruturada do AEP-PA.
+O `AuditEvent` é a trilha única de auditoria estruturada do SADEP.
 
 Ele existe para registrar, de forma persistida e rastreável, os atos relevantes praticados no sistema ao longo do rito do estágio probatório, permitindo:
 
@@ -21,7 +21,7 @@ Ele é a trilha formal de auditoria do processo e dos artefatos funcionais do ri
 
 ## Princípio central
 
-O AEP-PA possui dois tipos principais de eventos auditáveis que coexistem no `AuditEvent`:
+O SADEP possui dois tipos principais de eventos auditáveis que coexistem no `AuditEvent`:
 
 1. **eventos de processo / workflow**
 2. **eventos de artefato funcional**

@@ -9,7 +9,7 @@ export default function ForbiddenPage() {
             <img src="/brasao-para.svg" alt="" />
           </span>
           <span className="app-shell__brand-copy">
-            <strong>AEP-PA</strong>
+            <strong>SADEP</strong>
             <small>Secretaria de Estado de Educacao do Para</small>
           </span>
         </div>

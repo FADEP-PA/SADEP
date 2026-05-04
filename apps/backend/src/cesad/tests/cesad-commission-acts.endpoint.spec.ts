@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import {
   CesadCommissionActType,
   UserRole,
-} from '@aep-pa/contracts';
+} from '@sadep/contracts';
 
 import { AppModule } from '../../app/app.module';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
