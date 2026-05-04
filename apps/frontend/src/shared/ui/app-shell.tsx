@@ -10,7 +10,7 @@ import { getRolePresentation } from '@/shared/rbac/role-catalog';
 
 type AppShellProps = {
   children: React.ReactNode;
-  title: string;
+  title?: string;
   subtitle?: string;
   headerActions?: React.ReactNode;
   sidebarFooter?: React.ReactNode;
@@ -239,16 +239,21 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
         <header className="app-shell__header">
           <div className="app-shell__header-left">
             <div className="app-shell__header-branding">
+              <span className="app-shell__header-branding-mark" aria-hidden="true">
+                <img src="/brasao-para.svg" alt="" />
+              </span>
               <div className="app-shell__header-branding-copy">
                 <strong>Governo do Estado do Para</strong>
                 <span>Secretaria de Educacao</span>
               </div>
             </div>
 
-            <div className="app-shell__header-context">
-              <strong>{title}</strong>
-              {subtitle ? <span>{subtitle}</span> : null}
-            </div>
+            {title || subtitle ? (
+              <div className="app-shell__header-context">
+                {title ? <strong>{title}</strong> : null}
+                {subtitle ? <span>{subtitle}</span> : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="app-shell__header-right">

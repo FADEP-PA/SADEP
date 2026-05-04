@@ -10,12 +10,7 @@ export default function AuthenticatedLayout({
 }>) {
   return (
     <AuthGuard>
-      <AppShell
-        title="Portal AEP-PA"
-        subtitle="Acompanhamento institucional do estagio probatorio"
-      >
-        {children}
-      </AppShell>
+      <AppShell>{children}</AppShell>
     </AuthGuard>
   );
 }
