@@ -15,21 +15,21 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 
 ### BE-ARCH-01E4A — Access token em memoria e bootstrap via refresh
 
-- **Status operacional:** concluida / auditada / aprovada com ressalva nao bloqueante.
+- **Status operacional:** concluida / auditada / aprovada; ressalva de UX corrigida.
 - **Commit funcional aprovado:** `feat(frontend): keep access token in memory`.
+- **Fix funcional aprovado:** `BE-ARCH-01E4A-FIX — fix(frontend): normalize public auth routes`.
 - O frontend agora mantem `accessToken` em memoria e deixou de persisti-lo em `localStorage` ou `sessionStorage`.
 - O bootstrap da sessao passou a usar `POST /auth/refresh` e restaura a sessao em memoria quando o refresh cookie valido existe.
 - Login, refresh e logout usam `credentials: include`; o logout manual chama `POST /auth/logout` em modo best-effort.
 - `rememberMe` passou a ser apenas preferencia local nao sensivel.
 - `session.accessToken` ainda existe temporariamente no contexto em memoria para compatibilidade com telas existentes; os consumidores remanescentes ficam para `BE-ARCH-01E4C`.
-- Atualizacao de 2026-05-04: em rota publica, `401` no bootstrap de `/auth/refresh` deixa o usuario anonimo sem exibir aviso indevido de sessao expirada no login.
-- Proxima acao tecnica recomendada: seguir para `BE-ARCH-01E4C`.
+- Atualizacao de 2026-05-04: as rotas públicas equivalentes sao normalizadas no helper de auth; `401 público` no bootstrap de `/auth/refresh` deixa o usuario anonimo sem exibir aviso indevido de sessao expirada em `/login/`, `/403/` ou `/sessao-expirada/`.
+- Proxima acao tecnica recomendada: seguir para `BE-ARCH-01E4B`.
 
-### BE-ARCH-01E4B / BE-ARCH-01E4C — Refresh silencioso frontend
+### BE-ARCH-01E4B / BE-ARCH-01E4C — Pendencias de refresh silencioso frontend
 
-- **Status operacional:** `BE-ARCH-01E4B` concluida no recorte frontend; `BE-ARCH-01E4C` pendente.
-- `BE-ARCH-01E4B` implementou retry automatico unico de `401`, single-flight contra refresh storm e protecao contra loop de refresh em rotas `/auth/*`.
-- O cliente HTTP prefere o access token em memoria quando disponivel, mesmo enquanto telas legadas ainda passam `session.accessToken`.
+- **Status operacional:** pendentes.
+- `BE-ARCH-01E4B` deve implementar retry automatico de `401`, single-flight contra refresh storm e protecao contra loop de refresh.
 - `BE-ARCH-01E4C` deve remover consumidores remanescentes de `session.accessToken` e executar a validacao manual completa do fluxo.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 

@@ -33,8 +33,9 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 
 ## BE-ARCH-01E4A — Access token em memoria e bootstrap via refresh
 
-- **Status documental:** concluida / auditada / aprovada com ressalva nao bloqueante.
+- **Status documental:** concluida / auditada / aprovada; ressalva de UX corrigida.
 - **Commit funcional aprovado:** `feat(frontend): keep access token in memory`.
+- **Fix funcional aprovado:** `BE-ARCH-01E4A-FIX — fix(frontend): normalize public auth routes`.
 - Criou store em memoria para `accessToken`.
 - Removeu a persistencia de access token em `localStorage` e `sessionStorage`.
 - Alterou o bootstrap para `POST /auth/refresh`, restaurando sessao em memoria quando o refresh cookie e valido.
@@ -45,7 +46,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - O `http-client` ficou preparado para uso do token do store em memoria.
 - Nao alterou backend, contracts, Prisma, migrations, workflow, CESAD, permissoes ou regras processuais.
 - Validacoes aprovadas: `npm run typecheck --workspace @aep-pa/frontend`, `npm run build --workspace @aep-pa/frontend`, `npm run frontend:check` e `git diff --check`.
-- Ressalva nao bloqueante: um `401` publico no bootstrap de `/auth/refresh` pode exibir aviso indevido de sessao expirada no login; fix curto recomendado antes ou durante `BE-ARCH-01E4B`.
+- Ressalva nao bloqueante tratada pelo commit `fix(frontend): normalize public auth routes`: rotas públicas equivalentes sao normalizadas e `401 público` no bootstrap de `/auth/refresh` permanece como anonimo silencioso em rota publica.
 - `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ## FT-17 — Area de homologacao

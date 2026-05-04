@@ -36,7 +36,7 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 - [`BE-ARCH-01D — Alinhar frontend de sessão`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md): concluída/mitigada no recorte mínimo de sessão frontend; commit funcional aprovado `fix(frontend): align session invalidation`.
 - `BE-ARCH-01E2`: concluída/mitigada no recorte de modelagem persistente `UserSession`; commit funcional aprovado `feat(auth): model user sessions`.
 - `BE-ARCH-01E3`: concluida/mitigada no recorte backend de refresh, rotacao e logout server-side; commit funcional aprovado `feat(auth): add refresh token sessions`.
-- `BE-ARCH-01E4A`: concluida/mitigada no recorte frontend inicial; access token em memoria, bootstrap via refresh, `credentials: include` e logout best-effort; commit funcional aprovado `feat(frontend): keep access token in memory`.
+- `BE-ARCH-01E4A`: concluida/mitigada no recorte frontend inicial; access token em memoria, bootstrap via refresh, `credentials: include`, logout best-effort e correção do `401 público` em rotas públicas equivalentes; commits funcionais aprovados `feat(frontend): keep access token in memory` e `fix(frontend): normalize public auth routes`.
 - `BE-ARCH-01E4B`: pendente; retry automatico de `401` e single-flight.
 - `BE-ARCH-01E4C`: pendente; remover consumidores remanescentes de `session.accessToken` e validar manualmente o fluxo.
 - `BE-ARCH-01E5`: pendente; hardening operacional de cookies/CORS/env.
@@ -57,7 +57,7 @@ O resumo operacional dos problemas resolvidos fica em [`cross-cutting/resolved-p
 - `BE-ARCH-01D`: revalidação excessiva de sessão frontend, `401` não idempotente e falhas não-401 apagando sessão foram mitigadas no recorte mínimo.
 - `BE-ARCH-01E2`: gap de modelagem persistente para refresh/revogacao mitigado com `UserSession` e migration `20260430120000_add_user_session`.
 - `BE-ARCH-01E3`: gap backend de refresh, rotacao, cookie `HttpOnly` e logout server-side mitigado.
-- `BE-ARCH-01E4A`: risco de access token persistido em `localStorage`/`sessionStorage` mitigado; a UX do `401` publico, retry automatico/single-flight e remocao de consumidores remanescentes ficam pendentes em `BE-ARCH-01E4B/C`.
+- `BE-ARCH-01E4A`: risco de access token persistido em `localStorage`/`sessionStorage` mitigado; a UX do `401 público` no bootstrap tambem foi mitigada por normalizacao de rotas públicas; retry automatico/single-flight e remocao de consumidores remanescentes ficam pendentes em `BE-ARCH-01E4B/C`.
 
 ## Candidatos a arquivamento futuro
 
