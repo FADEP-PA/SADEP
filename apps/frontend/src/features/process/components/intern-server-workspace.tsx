@@ -7,7 +7,7 @@ import {
   type InternServerWorkspaceSnapshotRef,
   type ProcessAction,
 } from '@aep-pa/contracts';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import type { WorkflowHistoryItem } from '@/features/dashboard/types/process-dashboard-types';
 import { getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '@/shared/api/http-error';
@@ -27,6 +27,7 @@ import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { StatusBadge, type StatusBadgeTone } from '@/shared/ui/status-badge';
 
+import { getInitialTechnicalProcessId } from '../services/process-selection';
 import {
   formatDateTime,
   formatDocumentStatus,
@@ -115,10 +116,6 @@ function buildSelfEvaluationForm(
     additionalNotes: evaluation.additionalNotes ?? '',
     comment: '',
   };
-}
-
-function getInitialProcessId() {
-  return process.env.NEXT_PUBLIC_TECHNICAL_PROCESS_ID?.trim() || '';
 }
 
 function getDisplayName(name: string | undefined) {
@@ -482,7 +479,7 @@ function StageCard({ item }: { item: StageCardViewModel }) {
 
 export function InternServerWorkspace() {
   const { session } = useAuth();
-  const [processId] = useState(getInitialProcessId);
+  const [processId, setProcessId] = useState(getInitialTechnicalProcessId);
   const [snapshot, setSnapshot] = useState<InternProcessSnapshot | null>(null);
   const [selfEvaluationForm, setSelfEvaluationForm] = useState<SelfEvaluationFormState>(
     createEmptySelfEvaluationForm,
@@ -553,22 +550,58 @@ export function InternServerWorkspace() {
 
     void loadProcessSnapshot(processId.trim())
       .catch((error) => {
-        const payload =
-          typeof error === 'object' && error && 'payload' in error
-            ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
-            : undefined;
-
-        setSnapshot(null);
-        setSelfEvaluationForm(createEmptySelfEvaluationForm());
-        setIsSelfEvaluationExpanded(false);
-        setLoadErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar o processo informado.'));
-        setLoadErrorDetails(getHttpErrorDetails(payload));
-        setLoadErrorStatus(isHttpErrorStatus(error, 404) ? 404 : isHttpErrorStatus(error, 403) ? 403 : null);
+        handleProcessLoadError(error);
       })
       .finally(() => {
         setIsLoading(false);
       });
   }, [hasAttemptedInitialLoad, processId, session?.accessToken]);
+
+  function handleProcessLoadError(error: unknown) {
+    const payload =
+      typeof error === 'object' && error && 'payload' in error
+        ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
+        : undefined;
+
+    setSnapshot(null);
+    setSelfEvaluationForm(createEmptySelfEvaluationForm());
+    setIsSelfEvaluationExpanded(false);
+    setLoadErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar o processo informado.'));
+    setLoadErrorDetails(getHttpErrorDetails(payload));
+    setLoadErrorStatus(isHttpErrorStatus(error, 404) ? 404 : isHttpErrorStatus(error, 403) ? 403 : null);
+  }
+
+  async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const normalizedProcessId = processId.trim();
+    if (!session?.accessToken || normalizedProcessId.length === 0) {
+      setLoadErrorMessage('Informe um identificador de processo para abrir a area do servidor.');
+      setLoadErrorDetails([]);
+      setLoadErrorStatus(null);
+      setSuccessFeedback(null);
+      return;
+    }
+
+    setHasAttemptedInitialLoad(true);
+    setIsLoading(true);
+    setLoadErrorMessage(null);
+    setLoadErrorDetails([]);
+    setLoadErrorStatus(null);
+    setActionErrorMessage(null);
+    setSuccessFeedback(null);
+
+    try {
+      await loadProcessSnapshot(normalizedProcessId, {
+        title: 'Processo carregado',
+        description: 'A area do servidor foi atualizada com os dados reais liberados para o processo informado.',
+      });
+    } catch (error) {
+      handleProcessLoadError(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   async function loadProcessSnapshot(activeProcessId: string, success?: OperationFeedback) {
     if (!session?.accessToken) {
@@ -728,6 +761,35 @@ export function InternServerWorkspace() {
               </strong>
             </div>
           </div>
+        </section>
+
+        <section className="operations-card">
+          <div className="section-heading">
+            <span className="section-chip">Processo em foco</span>
+            <h3>Consulta do servidor estagiario</h3>
+            <p>
+              Informe o identificador do processo para abrir a area real do servidor. A variavel tecnica,
+              quando configurada, serve apenas como preenchimento inicial em desenvolvimento.
+            </p>
+          </div>
+
+          <form className="inline-form inline-form--elevated" onSubmit={handleLoadProcess}>
+            <label className="field-group" htmlFor="intern-workspace-process-id">
+              <span>Identificador do processo</span>
+              <input
+                id="intern-workspace-process-id"
+                name="processId"
+                placeholder="Informe o ID do processo"
+                value={processId}
+                onChange={(event) => setProcessId(event.target.value)}
+                disabled={isLoading || activeOperation !== null}
+              />
+            </label>
+
+            <button type="submit" disabled={isLoading || activeOperation !== null}>
+              {isLoading ? 'Carregando processo...' : 'Consultar processo'}
+            </button>
+          </form>
         </section>
 
         {activeOperationCopy ? (

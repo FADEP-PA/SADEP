@@ -22,6 +22,8 @@ import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { PageSection } from '@/shared/ui/page-section';
 
+import { getInitialTechnicalProcessId } from '../services/process-selection';
+
 const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
 
 type SupervisorDashboardStatus =
@@ -246,10 +248,6 @@ const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: st
     ],
   },
 ];
-
-function getInitialProcessId() {
-  return process.env.NEXT_PUBLIC_TECHNICAL_PROCESS_ID?.trim() || '';
-}
 
 function toDashboardStatus(status: ProcessStatus): SupervisorDashboardStatus {
   if (status === ProcessStatus.EM_AVALIACAO) {
@@ -478,7 +476,7 @@ function EvaluationFactorCard({
 
 export function SupervisorEvaluationWorkspace() {
   const { session } = useAuth();
-  const configuredProcessId = getInitialProcessId();
+  const configuredProcessId = getInitialTechnicalProcessId();
   const [selectedFilters, setSelectedFilters] = useState<SupervisorDashboardStatus[]>(
     STATUS_FILTERS.map((item) => item.id),
   );

@@ -29,6 +29,14 @@ Atualizacao de 2026-04-30:
 - `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` permanece apenas como preenchimento inicial opcional;
 - a solucao ainda nao substitui uma listagem segura de processos por perfil.
 
+Atualizacao de 2026-05-04:
+
+- varredura frontend encontrou uso da variavel tecnica em `/chefia-imediata`, `/processos` e `/servidor-estagiario`;
+- a leitura de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` foi centralizada em helper unico de selecao de processo;
+- `/servidor-estagiario` passou a permitir consulta manual por identificador de processo na propria tela;
+- `/processos` e `/chefia-imediata` permanecem com consulta manual e usam a variavel apenas como preenchimento inicial opcional;
+- a dependencia operacional de ID tecnico fixo foi mitigada nas telas mapeadas, mas a task continua aberta ate existir listagem segura de processos por perfil.
+
 ## Escopo previsto
 
 - substituir dependencia de ID tecnico fixo;
@@ -53,6 +61,11 @@ Atualizacao de 2026-04-30:
 - build frontend;
 - validacao manual das telas afetadas quando houver mudanca funcional futura.
 
+Validacoes executadas em 2026-05-04:
+
+- `npm run frontend:typecheck` passou;
+- `npm run frontend:check` passou, incluindo build Next.js.
+
 ## Proxima acao
 
-Executar varredura restante de rotas que usam `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`, com foco em `/processos` e `/servidor-estagiario`, e definir se a proxima mitigacao sera entrada manual temporaria ou endpoint/listagem real por perfil.
+Alinhar a proxima entrega frontend com `FE-CHEFIA-01`: substituir a consulta manual/fallback por listagem segura de processos por perfil quando houver endpoint real disponivel.

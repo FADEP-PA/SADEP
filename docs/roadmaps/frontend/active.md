@@ -30,8 +30,9 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 
 ### [FT-24 — Reduzir dependencia de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./tasks/FT-24-process-selection-technical-id.md)
 
-- **Status operacional:** parcialmente mitigada em `/chefia-imediata`.
-- Preparar telas restantes para depender menos de ID tecnico manual de processo em desenvolvimento.
+- **Status operacional:** parcialmente mitigada nas telas mapeadas.
+- `/chefia-imediata`, `/processos` e `/servidor-estagiario` permitem consulta manual de processo.
+- `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` fica centralizada como preenchimento inicial opcional de desenvolvimento, sem substituir listagem real por perfil.
 
 ### Backlog frontend documentado
 
