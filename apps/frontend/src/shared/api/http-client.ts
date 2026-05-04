@@ -1,4 +1,5 @@
 import { clearSession } from '@/shared/auth/session-storage';
+import { clearAccessToken, getAccessToken } from '@/shared/auth/access-token-store';
 import { SESSION_EXPIRED_REDIRECT, isPublicAuthRoute } from '@/shared/auth/auth-routes';
 
 import type { ApiErrorResponse } from './api-conventions';
@@ -10,6 +11,7 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
   params?: Record<string, Primitive | undefined>;
   token?: string;
+  useStoredAccessToken?: boolean;
   redirectOnUnauthorized?: boolean;
 };
 
@@ -54,6 +56,7 @@ function invalidateSessionOnce(redirectOnUnauthorized: boolean) {
   }
 
   unauthorizedInvalidationInProgress = true;
+  clearAccessToken();
   clearSession();
   scheduleUnauthorizedInvalidationReset();
 
@@ -96,18 +99,19 @@ async function parseResponse<T>(
 }
 
 export async function httpRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, headers, params, token, redirectOnUnauthorized, ...rest } = options;
+  const { body, headers, params, token, useStoredAccessToken, redirectOnUnauthorized, ...rest } = options;
+  const effectiveToken = token ?? (useStoredAccessToken ? getAccessToken() ?? undefined : undefined);
 
   const response = await fetch(buildUrl(path, params), {
     ...rest,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {}),
       ...headers,
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: 'no-store',
   });
 
-  return parseResponse<T>(response, { token, redirectOnUnauthorized });
+  return parseResponse<T>(response, { token: effectiveToken, redirectOnUnauthorized });
 }

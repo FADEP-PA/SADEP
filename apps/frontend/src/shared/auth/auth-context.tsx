@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { usePathname, useRouter } from 'next/navigation';
 
 import { HttpError } from '@/shared/api/http-error';
-import { getAuthenticatedUser, login } from '@/shared/api/services/auth-service';
+import { login, logoutSession, refreshSession as refreshAuthSession } from '@/shared/api/services/auth-service';
 
 import {
   DEFAULT_PUBLIC_REDIRECT,
@@ -12,7 +12,8 @@ import {
   getAuthenticatedHomeByRole,
   isPublicAuthRoute,
 } from './auth-routes';
-import { clearSession, persistSession, readSession } from './session-storage';
+import { clearAccessToken, setAccessToken } from './access-token-store';
+import { clearSession, persistRememberMePreference, readRememberMePreference } from './session-storage';
 import type { AuthSession, LoginInput } from './auth-types';
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
@@ -22,7 +23,7 @@ type AuthContextValue = {
   status: AuthStatus;
   bootstrapError: string | null;
   signIn: (input: LoginInput) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 };
 
@@ -68,6 +69,10 @@ function getRedirectPathForValidationFailure(pathname: string, error: unknown) {
   return DEFAULT_PUBLIC_REDIRECT;
 }
 
+function getCurrentBrowserPathname() {
+  return typeof window === 'undefined' ? DEFAULT_PUBLIC_REDIRECT : window.location.pathname;
+}
+
 function isUnauthorizedError(error: unknown) {
   return error instanceof HttpError && error.status === 401;
 }
@@ -81,41 +86,39 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [authRedirectPath, setAuthRedirectPath] = useState<string | null>(null);
 
   const bootstrapSession = useCallback(async () => {
-    const storedSession = readSession();
-
-    if (!storedSession) {
-      setSession(null);
-      setStatus('anonymous');
-      setBootstrapError(null);
-      setAuthRedirectPath(null);
-      return;
-    }
-
+    const rememberMe = readRememberMePreference() ?? true;
+    clearAccessToken();
+    clearSession();
     setStatus('loading');
 
     try {
-      const user = await getAuthenticatedUser(storedSession.accessToken, {
-        redirectOnUnauthorized: false,
-      });
-      const nextSession = { ...storedSession, user };
+      const response = await refreshAuthSession();
+      setAccessToken(response.accessToken);
 
-      persistSession(nextSession);
+      const nextSession: AuthSession = {
+        accessToken: response.accessToken,
+        user: response.user,
+        rememberMe,
+      };
+
       setSession(nextSession);
       setStatus('authenticated');
       setBootstrapError(null);
       setAuthRedirectPath(null);
     } catch (error) {
       setBootstrapError(getSessionValidationErrorMessage(error));
+      clearAccessToken();
+      clearSession();
 
       if (isUnauthorizedError(error)) {
         setSession(null);
         setStatus('anonymous');
-        setAuthRedirectPath(SESSION_EXPIRED_REDIRECT);
+        setAuthRedirectPath(getRedirectPathForValidationFailure(getCurrentBrowserPathname(), error));
         return;
       }
 
-      setSession(storedSession);
-      setStatus('authenticated');
+      setSession(null);
+      setStatus('anonymous');
       setAuthRedirectPath(null);
     }
   }, []);
@@ -146,13 +149,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const signIn = useCallback(
     async (input: LoginInput) => {
       const response = await login(input);
+      setAccessToken(response.accessToken);
+      persistRememberMePreference(input.rememberMe);
+      clearSession();
+
       const nextSession: AuthSession = {
         accessToken: response.accessToken,
         user: response.user,
         rememberMe: input.rememberMe,
       };
 
-      persistSession(nextSession);
       setSession(nextSession);
       setStatus('authenticated');
       setBootstrapError(null);
@@ -163,13 +169,20 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     [router],
   );
 
-  const signOut = useCallback(() => {
-    clearSession();
-    setSession(null);
-    setStatus('anonymous');
-    setAuthRedirectPath(null);
-    router.replace(DEFAULT_PUBLIC_REDIRECT);
-    router.refresh();
+  const signOut = useCallback(async () => {
+    try {
+      await logoutSession();
+    } catch {
+      // Logout local must complete even if the backend is temporarily unavailable.
+    } finally {
+      clearAccessToken();
+      clearSession();
+      setSession(null);
+      setStatus('anonymous');
+      setAuthRedirectPath(null);
+      router.replace(DEFAULT_PUBLIC_REDIRECT);
+      router.refresh();
+    }
   }, [router]);
 
   const refreshSession = useCallback(async () => {
@@ -178,11 +191,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
 
     try {
-      const user = await getAuthenticatedUser(session.accessToken, {
-        redirectOnUnauthorized: false,
-      });
-      const nextSession = { ...session, user };
-      persistSession(nextSession);
+      const response = await refreshAuthSession();
+      setAccessToken(response.accessToken);
+      const nextSession = {
+        accessToken: response.accessToken,
+        user: response.user,
+        rememberMe: session.rememberMe,
+      };
       setSession(nextSession);
       setStatus('authenticated');
       setBootstrapError(null);
@@ -191,6 +206,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setBootstrapError(getSessionValidationErrorMessage(error));
 
       if (isUnauthorizedError(error)) {
+        clearAccessToken();
+        clearSession();
         setSession(null);
         setStatus('anonymous');
         setAuthRedirectPath(getRedirectPathForValidationFailure(pathname, error));

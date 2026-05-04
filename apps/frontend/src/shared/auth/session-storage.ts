@@ -1,6 +1,5 @@
-import type { AuthSession } from './auth-types';
-
 const SESSION_STORAGE_KEY = 'aep-pa:auth:session';
+const REMEMBER_ME_STORAGE_KEY = 'aep-pa:auth:remember-me';
 
 type StorageType = 'local' | 'session';
 
@@ -18,7 +17,7 @@ function getStorage(type: StorageType): BrowserStorage | null {
   return type === 'local' ? window.localStorage : window.sessionStorage;
 }
 
-function readFrom(type: StorageType): AuthSession | null {
+function readLegacyRememberMeFrom(type: StorageType): boolean | null {
   const storage = getStorage(type);
 
   if (!storage) {
@@ -32,24 +31,30 @@ function readFrom(type: StorageType): AuthSession | null {
   }
 
   try {
-    return JSON.parse(rawValue) as AuthSession;
+    const parsed = JSON.parse(rawValue) as { rememberMe?: unknown };
+    return typeof parsed.rememberMe === 'boolean' ? parsed.rememberMe : null;
   } catch {
     storage.removeItem(SESSION_STORAGE_KEY);
     return null;
   }
 }
 
-export function readSession() {
-  return readFrom('local') ?? readFrom('session');
+export function readRememberMePreference() {
+  const storedValue = getStorage('local')?.getItem(REMEMBER_ME_STORAGE_KEY);
+
+  if (storedValue === 'true') {
+    return true;
+  }
+
+  if (storedValue === 'false') {
+    return false;
+  }
+
+  return readLegacyRememberMeFrom('local') ?? readLegacyRememberMeFrom('session');
 }
 
-export function persistSession(session: AuthSession) {
-  const nextStorageType: StorageType = session.rememberMe ? 'local' : 'session';
-  const alternateStorageType: StorageType = session.rememberMe ? 'session' : 'local';
-  const serializedSession = JSON.stringify(session);
-
-  getStorage(alternateStorageType)?.removeItem(SESSION_STORAGE_KEY);
-  getStorage(nextStorageType)?.setItem(SESSION_STORAGE_KEY, serializedSession);
+export function persistRememberMePreference(rememberMe: boolean) {
+  getStorage('local')?.setItem(REMEMBER_ME_STORAGE_KEY, String(rememberMe));
 }
 
 export function clearSession() {
