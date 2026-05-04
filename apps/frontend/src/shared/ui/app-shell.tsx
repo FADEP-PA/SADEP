@@ -89,10 +89,6 @@ function SidebarIcon({ name }: { name: SidebarIconName }) {
 }
 
 function getSidebarIconByHref(href: string): SidebarIconName {
-  if (href === '/inicio') {
-    return 'home';
-  }
-
   if (href === '/servidor-estagiario' || href === '/chefia-imediata') {
     return 'clipboard';
   }
@@ -166,9 +162,9 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
       <aside className="app-shell__sidebar">
         <div className="app-shell__sidebar-top">
           <Link
-            href="/inicio"
+            href={rolePresentation?.homePath ?? '/perfil'}
             className="app-shell__brand app-shell__sidebar-brand"
-            aria-label="Ir para a pagina inicial do AEP-PA"
+            aria-label="Ir para a area principal do perfil"
           >
             <span className="app-shell__brand-mark app-shell__brand-mark--coat" aria-hidden="true">
               <img src="/brasao-para.svg" alt="" />

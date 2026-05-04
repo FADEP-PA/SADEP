@@ -22,7 +22,7 @@ export default function ForbiddenPage() {
         </p>
 
         <div className="forbidden-page__actions">
-          <Link href="/inicio">Voltar ao inicio</Link>
+          <Link href="/perfil">Voltar ao perfil</Link>
           <Link href="/">Ir para o login</Link>
         </div>
       </section>

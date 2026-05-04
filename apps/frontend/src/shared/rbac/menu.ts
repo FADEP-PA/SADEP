@@ -13,29 +13,13 @@ export type NavigationGroup = {
   items: NavigationItem[];
 };
 
-const dashboardGroup: NavigationGroup = {
+const processGroup: NavigationGroup = {
   title: 'Painel principal',
   items: [
-    {
-      label: 'Inicio',
-      href: '/inicio',
-      description: 'Visao geral do ambiente autenticado, do perfil em operacao e dos acessos disponiveis.',
-    },
     {
       label: 'Processos',
       href: '/processos',
       description: 'Consultar status, acoes disponiveis, historico e dados operacionais do processo.',
-    },
-  ],
-};
-
-const overviewGroup: NavigationGroup = {
-  title: 'Painel principal',
-  items: [
-    {
-      label: 'Inicio',
-      href: '/inicio',
-      description: 'Visao geral do ambiente autenticado, do perfil em operacao e dos acessos disponiveis.',
     },
   ],
 };
@@ -53,7 +37,6 @@ const accountGroup: NavigationGroup = {
 
 const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.INTERN_SERVER]: [
-    overviewGroup,
     {
       title: 'Avaliacoes',
       items: [
@@ -67,7 +50,6 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
     accountGroup,
   ],
   [UserRole.IMMEDIATE_SUPERVISOR]: [
-    overviewGroup,
     {
       title: 'Avaliacoes',
       items: [
@@ -81,7 +63,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
     accountGroup,
   ],
   [UserRole.CESAD_MEMBER]: [
-    dashboardGroup,
+    processGroup,
     {
       title: 'Minha atuacao',
       items: [
@@ -95,7 +77,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
     accountGroup,
   ],
   [UserRole.COMMISSION_ASSISTANT]: [
-    dashboardGroup,
+    processGroup,
     {
       title: 'Minha atuacao',
       items: [
@@ -109,7 +91,6 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
     accountGroup,
   ],
   [UserRole.HOMOLOGATION_AUTHORITY]: [
-    overviewGroup,
     {
       title: 'Minha atuacao',
       items: [
@@ -123,7 +104,6 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
     accountGroup,
   ],
   [UserRole.ADMIN]: [
-    overviewGroup,
     {
       title: 'Areas operacionais',
       items: [
@@ -144,5 +124,5 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
 };
 
 export function getMenuByRole(role: UserRole) {
-  return menuByRole[role] ?? [overviewGroup, accountGroup];
+  return menuByRole[role] ?? [accountGroup];
 }

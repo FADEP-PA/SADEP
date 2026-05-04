@@ -1101,6 +1101,36 @@ export function SupervisorEvaluationWorkspace() {
         ) : (
           <div className="supervisor-dashboard">
             <section className="supervisor-dashboard__table-card">
+              <div className="supervisor-dashboard__filters">
+                <div className="supervisor-dashboard__filters-title">
+                  <span className="supervisor-dashboard__filters-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M4.5 6.5h15l-6 6.7v3.9l-3 1.7v-5.6l-6-6.7Z"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  <span>Filtrar por status</span>
+                </div>
+
+                <div className="supervisor-dashboard__filter-options" aria-label="Filtros por status da avaliacao">
+                  {STATUS_FILTERS.map((filter) => (
+                    <label key={filter.id} className="supervisor-dashboard__filter-option">
+                      <input
+                        type="checkbox"
+                        checked={selectedFilters.includes(filter.id)}
+                        onChange={() => toggleFilter(filter.id)}
+                      />
+                      <span>{filter.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="supervisor-dashboard__table-header">
                 <div>Servidor</div>
                 <div>Cargo</div>
@@ -1157,20 +1187,6 @@ export function SupervisorEvaluationWorkspace() {
                       </button>
                     </div>
                   </article>
-                ))}
-              </div>
-
-              <div className="supervisor-dashboard__filters">
-                <span>Filtrar por status:</span>
-                {STATUS_FILTERS.map((filter) => (
-                  <label key={filter.id} className="supervisor-dashboard__filter-option">
-                    <input
-                      type="checkbox"
-                      checked={selectedFilters.includes(filter.id)}
-                      onChange={() => toggleFilter(filter.id)}
-                    />
-                    <span>{filter.label}</span>
-                  </label>
                 ))}
               </div>
             </section>
