@@ -62,8 +62,18 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - O gap backend de refresh, rotacao e logout server-side foi mitigado.
 - O login cria `UserSession`, o refresh token e opaco, o hash HMAC-SHA-256 e persistido em `refreshTokenHash` e o transporte usa cookie `HttpOnly`.
 - `POST /auth/refresh` e `POST /auth/logout` foram implementados; refresh rotaciona a sessao e reuso revoga sessoes ativas da familia.
-- O frontend ainda nao foi migrado para o novo fluxo; `BE-ARCH-01E4` permanece pendente.
-- Hardening operacional amplo e auditoria formal permanecem pendentes em `BE-ARCH-01E5` e `BE-ARCH-01F`.
+- A etapa frontend `BE-ARCH-01E4A` foi entregue depois para access token em memoria e bootstrap via refresh.
+- Hardening operacional amplo e auditoria formal permanecem pendentes em `BE-ARCH-01E5` e `BE-ARCH-01F`; `BE-ARCH-01E4B/C` permanecem pendentes no frontend.
+
+## BE-ARCH-01E4A — Access token em memoria e bootstrap via refresh
+
+- **Status documental:** resolvida/mitigada no recorte frontend inicial.
+- **Commit funcional aprovado:** `feat(frontend): keep access token in memory`.
+- O risco de access token persistido em `localStorage` ou `sessionStorage` foi mitigado.
+- O frontend passou a manter o access token em memoria, restaurar sessao via `POST /auth/refresh`, usar `credentials: include` em login/refresh/logout e chamar `POST /auth/logout` em modo best-effort.
+- `rememberMe` passou a ser preferencia local nao sensivel e o storage legado `aep-pa:auth:session` deixou de ser prova de sessao autenticada.
+- A mitigacao ainda e parcial: a UX do `401` publico no bootstrap, o retry automatico com single-flight e a remocao dos consumidores remanescentes de `session.accessToken` ficam para `BE-ARCH-01E4B/C`.
+- Hardening operacional amplo e auditoria formal permanecem pendentes em `BE-ARCH-01E5` e `BE-ARCH-01F`; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ## Problemas antigos resolvidos
 

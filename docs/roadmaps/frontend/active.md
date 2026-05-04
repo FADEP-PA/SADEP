@@ -13,12 +13,24 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - Falhas nao-401 no bootstrap/refresh nao limpam sessao indevidamente.
 - Validacao manual em navegador permanece recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
-### BE-ARCH-01E4 — Alinhar frontend ao refresh server-side
+### BE-ARCH-01E4A — Access token em memoria e bootstrap via refresh
 
-- **Status operacional:** pendente.
-- O backend agora possui refresh, rotacao e logout server-side implementados e aprovados na `BE-ARCH-01E3`.
-- O frontend ainda nao consome esse fluxo e segue preservado no comportamento atual.
-- A proxima task relacionada a sessao frontend deve tratar access token em memoria, `credentials: include`, refresh silencioso, single-flight contra refresh storm e logout chamando `POST /auth/logout`.
+- **Status operacional:** concluida / auditada / aprovada com ressalva nao bloqueante.
+- **Commit funcional aprovado:** `feat(frontend): keep access token in memory`.
+- O frontend agora mantem `accessToken` em memoria e deixou de persisti-lo em `localStorage` ou `sessionStorage`.
+- O bootstrap da sessao passou a usar `POST /auth/refresh` e restaura a sessao em memoria quando o refresh cookie valido existe.
+- Login, refresh e logout usam `credentials: include`; o logout manual chama `POST /auth/logout` em modo best-effort.
+- `rememberMe` passou a ser apenas preferencia local nao sensivel.
+- `session.accessToken` ainda existe temporariamente no contexto em memoria para compatibilidade com telas existentes; os consumidores remanescentes ficam para `BE-ARCH-01E4C`.
+- Ressalva nao bloqueante: em rota publica, um `401` no bootstrap de `/auth/refresh` pode preencher `bootstrapError` e exibir aviso indevido de sessao expirada no login para usuario anonimo.
+- Proxima acao tecnica recomendada: corrigir a ressalva curta de UX do bootstrap publico e seguir para `BE-ARCH-01E4B`.
+
+### BE-ARCH-01E4B / BE-ARCH-01E4C — Pendencias de refresh silencioso frontend
+
+- **Status operacional:** pendentes.
+- `BE-ARCH-01E4B` deve implementar retry automatico de `401`, single-flight contra refresh storm e protecao contra loop de refresh.
+- `BE-ARCH-01E4C` deve remover consumidores remanescentes de `session.accessToken` e executar a validacao manual completa do fluxo.
+- `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ### [FE-CHEFIA-01 — Integracao real da chefia imediata](./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md)
 

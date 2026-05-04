@@ -31,6 +31,23 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - `AuthSession`, `rememberMe`, contratos de auth e storage atual foram preservados.
 - Validacao manual em navegador ainda e recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
+## BE-ARCH-01E4A — Access token em memoria e bootstrap via refresh
+
+- **Status documental:** concluida / auditada / aprovada com ressalva nao bloqueante.
+- **Commit funcional aprovado:** `feat(frontend): keep access token in memory`.
+- Criou store em memoria para `accessToken`.
+- Removeu a persistencia de access token em `localStorage` e `sessionStorage`.
+- Alterou o bootstrap para `POST /auth/refresh`, restaurando sessao em memoria quando o refresh cookie e valido.
+- Login, refresh e logout usam `credentials: include`.
+- Logout manual chama `POST /auth/logout` em modo best-effort e preserva limpeza local.
+- `rememberMe` virou preferencia local nao sensivel.
+- `session.accessToken` permanece temporariamente no contexto em memoria para compatibilidade com telas existentes.
+- O `http-client` ficou preparado para uso do token do store em memoria.
+- Nao alterou backend, contracts, Prisma, migrations, workflow, CESAD, permissoes ou regras processuais.
+- Validacoes aprovadas: `npm run typecheck --workspace @aep-pa/frontend`, `npm run build --workspace @aep-pa/frontend`, `npm run frontend:check` e `git diff --check`.
+- Ressalva nao bloqueante: um `401` publico no bootstrap de `/auth/refresh` pode exibir aviso indevido de sessao expirada no login; fix curto recomendado antes ou durante `BE-ARCH-01E4B`.
+- `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+
 ## FT-17 — Area de homologacao
 
 - **Status documental:** concluida no roadmap legado como painel preparado.

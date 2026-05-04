@@ -12,7 +12,8 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 
 ## Itens ativos ou retomaveis
 
-- `BE-ARCH-01E4` — alinhar frontend para access token em memoria e refresh silencioso.
+- `BE-ARCH-01E4B` — retry automatico de `401` e single-flight.
+- `BE-ARCH-01E4C` — remover consumidores remanescentes de `session.accessToken` e validar manualmente o fluxo.
 - `BE-ARCH-01E5` — hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F` — auditar e testar eventos de autenticacao.
 - `BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo.
@@ -24,7 +25,8 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 
 - `BE-ARCH-01D` — alinhamento minimo de sessao frontend concluido/aprovado; commit funcional aprovado `fix(frontend): align session invalidation`.
 - `BE-ARCH-01E3` — refresh, rotacao e logout server-side concluidos/aprovados; commit funcional aprovado `feat(auth): add refresh token sessions`.
-- `BE-ARCH-01E4`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes, portanto a frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida.
+- `BE-ARCH-01E4A` — access token em memoria e bootstrap via refresh concluidos/aprovados; commit funcional aprovado `feat(frontend): keep access token in memory`.
+- `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes, portanto a frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida.
 
 ## Regras de transicao
 

@@ -62,8 +62,10 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 ## Relação com BE-ARCH-01E3 / BE-ARCH-01E4
 
 - `BE-ARCH-01E3` foi concluida/aprovada no backend com refresh token opaco, cookie `HttpOnly`, `POST /auth/refresh`, rotacao, deteccao de reuso e `POST /auth/logout`.
-- O frontend ainda nao consome o novo fluxo server-side.
-- `BE-ARCH-01E4` permanece como proxima etapa frontend: access token em memoria, `credentials: include`, refresh silencioso, single-flight contra refresh storm e logout chamando `POST /auth/logout`.
+- `BE-ARCH-01E4A` foi concluida/aprovada no frontend com access token em memoria, bootstrap via `POST /auth/refresh`, `credentials: include` em login/refresh/logout, logout chamando `POST /auth/logout` em modo best-effort e `rememberMe` como preferencia local nao sensivel.
+- **Commit funcional aprovado:** `feat(frontend): keep access token in memory`.
+- Ressalva nao bloqueante: o `401` publico no bootstrap pode exibir aviso indevido de sessao expirada no login; fix curto recomendado antes ou durante `BE-ARCH-01E4B`.
+- `BE-ARCH-01E4B` permanece pendente para retry automatico de `401` e single-flight; `BE-ARCH-01E4C` permanece pendente para remover consumidores remanescentes de `session.accessToken` e validar manualmente o fluxo.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ## Itens frontend resolvidos
@@ -98,7 +100,7 @@ Relações principais:
 - `DX-POSTCSS-01` permanece alerta pendente e não deve ser confundido com `DX-01`.
 - Ausência de testes frontend permanece risco ou candidata futura de quality gate.
 - `/chefia-imediata` permanece frente frontend/integração ativa em `FE-CHEFIA-01`.
-- `BE-ARCH-01E3` mitigou o gap backend de refresh/rotacao/logout, mas `BE-ARCH-01E4` ainda e a proxima tarefa de sessao para o frontend.
+- `BE-ARCH-01E3` mitigou o gap backend de refresh/rotacao/logout, e `BE-ARCH-01E4A` mitigou o risco de access token persistido em storage; `BE-ARCH-01E4B/C` permanecem como proximas tarefas de sessao para o frontend.
 
 ## Regras de leitura
 
@@ -110,7 +112,7 @@ Relações principais:
 - Não confundir `FT-27/DX-01` resolvida com `DX-POSTCSS-01`.
 - Não confundir `FT-05` histórica com integração real da chefia.
 - Não tratar UI de homologação preparada em `FT-17` como fluxo backend completo.
-- `BE-ARCH-01D` está concluída no recorte mínimo de sessão frontend; `BE-ARCH-01E3` está concluída no recorte backend; `BE-ARCH-01E4`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+- `BE-ARCH-01D` está concluída no recorte mínimo de sessão frontend; `BE-ARCH-01E3` está concluída no recorte backend; `BE-ARCH-01E4A` está concluída no recorte frontend inicial; `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
 
 ## Fora do escopo deste índice
 
