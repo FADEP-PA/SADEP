@@ -486,6 +486,7 @@ export function SupervisorEvaluationWorkspace() {
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmittingEvaluation, setIsSubmittingEvaluation] = useState(false);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
 
@@ -1103,7 +1104,14 @@ export function SupervisorEvaluationWorkspace() {
             <section className="supervisor-dashboard__table-card">
               <div className="supervisor-dashboard__filters">
                 <div className="supervisor-dashboard__filters-title">
-                  <span className="supervisor-dashboard__filters-icon" aria-hidden="true">
+                  <button
+                    type="button"
+                    className="supervisor-dashboard__filters-trigger"
+                    aria-label="Abrir filtros por status"
+                    aria-expanded={isFilterPanelOpen}
+                    aria-controls="supervisor-status-filters"
+                    onClick={() => setIsFilterPanelOpen((current) => !current)}
+                  >
                     <svg viewBox="0 0 24 24" fill="none">
                       <path
                         d="M4.5 6.5h15l-6 6.7v3.9l-3 1.7v-5.6l-6-6.7Z"
@@ -1113,22 +1121,36 @@ export function SupervisorEvaluationWorkspace() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                  </span>
+                  </button>
                   <span>Filtrar por status</span>
                 </div>
 
-                <div className="supervisor-dashboard__filter-options" aria-label="Filtros por status da avaliacao">
-                  {STATUS_FILTERS.map((filter) => (
-                    <label key={filter.id} className="supervisor-dashboard__filter-option">
-                      <input
-                        type="checkbox"
-                        checked={selectedFilters.includes(filter.id)}
-                        onChange={() => toggleFilter(filter.id)}
-                      />
-                      <span>{filter.label}</span>
-                    </label>
-                  ))}
-                </div>
+                {isFilterPanelOpen ? (
+                  <div
+                    id="supervisor-status-filters"
+                    className="supervisor-dashboard__filter-popover"
+                    role="dialog"
+                    aria-label="Filtros por status da avaliacao"
+                  >
+                    <div className="supervisor-dashboard__filter-popover-header">
+                      <strong>Status exibidos</strong>
+                      <span>{selectedFilters.length} de {STATUS_FILTERS.length} ativos</span>
+                    </div>
+
+                    <div className="supervisor-dashboard__filter-options">
+                      {STATUS_FILTERS.map((filter) => (
+                        <label key={filter.id} className="supervisor-dashboard__filter-option">
+                          <input
+                            type="checkbox"
+                            checked={selectedFilters.includes(filter.id)}
+                            onChange={() => toggleFilter(filter.id)}
+                          />
+                          <span>{filter.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="supervisor-dashboard__table-header">
