@@ -104,7 +104,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setAccessToken(response.accessToken);
 
       const nextSession: AuthSession = {
-        accessToken: response.accessToken,
         user: response.user,
         rememberMe,
       };
@@ -164,7 +163,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       clearSession();
 
       const nextSession: AuthSession = {
-        accessToken: response.accessToken,
         user: response.user,
         rememberMe: input.rememberMe,
       };
@@ -204,7 +202,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       const response = await refreshAuthSession();
       setAccessToken(response.accessToken);
       const nextSession = {
-        accessToken: response.accessToken,
         user: response.user,
         rememberMe: session.rememberMe,
       };

@@ -21,16 +21,16 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - O bootstrap da sessao passou a usar `POST /auth/refresh` e restaura a sessao em memoria quando o refresh cookie valido existe.
 - Login, refresh e logout usam `credentials: include`; o logout manual chama `POST /auth/logout` em modo best-effort.
 - `rememberMe` passou a ser apenas preferencia local nao sensivel.
-- `session.accessToken` ainda existe temporariamente no contexto em memoria para compatibilidade com telas existentes; os consumidores remanescentes ficam para `BE-ARCH-01E4C`.
+- Atualizacao de 2026-05-04: `session.accessToken` foi removido do contexto; telas autenticadas usam o access token em memoria via cliente HTTP.
 - Atualizacao de 2026-05-04: em rota publica, `401` no bootstrap de `/auth/refresh` deixa o usuario anonimo sem exibir aviso indevido de sessao expirada no login.
-- Proxima acao tecnica recomendada: seguir para `BE-ARCH-01E4C`.
+- Proxima acao tecnica recomendada: validacao manual completa de login, reload autenticado, refresh silencioso, `401`, `403` e logout.
 
 ### BE-ARCH-01E4B / BE-ARCH-01E4C — Refresh silencioso frontend
 
-- **Status operacional:** `BE-ARCH-01E4B` concluida no recorte frontend; `BE-ARCH-01E4C` pendente.
+- **Status operacional:** `BE-ARCH-01E4B` e `BE-ARCH-01E4C` concluidas no recorte frontend.
 - `BE-ARCH-01E4B` implementou retry automatico unico de `401`, single-flight contra refresh storm e protecao contra loop de refresh em rotas `/auth/*`.
-- O cliente HTTP prefere o access token em memoria quando disponivel, mesmo enquanto telas legadas ainda passam `session.accessToken`.
-- `BE-ARCH-01E4C` deve remover consumidores remanescentes de `session.accessToken` e executar a validacao manual completa do fluxo.
+- `BE-ARCH-01E4C` removeu `session.accessToken` do contexto e migrou os services/telas de processo para `useStoredAccessToken`.
+- A validacao manual completa do fluxo autenticado permanece recomendada em navegador com backend local.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ### [FE-CHEFIA-01 — Integracao real da chefia imediata](./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md)

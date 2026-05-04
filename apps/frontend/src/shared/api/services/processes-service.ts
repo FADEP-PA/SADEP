@@ -55,17 +55,21 @@ export type SupervisorEvaluationWorkspaceSnapshot = {
   canRectify: boolean;
 };
 
-export async function getWorkflow(processId: string, accessToken: string) {
+const AUTHENTICATED_REQUEST = {
+  useStoredAccessToken: true,
+} as const;
+
+export async function getWorkflow(processId: string) {
   return httpRequest<WorkflowResponse>(`/processes/${processId}/workflow`, {
+    ...AUTHENTICATED_REQUEST,
     method: 'GET',
-    token: accessToken,
   });
 }
 
-export async function getWorkflowHistory(processId: string, accessToken: string) {
+export async function getWorkflowHistory(processId: string) {
   const history = await httpRequest<WorkflowHistoryItem[]>(`/processes/${processId}/history`, {
+    ...AUTHENTICATED_REQUEST,
     method: 'GET',
-    token: accessToken,
   });
 
   return {
@@ -76,42 +80,39 @@ export async function getWorkflowHistory(processId: string, accessToken: string)
   };
 }
 
-export async function getInternWorkspaceSnapshot(processId: string, accessToken: string) {
+export async function getInternWorkspaceSnapshot(processId: string) {
   return httpRequest<InternServerWorkspaceSnapshotRef>(
     `/processes/${processId}/intern-workspace`,
     {
+      ...AUTHENTICATED_REQUEST,
       method: 'GET',
-      token: accessToken,
     },
   );
 }
 
-export async function getSupervisorEvaluation(processId: string, accessToken: string) {
+export async function getSupervisorEvaluation(processId: string) {
   return httpRequest<SupervisorEvaluationWithDocumentContextRef | null>(
     `/processes/${processId}/supervisor-evaluation`,
     {
+      ...AUTHENTICATED_REQUEST,
       method: 'GET',
-      token: accessToken,
     },
   );
 }
 
-export async function getSelfEvaluation(processId: string, accessToken: string) {
+export async function getSelfEvaluation(processId: string) {
   return httpRequest<SelfEvaluationResponse | null>(`/processes/${processId}/self-evaluation`, {
+    ...AUTHENTICATED_REQUEST,
     method: 'GET',
-    token: accessToken,
   });
 }
 
-export async function getSupervisorEvaluationWorkspaceSnapshot(
-  processId: string,
-  accessToken: string,
-) {
+export async function getSupervisorEvaluationWorkspaceSnapshot(processId: string) {
   return httpRequest<SupervisorEvaluationWorkspaceSnapshot>(
     `/processes/${processId}/supervisor-evaluation/workspace`,
     {
+      ...AUTHENTICATED_REQUEST,
       method: 'GET',
-      token: accessToken,
     },
   );
 }
@@ -119,63 +120,58 @@ export async function getSupervisorEvaluationWorkspaceSnapshot(
 export async function getCesadStageReadSnapshot(
   processId: string,
   stageSequence: number,
-  accessToken: string,
 ) {
   return httpRequest<CesadStageReadSnapshotRef>(
     `/processes/${processId}/stages/${stageSequence}/consolidated-read`,
     {
+      ...AUTHENTICATED_REQUEST,
       method: 'GET',
-      token: accessToken,
     },
   );
 }
 
 export async function saveSelfEvaluationDraft(
   processId: string,
-  accessToken: string,
   body: UpsertSelfEvaluationInput,
 ) {
   return httpRequest<SelfEvaluationResponse>(`/processes/${processId}/self-evaluation/draft`, {
+    ...AUTHENTICATED_REQUEST,
     method: 'PUT',
-    token: accessToken,
     body,
   });
 }
 
 export async function submitSelfEvaluation(
   processId: string,
-  accessToken: string,
   body: UpsertSelfEvaluationInput,
 ) {
   return httpRequest<SelfEvaluationResponse>(`/processes/${processId}/self-evaluation/submit`, {
+    ...AUTHENTICATED_REQUEST,
     method: 'POST',
-    token: accessToken,
     body,
   });
 }
 
 export async function signSelfEvaluation(
   processId: string,
-  accessToken: string,
   body?: Pick<UpsertSelfEvaluationInput, 'comment'>,
 ) {
   return httpRequest<SelfEvaluationResponse>(`/processes/${processId}/self-evaluation/sign`, {
+    ...AUTHENTICATED_REQUEST,
     method: 'POST',
-    token: accessToken,
     body,
   });
 }
 
 export async function saveSupervisorEvaluationDraft(
   processId: string,
-  accessToken: string,
   body: UpsertSupervisorEvaluationInput,
 ) {
   return httpRequest<SupervisorEvaluationWithDocumentContextRef>(
     `/processes/${processId}/supervisor-evaluation/draft`,
     {
+      ...AUTHENTICATED_REQUEST,
       method: 'POST',
-      token: accessToken,
       body,
     },
   );
@@ -183,14 +179,13 @@ export async function saveSupervisorEvaluationDraft(
 
 export async function submitSupervisorEvaluation(
   processId: string,
-  accessToken: string,
   body: UpsertSupervisorEvaluationInput,
 ) {
   return httpRequest<SupervisorEvaluationWithDocumentContextRef>(
     `/processes/${processId}/supervisor-evaluation/submit`,
     {
+      ...AUTHENTICATED_REQUEST,
       method: 'POST',
-      token: accessToken,
       body,
     },
   );
@@ -198,41 +193,39 @@ export async function submitSupervisorEvaluation(
 
 export async function rectifySupervisorEvaluation(
   processId: string,
-  accessToken: string,
   body: UpsertSupervisorEvaluationInput,
 ) {
   return httpRequest<SupervisorEvaluationWithDocumentContextRef>(
     `/processes/${processId}/supervisor-evaluation/rectify`,
     {
+      ...AUTHENTICATED_REQUEST,
       method: 'POST',
-      token: accessToken,
       body,
     },
   );
 }
 
-export async function signSupervisorEvaluation(processId: string, accessToken: string) {
+export async function signSupervisorEvaluation(processId: string) {
   return httpRequest<DocumentSignatureResponse>(
     `/processes/${processId}/supervisor-evaluation/sign`,
     {
+      ...AUTHENTICATED_REQUEST,
       method: 'POST',
-      token: accessToken,
     },
   );
 }
 
 export async function getTechnicalProcessSnapshot(
   processId: string,
-  accessToken: string,
   userRole: UserRole,
 ): Promise<ProcessDashboardSnapshot> {
   const [workflow, historyResponse] = await Promise.all([
-    getWorkflow(processId, accessToken),
-    getWorkflowHistory(processId, accessToken),
+    getWorkflow(processId),
+    getWorkflowHistory(processId),
   ]);
 
   try {
-    const supervisorEvaluation = await getSupervisorEvaluation(processId, accessToken);
+    const supervisorEvaluation = await getSupervisorEvaluation(processId);
 
     return {
       workflow,
@@ -272,12 +265,11 @@ export async function getTechnicalProcessSnapshot(
 
 export async function transitionWorkflow(
   processId: string,
-  accessToken: string,
   body: WorkflowTransitionInput,
 ) {
   return httpRequest<WorkflowResponse>(`/processes/${processId}/workflow/transition`, {
+    ...AUTHENTICATED_REQUEST,
     method: 'POST',
-    token: accessToken,
     body,
   });
 }

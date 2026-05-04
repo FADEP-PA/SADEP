@@ -537,7 +537,7 @@ export function InternServerWorkspace() {
   const canPersistSelfEvaluation = Boolean(snapshot && canEditSelfEvaluation);
 
   useEffect(() => {
-    if (!session?.accessToken || hasAttemptedInitialLoad || processId.trim().length === 0) {
+    if (!session || hasAttemptedInitialLoad || processId.trim().length === 0) {
       return;
     }
 
@@ -554,7 +554,7 @@ export function InternServerWorkspace() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [hasAttemptedInitialLoad, processId, session?.accessToken]);
+  }, [hasAttemptedInitialLoad, processId, session]);
 
   function handleProcessLoadError(error: unknown) {
     const payload =
@@ -574,7 +574,7 @@ export function InternServerWorkspace() {
     event.preventDefault();
 
     const normalizedProcessId = processId.trim();
-    if (!session?.accessToken || normalizedProcessId.length === 0) {
+    if (!session || normalizedProcessId.length === 0) {
       setLoadErrorMessage('Informe um identificador de processo para abrir a area do servidor.');
       setLoadErrorDetails([]);
       setLoadErrorStatus(null);
@@ -603,14 +603,14 @@ export function InternServerWorkspace() {
   }
 
   async function loadProcessSnapshot(activeProcessId: string, success?: OperationFeedback) {
-    if (!session?.accessToken) {
+    if (!session) {
       return;
     }
 
     const normalizedProcessId = activeProcessId.trim();
     const [workspaceSnapshot, historyResponse] = await Promise.all([
-      getInternWorkspaceSnapshot(normalizedProcessId, session.accessToken),
-      getWorkflowHistory(normalizedProcessId, session.accessToken),
+      getInternWorkspaceSnapshot(normalizedProcessId),
+      getWorkflowHistory(normalizedProcessId),
     ]);
 
     const nextSnapshot: InternProcessSnapshot = {
@@ -641,7 +641,7 @@ export function InternServerWorkspace() {
   }
 
   async function handleSignSupervisorEvaluation() {
-    if (!session?.accessToken || !snapshot) {
+    if (!session || !snapshot) {
       return;
     }
 
@@ -652,7 +652,7 @@ export function InternServerWorkspace() {
     setSuccessFeedback(null);
 
     try {
-      await signSupervisorEvaluation(snapshot.workflow.id, session.accessToken);
+      await signSupervisorEvaluation(snapshot.workflow.id);
 
       await loadProcessSnapshot(snapshot.workflow.id, {
         title: 'Assinatura registrada',
@@ -675,7 +675,7 @@ export function InternServerWorkspace() {
   }
 
   async function handleSelfEvaluationMutation(kind: 'draft' | 'submit') {
-    if (!session?.accessToken || !snapshot) {
+    if (!session || !snapshot) {
       return;
     }
 
@@ -689,9 +689,9 @@ export function InternServerWorkspace() {
       const payload = normalizeSelfEvaluationPayload(selfEvaluationForm, kind === 'submit');
 
       if (kind === 'draft') {
-        await saveSelfEvaluationDraft(snapshot.workflow.id, session.accessToken, payload);
+        await saveSelfEvaluationDraft(snapshot.workflow.id, payload);
       } else {
-        await submitSelfEvaluation(snapshot.workflow.id, session.accessToken, payload);
+        await submitSelfEvaluation(snapshot.workflow.id, payload);
       }
 
       await loadProcessSnapshot(snapshot.workflow.id, {
