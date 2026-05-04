@@ -34,10 +34,10 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 
 ### [`FT-24 — Reduzir dependência de NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./frontend/tasks/FT-24-process-selection-technical-id.md)
 
-- **Status:** ativo / parcialmente mitigado.
+- **Status:** concluído no recorte frontend.
 - Reduzir dependência de ID técnico fixo; `/chefia-imediata`, `/processos` e `/servidor-estagiario` permitem consulta manual por processo.
-- `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` permanece centralizada apenas como preenchimento inicial opcional de desenvolvimento.
-- Requer alinhamento backend/frontend sobre fonte real de processos disponíveis.
+- O código frontend não consome mais `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
+- Listagem segura por perfil depende de contrato/backend futuro e não permanece como pendência frontend desta task.
 
 ### Backlog frontend pendente
 

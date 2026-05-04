@@ -27,7 +27,6 @@ import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { StatusBadge, type StatusBadgeTone } from '@/shared/ui/status-badge';
 
-import { getInitialTechnicalProcessId } from '../services/process-selection';
 import {
   formatDateTime,
   formatDocumentStatus,
@@ -479,7 +478,7 @@ function StageCard({ item }: { item: StageCardViewModel }) {
 
 export function InternServerWorkspace() {
   const { session } = useAuth();
-  const [processId, setProcessId] = useState(getInitialTechnicalProcessId);
+  const [processId, setProcessId] = useState('');
   const [snapshot, setSnapshot] = useState<InternProcessSnapshot | null>(null);
   const [selfEvaluationForm, setSelfEvaluationForm] = useState<SelfEvaluationFormState>(
     createEmptySelfEvaluationForm,
@@ -768,8 +767,8 @@ export function InternServerWorkspace() {
             <span className="section-chip">Processo em foco</span>
             <h3>Consulta do servidor estagiario</h3>
             <p>
-              Informe o identificador do processo para abrir a area real do servidor. A variavel tecnica,
-              quando configurada, serve apenas como preenchimento inicial em desenvolvimento.
+              Informe o identificador do processo para abrir a area real do servidor sem depender de
+              configuracao tecnica fixa em desenvolvimento.
             </p>
           </div>
 

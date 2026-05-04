@@ -22,8 +22,6 @@ import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { PageSection } from '@/shared/ui/page-section';
 
-import { getInitialTechnicalProcessId } from '../services/process-selection';
-
 const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
 
 type SupervisorDashboardStatus =
@@ -476,14 +474,13 @@ function EvaluationFactorCard({
 
 export function SupervisorEvaluationWorkspace() {
   const { session } = useAuth();
-  const configuredProcessId = getInitialTechnicalProcessId();
   const [selectedFilters, setSelectedFilters] = useState<SupervisorDashboardStatus[]>(
     STATUS_FILTERS.map((item) => item.id),
   );
   const [activeEvaluation, setActiveEvaluation] = useState<EvaluationDraft | null>(null);
   const [previousReviewRow, setPreviousReviewRow] = useState<SupervisorDashboardRow | null>(null);
   const [workspaceSnapshot, setWorkspaceSnapshot] = useState<SupervisorEvaluationWorkspaceSnapshot | null>(null);
-  const [processIdInput, setProcessIdInput] = useState(configuredProcessId);
+  const [processIdInput, setProcessIdInput] = useState('');
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
@@ -501,14 +498,6 @@ export function SupervisorEvaluationWorkspace() {
     () => dashboardRows.filter((row) => selectedFilters.includes(row.status)),
     [dashboardRows, selectedFilters],
   );
-
-  useEffect(() => {
-    if (!session?.accessToken || configuredProcessId.length === 0) {
-      return;
-    }
-
-    void loadSupervisorWorkspace(configuredProcessId);
-  }, [configuredProcessId, session?.accessToken]);
 
   async function loadSupervisorWorkspace(processId: string) {
     if (!session?.accessToken) {
@@ -810,11 +799,11 @@ export function SupervisorEvaluationWorkspace() {
           </button>
         </form>
 
-        {configuredProcessId.length === 0 && !workspaceSnapshot ? (
+        {!workspaceSnapshot ? (
           <FeedbackAlert
-            title="Processo real nao configurado"
+            title="Processo real nao selecionado"
             tone="info"
-            description="A tela permanece em modo demonstrativo ate um processo real ser informado ou configurado para validacao local."
+            description="A tela permanece em modo demonstrativo ate um processo real ser informado para validacao local."
           />
         ) : null}
 

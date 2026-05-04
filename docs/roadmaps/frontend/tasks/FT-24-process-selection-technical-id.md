@@ -2,7 +2,7 @@
 
 ## Status
 
-Ativo / parcialmente mitigado.
+Concluido no recorte frontend.
 
 ## Area
 
@@ -32,10 +32,11 @@ Atualizacao de 2026-04-30:
 Atualizacao de 2026-05-04:
 
 - varredura frontend encontrou uso da variavel tecnica em `/chefia-imediata`, `/processos` e `/servidor-estagiario`;
-- a leitura de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` foi centralizada em helper unico de selecao de processo;
+- a leitura de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` foi removida do codigo frontend;
 - `/servidor-estagiario` passou a permitir consulta manual por identificador de processo na propria tela;
-- `/processos` e `/chefia-imediata` permanecem com consulta manual e usam a variavel apenas como preenchimento inicial opcional;
-- a dependencia operacional de ID tecnico fixo foi mitigada nas telas mapeadas, mas a task continua aberta ate existir listagem segura de processos por perfil.
+- `/processos`, `/chefia-imediata` e `/servidor-estagiario` dependem de selecao/consulta explicita na UI, sem preenchimento por env tecnica;
+- nao ha endpoint real de listagem segura de processos por perfil exposto para o frontend neste momento;
+- a dependencia operacional frontend de ID tecnico fixo foi eliminada nas telas mapeadas.
 
 ## Escopo previsto
 
@@ -48,6 +49,7 @@ Atualizacao de 2026-05-04:
 - implementar painel completo sem endpoints;
 - mudar autorizacao;
 - alterar workflow.
+- criar endpoint backend de listagem de processos por perfil.
 
 ## Evidencias / referencias
 
@@ -65,7 +67,8 @@ Validacoes executadas em 2026-05-04:
 
 - `npm run frontend:typecheck` passou;
 - `npm run frontend:check` passou, incluindo build Next.js.
+- varredura final no codigo frontend nao encontrou `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
 
 ## Proxima acao
 
-Alinhar a proxima entrega frontend com `FE-CHEFIA-01`: substituir a consulta manual/fallback por listagem segura de processos por perfil quando houver endpoint real disponivel.
+Seguir para `FE-CHEFIA-01`. A listagem segura por perfil deve ser tratada quando houver contrato/backend disponivel; ate la, o frontend nao depende mais de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.

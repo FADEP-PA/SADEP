@@ -30,7 +30,6 @@ import { ProcessHistoryCard } from './process-history-card';
 import { ProcessListCard } from './process-list-card';
 import { ProcessStatusCard } from './process-status-card';
 import { ProcessTechnicalDetailsCard } from './process-technical-details-card';
-import { getInitialTechnicalProcessId } from '../services/process-selection';
 
 type SuccessFeedback = {
   title: string;
@@ -63,7 +62,7 @@ function upsertConsultedProcess(
 
 export function ProcessWorkspace() {
   const { session } = useAuth();
-  const [processId, setProcessId] = useState(getInitialTechnicalProcessId);
+  const [processId, setProcessId] = useState('');
   const [snapshot, setSnapshot] = useState<ProcessDashboardSnapshot | null>(null);
   const [consultedProcesses, setConsultedProcesses] = useState<ProcessDashboardListItem[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
