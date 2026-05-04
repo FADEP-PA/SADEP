@@ -66,8 +66,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - **Commit funcional aprovado:** `feat(frontend): keep access token in memory`.
 - Atualizacao de 2026-05-04: o `401` publico no bootstrap nao exibe mais aviso indevido de sessao expirada no login.
 - Atualizacao de 2026-05-04: `BE-ARCH-01E4B` foi concluida no recorte frontend com retry automatico unico de `401`, single-flight contra refresh storm e protecao contra loop em rotas `/auth/*`.
-- Atualizacao de 2026-05-04: `BE-ARCH-01E4C` foi concluida no recorte frontend com remocao de `session.accessToken` do contexto e migracao das telas/services de processo para access token em memoria via cliente HTTP.
-- A validacao manual completa do fluxo autenticado permanece recomendada em navegador com backend local.
+- `BE-ARCH-01E4C` permanece pendente para remover consumidores remanescentes de `session.accessToken` e validar manualmente o fluxo.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ## Itens frontend resolvidos
@@ -102,7 +101,7 @@ Relações principais:
 - `DX-POSTCSS-01` permanece alerta pendente e não deve ser confundido com `DX-01`.
 - Ausência de testes frontend permanece risco ou candidata futura de quality gate.
 - `/chefia-imediata` permanece frente frontend/integração ativa em `FE-CHEFIA-01`.
-- `BE-ARCH-01E3` mitigou o gap backend de refresh/rotacao/logout, e `BE-ARCH-01E4A` mitigou o risco de access token persistido em storage; `BE-ARCH-01E4B/C` permanecem como proximas tarefas de sessao para o frontend.
+- `BE-ARCH-01E3` mitigou o gap backend de refresh/rotacao/logout, e `BE-ARCH-01E4A` mitigou o risco de access token persistido em storage e o alerta de UX do `401 público` em rota publica; `BE-ARCH-01E4B/C` permanecem como proximas tarefas de sessao para o frontend.
 
 ## Regras de leitura
 
