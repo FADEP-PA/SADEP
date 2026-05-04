@@ -22,8 +22,8 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - Login, refresh e logout usam `credentials: include`; o logout manual chama `POST /auth/logout` em modo best-effort.
 - `rememberMe` passou a ser apenas preferencia local nao sensivel.
 - `session.accessToken` ainda existe temporariamente no contexto em memoria para compatibilidade com telas existentes; os consumidores remanescentes ficam para `BE-ARCH-01E4C`.
-- Ressalva nao bloqueante: em rota publica, um `401` no bootstrap de `/auth/refresh` pode preencher `bootstrapError` e exibir aviso indevido de sessao expirada no login para usuario anonimo.
-- Proxima acao tecnica recomendada: corrigir a ressalva curta de UX do bootstrap publico e seguir para `BE-ARCH-01E4B`.
+- Atualizacao de 2026-05-04: em rota publica, `401` no bootstrap de `/auth/refresh` deixa o usuario anonimo sem exibir aviso indevido de sessao expirada no login.
+- Proxima acao tecnica recomendada: seguir para `BE-ARCH-01E4B`.
 
 ### BE-ARCH-01E4B / BE-ARCH-01E4C — Pendencias de refresh silencioso frontend
 

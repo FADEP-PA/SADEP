@@ -64,7 +64,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - `BE-ARCH-01E3` foi concluida/aprovada no backend com refresh token opaco, cookie `HttpOnly`, `POST /auth/refresh`, rotacao, deteccao de reuso e `POST /auth/logout`.
 - `BE-ARCH-01E4A` foi concluida/aprovada no frontend com access token em memoria, bootstrap via `POST /auth/refresh`, `credentials: include` em login/refresh/logout, logout chamando `POST /auth/logout` em modo best-effort e `rememberMe` como preferencia local nao sensivel.
 - **Commit funcional aprovado:** `feat(frontend): keep access token in memory`.
-- Ressalva nao bloqueante: o `401` publico no bootstrap pode exibir aviso indevido de sessao expirada no login; fix curto recomendado antes ou durante `BE-ARCH-01E4B`.
+- Atualizacao de 2026-05-04: o `401` publico no bootstrap nao exibe mais aviso indevido de sessao expirada no login.
 - `BE-ARCH-01E4B` permanece pendente para retry automatico de `401` e single-flight; `BE-ARCH-01E4C` permanece pendente para remover consumidores remanescentes de `session.accessToken` e validar manualmente o fluxo.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 

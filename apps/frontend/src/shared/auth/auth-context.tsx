@@ -73,6 +73,14 @@ function getCurrentBrowserPathname() {
   return typeof window === 'undefined' ? DEFAULT_PUBLIC_REDIRECT : window.location.pathname;
 }
 
+function getBootstrapErrorMessage(pathname: string, error: unknown) {
+  if (isPublicAuthRoute(pathname) && isUnauthorizedError(error)) {
+    return null;
+  }
+
+  return getSessionValidationErrorMessage(error);
+}
+
 function isUnauthorizedError(error: unknown) {
   return error instanceof HttpError && error.status === 401;
 }
@@ -106,14 +114,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setBootstrapError(null);
       setAuthRedirectPath(null);
     } catch (error) {
-      setBootstrapError(getSessionValidationErrorMessage(error));
+      const currentPathname = getCurrentBrowserPathname();
+
+      setBootstrapError(getBootstrapErrorMessage(currentPathname, error));
       clearAccessToken();
       clearSession();
 
       if (isUnauthorizedError(error)) {
         setSession(null);
         setStatus('anonymous');
-        setAuthRedirectPath(getRedirectPathForValidationFailure(getCurrentBrowserPathname(), error));
+        setAuthRedirectPath(getRedirectPathForValidationFailure(currentPathname, error));
         return;
       }
 
