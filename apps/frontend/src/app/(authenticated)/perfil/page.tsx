@@ -1,31 +1,24 @@
 'use client';
 
+import Link from 'next/link';
+
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { useAuth } from '@/shared/auth/auth-context';
 import { getRolePresentation } from '@/shared/rbac/role-catalog';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
-import { InfoCard } from '@/shared/ui/info-card';
-import { KeyValueList } from '@/shared/ui/key-value-list';
 import { PageSection } from '@/shared/ui/page-section';
 
-const integrationPoints = [
-  {
-    title: 'Identificacao da conta',
-    items: ['Nome canônico da pessoa autenticada.', 'Perfil institucional aplicado ao ambiente.', 'Identificador interno do usuario autenticado.'],
-  },
-  {
-    title: 'Persistencia da sessao',
-    items: ['Sessao longa quando a opcao de lembrar estiver ativa.', 'Sessao de aba quando o acesso nao deve persistir.', 'Revalidacao automatica da identidade ao abrir o app.'],
-  },
-  {
-    title: 'Acesso e permissao',
-    items: ['As rotas abertas dependem do perfil autenticado.', 'O portal preserva o escopo institucional de cada area.', 'Telas protegidas redirecionam quando o acesso nao e permitido.'],
-  },
-  {
-    title: 'Seguranca operacional',
-    items: ['A autenticacao expirada encerra o acesso protegido.', 'Falhas de sessao geram feedback claro ao usuario.', 'O frontend depende apenas dos dados liberados pelo backend.'],
-  },
-];
+function formatSessionStatus(status: string) {
+  if (status === 'authenticated') {
+    return 'Sessao ativa';
+  }
+
+  if (status === 'loading') {
+    return 'Verificando sessao';
+  }
+
+  return 'Sessao encerrada';
+}
 
 export default function AuthenticatedProfilePage() {
   const { session, status, bootstrapError } = useAuth();
@@ -34,80 +27,70 @@ export default function AuthenticatedProfilePage() {
   return (
     <AuthGuard>
       <PageSection
-        eyebrow="Conta autenticada"
-        title="Perfil e sessao atual"
-        description="Resumo da identidade autenticada, do perfil institucional e do estado atual da sessao."
+        eyebrow="Meu perfil"
+        title="Dados da minha conta"
+        description="Confira as informacoes basicas do seu acesso ao sistema."
       >
-        <div className="portal-hero portal-hero--compact">
-          <div className="portal-hero__copy">
-            <span className="section-chip">Sessao ativa</span>
-            <h2>{rolePresentation?.label ?? 'Perfil nao identificado'}</h2>
-            <p>
-              Esta area concentra a leitura da conta autenticada e ajuda a confirmar rapidamente
-              identidade, permissao de acesso e persistencia da sessao.
-            </p>
+        <section className="profile-summary" aria-labelledby="profile-summary-title">
+          <div className="profile-summary__avatar" aria-hidden="true">
+            {(session?.user.name?.[0] ?? 'U').toUpperCase()}
           </div>
 
-          <aside className="portal-hero__visual">
-            <KeyValueList
-              items={[
-                { label: 'status', value: status },
-                { label: 'name', value: session?.user.name ?? 'Nao informado' },
-                { label: 'email', value: session?.user.email ?? 'Nao informado' },
-                { label: 'role', value: session?.user.role ?? 'Nao informado' },
-                { label: 'rememberMe', value: session?.rememberMe ? 'true' : 'false' },
-              ]}
-            />
-          </aside>
-        </div>
+          <div className="profile-summary__main">
+            <span className="section-chip">Conta em uso</span>
+            <h2 id="profile-summary-title">{session?.user.name ?? 'Usuario nao informado'}</h2>
+            <p>{session?.user.email ?? 'E-mail nao informado'}</p>
+          </div>
 
-        <div className="metrics-grid">
-          <InfoCard
-            eyebrow="Sessao"
-            title="Dados atuais da conta"
-            description="Campos usados pelo frontend para identificar o usuario autenticado."
-          >
-            <KeyValueList
-              items={[
-                { label: 'sub', value: session?.user.sub ?? 'Nao informado' },
-                { label: 'name', value: session?.user.name ?? 'Nao informado' },
-                { label: 'email', value: session?.user.email ?? 'Nao informado' },
-                { label: 'role', value: session?.user.role ?? 'Nao informado' },
-                { label: 'rememberMe', value: session?.rememberMe ? 'true' : 'false' },
-              ]}
-            />
-          </InfoCard>
+          <div className="profile-summary__status">
+            <span>{formatSessionStatus(status)}</span>
+          </div>
+        </section>
 
-          <InfoCard
-            eyebrow="Perfil"
-            title="Apresentacao institucional"
-            description="Referencia institucional usada para rotas iniciais, descricao e rotulagem visual."
-          >
-            <KeyValueList
-              items={[
-                { label: 'label', value: rolePresentation?.label ?? 'Nao informado' },
-                { label: 'atalho', value: rolePresentation?.shortLabel ?? 'Nao informado' },
-                { label: 'homePath', value: rolePresentation?.homePath ?? 'Nao informado' },
-                { label: 'descricao', value: rolePresentation?.description ?? 'Nao informada' },
-              ]}
-            />
-          </InfoCard>
-        </div>
+        <section className="profile-details" aria-label="Detalhes simples da conta">
+          <article className="profile-details__panel profile-details__panel--wide">
+            <h3>Meu acesso</h3>
+            <div className="profile-details__rows">
+              <div className="profile-details__row">
+                <span>Perfil no sistema</span>
+                <strong>{rolePresentation?.label ?? 'Nao informado'}</strong>
+              </div>
+              <div className="profile-details__row">
+                <span>O que posso fazer</span>
+                <strong>{rolePresentation?.description ?? 'Acessar as areas liberadas para meu perfil.'}</strong>
+              </div>
+              <div className="profile-details__row">
+                <span>Area principal</span>
+                {rolePresentation?.homePath ? (
+                  <Link href={rolePresentation.homePath}>Abrir minha area de trabalho</Link>
+                ) : (
+                  <strong>Nao informada</strong>
+                )}
+              </div>
+            </div>
+          </article>
 
-        <div className="metrics-grid">
-          {integrationPoints.map((section) => (
-            <InfoCard key={section.title} eyebrow="Integracao" title={section.title}>
-              <ul className="content-list">
-                {section.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </InfoCard>
-          ))}
-        </div>
+          <article className="profile-details__panel">
+            <h3>Minha sessao</h3>
+            <div className="profile-details__rows">
+              <div className="profile-details__row">
+                <span>Situação</span>
+                <strong>{formatSessionStatus(status)}</strong>
+              </div>
+              <div className="profile-details__row">
+                <span>Este dispositivo</span>
+                <strong>
+                  {session?.rememberMe
+                    ? 'Vai lembrar meu acesso neste navegador.'
+                    : 'Nao vai manter meu acesso depois que eu sair.'}
+                </strong>
+              </div>
+            </div>
+          </article>
+        </section>
 
         {bootstrapError ? (
-          <FeedbackAlert title="Ultimo aviso de autenticacao" tone="warning" description={bootstrapError} />
+          <FeedbackAlert title="Aviso sobre sua sessao" tone="warning" description={bootstrapError} />
         ) : null}
       </PageSection>
     </AuthGuard>
