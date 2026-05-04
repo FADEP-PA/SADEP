@@ -23,12 +23,13 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - `rememberMe` passou a ser apenas preferencia local nao sensivel.
 - `session.accessToken` ainda existe temporariamente no contexto em memoria para compatibilidade com telas existentes; os consumidores remanescentes ficam para `BE-ARCH-01E4C`.
 - Atualizacao de 2026-05-04: em rota publica, `401` no bootstrap de `/auth/refresh` deixa o usuario anonimo sem exibir aviso indevido de sessao expirada no login.
-- Proxima acao tecnica recomendada: seguir para `BE-ARCH-01E4B`.
+- Proxima acao tecnica recomendada: seguir para `BE-ARCH-01E4C`.
 
-### BE-ARCH-01E4B / BE-ARCH-01E4C — Pendencias de refresh silencioso frontend
+### BE-ARCH-01E4B / BE-ARCH-01E4C — Refresh silencioso frontend
 
-- **Status operacional:** pendentes.
-- `BE-ARCH-01E4B` deve implementar retry automatico de `401`, single-flight contra refresh storm e protecao contra loop de refresh.
+- **Status operacional:** `BE-ARCH-01E4B` concluida no recorte frontend; `BE-ARCH-01E4C` pendente.
+- `BE-ARCH-01E4B` implementou retry automatico unico de `401`, single-flight contra refresh storm e protecao contra loop de refresh em rotas `/auth/*`.
+- O cliente HTTP prefere o access token em memoria quando disponivel, mesmo enquanto telas legadas ainda passam `session.accessToken`.
 - `BE-ARCH-01E4C` deve remover consumidores remanescentes de `session.accessToken` e executar a validacao manual completa do fluxo.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
