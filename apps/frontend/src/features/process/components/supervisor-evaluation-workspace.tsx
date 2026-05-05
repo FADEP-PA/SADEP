@@ -773,38 +773,42 @@ export function SupervisorEvaluationWorkspace() {
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
       <PageSection
-        eyebrow="Chefia imediata"
-        title={activeEvaluation ? 'Avaliacao de desempenho' : 'Painel da chefia'}
+        eyebrow={activeEvaluation ? undefined : 'Chefia imediata'}
+        title={activeEvaluation ? undefined : 'Painel da chefia'}
         description={
           activeEvaluation
-            ? 'Relatorio tecnico individual de estagio probatorio.'
+            ? undefined
             : 'Visualizacao demonstrativa da unidade escolar com lista de servidores e situacao atual das avaliacoes.'
         }
       >
-        <form className="inline-form inline-form--elevated" onSubmit={handleLoadWorkspace}>
-          <label className="field-group" htmlFor="supervisor-workspace-process-id">
-            <span>Identificador do processo</span>
-            <input
-              id="supervisor-workspace-process-id"
-              name="processId"
-              placeholder="Informe o ID do processo"
-              value={processIdInput}
-              onChange={(event) => setProcessIdInput(event.target.value)}
-              disabled={isLoadingWorkspace}
-            />
-          </label>
+        {!activeEvaluation ? (
+          <>
+            <form className="inline-form inline-form--elevated" onSubmit={handleLoadWorkspace}>
+              <label className="field-group" htmlFor="supervisor-workspace-process-id">
+                <span>Identificador do processo</span>
+                <input
+                  id="supervisor-workspace-process-id"
+                  name="processId"
+                  placeholder="Informe o ID do processo"
+                  value={processIdInput}
+                  onChange={(event) => setProcessIdInput(event.target.value)}
+                  disabled={isLoadingWorkspace}
+                />
+              </label>
 
-          <button type="submit" disabled={isLoadingWorkspace}>
-            {isLoadingWorkspace ? 'Consultando processo...' : 'Consultar processo'}
-          </button>
-        </form>
+              <button type="submit" disabled={isLoadingWorkspace}>
+                {isLoadingWorkspace ? 'Consultando processo...' : 'Consultar processo'}
+              </button>
+            </form>
 
-        {!workspaceSnapshot ? (
-          <FeedbackAlert
-            title="Processo real nao selecionado"
-            tone="info"
-            description="A tela permanece em modo demonstrativo ate um processo real ser informado para validacao local."
-          />
+            {!workspaceSnapshot ? (
+              <FeedbackAlert
+                title="Processo real nao selecionado"
+                tone="info"
+                description="A tela permanece em modo demonstrativo ate um processo real ser informado para validacao local."
+              />
+            ) : null}
+          </>
         ) : null}
 
         {isLoadingWorkspace ? (
