@@ -5533,8 +5533,39 @@ h3,
 }
 
 .evaluation-detail__factor-header:hover {
+  background: #f2f6fb;
+  color: var(--ink);
   transform: none;
   box-shadow: none;
+}
+
+.evaluation-detail__factor-header:hover .evaluation-detail__factor-title {
+  color: var(--ink);
+}
+
+.evaluation-detail__factor-header:hover .evaluation-detail__factor-metric span {
+  color: #8ea2be;
+}
+
+.evaluation-detail__factor-header:focus,
+.evaluation-detail__factor-header:focus-visible,
+.evaluation-detail__factor-header:active {
+  background: #e7f2fb;
+  color: #083a6d;
+  box-shadow: inset 0 0 0 1px rgba(0, 124, 192, 0.2);
+  outline-color: rgba(0, 124, 192, 0.28);
+}
+
+.evaluation-detail__factor-header:focus .evaluation-detail__factor-title,
+.evaluation-detail__factor-header:focus-visible .evaluation-detail__factor-title,
+.evaluation-detail__factor-header:active .evaluation-detail__factor-title {
+  color: #083a6d;
+}
+
+.evaluation-detail__factor-header:focus .evaluation-detail__factor-metric span,
+.evaluation-detail__factor-header:focus-visible .evaluation-detail__factor-metric span,
+.evaluation-detail__factor-header:active .evaluation-detail__factor-metric span {
+  color: #547294;
 }
 
 .evaluation-detail__factor-title {
@@ -5633,7 +5664,147 @@ h3,
 
 .evaluation-detail__summary-card {
   display: grid;
-  gap: 1rem;
+  gap: 1.35rem;
+}
+
+.evaluation-detail__final-score-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border-radius: 1rem;
+  background: #1474ad;
+  box-shadow: 0 22px 34px rgba(20, 116, 173, 0.16);
+}
+
+.evaluation-detail__final-score-panel label {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 1.3rem 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.evaluation-detail__final-score-panel label:last-child {
+  border-right: 0;
+}
+
+.evaluation-detail__final-score-panel span {
+  color: #acd3ed;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.evaluation-detail__final-score-panel input,
+.evaluation-detail__final-score-panel select {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-weight: 900;
+  text-align: center;
+  outline: none;
+}
+
+.evaluation-detail__final-score-panel input {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  line-height: 1;
+}
+
+.evaluation-detail__final-score-panel select {
+  font-size: clamp(1.65rem, 3vw, 2.6rem);
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+.evaluation-detail__final-score-panel select option {
+  color: var(--ink);
+}
+
+.evaluation-detail__final-score-panel input:focus,
+.evaluation-detail__final-score-panel select:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.6rem;
+}
+
+.evaluation-detail__final-note {
+  margin: 0;
+  color: #9fb0c8;
+  font-size: 0.78rem;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.evaluation-detail__signature-card {
+  display: grid;
+  gap: 2.2rem;
+  padding: 2.8rem 3rem 2.1rem;
+  border: 1px solid rgba(19, 51, 93, 0.08);
+  border-radius: 1rem;
+  background: #ffffff;
+}
+
+.evaluation-detail__signature-title {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(19, 51, 93, 0.12);
+  color: #9aabc2;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.evaluation-detail__signature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4rem;
+}
+
+.evaluation-detail__signature-box {
+  display: grid;
+  justify-items: center;
+  gap: 0.55rem;
+  text-align: center;
+}
+
+.evaluation-detail__signature-box div {
+  width: 100%;
+  padding: 1rem;
+  border-bottom: 2px solid rgba(19, 51, 93, 0.1);
+  background: #f5f8fb;
+  color: #c2cedc;
+  font-size: 0.74rem;
+  font-style: italic;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.evaluation-detail__signature-box strong {
+  color: #173d74;
+  font-size: 0.86rem;
+  text-transform: uppercase;
+}
+
+.evaluation-detail__signature-box span {
+  color: #9aabc2;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.evaluation-detail__signature-place-date {
+  color: #1472c7;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .evaluation-detail__summary-grid {
@@ -5683,6 +5854,35 @@ h3,
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+}
+
+.evaluation-detail__month-select {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 9rem;
+}
+
+.evaluation-detail__month-select span {
+  color: #617c9d;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.evaluation-detail__month-select select {
+  min-height: 2.65rem;
+  padding: 0.55rem 2rem 0.55rem 0.8rem;
+  border: 1px solid rgba(0, 124, 192, 0.22);
+  border-radius: 0.65rem;
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.evaluation-detail__month-select select:focus-visible {
+  outline: 3px solid rgba(0, 124, 192, 0.22);
+  outline-offset: 2px;
 }
 
 .evaluation-detail__observation-item textarea {
@@ -6033,6 +6233,24 @@ button,
     padding: 0.75rem 0 0;
     border-left: 0;
     text-align: left;
+  }
+
+  .evaluation-detail__final-score-panel,
+  .evaluation-detail__signature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .evaluation-detail__final-score-panel label {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.24);
+  }
+
+  .evaluation-detail__final-score-panel label:last-child {
+    border-bottom: 0;
+  }
+
+  .evaluation-detail__signature-card {
+    padding: 1.6rem 1rem;
   }
 
   .supervisor-dashboard__table-header {

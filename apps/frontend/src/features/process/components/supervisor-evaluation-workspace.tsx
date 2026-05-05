@@ -71,6 +71,9 @@ type EvaluationDraft = {
   unitCompetencies: string;
   serverAssignments: string;
   generalComments: string;
+  totalStageScore: string;
+  stageAverage: string;
+  administrativeConcept: string;
   monthlyObservations: MonthlyObservation[];
   factors: EvaluationFactorDraft[];
   expandedFactorIds: string[];
@@ -194,6 +197,22 @@ const STATUS_FILTERS: Array<{ id: SupervisorDashboardStatus; label: string }> = 
   { id: 'CONCLUIDO', label: 'Concluidos' },
 ];
 
+const MONTHLY_OBSERVATION_OPTIONS = [
+  '1o mes',
+  '2o mes',
+  '3o mes',
+  '4o mes',
+  '5o mes',
+  '6o mes',
+  '7o mes',
+  '8o mes',
+  '9o mes',
+  '10o mes',
+  '11o mes',
+  '12o mes',
+] as const;
+const ADMINISTRATIVE_CONCEPT_OPTIONS = ['Insuficiente', 'Regular', 'Bom', 'Excelente'] as const;
+
 const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: string; label: string }> }> = [
   {
     id: 'assiduidade',
@@ -302,6 +321,9 @@ function createEvaluationDraft(
     unitCompetencies: evaluation?.summary ?? '',
     serverAssignments: '',
     generalComments: evaluation?.generalComments ?? '',
+    totalStageScore: '0.0',
+    stageAverage: '0.0',
+    administrativeConcept: 'Insuficiente',
     monthlyObservations: [],
     factors: FACTOR_TEMPLATES.map((factor) => ({
       id: factor.id,
@@ -322,14 +344,15 @@ function buildSupervisorEvaluationPayload(
 ): UpsertSupervisorEvaluationInput {
   const summaryParts = [draft.unitCompetencies.trim(), draft.serverAssignments.trim()].filter(Boolean);
   const summary = summaryParts.join('\n\n');
-  const generalComments = draft.generalComments.trim();
+  const generalComments = [
+    draft.generalComments.trim(),
+    `Resultado final informado pela chefia: pontuacao total ${draft.totalStageScore || '0.0'}, media ${draft.stageAverage || '0.0'}, conceito ${draft.administrativeConcept}.`,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 
   if (!summary) {
     throw new Error('Informe as competencias da unidade ou as atribuicoes do servidor antes de salvar.');
-  }
-
-  if (!generalComments) {
-    throw new Error('Informe o parecer da chefia antes de salvar.');
   }
 
   return {
@@ -340,7 +363,7 @@ function buildSupervisorEvaluationPayload(
         factor.items.map((item) => ({
           code: item.id,
           label: item.label,
-          rating: Math.min(5, Math.max(1, item.score)),
+          rating: Math.min(100, Math.max(1, item.score)),
         })),
       ),
     },
@@ -396,13 +419,12 @@ function calculateFactorAverage(factor: EvaluationFactorDraft) {
   return total / factor.items.length;
 }
 
-function calculateOverallAverage(factors: EvaluationFactorDraft[]) {
-  if (factors.length === 0) {
-    return 0;
-  }
-
-  const total = factors.reduce((sum, factor) => sum + calculateFactorAverage(factor), 0);
-  return total / factors.length;
+function formatValidationDate(date = new Date()) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
 }
 
 function EvaluationFactorCard({
@@ -447,7 +469,7 @@ function EvaluationFactorCard({
                 <input
                   type="number"
                   min={1}
-                  max={5}
+                  max={100}
                   value={item.score}
                   onChange={(event) => onScoreChange(item.id, Number(event.target.value || 0))}
                 />
@@ -617,7 +639,7 @@ export function SupervisorEvaluationWorkspace() {
                   item.id === itemId
                     ? {
                         ...item,
-                        score: Math.min(5, Math.max(1, score)),
+                        score: Math.min(100, Math.max(1, score)),
                       }
                     : item,
                 ),
@@ -628,6 +650,10 @@ export function SupervisorEvaluationWorkspace() {
     });
   }
 
+  function updateFinalResult(field: 'totalStageScore' | 'stageAverage' | 'administrativeConcept', value: string) {
+    setActiveEvaluation((current) => (current ? { ...current, [field]: value } : current));
+  }
+
   function addMonthlyObservation() {
     setActiveEvaluation((current) => {
       if (!current) {
@@ -635,6 +661,10 @@ export function SupervisorEvaluationWorkspace() {
       }
 
       const nextIndex = current.monthlyObservations.length + 1;
+      const selectedMonths = new Set(current.monthlyObservations.map((observation) => observation.monthLabel));
+      const nextMonth =
+        MONTHLY_OBSERVATION_OPTIONS.find((month) => !selectedMonths.has(month)) ??
+        MONTHLY_OBSERVATION_OPTIONS[Math.min(nextIndex - 1, MONTHLY_OBSERVATION_OPTIONS.length - 1)];
 
       return {
         ...current,
@@ -642,10 +672,25 @@ export function SupervisorEvaluationWorkspace() {
           ...current.monthlyObservations,
           {
             id: `obs-${nextIndex}`,
-            monthLabel: `Observacao ${nextIndex}`,
+            monthLabel: nextMonth,
             description: '',
           },
         ],
+      };
+    });
+  }
+
+  function updateMonthlyObservationMonth(id: string, monthLabel: string) {
+    setActiveEvaluation((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        monthlyObservations: current.monthlyObservations.map((observation) =>
+          observation.id === id ? { ...observation, monthLabel } : observation,
+        ),
       };
     });
   }
@@ -947,7 +992,21 @@ export function SupervisorEvaluationWorkspace() {
                   {activeEvaluation.monthlyObservations.map((observation) => (
                     <article key={observation.id} className="evaluation-detail__observation-item">
                       <div className="evaluation-detail__observation-row">
-                        <strong>{observation.monthLabel}</strong>
+                        <label className="evaluation-detail__month-select">
+                          <span>Mes da observacao</span>
+                          <select
+                            value={observation.monthLabel}
+                            onChange={(event) =>
+                              updateMonthlyObservationMonth(observation.id, event.target.value)
+                            }
+                          >
+                            {MONTHLY_OBSERVATION_OPTIONS.map((month) => (
+                              <option key={month} value={month}>
+                                {month}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
                         <button
                           type="button"
                           className="ghost-button"
@@ -962,7 +1021,7 @@ export function SupervisorEvaluationWorkspace() {
                           updateMonthlyObservationDescription(observation.id, event.target.value)
                         }
                         rows={4}
-                        placeholder="Descreva a observacao mensal do periodo..."
+                        placeholder="Relate fatos e evidencias do desempenho observado..."
                       />
                     </article>
                   ))}
@@ -1022,52 +1081,71 @@ export function SupervisorEvaluationWorkspace() {
               ))}
             </div>
 
-            <section className="evaluation-detail__card">
-              <div className="evaluation-detail__section-title">
-                VII. Parecer da chefia imediata
-              </div>
-              <label className="field-group">
-                <textarea
-                  value={activeEvaluation.generalComments}
-                  onChange={(event) =>
-                    setActiveEvaluation((current) =>
-                      current
-                        ? {
-                            ...current,
-                            generalComments: event.target.value,
-                          }
-                        : current,
-                    )
-                  }
-                  rows={6}
-                  placeholder="Registre aqui o parecer tecnico final da chefia imediata para esta etapa..."
-                />
-                <small>{activeEvaluation.generalComments.length} / 450 caracteres</small>
-              </label>
-            </section>
-
             <section className="evaluation-detail__card evaluation-detail__summary-card">
-              <div className="evaluation-detail__section-title">Resumo da avaliacao</div>
-              <div className="evaluation-detail__summary-grid">
-                <div>
-                  <span>Media geral dos fatores</span>
-                  <strong>{calculateOverallAverage(activeEvaluation.factors).toFixed(1)}</strong>
+              <div className="evaluation-detail__final-score-panel">
+                <label>
+                  <span>Pontuacao total da etapa (soma das medias)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={activeEvaluation.totalStageScore}
+                    onChange={(event) => updateFinalResult('totalStageScore', event.target.value)}
+                  />
+                </label>
+
+                <label>
+                  <span>Media da etapa</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={activeEvaluation.stageAverage}
+                    onChange={(event) => updateFinalResult('stageAverage', event.target.value)}
+                  />
+                </label>
+
+                <label>
+                  <span>Conceito administrativo</span>
+                  <select
+                    value={activeEvaluation.administrativeConcept}
+                    onChange={(event) => updateFinalResult('administrativeConcept', event.target.value)}
+                  >
+                    {ADMINISTRATIVE_CONCEPT_OPTIONS.map((concept) => (
+                      <option key={concept} value={concept}>
+                        {concept}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <p className="evaluation-detail__final-note">
+                "A media da 4a etapa sera provisoria devendo ser confirmada conforme normas especificas."
+              </p>
+
+              <div className="evaluation-detail__signature-card">
+                <div className="evaluation-detail__signature-title">
+                  Validacao do Relatorio Individual de Estagio Probatorio
                 </div>
-                <div>
-                  <span>Fatores avaliados</span>
-                  <strong>{activeEvaluation.factors.length}</strong>
+
+                <div className="evaluation-detail__signature-grid">
+                  <div className="evaluation-detail__signature-box">
+                    <div>Aguardando conclusao do preenchimento</div>
+                    <strong>{activeEvaluation.row.serverName}</strong>
+                    <span>Assinatura do servidor-estagiario</span>
+                  </div>
+
+                  <div className="evaluation-detail__signature-box">
+                    <div>Aguardando conclusao do preenchimento</div>
+                    <strong>{activeEvaluation.row.supervisorName}</strong>
+                    <span>Assinatura da chefia imediata ({activeEvaluation.row.supervisorRole})</span>
+                  </div>
                 </div>
-                <div>
-                  <span>Itens pontuados</span>
-                  <strong>{activeEvaluation.factors.reduce((sum, factor) => sum + factor.items.length, 0)}</strong>
-                </div>
-                <div>
-                  <span>Observacoes mensais</span>
-                  <strong>{activeEvaluation.monthlyObservations.length}</strong>
-                </div>
-                <div>
-                  <span>Parecer da chefia</span>
-                  <strong>{activeEvaluation.generalComments.trim().length > 0 ? 'Preenchido' : 'Vazio'}</strong>
+
+                <div className="evaluation-detail__signature-place-date">
+                  Belem, Para - {formatValidationDate()}
                 </div>
               </div>
 
