@@ -4938,31 +4938,31 @@ h3,
 .supervisor-dashboard__row {
   display: grid;
   grid-template-columns:
-    minmax(170px, 1.2fr)
-    minmax(120px, 0.9fr)
-    minmax(110px, 0.8fr)
-    minmax(170px, 1fr)
-    minmax(150px, 0.9fr)
-    minmax(130px, 0.9fr)
-    minmax(170px, 1fr)
-    minmax(130px, 0.8fr);
-  gap: 1rem;
+    minmax(128px, 1.2fr)
+    minmax(104px, 0.9fr)
+    minmax(86px, 0.72fr)
+    minmax(118px, 0.9fr)
+    minmax(112px, 0.92fr)
+    minmax(96px, 0.76fr)
+    minmax(112px, 0.82fr)
+    minmax(104px, 0.72fr);
+  gap: 0.7rem;
   align-items: center;
 }
 
 .supervisor-dashboard__table-header {
-  padding: 1rem 1.75rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid rgba(19, 51, 93, 0.08);
   background: rgba(237, 244, 250, 0.72);
   color: #617c9d;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .supervisor-dashboard__row {
-  padding: 1.2rem 1.75rem;
+  padding: 1.05rem 1.25rem;
   border-bottom: 1px solid rgba(19, 51, 93, 0.08);
   background: rgba(255, 255, 255, 0.82);
   transition:
@@ -4989,19 +4989,20 @@ h3,
 }
 
 .supervisor-dashboard__server strong {
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1.25;
 }
 
 .supervisor-dashboard__server span {
   color: #89a0bd;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .supervisor-dashboard__cell {
   color: #36567f;
+  font-size: 0.92rem;
   font-weight: 700;
 }
 
@@ -5021,7 +5022,7 @@ h3,
   align-items: center;
   justify-content: center;
   min-height: 1.9rem;
-  padding: 0.35rem 0.75rem;
+  padding: 0.35rem 0.6rem;
   border-radius: 0.4rem;
   font-size: 0.82rem;
   font-weight: 800;
@@ -5067,19 +5068,19 @@ h3,
 
 .supervisor-dashboard__ghost-action {
   min-height: 2.2rem;
-  padding: 0.45rem 0.95rem;
-  font-size: 0.82rem;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.78rem;
 }
 
 .supervisor-dashboard__primary-action {
-  min-width: 6rem;
+  min-width: 5.7rem;
   min-height: 2.3rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.85rem;
   border: 1px solid transparent;
   border-radius: 0.75rem;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: #ffffff;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 800;
   text-transform: uppercase;
   box-shadow: 0 12px 24px rgba(0, 124, 192, 0.18);
@@ -5123,7 +5124,7 @@ h3,
   align-items: center;
   gap: 0.65rem;
   color: #617c9d;
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
