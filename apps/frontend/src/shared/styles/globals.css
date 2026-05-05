@@ -3172,14 +3172,16 @@ h3,
 .app-shell__sidebar .app-shell__brand-mark {
   width: 3.15rem;
   height: 3.15rem;
-  border-radius: 0.95rem;
-  background: rgba(255, 255, 255, 0.18);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
 .app-shell__brand-mark--coat {
-  overflow: hidden;
-  padding: 0.18rem;
+  overflow: visible;
+  padding: 0;
 }
 
 .app-shell__brand-mark--coat::before {
