@@ -31,22 +31,6 @@ export default function AuthenticatedProfilePage() {
         title="Dados da minha conta"
         description="Confira as informacoes basicas do seu acesso ao sistema."
       >
-        <section className="profile-summary" aria-labelledby="profile-summary-title">
-          <div className="profile-summary__avatar" aria-hidden="true">
-            {(session?.user.name?.[0] ?? 'U').toUpperCase()}
-          </div>
-
-          <div className="profile-summary__main">
-            <span className="section-chip">Conta em uso</span>
-            <h2 id="profile-summary-title">{session?.user.name ?? 'Usuario nao informado'}</h2>
-            <p>{session?.user.email ?? 'E-mail nao informado'}</p>
-          </div>
-
-          <div className="profile-summary__status">
-            <span>{formatSessionStatus(status)}</span>
-          </div>
-        </section>
-
         <section className="profile-details" aria-label="Detalhes simples da conta">
           <article className="profile-details__panel profile-details__panel--wide">
             <h3>Meu acesso</h3>
