@@ -235,9 +235,6 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
         <header className="app-shell__header">
           <div className="app-shell__header-left">
             <div className="app-shell__header-branding">
-              <span className="app-shell__header-branding-mark" aria-hidden="true">
-                <img src="/brasao-para.svg" alt="" />
-              </span>
               <div className="app-shell__header-branding-copy">
                 <strong>Governo do Estado do Para</strong>
                 <span>Secretaria de Educacao</span>
