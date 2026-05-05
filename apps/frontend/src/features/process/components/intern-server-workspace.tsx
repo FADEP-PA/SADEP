@@ -7,10 +7,10 @@ import {
   type InternServerWorkspaceSnapshotRef,
   type ProcessAction,
 } from '@sadep/contracts';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { WorkflowHistoryItem } from '@/features/dashboard/types/process-dashboard-types';
-import { getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '@/shared/api/http-error';
+import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import {
   getWorkflowHistory,
   getInternWorkspaceSnapshot,
@@ -478,22 +478,16 @@ function StageCard({ item }: { item: StageCardViewModel }) {
 
 export function InternServerWorkspace() {
   const { session } = useAuth();
-  const [processId, setProcessId] = useState('');
   const [snapshot, setSnapshot] = useState<InternProcessSnapshot | null>(null);
   const [selfEvaluationForm, setSelfEvaluationForm] = useState<SelfEvaluationFormState>(
     createEmptySelfEvaluationForm,
   );
-  const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
-  const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
-  const [loadErrorStatus, setLoadErrorStatus] = useState<number | null>(null);
   const [actionErrorTitle, setActionErrorTitle] = useState('Falha ao atualizar a etapa');
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [actionErrorDetails, setActionErrorDetails] = useState<string[]>([]);
   const [successFeedback, setSuccessFeedback] = useState<OperationFeedback | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [activeOperation, setActiveOperation] = useState<ActionOperation>(null);
   const [isSelfEvaluationExpanded, setIsSelfEvaluationExpanded] = useState(false);
-  const [hasAttemptedInitialLoad, setHasAttemptedInitialLoad] = useState(false);
 
   const displayName = getDisplayName(session?.user.name);
   const heroIdentity = useMemo(
@@ -535,72 +529,6 @@ export function InternServerWorkspace() {
   const currentStagePeriod =
     STAGE_PERIODS[Math.min(Math.max(currentStageSequence - 1, 0), TOTAL_STAGES - 1)];
   const canPersistSelfEvaluation = Boolean(snapshot && canEditSelfEvaluation);
-
-  useEffect(() => {
-    if (!session || hasAttemptedInitialLoad || processId.trim().length === 0) {
-      return;
-    }
-
-    setHasAttemptedInitialLoad(true);
-    setIsLoading(true);
-    setLoadErrorMessage(null);
-    setLoadErrorDetails([]);
-    setLoadErrorStatus(null);
-
-    void loadProcessSnapshot(processId.trim())
-      .catch((error) => {
-        handleProcessLoadError(error);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [hasAttemptedInitialLoad, processId, session]);
-
-  function handleProcessLoadError(error: unknown) {
-    const payload =
-      typeof error === 'object' && error && 'payload' in error
-        ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
-        : undefined;
-
-    setSnapshot(null);
-    setSelfEvaluationForm(createEmptySelfEvaluationForm());
-    setIsSelfEvaluationExpanded(false);
-    setLoadErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar o processo informado.'));
-    setLoadErrorDetails(getHttpErrorDetails(payload));
-    setLoadErrorStatus(isHttpErrorStatus(error, 404) ? 404 : isHttpErrorStatus(error, 403) ? 403 : null);
-  }
-
-  async function handleLoadProcess(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const normalizedProcessId = processId.trim();
-    if (!session || normalizedProcessId.length === 0) {
-      setLoadErrorMessage('Informe um identificador de processo para abrir a area do servidor.');
-      setLoadErrorDetails([]);
-      setLoadErrorStatus(null);
-      setSuccessFeedback(null);
-      return;
-    }
-
-    setHasAttemptedInitialLoad(true);
-    setIsLoading(true);
-    setLoadErrorMessage(null);
-    setLoadErrorDetails([]);
-    setLoadErrorStatus(null);
-    setActionErrorMessage(null);
-    setSuccessFeedback(null);
-
-    try {
-      await loadProcessSnapshot(normalizedProcessId, {
-        title: 'Processo carregado',
-        description: 'A area do servidor foi atualizada com os dados reais liberados para o processo informado.',
-      });
-    } catch (error) {
-      handleProcessLoadError(error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   async function loadProcessSnapshot(activeProcessId: string, success?: OperationFeedback) {
     if (!session) {
@@ -724,94 +652,50 @@ export function InternServerWorkspace() {
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
       <section className="operations-page operations-page--server intern-dashboard">
-        <section className="operations-card intern-hero">
-          <div className="intern-hero__identity">
-            <div>
-              <h2>{displayName}</h2>
-              <p>
-                Cargo: {heroIdentity.roleLabel}
-                <span>Lotacao: {heroIdentity.lotacao}</span>
-                <span>Modelo: {heroIdentity.modelLabel}</span>
-              </p>
+        {!isSelfEvaluationExpanded ? (
+          <section className="operations-card intern-hero">
+            <div className="intern-hero__identity">
+              <div>
+                <h2>{displayName}</h2>
+                <p>
+                  Cargo: {heroIdentity.roleLabel}
+                  <span>Lotacao: {heroIdentity.lotacao}</span>
+                  <span>Modelo: {heroIdentity.modelLabel}</span>
+                </p>
+              </div>
+
+              <StatusBadge label={topStatusBadge.label} tone={topStatusBadge.tone} />
             </div>
 
-            <StatusBadge label={topStatusBadge.label} tone={topStatusBadge.tone} />
-          </div>
+            <div className="intern-hero__summary">
+              <div className="intern-hero__summary-card">
+                <span>Etapa atual</span>
+                <strong>{snapshot ? `${snapshot.workspace.currentStage.sequence}a etapa` : '3a etapa'}</strong>
+              </div>
 
-          <div className="intern-hero__summary">
-            <div className="intern-hero__summary-card">
-              <span>Etapa atual</span>
-              <strong>{snapshot ? `${snapshot.workspace.currentStage.sequence}a etapa` : '3a etapa'}</strong>
+              <div className="intern-hero__summary-card">
+                <span>Acompanhamento</span>
+                <strong>{snapshot ? 'Processo real conectado' : 'Modo demonstrativo'}</strong>
+              </div>
+
+              <div className="intern-hero__summary-card">
+                <span>Autoavaliacao</span>
+                <strong>
+                  {snapshot?.selfEvaluation
+                    ? formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)
+                    : canEditSelfEvaluation
+                      ? 'Disponivel'
+                      : 'Aguardando etapa'}
+                </strong>
+              </div>
             </div>
-
-            <div className="intern-hero__summary-card">
-              <span>Acompanhamento</span>
-              <strong>{snapshot ? 'Processo real conectado' : 'Modo demonstrativo'}</strong>
-            </div>
-
-            <div className="intern-hero__summary-card">
-              <span>Autoavaliacao</span>
-              <strong>
-                {snapshot?.selfEvaluation
-                  ? formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)
-                  : canEditSelfEvaluation
-                    ? 'Disponivel'
-                    : 'Aguardando etapa'}
-              </strong>
-            </div>
-          </div>
-        </section>
-
-        <section className="operations-card">
-          <div className="section-heading">
-            <span className="section-chip">Processo em foco</span>
-            <h3>Consulta do servidor estagiario</h3>
-            <p>
-              Informe o identificador do processo para abrir a area real do servidor sem depender de
-              configuracao tecnica fixa em desenvolvimento.
-            </p>
-          </div>
-
-          <form className="inline-form inline-form--elevated" onSubmit={handleLoadProcess}>
-            <label className="field-group" htmlFor="intern-workspace-process-id">
-              <span>Identificador do processo</span>
-              <input
-                id="intern-workspace-process-id"
-                name="processId"
-                placeholder="Informe o ID do processo"
-                value={processId}
-                onChange={(event) => setProcessId(event.target.value)}
-                disabled={isLoading || activeOperation !== null}
-              />
-            </label>
-
-            <button type="submit" disabled={isLoading || activeOperation !== null}>
-              {isLoading ? 'Carregando processo...' : 'Consultar processo'}
-            </button>
-          </form>
-        </section>
+          </section>
+        ) : null}
 
         {activeOperationCopy ? (
           <InlineLoadingState
             title={activeOperationCopy.title}
             description={activeOperationCopy.description}
-          />
-        ) : null}
-
-        {loadErrorMessage ? (
-          <FeedbackAlert
-            title="Falha ao abrir processo"
-            tone="error"
-            description={loadErrorMessage}
-            details={loadErrorDetails}
-          />
-        ) : null}
-
-        {loadErrorStatus === 403 ? (
-          <ContentState
-            title="Acesso indisponivel para este processo"
-            description="O backend nao liberou a leitura deste processo para o servidor autenticado."
-            tone="warning"
           />
         ) : null}
 
@@ -829,13 +713,6 @@ export function InternServerWorkspace() {
             tone="error"
             description={actionErrorMessage}
             details={actionErrorDetails}
-          />
-        ) : null}
-
-        {isLoading && !snapshot ? (
-          <InlineLoadingState
-            title="Carregando visualizacao do servidor"
-            description="Buscando o processo configurado para substituir os dados demonstrativos."
           />
         ) : null}
 
