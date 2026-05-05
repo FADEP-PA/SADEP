@@ -5671,17 +5671,18 @@ h3,
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   overflow: hidden;
-  border-radius: 1rem;
-  background: #1474ad;
-  box-shadow: 0 22px 34px rgba(20, 116, 173, 0.16);
+  border: 1px solid rgba(0, 124, 192, 0.18);
+  border-radius: 0.85rem;
+  background: #f7fbff;
+  box-shadow: none;
 }
 
 .evaluation-detail__final-score-panel label {
   display: grid;
   justify-items: center;
-  gap: 0.5rem;
-  padding: 1.3rem 1rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.24);
+  gap: 0.35rem;
+  padding: 0.85rem 0.8rem;
+  border-right: 1px solid rgba(0, 124, 192, 0.12);
 }
 
 .evaluation-detail__final-score-panel label:last-child {
@@ -5689,44 +5690,70 @@ h3,
 }
 
 .evaluation-detail__final-score-panel span {
-  color: #acd3ed;
-  font-size: 0.68rem;
+  color: #6f86a6;
+  font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.1em;
   text-align: center;
   text-transform: uppercase;
 }
 
-.evaluation-detail__final-score-panel input,
-.evaluation-detail__final-score-panel select {
+.evaluation-detail__final-score-panel input {
   width: 100%;
   border: 0;
   background: transparent;
-  color: #ffffff;
+  color: #173d74;
   font-weight: 900;
   text-align: center;
   outline: none;
 }
 
 .evaluation-detail__final-score-panel input {
-  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
   line-height: 1;
 }
 
-.evaluation-detail__final-score-panel select {
-  font-size: clamp(1.65rem, 3vw, 2.6rem);
-  font-style: italic;
+.evaluation-detail__final-score-panel input:focus {
+  background: #eef7ff;
+  border-radius: 0.45rem;
+}
+
+.evaluation-detail__concept-picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.evaluation-detail__concept-option {
+  min-height: 2rem;
+  padding: 0.42rem 0.65rem;
+  border: 1px solid rgba(0, 124, 192, 0.18);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #31577f;
+  box-shadow: none;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.evaluation-detail__final-score-panel select option {
-  color: var(--ink);
+.evaluation-detail__concept-option:hover,
+.evaluation-detail__concept-option:focus-visible {
+  background: #eef7ff;
+  color: #173d74;
+  box-shadow: none;
+  transform: none;
 }
 
-.evaluation-detail__final-score-panel input:focus,
-.evaluation-detail__final-score-panel select:focus {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 0.6rem;
+.evaluation-detail__concept-option--active,
+.evaluation-detail__concept-option--active:hover,
+.evaluation-detail__concept-option--active:focus-visible {
+  border-color: #1472c7;
+  background: #1472c7;
+  color: #ffffff;
 }
 
 .evaluation-detail__final-note {

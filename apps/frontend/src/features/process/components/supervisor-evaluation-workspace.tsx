@@ -654,6 +654,12 @@ export function SupervisorEvaluationWorkspace() {
     setActiveEvaluation((current) => (current ? { ...current, [field]: value } : current));
   }
 
+  function clearDefaultFinalScore(field: 'totalStageScore' | 'stageAverage') {
+    setActiveEvaluation((current) =>
+      current && current[field] === '0.0' ? { ...current, [field]: '' } : current,
+    );
+  }
+
   function addMonthlyObservation() {
     setActiveEvaluation((current) => {
       if (!current) {
@@ -1089,7 +1095,8 @@ export function SupervisorEvaluationWorkspace() {
                     type="number"
                     min="0"
                     step="0.1"
-                    value={activeEvaluation.totalStageScore}
+                    value={activeEvaluation.totalStageScore ?? '0.0'}
+                    onFocus={() => clearDefaultFinalScore('totalStageScore')}
                     onChange={(event) => updateFinalResult('totalStageScore', event.target.value)}
                   />
                 </label>
@@ -1101,23 +1108,30 @@ export function SupervisorEvaluationWorkspace() {
                     min="0"
                     max="100"
                     step="0.1"
-                    value={activeEvaluation.stageAverage}
+                    value={activeEvaluation.stageAverage ?? '0.0'}
+                    onFocus={() => clearDefaultFinalScore('stageAverage')}
                     onChange={(event) => updateFinalResult('stageAverage', event.target.value)}
                   />
                 </label>
 
                 <label>
                   <span>Conceito administrativo</span>
-                  <select
-                    value={activeEvaluation.administrativeConcept}
-                    onChange={(event) => updateFinalResult('administrativeConcept', event.target.value)}
-                  >
+                  <div className="evaluation-detail__concept-picker" role="group" aria-label="Conceito administrativo">
                     {ADMINISTRATIVE_CONCEPT_OPTIONS.map((concept) => (
-                      <option key={concept} value={concept}>
+                      <button
+                        key={concept}
+                        type="button"
+                        className={
+                          activeEvaluation.administrativeConcept === concept
+                            ? 'evaluation-detail__concept-option evaluation-detail__concept-option--active'
+                            : 'evaluation-detail__concept-option'
+                        }
+                        onClick={() => updateFinalResult('administrativeConcept', concept)}
+                      >
                         {concept}
-                      </option>
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 </label>
               </div>
 
