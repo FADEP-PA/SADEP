@@ -78,7 +78,7 @@ export function ProcessWorkspace() {
     event.preventDefault();
 
     if (!session || processId.trim().length === 0) {
-      setErrorMessage('Informe um identificador de processo para consultar os dados disponiveis.');
+      setErrorMessage('Informe um identificador de processo para consultar os dados disponíveis.');
       setErrorDetails([]);
       setErrorStatus(null);
       setSuccessFeedback(null);
@@ -101,14 +101,14 @@ export function ProcessWorkspace() {
       setSuccessFeedback({
         title: 'Processo carregado',
         description:
-          'A consulta operacional foi atualizada com workflow, historico e dados complementares liberados para este processo.',
+          'A consulta operacional foi atualizada com workflow, histórico e dados complementares liberados para este processo.',
       });
     } catch (error) {
       const payload =
         typeof error === 'object' && error && 'payload' in error
           ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
           : undefined;
-      setErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar os dados do processo.'));
+      setErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar os dados do processo.'));
       setErrorDetails(getHttpErrorDetails(payload));
       setErrorStatus(isHttpErrorStatus(error, 404) ? 404 : isHttpErrorStatus(error, 403) ? 403 : null);
       setSnapshot(null);
@@ -124,7 +124,7 @@ export function ProcessWorkspace() {
         <PageSection
           eyebrow="Processos"
           title="Consulta operacional de processos"
-          description="Informe um processo para visualizar status, leitura institucional, historico e dados complementares disponiveis para o seu perfil."
+          description="Informe um processo para visualizar status, leitura institucional, histórico e dados complementares disponíveis para o seu perfil."
         >
           <div className="workspace-overview workspace-overview--accent">
             <div className="workspace-overview__copy">
@@ -132,11 +132,11 @@ export function ProcessWorkspace() {
               <h3>
                 {snapshot
                   ? `Processo ${snapshot.workflow.id} em leitura operacional`
-                  : 'Abra um processo para acompanhar workflow, historico e bloqueios'}
+                  : 'Abra um processo para acompanhar workflow, histórico e bloqueios'}
               </h3>
               <p>
-                Esta area concentra a leitura principal do processo e organiza a consulta como um
-                servico institucional claro, com destaque para status, historico e proximas referencias.
+                Esta área concentra a leitura principal do processo e organiza a consulta como um
+                serviço institucional claro, com destaque para status, histórico e próximas referências.
               </p>
 
               <form className="inline-form inline-form--elevated" onSubmit={handleLoadProcess}>
@@ -167,12 +167,12 @@ export function ProcessWorkspace() {
                     value: snapshot ? formatProcessStatus(snapshot.workflow.status) : 'Aguardando consulta',
                   },
                   {
-                    label: 'ultima movimentacao',
-                    value: lastHistoryEntry ? formatDateTime(lastHistoryEntry.occurredAt) : 'Ainda nao disponivel',
+                    label: 'última movimentação',
+                    value: lastHistoryEntry ? formatDateTime(lastHistoryEntry.occurredAt) : 'Ainda não disponível',
                   },
                   {
-                    label: 'avaliacao da chefia',
-                    value: snapshot?.supervisorEvaluation ? 'Disponivel na leitura' : 'Nao exibida nesta consulta',
+                    label: 'avaliação da chefia',
+                    value: snapshot?.supervisorEvaluation ? 'Disponível na leitura' : 'Não exibida nesta consulta',
                   },
                 ]}
               />
@@ -192,11 +192,11 @@ export function ProcessWorkspace() {
                   <strong>{consultedProcesses.length}</strong>
                 </div>
                 <div className="workspace-stat">
-                  <span>acoes liberadas</span>
+                  <span>ações liberadas</span>
                   <strong>{snapshot?.workflow.availableActions.length ?? 0}</strong>
                 </div>
                 <div className="workspace-stat">
-                  <span>eventos no historico</span>
+                  <span>eventos no histórico</span>
                   <strong>{snapshot?.history.length ?? 0}</strong>
                 </div>
               </div>
@@ -206,7 +206,7 @@ export function ProcessWorkspace() {
           {isLoading ? (
             <InlineLoadingState
               title="Consultando processo"
-              description="O painel esta sincronizando workflow, historico e informacoes complementares liberadas para o seu perfil."
+              description="O painel está sincronizando workflow, histórico e informações complementares liberadas para o seu perfil."
             />
           ) : null}
 
@@ -216,8 +216,8 @@ export function ProcessWorkspace() {
               message={errorMessage}
               details={errorDetails}
               genericTitle="Falha ao carregar processo"
-              notFoundTitle="Processo nao encontrado"
-              blockedTitle="Acesso indisponivel para este processo"
+              notFoundTitle="Processo não encontrado"
+              blockedTitle="Acesso indisponível para este processo"
             />
           ) : null}
 
@@ -234,7 +234,7 @@ export function ProcessWorkspace() {
 
             <div className="workspace-aside-stack">
               <InfoCard
-                eyebrow="Leitura rapida"
+                eyebrow="Leitura rápida"
                 title="Painel institucional"
                 description="Resumo imediato para orientar a consulta antes de entrar nos detalhes do processo."
               >
@@ -245,7 +245,7 @@ export function ProcessWorkspace() {
                       label: 'proxima referencia',
                       value:
                         snapshot?.workflow.availableActions[0]
-                          ? 'Ha acoes liberadas para este processo'
+                          ? 'Há ações liberadas para este processo'
                           : 'Aguardando retorno do workflow',
                     },
                     {
@@ -259,12 +259,12 @@ export function ProcessWorkspace() {
               <InfoCard
                 eyebrow="Como usar"
                 title="Leitura orientada"
-                description="A consulta organiza o processo como um quadro institucional, com foco em leitura rapida e decisao segura."
+                description="A consulta organiza o processo como um quadro institucional, com foco em leitura rápida e decisão segura."
               >
                 <ul className="content-list">
                   <li>Use o identificador do processo para atualizar o quadro principal.</li>
-                  <li>Confira status macro, acoes disponiveis e ultima movimentacao no mesmo contexto.</li>
-                  <li>Revise bloqueios e leitura parcial antes de seguir para a proxima etapa.</li>
+                  <li>Confira status macro, ações disponíveis e última movimentação no mesmo contexto.</li>
+                  <li>Revise bloqueios e leitura parcial antes de seguir para a próxima etapa.</li>
                 </ul>
               </InfoCard>
             </div>
@@ -273,7 +273,7 @@ export function ProcessWorkspace() {
           {!snapshot && !errorMessage ? (
             <ContentState
               title="Nenhum processo carregado"
-              description="Faca uma consulta para abrir o painel principal do processo com os dados liberados para este perfil."
+              description="Faça uma consulta para abrir o painel principal do processo com os dados liberados para este perfil."
               tone="info"
             />
           ) : null}

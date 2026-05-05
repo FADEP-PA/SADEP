@@ -20,8 +20,8 @@ export function ProcessListCard({ items, activeProcessId }: ProcessListCardProps
   return (
     <InfoCard
       eyebrow="Listagem de processos"
-      title="Processos carregados nesta sessao"
-      description="Cada item destaca status macro do workflow, etapa atual e a principal acao disponivel para orientar a proxima movimentacao."
+      title="Processos carregados nesta sessão"
+      description="Cada item destaca status macro do workflow, etapa atual e a principal ação disponível para orientar a próxima movimentação."
     >
       {items.length > 0 ? (
         <div className="process-list-card">
@@ -34,7 +34,7 @@ export function ProcessListCard({ items, activeProcessId }: ProcessListCardProps
                     {item.id === activeProcessId ? ' - em foco' : ''}
                   </strong>
                   <p>
-                    Etapa atual: {formatProcessStatus(item.currentStage)}. Proxima acao:{' '}
+                    Etapa atual: {formatProcessStatus(item.currentStage)}. Próxima ação:{' '}
                     {formatProcessAction(item.primaryAction ?? undefined)}.
                   </p>
                 </div>
@@ -46,9 +46,9 @@ export function ProcessListCard({ items, activeProcessId }: ProcessListCardProps
               </div>
 
               <div className="process-list-card__facts">
-                <span>{item.availableActionsCount} acoes liberadas</span>
-                <span>{item.historyCount} eventos auditaveis</span>
-                <span>Ultima leitura {formatDateTime(item.lastViewedAt)}</span>
+                <span>{item.availableActionsCount} ações liberadas</span>
+                <span>{item.historyCount} eventos auditáveis</span>
+                <span>Última leitura {formatDateTime(item.lastViewedAt)}</span>
               </div>
             </div>
           ))}
@@ -56,7 +56,7 @@ export function ProcessListCard({ items, activeProcessId }: ProcessListCardProps
       ) : (
         <ContentState
           title="Nenhum processo carregado"
-          description="Informe um identificador valido para iniciar a lista de processos consultados nesta sessao."
+          description="Informe um identificador válido para iniciar a lista de processos consultados nesta sessão."
           tone="info"
         />
       )}

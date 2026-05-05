@@ -31,19 +31,19 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getSessionValidationErrorMessage(error: unknown) {
   if (error instanceof HttpError && error.status === 401) {
-    return 'Sua sessao expirou. Faca login novamente para continuar.';
+    return 'Sua sessão expirou. Faça login novamente para continuar.';
   }
 
   if (error instanceof HttpError && error.status >= 500) {
-    return 'Nao foi possivel validar sua sessao porque o backend esta indisponivel no momento.';
+    return 'Não foi possível validar sua sessão porque o backend está indisponível no momento.';
   }
 
   if (error instanceof Error && error.name === 'AbortError') {
-    return 'Nao foi possivel validar sua sessao porque a resposta do backend excedeu o tempo limite.';
+    return 'Não foi possível validar sua sessão porque a resposta do backend excedeu o tempo limite.';
   }
 
   if (error instanceof TypeError) {
-    return 'Nao foi possivel validar sua sessao porque o backend nao respondeu ou houve falha de rede.';
+    return 'Não foi possível validar sua sessão porque o backend não respondeu ou houve falha de rede.';
   }
 
   if (error instanceof HttpError) {
@@ -54,7 +54,7 @@ function getSessionValidationErrorMessage(error: unknown) {
     return error.message;
   }
 
-  return 'Nao foi possivel validar sua sessao. Faca login novamente para continuar.';
+  return 'Não foi possível validar sua sessão. Faça login novamente para continuar.';
 }
 
 function getRedirectPathForValidationFailure(pathname: string, error: unknown) {

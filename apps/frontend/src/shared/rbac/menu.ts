@@ -19,7 +19,7 @@ const processGroup: NavigationGroup = {
     {
       label: 'Processos',
       href: '/processos',
-      description: 'Consultar status, acoes disponiveis, historico e dados operacionais do processo.',
+      description: 'Consultar status, ações disponíveis, histórico e dados operacionais do processo.',
     },
   ],
 };
@@ -30,7 +30,7 @@ const accountGroup: NavigationGroup = {
     {
       label: 'Meu perfil',
       href: '/perfil',
-      description: 'Consultar dados da sessao autenticada, perfil de acesso e informacoes do usuario.',
+      description: 'Consultar dados da sessão autenticada, perfil de acesso e informações do usuário.',
     },
   ],
 };
@@ -38,12 +38,12 @@ const accountGroup: NavigationGroup = {
 const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.INTERN_SERVER]: [
     {
-      title: 'Avaliacoes',
+      title: 'Avaliações',
       items: [
         {
-          label: 'Minhas avaliacoes',
+          label: 'Minhas avaliações',
           href: '/servidor-estagiario',
-          description: 'Acompanhar a etapa atual, assinar a avaliacao da chefia e registrar a autoavaliacao.',
+          description: 'Acompanhar a etapa atual, assinar a avaliação da chefia e registrar a autoavaliação.',
         },
       ],
     },
@@ -51,12 +51,12 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   ],
   [UserRole.IMMEDIATE_SUPERVISOR]: [
     {
-      title: 'Avaliacoes',
+      title: 'Avaliações',
       items: [
         {
-          label: 'Avaliacoes da chefia',
+          label: 'Avaliações da chefia',
           href: '/chefia-imediata',
-          description: 'Criar, salvar, submeter e retificar a avaliacao da chefia imediata.',
+          description: 'Criar, salvar, submeter e retificar a avaliação da chefia imediata.',
         },
       ],
     },
@@ -65,12 +65,12 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.CESAD_MEMBER]: [
     processGroup,
     {
-      title: 'Minha atuacao',
+      title: 'Minha atuação',
       items: [
         {
           label: getRolePresentation(UserRole.CESAD_MEMBER).label,
           href: '/cesad-comissao',
-          description: 'Analisar processos, consultar historico e acompanhar a etapa colegiada.',
+          description: 'Analisar processos, consultar histórico e acompanhar a etapa colegiada.',
         },
       ],
     },
@@ -79,12 +79,12 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.COMMISSION_ASSISTANT]: [
     processGroup,
     {
-      title: 'Minha atuacao',
+      title: 'Minha atuação',
       items: [
         {
           label: getRolePresentation(UserRole.COMMISSION_ASSISTANT).label,
           href: '/cesad-comissao',
-          description: 'Consultar processos, historico e leitura consolidada da etapa em modo de apoio.',
+          description: 'Consultar processos, histórico e leitura consolidada da etapa em modo de apoio.',
         },
       ],
     },
@@ -92,12 +92,12 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   ],
   [UserRole.HOMOLOGATION_AUTHORITY]: [
     {
-      title: 'Minha atuacao',
+      title: 'Minha atuação',
       items: [
         {
           label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
           href: '/homologacao-autoridade',
-          description: 'Conferir o processo e acompanhar os atos finais de homologacao.',
+          description: 'Conferir o processo e acompanhar os atos finais de homologação.',
         },
       ],
     },
@@ -105,17 +105,17 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   ],
   [UserRole.ADMIN]: [
     {
-      title: 'Areas operacionais',
+      title: 'Áreas operacionais',
       items: [
         {
           label: getRolePresentation(UserRole.ADMIN).label,
           href: '/admin',
-          description: 'Suporte operacional, administracao do ambiente e acompanhamento tecnico.',
+          description: 'Suporte operacional, administração do ambiente e acompanhamento técnico.',
         },
         {
           label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
           href: '/homologacao-autoridade',
-          description: 'Consultar a area de homologacao e os marcos finais do processo.',
+          description: 'Consultar a área de homologação e os marcos finais do processo.',
         },
       ],
     },

@@ -10,7 +10,7 @@ export default function ForbiddenPage() {
           </span>
           <span className="app-shell__brand-copy">
             <strong>SADEP</strong>
-            <small>Secretaria de Estado de Educacao do Para</small>
+            <small>Secretaria de Estado de Educação do Pará</small>
           </span>
         </div>
 

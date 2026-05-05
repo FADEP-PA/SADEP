@@ -119,7 +119,7 @@ function buildSelfEvaluationForm(
 
 function getDisplayName(name: string | undefined) {
   if (!name || name.trim().length === 0) {
-    return 'Joao da Silva';
+    return 'João da Silva';
   }
 
   return name.trim();
@@ -134,7 +134,7 @@ function normalizeSelfEvaluationPayload(
   const comment = form.comment.trim();
 
   if (requireReflection && selfReflection.length === 0) {
-    throw new Error('Preencha a autoavaliacao antes de enviar para a chefia.');
+    throw new Error('Preencha a autoavaliação antes de enviar para a chefia.');
   }
 
   return {
@@ -148,7 +148,7 @@ function getSelfEvaluationFormIssues(form: SelfEvaluationFormState) {
   const issues: string[] = [];
 
   if (!form.selfReflection.trim()) {
-    issues.push('Preencha o texto principal da autoavaliacao antes de enviar.');
+    issues.push('Preencha o texto principal da autoavaliação antes de enviar.');
   }
 
   return issues;
@@ -157,22 +157,22 @@ function getSelfEvaluationFormIssues(form: SelfEvaluationFormState) {
 function getActionOperationCopy(operation: ActionOperation) {
   if (operation === 'sign-supervisor') {
     return {
-      title: 'Registrando assinatura da avaliacao da chefia',
-      description: 'A confirmacao do servidor esta sendo enviada e o painel sera atualizado em seguida.',
+      title: 'Registrando assinatura da avaliação da chefia',
+      description: 'A confirmação do servidor está sendo enviada e o painel será atualizado em seguida.',
     };
   }
 
   if (operation === 'save-self-draft') {
     return {
-      title: 'Salvando autoavaliacao',
-      description: 'O rascunho da autoavaliacao esta sendo salvo para continuar o preenchimento depois.',
+      title: 'Salvando autoavaliação',
+      description: 'O rascunho da autoavaliação está sendo salvo para continuar o preenchimento depois.',
     };
   }
 
   if (operation === 'submit-self-evaluation') {
     return {
-      title: 'Enviando autoavaliacao',
-      description: 'A autoavaliacao esta sendo consolidada para assinatura da chefia imediata.',
+      title: 'Enviando autoavaliação',
+      description: 'A autoavaliação está sendo consolidada para assinatura da chefia imediata.',
     };
   }
 
@@ -196,7 +196,7 @@ function getTopStatusBadge(snapshot: InternProcessSnapshot | null, canSignSuperv
 
   if (canEditSelfEvaluation) {
     return {
-      label: 'Autoavaliacao disponivel',
+      label: 'Autoavaliação disponível',
       tone: 'info' as const,
     };
   }
@@ -224,7 +224,7 @@ function getCurrentStageStatus(snapshot: InternProcessSnapshot, canSignSuperviso
 
   if (snapshot.workflow.status === ProcessStatus.EM_ANALISE_CESAD) {
     return {
-      label: 'Em analise pela comissao',
+      label: 'Em análise pela comissão',
       tone: 'info' as const,
     };
   }
@@ -254,49 +254,49 @@ function createDemoStageCards(): StageCardViewModel[] {
   return [
     {
       sequence: 1,
-      title: '1a Etapa',
+      title: '1ª Etapa',
       period: STAGE_PERIODS[0],
       statusLabel: 'Homologada',
       statusTone: 'success',
       markerLabel: '✓',
       markerClassName: 'intern-stage-card__marker intern-stage-card__marker--done',
       documents: [
-        { label: 'Avaliacao da chefia', tone: 'default' },
-        { label: 'Autoavaliacao', tone: 'default' },
-        { label: 'Parecer da comissao', tone: 'default' },
+        { label: 'Avaliação da chefia', tone: 'default' },
+        { label: 'Autoavaliação', tone: 'default' },
+        { label: 'Parecer da comissão', tone: 'default' },
       ],
     },
     {
       sequence: 2,
-      title: '2a Etapa',
+      title: '2ª Etapa',
       period: STAGE_PERIODS[1],
       statusLabel: 'Homologada',
       statusTone: 'success',
       markerLabel: '✓',
       markerClassName: 'intern-stage-card__marker intern-stage-card__marker--done',
       documents: [
-        { label: 'Avaliacao da chefia', tone: 'default' },
-        { label: 'Autoavaliacao', tone: 'default' },
-        { label: 'Parecer da comissao', tone: 'default' },
+        { label: 'Avaliação da chefia', tone: 'default' },
+        { label: 'Autoavaliação', tone: 'default' },
+        { label: 'Parecer da comissão', tone: 'default' },
       ],
     },
     {
       sequence: 3,
-      title: '3a Etapa',
+      title: '3ª Etapa',
       period: STAGE_PERIODS[2],
-      statusLabel: 'Em analise pela comissao',
+      statusLabel: 'Em análise pela comissão',
       statusTone: 'info',
       markerLabel: '3',
       markerClassName: 'intern-stage-card__marker intern-stage-card__marker--current',
       documents: [
-        { label: 'Avaliacao da chefia', tone: 'default' },
-        { label: 'Autoavaliacao', tone: 'default' },
-        { label: 'Parecer ainda nao emitido', tone: 'muted' },
+        { label: 'Avaliação da chefia', tone: 'default' },
+        { label: 'Autoavaliação', tone: 'default' },
+        { label: 'Parecer ainda não emitido', tone: 'muted' },
       ],
     },
     {
       sequence: 4,
-      title: '4a Etapa',
+      title: '4ª Etapa',
       period: STAGE_PERIODS[3],
       statusLabel: 'Prazo em curso',
       statusTone: 'neutral',
@@ -304,7 +304,7 @@ function createDemoStageCards(): StageCardViewModel[] {
       markerClassName: 'intern-stage-card__marker intern-stage-card__marker--future',
       documents: [],
       primaryAction: {
-        label: 'Realizar autoavaliacao',
+        label: 'Realizar autoavaliação',
         kind: 'primary',
       },
     },
@@ -347,16 +347,16 @@ function buildStageCards(
     if (isPastStage) {
       return {
         sequence,
-        title: `${sequence}a Etapa`,
-        period: STAGE_PERIODS[index] ?? 'Periodo institucional',
+        title: `${sequence}ª Etapa`,
+        period: STAGE_PERIODS[index] ?? 'Período institucional',
         statusLabel: 'Homologada',
         statusTone: 'success',
         markerLabel: '✓',
         markerClassName: 'intern-stage-card__marker intern-stage-card__marker--done',
         documents: [
-          { label: 'Avaliacao da chefia', tone: 'default' },
-          { label: 'Autoavaliacao', tone: 'default' },
-          { label: 'Parecer da comissao', tone: 'default' },
+          { label: 'Avaliação da chefia', tone: 'default' },
+          { label: 'Autoavaliação', tone: 'default' },
+          { label: 'Parecer da comissão', tone: 'default' },
         ],
       };
     }
@@ -365,21 +365,21 @@ function buildStageCards(
       const documents: StageDocumentItem[] = [
         {
           label: snapshot.supervisorEvaluation
-            ? 'Avaliacao da chefia'
-            : snapshot.supervisorEvaluationWarning ?? 'Avaliacao da chefia',
+            ? 'Avaliação da chefia'
+            : snapshot.supervisorEvaluationWarning ?? 'Avaliação da chefia',
           tone: snapshot.supervisorEvaluation ? 'default' : 'muted',
         },
         {
           label:
             snapshot.selfEvaluation || canEditSelfEvaluation
-              ? 'Autoavaliacao'
-              : snapshot.selfEvaluationWarning ?? 'Autoavaliacao',
+              ? 'Autoavaliação'
+              : snapshot.selfEvaluationWarning ?? 'Autoavaliação',
           tone: snapshot.selfEvaluation || canEditSelfEvaluation ? 'default' : 'muted',
         },
         {
           label: snapshot.workspace.cesadOpinionAccess.canView
-            ? 'Parecer da comissao'
-            : 'Parecer ainda nao emitido',
+            ? 'Parecer da comissão'
+            : 'Parecer ainda não emitido',
           tone: snapshot.workspace.cesadOpinionAccess.canView ? 'default' : 'muted',
         },
       ];
@@ -388,14 +388,14 @@ function buildStageCards(
 
       if (canSignSupervisorEvaluation) {
         primaryAction = {
-          label: activeOperation === 'sign-supervisor' ? 'Assinando...' : 'Assinar avaliacao da chefia',
+          label: activeOperation === 'sign-supervisor' ? 'Assinando...' : 'Assinar avaliação da chefia',
           kind: 'primary',
           disabled: activeOperation !== null,
           onClick: onSignSupervisorEvaluation,
         };
       } else if (canEditSelfEvaluation || snapshot.selfEvaluation?.status === SelfEvaluationStatus.DRAFT) {
         primaryAction = {
-          label: canEditSelfEvaluation ? 'Realizar autoavaliacao' : 'Consultar autoavaliacao',
+          label: canEditSelfEvaluation ? 'Realizar autoavaliação' : 'Consultar autoavaliação',
           kind: 'primary',
           onClick: onToggleSelfEvaluation,
         };
@@ -403,8 +403,8 @@ function buildStageCards(
 
       return {
         sequence,
-        title: `${sequence}a Etapa`,
-        period: STAGE_PERIODS[index] ?? 'Periodo institucional',
+        title: `${sequence}ª Etapa`,
+        period: STAGE_PERIODS[index] ?? 'Período institucional',
         statusLabel: currentStageStatus.label,
         statusTone: currentStageStatus.tone,
         markerLabel: String(sequence),
@@ -416,8 +416,8 @@ function buildStageCards(
 
     return {
       sequence,
-      title: `${sequence}a Etapa`,
-      period: STAGE_PERIODS[index] ?? 'Periodo institucional',
+        title: `${sequence}ª Etapa`,
+        period: STAGE_PERIODS[index] ?? 'Período institucional',
       statusLabel: sequence === currentStageSequence + 1 ? 'Prazo em curso' : 'Aguardando etapa',
       statusTone: 'neutral',
       markerLabel: String(sequence),
@@ -441,7 +441,7 @@ function StageCard({ item }: { item: StageCardViewModel }) {
             </div>
 
             <p>
-              <span>Periodo:</span> {item.period}
+              <span>Período:</span> {item.period}
             </p>
           </div>
 
@@ -548,13 +548,13 @@ export function InternServerWorkspace() {
       supervisorEvaluation: workspaceSnapshot.supervisorEvaluation,
       supervisorEvaluationWarning: workspaceSnapshot.capabilities.canViewSupervisorEvaluation
         ? null
-        : 'A avaliacao da chefia sera exibida quando estiver liberada no fluxo da etapa.',
+        : 'A avaliação da chefia será exibida quando estiver liberada no fluxo da etapa.',
       selfEvaluation: workspaceSnapshot.selfEvaluation,
       selfEvaluationWarning:
         workspaceSnapshot.capabilities.canViewSelfEvaluation ||
         workspaceSnapshot.capabilities.canEditSelfEvaluation
           ? null
-          : 'A autoavaliacao sera liberada conforme as regras calculadas pelo backend.',
+          : 'A autoavaliação será liberada conforme as regras calculadas pelo backend.',
     };
 
     setSnapshot(nextSnapshot);
@@ -584,7 +584,7 @@ export function InternServerWorkspace() {
 
       await loadProcessSnapshot(snapshot.workflow.id, {
         title: 'Assinatura registrada',
-        description: 'A avaliacao da chefia foi confirmada e a autoavaliacao ficou em destaque nesta tela.',
+        description: 'A avaliação da chefia foi confirmada e a autoavaliação ficou em destaque nesta tela.',
       });
       setIsSelfEvaluationExpanded(true);
     } catch (error) {
@@ -594,7 +594,7 @@ export function InternServerWorkspace() {
           : undefined;
 
       setActionErrorMessage(
-        getRequestErrorMessage(error, 'Nao foi possivel assinar a avaliacao da chefia.'),
+        getRequestErrorMessage(error, 'Não foi possível assinar a avaliação da chefia.'),
       );
       setActionErrorDetails(getHttpErrorDetails(payload));
     } finally {
@@ -608,7 +608,7 @@ export function InternServerWorkspace() {
     }
 
     setActiveOperation(kind === 'draft' ? 'save-self-draft' : 'submit-self-evaluation');
-    setActionErrorTitle(kind === 'draft' ? 'Falha ao salvar autoavaliacao' : 'Falha ao enviar autoavaliacao');
+    setActionErrorTitle(kind === 'draft' ? 'Falha ao salvar autoavaliação' : 'Falha ao enviar autoavaliação');
     setActionErrorMessage(null);
     setActionErrorDetails([]);
     setSuccessFeedback(null);
@@ -623,11 +623,11 @@ export function InternServerWorkspace() {
       }
 
       await loadProcessSnapshot(snapshot.workflow.id, {
-        title: kind === 'draft' ? 'Rascunho salvo' : 'Autoavaliacao enviada',
+        title: kind === 'draft' ? 'Rascunho salvo' : 'Autoavaliação enviada',
         description:
           kind === 'draft'
-            ? 'O texto da autoavaliacao foi salvo e permanece disponivel para edicao.'
-            : 'A autoavaliacao foi encaminhada e agora segue para a assinatura da chefia imediata.',
+            ? 'O texto da autoavaliação foi salvo e permanece disponível para edição.'
+            : 'A autoavaliação foi encaminhada e agora segue para a assinatura da chefia imediata.',
       });
     } catch (error) {
       const payload =
@@ -639,8 +639,8 @@ export function InternServerWorkspace() {
         getRequestErrorMessage(
           error,
           kind === 'draft'
-            ? 'Nao foi possivel salvar a autoavaliacao.'
-            : 'Nao foi possivel enviar a autoavaliacao.',
+            ? 'Não foi possível salvar a autoavaliação.'
+            : 'Não foi possível enviar a autoavaliação.',
         ),
       );
       setActionErrorDetails(getHttpErrorDetails(payload));
@@ -659,7 +659,7 @@ export function InternServerWorkspace() {
                 <h2>{displayName}</h2>
                 <p>
                   Cargo: {heroIdentity.roleLabel}
-                  <span>Lotacao: {heroIdentity.lotacao}</span>
+                  <span>Lotação: {heroIdentity.lotacao}</span>
                   <span>Modelo: {heroIdentity.modelLabel}</span>
                 </p>
               </div>
@@ -670,7 +670,7 @@ export function InternServerWorkspace() {
             <div className="intern-hero__summary">
               <div className="intern-hero__summary-card">
                 <span>Etapa atual</span>
-                <strong>{snapshot ? `${snapshot.workspace.currentStage.sequence}a etapa` : '3a etapa'}</strong>
+                <strong>{snapshot ? `${snapshot.workspace.currentStage.sequence}ª etapa` : '3ª etapa'}</strong>
               </div>
 
               <div className="intern-hero__summary-card">
@@ -679,12 +679,12 @@ export function InternServerWorkspace() {
               </div>
 
               <div className="intern-hero__summary-card">
-                <span>Autoavaliacao</span>
+                <span>Autoavaliação</span>
                 <strong>
                   {snapshot?.selfEvaluation
                     ? formatSupervisorEvaluationStatus(snapshot.selfEvaluation.status)
                     : canEditSelfEvaluation
-                      ? 'Disponivel'
+                      ? 'Disponível'
                       : 'Aguardando etapa'}
                 </strong>
               </div>
@@ -727,13 +727,13 @@ export function InternServerWorkspace() {
             </button>
 
             <div className="intern-self-screen__header">
-              <h3>Autoavaliacao - {currentStageSequence}a etapa</h3>
-              <p>Preenchimento de formulario oficial de desempenho.</p>
+              <h3>Autoavaliação - {currentStageSequence}ª etapa</h3>
+              <p>Preenchimento de formulário oficial de desempenho.</p>
             </div>
 
             <section className="operations-card intern-self-screen__identity-card">
               <div className="intern-self-screen__section-label">
-                Identificacao do servidor (somente leitura)
+                Identificação do servidor (somente leitura)
               </div>
 
               <div className="intern-self-screen__identity-grid">
@@ -746,11 +746,11 @@ export function InternServerWorkspace() {
                   <strong>{heroIdentity.roleLabel}</strong>
                 </div>
                 <div>
-                  <span>Lotacao</span>
+                  <span>Lotação</span>
                   <strong>{heroIdentity.lotacao}</strong>
                 </div>
                 <div>
-                  <span>Periodo</span>
+                  <span>Período</span>
                   <strong>{currentStagePeriod}</strong>
                 </div>
               </div>
@@ -760,9 +760,9 @@ export function InternServerWorkspace() {
               <div className="self-evaluation-form">
                 {canPersistSelfEvaluation && selfEvaluationFormIssues.length > 0 ? (
                   <FeedbackAlert
-                    title="Autoavaliacao pendente"
+                    title="Autoavaliação pendente"
                     tone="warning"
-                    description="Complete o texto principal para liberar o salvamento da autoavaliacao."
+                    description="Complete o texto principal para liberar o salvamento da autoavaliação."
                     details={selfEvaluationFormIssues}
                   />
                 ) : null}
@@ -771,12 +771,12 @@ export function InternServerWorkspace() {
                   <FeedbackAlert
                     title="Modo demonstrativo"
                     tone="info"
-                    description="Esta tela usa dados falsos para visualizacao. O salvamento fica habilitado quando um processo real estiver carregado."
+                    description="Esta tela usa dados falsos para visualização. O salvamento fica habilitado quando um processo real estiver carregado."
                   />
                 ) : null}
 
                 <label className="field-group" htmlFor="self-evaluation-reflection">
-                  <span>Descreva sua autoavaliacao conforme modelo oficial</span>
+                  <span>Descreva sua autoavaliação conforme modelo oficial</span>
                   <textarea
                     id="self-evaluation-reflection"
                     rows={10}
@@ -788,12 +788,12 @@ export function InternServerWorkspace() {
                       }))
                     }
                     disabled={!canPersistSelfEvaluation || activeOperation !== null}
-                    placeholder="Digite aqui o texto da sua autoavaliacao tecnica e pedagogica..."
+                    placeholder="Digite aqui o texto da sua autoavaliação técnica e pedagógica..."
                   />
                 </label>
 
                 <label className="field-group" htmlFor="self-evaluation-notes">
-                  <span>Outras observacoes</span>
+                  <span>Outras observações</span>
                   <textarea
                     id="self-evaluation-notes"
                     rows={5}
@@ -805,7 +805,7 @@ export function InternServerWorkspace() {
                       }))
                     }
                     disabled={!canPersistSelfEvaluation || activeOperation !== null}
-                    placeholder="Informacoes adicionais relevantes para a Comissao..."
+                    placeholder="Informações adicionais relevantes para a Comissão..."
                   />
                 </label>
 
@@ -813,7 +813,7 @@ export function InternServerWorkspace() {
                   className="field-group intern-self-screen__comment-field"
                   htmlFor="self-evaluation-comment"
                 >
-                  <span>Comentario da movimentacao</span>
+                  <span>Comentário da movimentação</span>
                   <textarea
                     id="self-evaluation-comment"
                     rows={3}
@@ -825,7 +825,7 @@ export function InternServerWorkspace() {
                       }))
                     }
                     disabled={!canPersistSelfEvaluation || activeOperation !== null}
-                    placeholder="Comentario opcional para o historico auditavel."
+                    placeholder="Comentário opcional para o histórico auditável."
                   />
                 </label>
 
@@ -838,7 +838,7 @@ export function InternServerWorkspace() {
                       field?.focus();
                     }}
                   >
-                    Editar autoavaliacao
+                    Editar autoavaliação
                   </button>
 
                   <button
@@ -846,7 +846,7 @@ export function InternServerWorkspace() {
                     onClick={() => void handleSelfEvaluationMutation('draft')}
                     disabled={!canPersistSelfEvaluation || activeOperation !== null}
                   >
-                    {activeOperation === 'save-self-draft' ? 'Salvando...' : 'Salvar autoavaliacao'}
+                    {activeOperation === 'save-self-draft' ? 'Salvando...' : 'Salvar autoavaliação'}
                   </button>
                 </div>
               </div>
@@ -857,11 +857,11 @@ export function InternServerWorkspace() {
         <section className="operations-section">
           <div className="operations-section__header">
             <div>
-              <span className="section-chip">Etapas do estagio probatorio</span>
-              <h3>Minhas avaliacoes</h3>
+              <span className="section-chip">Etapas do estágio probatório</span>
+              <h3>Minhas avaliações</h3>
               <p>
-                Visao simplificada da jornada do servidor, com destaque para a etapa atual e as
-                acoes disponiveis.
+                Visão simplificada da jornada do servidor, com destaque para a etapa atual e as
+                ações disponíveis.
               </p>
             </div>
           </div>
@@ -886,7 +886,7 @@ export function InternServerWorkspace() {
               <div className="intern-signature-strip">
                 {snapshot.workspace.supervisorEvaluation?.documentContext ? (
                   <div className="intern-signature-card">
-                    <strong>Avaliacao da chefia</strong>
+                    <strong>Avaliação da chefia</strong>
                     <StatusBadge
                       label={formatDocumentStatus(snapshot.workspace.supervisorEvaluation.documentContext.documentStatus)}
                       tone={getDocumentStatusTone(snapshot.workspace.supervisorEvaluation.documentContext.documentStatus)}
@@ -907,7 +907,7 @@ export function InternServerWorkspace() {
 
                 {snapshot.workspace.selfEvaluation?.documentContext ? (
                   <div className="intern-signature-card">
-                    <strong>Autoavaliacao</strong>
+                    <strong>Autoavaliação</strong>
                     <StatusBadge
                       label={formatDocumentStatus(snapshot.workspace.selfEvaluation.documentContext.documentStatus)}
                       tone={getDocumentStatusTone(snapshot.workspace.selfEvaluation.documentContext.documentStatus)}
@@ -931,8 +931,8 @@ export function InternServerWorkspace() {
             <section className="operations-card">
               <div className="operations-card__header">
                 <div>
-                  <span className="section-chip">Historico recente</span>
-                  <h3>Ultimas movimentacoes</h3>
+                  <span className="section-chip">Histórico recente</span>
+                  <h3>Últimas movimentações</h3>
                 </div>
               </div>
 
@@ -944,14 +944,14 @@ export function InternServerWorkspace() {
                         <strong>{formatProcessAction(item.action as ProcessAction)}</strong>
                         <span>{formatDateTime(item.occurredAt)}</span>
                       </div>
-                      <p>{item.comment ?? 'Movimentacao registrada sem comentario adicional.'}</p>
+                      <p>{item.comment ?? 'Movimentação registrada sem comentário adicional.'}</p>
                     </article>
                   ))}
                 </div>
               ) : (
                 <ContentState
-                  title="Historico ainda vazio"
-                  description="As movimentacoes auditaveis aparecerao aqui assim que o processo registrar novos eventos."
+                  title="Histórico ainda vazio"
+                  description="As movimentações auditáveis aparecerão aqui assim que o processo registrar novos eventos."
                   tone="info"
                 />
               )}

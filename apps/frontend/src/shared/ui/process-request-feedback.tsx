@@ -29,7 +29,7 @@ export function ProcessRequestFeedback({
   message,
   details = [],
   genericTitle,
-  notFoundTitle = 'Processo nao encontrado',
+  notFoundTitle = 'Processo não encontrado',
   blockedTitle = 'Acesso bloqueado',
 }: ProcessRequestFeedbackProps) {
   if (status === 404) {

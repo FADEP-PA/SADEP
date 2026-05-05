@@ -15,10 +15,10 @@ import type { WorkflowHistoryItem } from '../../dashboard/types/process-dashboar
 import type { StatusBadgeTone } from '@/shared/ui/status-badge';
 
 const STATUS_LABELS: Record<ProcessStatus, string> = {
-  [ProcessStatus.EM_AVALIACAO]: 'Em avaliacao',
+  [ProcessStatus.EM_AVALIACAO]: 'Em avaliação',
   [ProcessStatus.AGUARDANDO_ASSINATURA]: 'Aguardando assinatura',
   [ProcessStatus.ASSINADO]: 'Assinado',
-  [ProcessStatus.EM_ANALISE_CESAD]: 'Em analise pela CESAD',
+  [ProcessStatus.EM_ANALISE_CESAD]: 'Em análise pela CESAD',
   [ProcessStatus.PARECER_EMITIDO]: 'Parecer emitido',
   [ProcessStatus.HOMOLOGADO]: 'Homologado',
   [ProcessStatus.NOTIFICADO]: 'Notificado',
@@ -29,13 +29,13 @@ const STATUS_LABELS: Record<ProcessStatus, string> = {
 const ACTION_LABELS: Partial<Record<ProcessAction, string>> = {
   [ProcessAction.CREATE_PROCESS]: 'Criar processo',
   [ProcessAction.ACTIVATE_STAGE]: 'Ativar etapa',
-  [ProcessAction.START_EVALUATION]: 'Iniciar avaliacao',
-  [ProcessAction.SAVE_EVALUATION_DRAFT]: 'Salvar avaliacao',
-  [ProcessAction.COMPLETE_EVALUATION]: 'Concluir avaliacao',
+  [ProcessAction.START_EVALUATION]: 'Iniciar avaliação',
+  [ProcessAction.SAVE_EVALUATION_DRAFT]: 'Salvar avaliação',
+  [ProcessAction.COMPLETE_EVALUATION]: 'Concluir avaliação',
   [ProcessAction.RELEASE_FOR_SERVER_SIGNATURE]: 'Liberar para assinatura',
-  [ProcessAction.RECTIFY_EVALUATION]: 'Retificar avaliacao',
-  [ProcessAction.SIGN_EVALUATION]: 'Assinar avaliacao',
-  [ProcessAction.SUBMIT_SELF_EVALUATION]: 'Enviar autoavaliacao',
+  [ProcessAction.RECTIFY_EVALUATION]: 'Retificar avaliação',
+  [ProcessAction.SIGN_EVALUATION]: 'Assinar avaliação',
+  [ProcessAction.SUBMIT_SELF_EVALUATION]: 'Enviar autoavaliação',
   [ProcessAction.SEND_TO_CESAD]: 'Encaminhar a CESAD',
   [ProcessAction.START_CESAD_OPINION]: 'Iniciar parecer CESAD',
   [ProcessAction.SAVE_CESAD_OPINION_DRAFT]: 'Salvar parecer CESAD',
@@ -43,32 +43,32 @@ const ACTION_LABELS: Partial<Record<ProcessAction, string>> = {
   [ProcessAction.ISSUE_CESAD_OPINION]: 'Emitir parecer CESAD',
   [ProcessAction.SIGN_CESAD_OPINION]: 'Assinar parecer CESAD',
   [ProcessAction.REQUEST_ADJUSTMENT]: 'Solicitar ajuste',
-  [ProcessAction.SEND_TO_HOMOLOGATION]: 'Enviar para homologacao',
+  [ProcessAction.SEND_TO_HOMOLOGATION]: 'Enviar para homologação',
   [ProcessAction.HOMOLOGATE_RESULT]: 'Homologar resultado',
-  [ProcessAction.RETURN_FOR_REGULARIZATION]: 'Retornar para regularizacao',
-  [ProcessAction.GENERATE_NOTIFICATION]: 'Gerar notificacao',
-  [ProcessAction.SEND_NOTIFICATION]: 'Enviar notificacao',
-  [ProcessAction.RECORD_ACKNOWLEDGEMENT]: 'Registrar ciencia',
+  [ProcessAction.RETURN_FOR_REGULARIZATION]: 'Retornar para regularização',
+  [ProcessAction.GENERATE_NOTIFICATION]: 'Gerar notificação',
+  [ProcessAction.SEND_NOTIFICATION]: 'Enviar notificação',
+  [ProcessAction.RECORD_ACKNOWLEDGEMENT]: 'Registrar ciência',
   [ProcessAction.LINK_ORDINANCE]: 'Vincular portaria',
   [ProcessAction.CLOSE_PROCESS]: 'Encerrar processo',
 };
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  [UserRole.INTERN_SERVER]: 'Servidor estagiario',
+  [UserRole.INTERN_SERVER]: 'Servidor estagiário',
   [UserRole.IMMEDIATE_SUPERVISOR]: 'Chefia imediata',
-  [UserRole.CESAD_MEMBER]: 'CESAD / comissao',
-  [UserRole.COMMISSION_ASSISTANT]: 'Assistente da comissao',
+  [UserRole.CESAD_MEMBER]: 'CESAD / comissão',
+  [UserRole.COMMISSION_ASSISTANT]: 'Assistente da comissão',
   [UserRole.HOMOLOGATION_AUTHORITY]: 'Autoridade homologadora',
   [UserRole.ADMIN]: 'Administrador',
 };
 
 const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
-  [DocumentType.SUPERVISOR_EVALUATION]: 'Avaliacao da chefia',
-  [DocumentType.SELF_EVALUATION]: 'Autoavaliacao',
+  [DocumentType.SUPERVISOR_EVALUATION]: 'Avaliação da chefia',
+  [DocumentType.SELF_EVALUATION]: 'Autoavaliação',
   [DocumentType.CESAD_OPINION]: 'Parecer CESAD da etapa',
-  [DocumentType.HOMOLOGATION_RECORD]: 'Registro de homologacao',
-  [DocumentType.RESULT_NOTIFICATION]: 'Notificacao de resultado',
-  [DocumentType.ACKNOWLEDGEMENT_RECORD]: 'Registro de ciencia',
+  [DocumentType.HOMOLOGATION_RECORD]: 'Registro de homologação',
+  [DocumentType.RESULT_NOTIFICATION]: 'Notificação de resultado',
+  [DocumentType.ACKNOWLEDGEMENT_RECORD]: 'Registro de ciência',
   [DocumentType.ORDINANCE]: 'Portaria',
 };
 
@@ -82,18 +82,18 @@ const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
 
 const SIGNATURE_STATUS_LABELS: Record<SignatureStatus, string> = {
   [SignatureStatus.PENDING]: 'Pendente',
-  [SignatureStatus.COMPLETED]: 'Concluida',
+  [SignatureStatus.COMPLETED]: 'Concluída',
   [SignatureStatus.FAILED]: 'Falhou',
   [SignatureStatus.CANCELED]: 'Cancelada',
 };
 
 const CESAD_STAGE_OPINION_STATUS_LABELS: Record<CesadStageOpinionStatus, string> = {
   [CesadStageOpinionStatus.DRAFT]: 'Rascunho',
-  [CesadStageOpinionStatus.COMPLETED]: 'Concluido',
+  [CesadStageOpinionStatus.COMPLETED]: 'Concluído',
 };
 
 const OFFICIAL_PROCESS_TIME_ZONE = 'America/Belem';
-const OFFICIAL_PROCESS_TIME_ZONE_LABEL = 'Belem';
+const OFFICIAL_PROCESS_TIME_ZONE_LABEL = 'Belém';
 
 type DocumentTypeFormatInput =
   | string
@@ -105,7 +105,7 @@ type DocumentTypeFormatInput =
 
 export function formatProcessStatus(status: string | undefined) {
   if (!status) {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   return STATUS_LABELS[status as ProcessStatus] ?? status;
@@ -134,7 +134,7 @@ export function getProcessStatusTone(status: string | undefined): StatusBadgeTon
 
 export function formatProcessAction(action: string | undefined) {
   if (!action) {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   return ACTION_LABELS[action as ProcessAction] ?? action;
@@ -142,7 +142,7 @@ export function formatProcessAction(action: string | undefined) {
 
 export function formatRole(role: string | null | undefined) {
   if (!role) {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   return ROLE_LABELS[role as UserRole] ?? role;
@@ -159,7 +159,7 @@ export function formatDocumentType(input: DocumentTypeFormatInput) {
       : null;
 
   if (!type) {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   if (type === DocumentType.CESAD_OPINION) {
@@ -179,7 +179,7 @@ export function formatDocumentType(input: DocumentTypeFormatInput) {
 
 export function formatDocumentStatus(status: string | null | undefined) {
   if (!status) {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   return DOCUMENT_STATUS_LABELS[status as DocumentStatus] ?? status;
@@ -207,7 +207,7 @@ export function getDocumentStatusTone(status: DocumentStatus | null | undefined)
 
 export function formatSignatureStatus(status: string | undefined) {
   if (!status) {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   return SIGNATURE_STATUS_LABELS[status as SignatureStatus] ?? status;
@@ -233,7 +233,7 @@ export function formatSupervisorEvaluationStatus(
   status: SupervisorEvaluationStatus | SelfEvaluationStatus | undefined,
 ) {
   if (!status) {
-    return 'Ainda nao iniciada';
+    return 'Ainda não iniciada';
   }
 
   if (status === SupervisorEvaluationStatus.DRAFT) {
@@ -262,7 +262,7 @@ export function getSupervisorEvaluationStatusTone(
 
 export function formatCesadStageOpinionStatus(status: CesadStageOpinionStatus | undefined) {
   if (!status) {
-    return 'Ainda nao iniciado';
+    return 'Ainda não iniciado';
   }
 
   return CESAD_STAGE_OPINION_STATUS_LABELS[status] ?? status;
@@ -282,7 +282,7 @@ export function formatStageInstructionStatus(
   status: CesadStageDocumentationStatusRef['stageInstructionStatus'] | undefined,
 ) {
   if (!status) {
-    return 'Situacao documental indisponivel';
+    return 'Situação documental indisponível';
   }
 
   if (status === 'COMPLETE') {
@@ -293,7 +293,7 @@ export function formatStageInstructionStatus(
     return 'Documentos presentes com assinaturas pendentes';
   }
 
-  return 'Documentos obrigatorios ausentes';
+  return 'Documentos obrigatórios ausentes';
 }
 
 export function getStageInstructionStatusTone(
@@ -312,7 +312,7 @@ export function getStageInstructionStatusTone(
 
 export function formatDateTime(value: string | null | undefined) {
   if (!value) {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   const parsed = new Date(value);
@@ -345,12 +345,12 @@ export function getProcessBlockers(snapshot: {
 
   if (snapshot.workflow.availableActions.length === 0) {
     blockers.push(
-      `Nenhuma acao foi liberada pelo workflow para o status ${formatProcessStatus(snapshot.workflow.status)}.`,
+      `Nenhuma ação foi liberada pelo workflow para o status ${formatProcessStatus(snapshot.workflow.status)}.`,
     );
   }
 
   if (snapshot.history.length === 0) {
-    blockers.push('O historico auditavel ainda nao possui eventos para apoiar a leitura operacional.');
+    blockers.push('O histórico auditável ainda não possui eventos para apoiar a leitura operacional.');
   }
 
   if (snapshot.supervisorEvaluationWarning) {
@@ -358,7 +358,7 @@ export function getProcessBlockers(snapshot: {
   }
 
   if (snapshot.workflow.status === ProcessStatus.ENCERRADO) {
-    blockers.push('O processo esta encerrado e a tela permanece apenas para consulta do resultado consolidado.');
+    blockers.push('O processo está encerrado e a tela permanece apenas para consulta do resultado consolidado.');
   }
 
   return blockers;

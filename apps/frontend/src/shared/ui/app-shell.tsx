@@ -164,7 +164,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
           <Link
             href={rolePresentation?.homePath ?? '/perfil'}
             className="app-shell__brand app-shell__sidebar-brand"
-            aria-label="Ir para a area principal do perfil"
+            aria-label="Ir para a área principal do perfil"
           >
             <span className="app-shell__brand-mark app-shell__brand-mark--coat" aria-hidden="true">
               <img src="/brasao-para.svg" alt="" />
@@ -187,7 +187,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
 
         <div className="app-shell__sidebar-divider" />
 
-        <nav className="app-shell__sidebar-nav" aria-label="Navegacao lateral do ambiente autenticado">
+        <nav className="app-shell__sidebar-nav" aria-label="Navegação lateral do ambiente autenticado">
           {navigationGroups.map((group) => (
             <section key={group.title} className="app-shell__sidebar-group">
               <span className="app-shell__sidebar-group-label">{group.title}</span>
@@ -236,8 +236,8 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
           <div className="app-shell__header-left">
             <div className="app-shell__header-branding">
               <div className="app-shell__header-branding-copy">
-                <strong>Governo do Estado do Para</strong>
-                <span>Secretaria de Educacao</span>
+                <strong>Governo do Estado do Pará</strong>
+                <span>Secretaria de Educação</span>
               </div>
             </div>
 

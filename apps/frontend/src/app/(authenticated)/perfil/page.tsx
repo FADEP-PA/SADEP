@@ -10,14 +10,14 @@ import { PageSection } from '@/shared/ui/page-section';
 
 function formatSessionStatus(status: string) {
   if (status === 'authenticated') {
-    return 'Sessao ativa';
+    return 'Sessão ativa';
   }
 
   if (status === 'loading') {
-    return 'Verificando sessao';
+    return 'Verificando sessão';
   }
 
-  return 'Sessao encerrada';
+  return 'Sessão encerrada';
 }
 
 export default function AuthenticatedProfilePage() {
@@ -29,7 +29,7 @@ export default function AuthenticatedProfilePage() {
       <PageSection
         eyebrow="Meu perfil"
         title="Dados da minha conta"
-        description="Confira as informacoes basicas do seu acesso ao sistema."
+        description="Confira as informações básicas do seu acesso ao sistema."
       >
         <section className="profile-details" aria-label="Detalhes simples da conta">
           <article className="profile-details__panel profile-details__panel--wide">
@@ -37,25 +37,25 @@ export default function AuthenticatedProfilePage() {
             <div className="profile-details__rows">
               <div className="profile-details__row">
                 <span>Perfil no sistema</span>
-                <strong>{rolePresentation?.label ?? 'Nao informado'}</strong>
+                <strong>{rolePresentation?.label ?? 'Não informado'}</strong>
               </div>
               <div className="profile-details__row">
                 <span>O que posso fazer</span>
-                <strong>{rolePresentation?.description ?? 'Acessar as areas liberadas para meu perfil.'}</strong>
+                <strong>{rolePresentation?.description ?? 'Acessar as áreas liberadas para meu perfil.'}</strong>
               </div>
               <div className="profile-details__row">
-                <span>Area principal</span>
+                <span>Área principal</span>
                 {rolePresentation?.homePath ? (
-                  <Link href={rolePresentation.homePath}>Abrir minha area de trabalho</Link>
+                  <Link href={rolePresentation.homePath}>Abrir minha área de trabalho</Link>
                 ) : (
-                  <strong>Nao informada</strong>
+                  <strong>Não informada</strong>
                 )}
               </div>
             </div>
           </article>
 
           <article className="profile-details__panel">
-            <h3>Minha sessao</h3>
+            <h3>Minha sessão</h3>
             <div className="profile-details__rows">
               <div className="profile-details__row">
                 <span>Situação</span>
@@ -66,7 +66,7 @@ export default function AuthenticatedProfilePage() {
                 <strong>
                   {session?.rememberMe
                     ? 'Vai lembrar meu acesso neste navegador.'
-                    : 'Nao vai manter meu acesso depois que eu sair.'}
+                    : 'Não vai manter meu acesso depois que eu sair.'}
                 </strong>
               </div>
             </div>
@@ -74,7 +74,7 @@ export default function AuthenticatedProfilePage() {
         </section>
 
         {bootstrapError ? (
-          <FeedbackAlert title="Aviso sobre sua sessao" tone="warning" description={bootstrapError} />
+          <FeedbackAlert title="Aviso sobre sua sessão" tone="warning" description={bootstrapError} />
         ) : null}
       </PageSection>
     </AuthGuard>

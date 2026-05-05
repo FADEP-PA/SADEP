@@ -120,7 +120,7 @@ async function refreshAccessToken() {
         const nextAccessToken = (payload as RefreshSessionResponse | undefined)?.accessToken;
 
         if (!nextAccessToken) {
-          throw new HttpError(500, 'Resposta de renovacao de sessao sem access token.');
+          throw new HttpError(500, 'Resposta de renovação de sessão sem access token.');
         }
 
         setAccessToken(nextAccessToken);

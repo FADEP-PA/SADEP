@@ -129,12 +129,12 @@ const PREVIOUS_EVALUATION_HISTORY: Record<string, PreviousEvaluationItem[]> = {
 const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
   {
     id: 'SUP-001',
-    serverName: 'Joao da Silva',
+    serverName: 'João da Silva',
     registration: '459134-1',
     role: 'Professor Nivel II',
     exerciseStart: '10/02/2022',
     status: 'EM_AVALIACAO',
-    stageLabel: '3a etapa',
+    stageLabel: '3ª etapa',
     deadline: '15/10/2024',
     canReviewPrevious: true,
     actionLabel: 'Avaliar',
@@ -149,7 +149,7 @@ const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
     role: 'Professor Nivel II',
     exerciseStart: '15/05/2021',
     status: 'EM_AVALIACAO',
-    stageLabel: '4a etapa',
+    stageLabel: '4ª etapa',
     deadline: '20/11/2024',
     canReviewPrevious: true,
     actionLabel: 'Avaliar',
@@ -180,7 +180,7 @@ const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
     role: 'Professor',
     exerciseStart: '12/08/2021',
     status: 'EM_ANALISE_CESAD',
-    stageLabel: '4a etapa',
+    stageLabel: '4ª etapa',
     deadline: '05/09/2024',
     canReviewPrevious: false,
     actionLabel: 'Visualizar',
@@ -192,25 +192,25 @@ const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
 ];
 
 const STATUS_FILTERS: Array<{ id: SupervisorDashboardStatus; label: string }> = [
-  { id: 'EM_AVALIACAO', label: 'Em avaliacao' },
+  { id: 'EM_AVALIACAO', label: 'Em avaliação' },
   { id: 'AGUARDANDO_ASSINATURA', label: 'Aguardando assinatura' },
-  { id: 'EM_ANALISE_CESAD', label: 'Em analise CESAD' },
-  { id: 'CONCLUIDO', label: 'Concluidos' },
+  { id: 'EM_ANALISE_CESAD', label: 'Em análise CESAD' },
+  { id: 'CONCLUIDO', label: 'Concluídos' },
 ];
 
 const MONTHLY_OBSERVATION_OPTIONS = [
-  '1o mes',
-  '2o mes',
-  '3o mes',
-  '4o mes',
-  '5o mes',
-  '6o mes',
-  '7o mes',
-  '8o mes',
-  '9o mes',
-  '10o mes',
-  '11o mes',
-  '12o mes',
+  '1º mês',
+  '2º mês',
+  '3º mês',
+  '4º mês',
+  '5º mês',
+  '6º mês',
+  '7º mês',
+  '8º mês',
+  '9º mês',
+  '10º mês',
+  '11º mês',
+  '12º mês',
 ] as const;
 const ADMINISTRATIVE_CONCEPT_OPTIONS = ['Insuficiente', 'Regular', 'Bom', 'Excelente'] as const;
 
@@ -219,7 +219,7 @@ const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: st
     id: 'assiduidade',
     title: 'Assiduidade',
     items: [
-      { id: '1.1', label: '1.1 Cumpre o horario integralmente' },
+      { id: '1.1', label: '1.1 Cumpre o horário integralmente' },
       { id: '1.2', label: '1.2 Quando presente pouco se ausenta do local de trabalho' },
       { id: '1.3', label: '1.3 Quase nunca falta' },
       { id: '1.4', label: '1.4 Quando falta apresenta justificativa legal' },
@@ -229,20 +229,20 @@ const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: st
     id: 'disciplina',
     title: 'Disciplina',
     items: [
-      { id: '2.1', label: '2.1 Observancia de normas e regulamentos' },
+      { id: '2.1', label: '2.1 Observância de normas e regulamentos' },
       { id: '2.2', label: '2.2 Urbanidade e respeito no trato' },
       { id: '2.3', label: '2.3 Acato as ordens superiores' },
-      { id: '2.4', label: '2.4 Zelo pelo patrimonio publico' },
+      { id: '2.4', label: '2.4 Zelo pelo patrimônio público' },
     ],
   },
   {
     id: 'iniciativa',
     title: 'Capacidade de iniciativa',
     items: [
-      { id: '3.1', label: '3.1 Busca de solucoes para problemas' },
-      { id: '3.2', label: '3.2 Inovacao pedagogica e proatividade' },
-      { id: '3.3', label: '3.3 Colaboracao institucional' },
-      { id: '3.4', label: '3.4 Sugestoes para melhoria do servico' },
+      { id: '3.1', label: '3.1 Busca de soluções para problemas' },
+      { id: '3.2', label: '3.2 Inovação pedagógica e proatividade' },
+      { id: '3.3', label: '3.3 Colaboração institucional' },
+      { id: '3.4', label: '3.4 Sugestões para melhoria do serviço' },
     ],
   },
   {
@@ -251,18 +251,18 @@ const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: st
     items: [
       { id: '4.1', label: '4.1 Volume e qualidade do trabalho' },
       { id: '4.2', label: '4.2 Cumprimento de prazos e metas' },
-      { id: '4.3', label: '4.3 Eficiencia na execucao de tarefas' },
-      { id: '4.4', label: '4.4 Organizacao das atividades' },
+      { id: '4.3', label: '4.3 Eficiência na execução de tarefas' },
+      { id: '4.4', label: '4.4 Organização das atividades' },
     ],
   },
   {
     id: 'responsabilidade',
     title: 'Responsabilidade',
     items: [
-      { id: '5.1', label: '5.1 Sigilo profissional e etica' },
-      { id: '5.2', label: '5.2 Cuidado com documentacao escolar' },
+      { id: '5.1', label: '5.1 Sigilo profissional e ética' },
+      { id: '5.2', label: '5.2 Cuidado com documentação escolar' },
       { id: '5.3', label: '5.3 Compromisso com resultados' },
-      { id: '5.4', label: '5.4 Prestacao de contas das atividades' },
+      { id: '5.4', label: '5.4 Prestação de contas das atividades' },
     ],
   },
 ];
@@ -296,7 +296,7 @@ function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot)
     id: snapshot.process.id,
     serverName: 'Processo configurado',
     registration: snapshot.process.id,
-    role: 'Servidor em avaliacao',
+    role: 'Servidor em avaliação',
     exerciseStart: '-',
     status: toDashboardStatus(snapshot.process.status),
     stageLabel: 'Etapa atual',
@@ -347,13 +347,13 @@ function buildSupervisorEvaluationPayload(
   const summary = summaryParts.join('\n\n');
   const generalComments = [
     draft.generalComments.trim(),
-    `Resultado final informado pela chefia: pontuacao total ${draft.totalStageScore || '0.0'}, media ${draft.stageAverage || '0.0'}, conceito ${draft.administrativeConcept}.`,
+    `Resultado final informado pela chefia: pontuação total ${draft.totalStageScore || '0.0'}, média ${draft.stageAverage || '0.0'}, conceito ${draft.administrativeConcept}.`,
   ]
     .filter(Boolean)
     .join('\n\n');
 
   if (!summary) {
-    throw new Error('Informe as competencias da unidade ou as atribuicoes do servidor antes de salvar.');
+    throw new Error('Informe as competências da unidade ou as atribuições do servidor antes de salvar.');
   }
 
   return {
@@ -370,14 +370,14 @@ function buildSupervisorEvaluationPayload(
     },
     comment:
       mode === 'submit'
-        ? 'Avaliacao da chefia encaminhada para formalizacao documental.'
-        : 'Rascunho da avaliacao da chefia salvo pela interface.',
+        ? 'Avaliação da chefia encaminhada para formalização documental.'
+        : 'Rascunho da avaliação da chefia salvo pela interface.',
   };
 }
 
 function getStatusLabel(status: SupervisorDashboardStatus) {
   if (status === 'EM_AVALIACAO') {
-    return 'Em avaliacao';
+    return 'Em avaliação';
   }
 
   if (status === 'AGUARDANDO_ASSINATURA') {
@@ -385,7 +385,7 @@ function getStatusLabel(status: SupervisorDashboardStatus) {
   }
 
   if (status === 'EM_ANALISE_CESAD') {
-    return 'Em analise CESAD';
+    return 'Em análise CESAD';
   }
 
   return 'Homologado';
@@ -455,7 +455,7 @@ function EvaluationFactorCard({
         </div>
 
         <div className="evaluation-detail__factor-metric">
-          <span>Media do fator</span>
+              <span>Média do fator</span>
           <strong>{average.toFixed(1)}</strong>
         </div>
       </button>
@@ -485,7 +485,7 @@ function EvaluationFactorCard({
               <strong>{subtotal.toFixed(1)}</strong>
             </div>
             <div>
-              <span>Pontuacao final do fator (media)</span>
+              <span>Pontuação final do fator (média)</span>
               <strong>{average.toFixed(1)}</strong>
             </div>
           </div>
@@ -550,7 +550,7 @@ export function SupervisorEvaluationWorkspace() {
 
       setWorkspaceSnapshot(null);
       setActiveEvaluation((current) => (current?.row.source === 'real' ? null : current));
-      setLoadErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel carregar o workspace real da chefia.'));
+      setLoadErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar o workspace real da chefia.'));
       setLoadErrorDetails(getHttpErrorDetails(payload));
     } finally {
       setIsLoadingWorkspace(false);
@@ -765,11 +765,11 @@ export function SupervisorEvaluationWorkspace() {
 
     try {
       if (!session || !workspaceSnapshot) {
-        throw new Error('Sessao ou processo real indisponivel para salvar a avaliacao.');
+        throw new Error('Sessão ou processo real indisponível para salvar a avaliação.');
       }
 
       if (!workspaceSnapshot.canEditDraft) {
-        throw new Error('O backend nao liberou salvamento de rascunho para o estado atual do processo.');
+        throw new Error('O backend não liberou salvamento de rascunho para o estado atual do processo.');
       }
 
       await saveSupervisorEvaluationDraft(
@@ -779,7 +779,7 @@ export function SupervisorEvaluationWorkspace() {
       await loadSupervisorWorkspace(workspaceSnapshot.process.id);
       setFeedbackMessage('Rascunho salvo no processo real pelo backend.');
     } catch (error) {
-      setActionErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel salvar o rascunho da avaliacao.'));
+      setActionErrorMessage(getRequestErrorMessage(error, 'Não foi possível salvar o rascunho da avaliação.'));
     } finally {
       setIsSavingDraft(false);
     }
@@ -798,32 +798,32 @@ export function SupervisorEvaluationWorkspace() {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       setIsSubmittingEvaluation(false);
-      setFeedbackMessage('Avaliacao encaminhada para assinatura da chefia immediata.');
+      setFeedbackMessage('Avaliação encaminhada para assinatura da chefia imediata.');
       return;
     }
 
     try {
       if (!session || !workspaceSnapshot) {
-        throw new Error('Sessao ou processo real indisponivel para enviar a avaliacao.');
+        throw new Error('Sessão ou processo real indisponível para enviar a avaliação.');
       }
 
       const payload = buildSupervisorEvaluationPayload(activeEvaluation, 'submit');
 
       if (workspaceSnapshot.canRectify) {
         await rectifySupervisorEvaluation(workspaceSnapshot.process.id, payload);
-        setFeedbackMessage('Avaliacao retificada no processo real pelo backend.');
+        setFeedbackMessage('Avaliação retificada no processo real pelo backend.');
       } else {
         if (!workspaceSnapshot.canSubmit) {
-          throw new Error('O backend nao liberou envio da avaliacao para o estado atual do processo.');
+          throw new Error('O backend não liberou envio da avaliação para o estado atual do processo.');
         }
 
         await submitSupervisorEvaluation(workspaceSnapshot.process.id, payload);
-        setFeedbackMessage('Avaliacao enviada para formalizacao documental pelo backend.');
+        setFeedbackMessage('Avaliação enviada para formalização documental pelo backend.');
       }
 
       await loadSupervisorWorkspace(workspaceSnapshot.process.id);
     } catch (error) {
-      setActionErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel enviar a avaliacao da chefia.'));
+      setActionErrorMessage(getRequestErrorMessage(error, 'Não foi possível enviar a avaliação da chefia.'));
     } finally {
       setIsSubmittingEvaluation(false);
     }
@@ -836,7 +836,7 @@ export function SupervisorEvaluationWorkspace() {
   const canSaveActiveDraft = !isRealEvaluation || Boolean(workspaceSnapshot?.canEditDraft);
   const canSubmitActiveEvaluation =
     !isRealEvaluation || Boolean(workspaceSnapshot?.canSubmit || workspaceSnapshot?.canRectify);
-  const submitButtonLabel = workspaceSnapshot?.canRectify ? 'Retificar avaliacao' : 'Enviar para assinatura';
+  const submitButtonLabel = workspaceSnapshot?.canRectify ? 'Retificar avaliação' : 'Enviar para assinatura';
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
@@ -846,7 +846,7 @@ export function SupervisorEvaluationWorkspace() {
         description={
           activeEvaluation
             ? undefined
-            : 'Visualizacao demonstrativa da unidade escolar com lista de servidores e situacao atual das avaliacoes.'
+            : 'Visualização demonstrativa da unidade escolar com lista de servidores e situação atual das avaliações.'
         }
       >
         {!activeEvaluation ? (
@@ -871,9 +871,9 @@ export function SupervisorEvaluationWorkspace() {
 
             {!workspaceSnapshot ? (
               <FeedbackAlert
-                title="Processo real nao selecionado"
+                title="Processo real não selecionado"
                 tone="info"
-                description="A tela permanece em modo demonstrativo ate um processo real ser informado para validacao local."
+                description="A tela permanece em modo demonstrativo até um processo real ser informado para validação local."
               />
             ) : null}
           </>
@@ -882,7 +882,7 @@ export function SupervisorEvaluationWorkspace() {
         {isLoadingWorkspace ? (
           <InlineLoadingState
             title="Carregando workspace real da chefia"
-            description="Consultando o backend para substituir dados locais quando o processo estiver disponivel para a chefia autenticada."
+            description="Consultando o backend para substituir dados locais quando o processo estiver disponível para a chefia autenticada."
           />
         ) : null}
 
@@ -906,13 +906,13 @@ export function SupervisorEvaluationWorkspace() {
             </button>
 
             <div className="evaluation-detail__heading">
-              <h3>Avaliacao de desempenho - {activeEvaluation.row.stageLabel}</h3>
-              <p>Relatorio Tecnico Individual de Estagio Probatorio</p>
+              <h3>Avaliação de desempenho - {activeEvaluation.row.stageLabel}</h3>
+              <p>Relatório Técnico Individual de Estágio Probatório</p>
             </div>
 
             <section className="evaluation-detail__card">
               <div className="evaluation-detail__section-title">
-                I. Identificacao do servidor e chefia (somente leitura)
+                I. Identificação do servidor e chefia (somente leitura)
               </div>
 
               <div className="evaluation-detail__identity-grid">
@@ -921,21 +921,21 @@ export function SupervisorEvaluationWorkspace() {
                   <strong>{activeEvaluation.row.serverName}</strong>
                 </div>
                 <div>
-                  <span>Cargo / matricula</span>
+                  <span>Cargo / matrícula</span>
                   <strong>
                     {activeEvaluation.row.role} / {activeEvaluation.row.registration}
                   </strong>
                 </div>
                 <div>
-                  <span>Data exercicio</span>
+                  <span>Data exercício</span>
                   <strong>{activeEvaluation.row.exerciseStart}</strong>
                 </div>
                 <div>
-                  <span>Periodo de acompanhamento</span>
+                  <span>Período de acompanhamento</span>
                   <strong>{activeEvaluation.row.trackingPeriod}</strong>
                 </div>
                 <div>
-                  <span>Unidade de lotacao</span>
+                  <span>Unidade de lotação</span>
                   <strong>Escola Estadual X</strong>
                 </div>
                 <div>
@@ -950,7 +950,7 @@ export function SupervisorEvaluationWorkspace() {
             </section>
 
             <section className="evaluation-detail__card">
-              <div className="evaluation-detail__section-title">II. Competencia da unidade</div>
+              <div className="evaluation-detail__section-title">II. Competência da unidade</div>
               <label className="field-group">
                 <textarea
                   value={activeEvaluation.unitCompetencies}
@@ -965,7 +965,7 @@ export function SupervisorEvaluationWorkspace() {
                     )
                   }
                   rows={5}
-                  placeholder="Descreva as competencias e objetivos da unidade escolar..."
+                  placeholder="Descreva as competências e objetivos da unidade escolar..."
                 />
                 <small>{activeEvaluation.unitCompetencies.length} / 450 caracteres</small>
               </label>
@@ -973,7 +973,7 @@ export function SupervisorEvaluationWorkspace() {
 
             <section className="evaluation-detail__card">
               <div className="evaluation-detail__section-title">
-                III. Atribuicoes do servidor-estagiario no periodo
+                III. Atribuições do servidor-estagiário no período
               </div>
               <label className="field-group">
                 <textarea
@@ -989,7 +989,7 @@ export function SupervisorEvaluationWorkspace() {
                     )
                   }
                   rows={5}
-                  placeholder="Descreva as tarefas e responsabilidades especificas do servidor..."
+                  placeholder="Descreva as tarefas e responsabilidades específicas do servidor..."
                 />
                 <small>{activeEvaluation.serverAssignments.length} / 450 caracteres</small>
               </label>
@@ -998,7 +998,7 @@ export function SupervisorEvaluationWorkspace() {
             <section className="evaluation-detail__card">
               <div className="evaluation-detail__section-header">
                 <div className="evaluation-detail__section-title">
-                  IV. Consideracoes sobre o periodo (mensal)
+                  IV. Considerações sobre o período (mensal)
                 </div>
 
                 <button
@@ -1006,7 +1006,7 @@ export function SupervisorEvaluationWorkspace() {
                   className="evaluation-detail__compact-button"
                   onClick={addMonthlyObservation}
                 >
-                  + Inserir observacao
+                  + Inserir observação
                 </button>
               </div>
 
@@ -1016,7 +1016,7 @@ export function SupervisorEvaluationWorkspace() {
                     <article key={observation.id} className="evaluation-detail__observation-item">
                       <div className="evaluation-detail__observation-row">
                         <label className="evaluation-detail__month-select">
-                          <span>Mes da observacao</span>
+                          <span>Mês da observação</span>
                           <select
                             value={observation.monthLabel}
                             onChange={(event) =>
@@ -1044,7 +1044,7 @@ export function SupervisorEvaluationWorkspace() {
                           updateMonthlyObservationDescription(observation.id, event.target.value)
                         }
                         rows={4}
-                        placeholder="Relate fatos e evidencias do desempenho observado..."
+                        placeholder="Relate fatos e evidências do desempenho observado..."
                       />
 
                       <div className="evaluation-detail__observation-attachment">
@@ -1062,7 +1062,7 @@ export function SupervisorEvaluationWorkspace() {
                         </label>
 
                         <small>
-                          {observation.attachmentName || 'Nenhum arquivo anexado para este mes.'}
+                          {observation.attachmentName || 'Nenhum arquivo anexado para este mês.'}
                         </small>
                       </div>
                     </article>
@@ -1070,46 +1070,46 @@ export function SupervisorEvaluationWorkspace() {
                 </div>
               ) : (
                 <div className="evaluation-detail__empty-observation">
-                  Nenhuma observacao mensal inserida.
+                  Nenhuma observação mensal inserida.
                 </div>
               )}
             </section>
 
             <section className="evaluation-detail__card">
               <div className="evaluation-detail__section-title">
-                V. Instrucoes para avaliacao tecnica (conceitos oficiais)
+                V. Instruções para avaliação técnica (conceitos oficiais)
               </div>
 
               <div className="evaluation-detail__concept-table">
                 <div className="evaluation-detail__concept-header">
                   <div>Faixa de pontos</div>
                   <div>Conceito</div>
-                  <div>Descricao tecnica</div>
+                  <div>Descrição técnica</div>
                 </div>
                 <div className="evaluation-detail__concept-row">
                   <div>0 a 49,9</div>
                   <div className="evaluation-detail__concept evaluation-detail__concept--bad">Insuficiente</div>
-                  <div>"O servidor nao atendeu as expectativas de desempenho definidas previamente."</div>
+                  <div>"O servidor não atendeu as expectativas de desempenho definidas previamente."</div>
                 </div>
                 <div className="evaluation-detail__concept-row">
                   <div>50 a 69,9</div>
                   <div className="evaluation-detail__concept evaluation-detail__concept--regular">Regular</div>
-                  <div>"O servidor atendeu parcialmente as expectativas de desempenho definidas previamente necessitando melhorar a atuacao."</div>
+                  <div>"O servidor atendeu parcialmente as expectativas de desempenho definidas previamente, necessitando melhorar a atuação."</div>
                 </div>
                 <div className="evaluation-detail__concept-row">
                   <div>70 a 89,9</div>
                   <div className="evaluation-detail__concept evaluation-detail__concept--good">Bom</div>
-                  <div>"O servidor atendeu as expectativas de desempenho definidas previamente porem ainda apresentou aspectos passiveis de melhora."</div>
+                  <div>"O servidor atendeu as expectativas de desempenho definidas previamente, porém ainda apresentou aspectos passíveis de melhora."</div>
                 </div>
                 <div className="evaluation-detail__concept-row">
                   <div>90 a 100</div>
                   <div className="evaluation-detail__concept evaluation-detail__concept--great">Excelente</div>
-                  <div>"O servidor apresentou desempenho plenamente satisfatorio quanto ao aspecto avaliado superando as expectativas."</div>
+                  <div>"O servidor apresentou desempenho plenamente satisfatório quanto ao aspecto avaliado, superando as expectativas."</div>
                 </div>
               </div>
             </section>
 
-            <div className="evaluation-detail__factors-title">VI. Pontuacao dos fatores</div>
+            <div className="evaluation-detail__factors-title">VI. Pontuação dos fatores</div>
 
             <div className="evaluation-detail__factor-stack">
               {activeEvaluation.factors.map((factor) => (
@@ -1126,7 +1126,7 @@ export function SupervisorEvaluationWorkspace() {
             <section className="evaluation-detail__card evaluation-detail__summary-card">
               <div className="evaluation-detail__final-score-panel">
                 <label>
-                  <span>Pontuacao total da etapa (soma das medias)</span>
+                  <span>Pontuação total da etapa (soma das médias)</span>
                   <input
                     type="number"
                     min="0"
@@ -1138,7 +1138,7 @@ export function SupervisorEvaluationWorkspace() {
                 </label>
 
                 <label>
-                  <span>Media da etapa</span>
+                  <span>Média da etapa</span>
                   <input
                     type="number"
                     min="0"
@@ -1172,30 +1172,30 @@ export function SupervisorEvaluationWorkspace() {
               </div>
 
               <p className="evaluation-detail__final-note">
-                "A media da 4a etapa sera provisoria devendo ser confirmada conforme normas especificas."
+                "A média da 4ª etapa será provisória, devendo ser confirmada conforme normas específicas."
               </p>
 
               <div className="evaluation-detail__signature-card">
                 <div className="evaluation-detail__signature-title">
-                  Validacao do Relatorio Individual de Estagio Probatorio
+                  Validação do Relatório Individual de Estágio Probatório
                 </div>
 
                 <div className="evaluation-detail__signature-grid">
                   <div className="evaluation-detail__signature-box">
-                    <div>Aguardando conclusao do preenchimento</div>
+                    <div>Aguardando conclusão do preenchimento</div>
                     <strong>{activeEvaluation.row.serverName}</strong>
-                    <span>Assinatura do servidor-estagiario</span>
+                    <span>Assinatura do servidor-estagiário</span>
                   </div>
 
                   <div className="evaluation-detail__signature-box">
-                    <div>Aguardando conclusao do preenchimento</div>
+                    <div>Aguardando conclusão do preenchimento</div>
                     <strong>{activeEvaluation.row.supervisorName}</strong>
                     <span>Assinatura da chefia imediata ({activeEvaluation.row.supervisorRole})</span>
                   </div>
                 </div>
 
                 <div className="evaluation-detail__signature-place-date">
-                  Belem, Para - {formatValidationDate()}
+                  Belém, Pará - {formatValidationDate()}
                 </div>
               </div>
 
@@ -1205,7 +1205,7 @@ export function SupervisorEvaluationWorkspace() {
 
               {actionErrorMessage ? (
                 <FeedbackAlert
-                  title="Operacao nao concluida"
+                  title="Operação não concluída"
                   tone="error"
                   description={actionErrorMessage}
                 />
@@ -1262,7 +1262,7 @@ export function SupervisorEvaluationWorkspace() {
                     id="supervisor-status-filters"
                     className="supervisor-dashboard__filter-popover"
                     role="dialog"
-                    aria-label="Filtros por status da avaliacao"
+                    aria-label="Filtros por status da avaliação"
                   >
                     <div className="supervisor-dashboard__filter-popover-header">
                       <strong>Status exibidos</strong>
@@ -1287,14 +1287,14 @@ export function SupervisorEvaluationWorkspace() {
 
               <div className="supervisor-dashboard__table-header">
                 <div>Servidor</div>
-                <div>Matricula</div>
+                <div>Matrícula</div>
                 <div>Cargo</div>
-                <div>Exercicio</div>
+                <div>Exercício</div>
                 <div>Status</div>
                 <div>Etapa atual</div>
                 <div>Prazo limite</div>
-                <div>Avaliacoes anteriores</div>
-                <div>Acao</div>
+                <div>Avaliações anteriores</div>
+                <div>Ação</div>
               </div>
 
               <div className="supervisor-dashboard__rows">
