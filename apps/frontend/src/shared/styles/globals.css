@@ -5723,6 +5723,227 @@ h3,
   background: rgba(0, 124, 192, 0.08);
 }
 
+/* Compact authenticated typography */
+
+.app-shell {
+  font-size: 0.94rem;
+}
+
+.app-shell strong,
+.app-shell button,
+.app-shell a {
+  font-weight: 500;
+}
+
+.app-shell h1,
+.app-shell h2,
+.app-shell h3 {
+  font-weight: 550;
+}
+
+.app-shell__sidebar .app-shell__brand-copy strong {
+  font-size: 1.62rem;
+  font-weight: 600;
+}
+
+.app-shell__sidebar .app-shell__brand-copy small {
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+}
+
+.app-shell__sidebar-group-label,
+.section-chip,
+.key-value-list dt,
+.status-badge,
+.profile-details__row span,
+.workspace-service-card span,
+.workspace-stat span,
+.intern-hero__summary-card span,
+.supervisor-dashboard__table-header,
+.supervisor-dashboard__filters-title,
+.supervisor-dashboard__server span,
+.supervisor-dashboard__pill,
+.supervisor-dashboard__stage-chip {
+  font-weight: 550;
+  letter-spacing: 0.07em;
+}
+
+.app-shell__sidebar-link {
+  min-height: 3rem;
+}
+
+.app-shell__sidebar-link-text,
+.app-shell__sidebar-signout {
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.app-shell__header-branding-copy strong,
+.app-shell__header-context strong,
+.app-shell__header-user strong {
+  font-weight: 500;
+}
+
+.app-shell__header-branding-copy strong {
+  font-size: 0.82rem;
+}
+
+.app-shell__header-branding-copy span,
+.app-shell__header-context span,
+.app-shell__header-user span {
+  font-size: 0.8rem;
+}
+
+.app-shell__header-context strong,
+.app-shell__header-user strong {
+  font-size: 0.9rem;
+}
+
+.app-shell__header-avatar {
+  font-weight: 500;
+}
+
+.page-section__header h2 {
+  max-width: 22ch;
+  font-size: clamp(1.75rem, 3.2vw, 2.45rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+.page-section__header p,
+.muted-paragraph,
+.surface-card p {
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.section-chip {
+  padding: 0.26rem 0.65rem;
+  font-size: 0.68rem;
+}
+
+.surface-card h3,
+.profile-details__panel h3,
+.operations-section__header h3,
+.operations-card__header h3 {
+  font-size: 1.15rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.profile-summary {
+  padding: 1.35rem;
+}
+
+.profile-summary__avatar {
+  width: 3.35rem;
+  height: 3.35rem;
+  border-radius: 1rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.profile-summary__main h2 {
+  font-size: clamp(1.7rem, 3vw, 2.45rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+
+.profile-summary__main p,
+.profile-details__row strong,
+.profile-details__row a {
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.profile-summary__status span,
+.status-badge {
+  min-height: 1.9rem;
+  padding: 0.3rem 0.68rem;
+  font-size: 0.72rem;
+}
+
+.supervisor-dashboard__filters {
+  padding: 0.9rem 1.2rem;
+}
+
+.supervisor-dashboard__filters-title,
+.supervisor-dashboard__table-header {
+  font-size: 0.68rem;
+}
+
+.supervisor-dashboard__table-header {
+  padding: 0.85rem 1.1rem;
+}
+
+.supervisor-dashboard__row {
+  padding: 0.85rem 1.1rem;
+}
+
+.supervisor-dashboard__server strong,
+.supervisor-dashboard__cell {
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.supervisor-dashboard__server span {
+  font-size: 0.7rem;
+}
+
+.supervisor-dashboard__pill,
+.supervisor-dashboard__stage-chip {
+  min-height: 1.65rem;
+  padding: 0.28rem 0.52rem;
+  font-size: 0.7rem;
+}
+
+.supervisor-dashboard__ghost-action,
+.supervisor-dashboard__primary-action,
+button,
+.secondary-button,
+.warning-button,
+.ghost-button {
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.supervisor-dashboard__primary-action {
+  min-height: 2.05rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.supervisor-dashboard__ghost-action {
+  min-height: 2rem;
+  padding: 0.35rem 0.68rem;
+}
+
+.intern-hero__identity h2,
+.workspace-overview__copy h3,
+.operations-hero__copy h2,
+.supervisor-dashboard__hero-copy h3 {
+  font-size: clamp(1.7rem, 3.2vw, 2.45rem);
+  line-height: 1.03;
+  letter-spacing: -0.03em;
+  text-transform: none;
+}
+
+.intern-stage-card__title-row strong,
+.workspace-stat strong,
+.workspace-service-card strong,
+.intern-hero__summary-card strong,
+.supervisor-dashboard__hero-metric strong {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.supervisor-dashboard__hero-copy p,
+.workspace-overview__copy p,
+.intern-hero__identity p {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  text-transform: none;
+}
+
 @media (max-width: 1100px) {
   .portal-hero,
   .portal-spotlight,
