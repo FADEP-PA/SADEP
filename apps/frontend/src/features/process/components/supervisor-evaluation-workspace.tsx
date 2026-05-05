@@ -64,6 +64,7 @@ type MonthlyObservation = {
   id: string;
   monthLabel: string;
   description: string;
+  attachmentName: string;
 };
 
 type EvaluationDraft = {
@@ -363,7 +364,7 @@ function buildSupervisorEvaluationPayload(
         factor.items.map((item) => ({
           code: item.id,
           label: item.label,
-          rating: Math.min(100, Math.max(1, item.score)),
+          rating: Math.min(100, Math.max(0, item.score)),
         })),
       ),
     },
@@ -468,7 +469,7 @@ function EvaluationFactorCard({
               <div className="evaluation-detail__score-input-wrap">
                 <input
                   type="number"
-                  min={1}
+                  min={0}
                   max={100}
                   value={item.score}
                   onChange={(event) => onScoreChange(item.id, Number(event.target.value || 0))}
@@ -639,7 +640,7 @@ export function SupervisorEvaluationWorkspace() {
                   item.id === itemId
                     ? {
                         ...item,
-                        score: Math.min(100, Math.max(1, score)),
+                        score: Math.min(100, Math.max(0, score)),
                       }
                     : item,
                 ),
@@ -680,6 +681,7 @@ export function SupervisorEvaluationWorkspace() {
             id: `obs-${nextIndex}`,
             monthLabel: nextMonth,
             description: '',
+            attachmentName: '',
           },
         ],
       };
@@ -711,6 +713,21 @@ export function SupervisorEvaluationWorkspace() {
         ...current,
         monthlyObservations: current.monthlyObservations.map((observation) =>
           observation.id === id ? { ...observation, description } : observation,
+        ),
+      };
+    });
+  }
+
+  function updateMonthlyObservationAttachment(id: string, attachmentName: string) {
+    setActiveEvaluation((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        monthlyObservations: current.monthlyObservations.map((observation) =>
+          observation.id === id ? { ...observation, attachmentName } : observation,
         ),
       };
     });
@@ -1029,6 +1046,25 @@ export function SupervisorEvaluationWorkspace() {
                         rows={4}
                         placeholder="Relate fatos e evidencias do desempenho observado..."
                       />
+
+                      <div className="evaluation-detail__observation-attachment">
+                        <label>
+                          <input
+                            type="file"
+                            onChange={(event) =>
+                              updateMonthlyObservationAttachment(
+                                observation.id,
+                                event.target.files?.[0]?.name ?? '',
+                              )
+                            }
+                          />
+                          <span>Anexar arquivo</span>
+                        </label>
+
+                        <small>
+                          {observation.attachmentName || 'Nenhum arquivo anexado para este mes.'}
+                        </small>
+                      </div>
                     </article>
                   ))}
                 </div>
