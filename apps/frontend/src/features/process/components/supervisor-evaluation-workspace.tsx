@@ -126,7 +126,7 @@ const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
   {
     id: 'SUP-001',
     serverName: 'Joao da Silva',
-    registration: '543***-PA',
+    registration: '459134-1',
     role: 'Professor Nivel II',
     exerciseStart: '10/02/2022',
     status: 'EM_AVALIACAO',
@@ -141,7 +141,7 @@ const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
   {
     id: 'SUP-002',
     serverName: 'Maria Santos',
-    registration: '544***-PA',
+    registration: '857358-2',
     role: 'Professor Nivel II',
     exerciseStart: '15/05/2021',
     status: 'EM_AVALIACAO',
@@ -156,7 +156,7 @@ const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
   {
     id: 'SUP-003',
     serverName: 'Carlos Lima',
-    registration: '103***-PA',
+    registration: '631842-1',
     role: 'Analista',
     exerciseStart: '01/03/2020',
     status: 'CONCLUIDO',
@@ -172,7 +172,7 @@ const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
   {
     id: 'SUP-004',
     serverName: 'Ana Pereira',
-    registration: '104***-PA',
+    registration: '274916-2',
     role: 'Professor',
     exerciseStart: '12/08/2021',
     status: 'EM_ANALISE_CESAD',
@@ -1159,6 +1159,7 @@ export function SupervisorEvaluationWorkspace() {
 
               <div className="supervisor-dashboard__table-header">
                 <div>Servidor</div>
+                <div>Matricula</div>
                 <div>Cargo</div>
                 <div>Exercicio</div>
                 <div>Status</div>
@@ -1173,9 +1174,11 @@ export function SupervisorEvaluationWorkspace() {
                   <article key={row.id} className="supervisor-dashboard__row">
                     <div className="supervisor-dashboard__server">
                       <strong>{row.serverName}</strong>
-                      <span>Matricula: {row.registration}</span>
                     </div>
 
+                    <div className="supervisor-dashboard__cell supervisor-dashboard__registration">
+                      {row.registration}
+                    </div>
                     <div className="supervisor-dashboard__cell">{row.role}</div>
                     <div className="supervisor-dashboard__cell">{row.exerciseStart}</div>
                     <div className="supervisor-dashboard__cell">

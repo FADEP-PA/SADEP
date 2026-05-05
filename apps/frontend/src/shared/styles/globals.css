@@ -4940,8 +4940,9 @@ h3,
 .supervisor-dashboard__row {
   display: grid;
   grid-template-columns:
-    minmax(128px, 1.2fr)
-    minmax(104px, 0.9fr)
+    minmax(116px, 1.05fr)
+    minmax(104px, 0.82fr)
+    minmax(104px, 0.86fr)
     minmax(86px, 0.72fr)
     minmax(118px, 0.9fr)
     minmax(112px, 0.92fr)
@@ -5006,6 +5007,11 @@ h3,
   color: #36567f;
   font-size: 0.92rem;
   font-weight: 700;
+}
+
+.supervisor-dashboard__registration {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
 }
 
 .supervisor-dashboard__cell--center {
