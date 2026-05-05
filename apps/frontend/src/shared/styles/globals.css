@@ -5142,21 +5142,24 @@ h3,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.4rem;
+  height: 1.4rem;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: 0;
   background: transparent;
   color: var(--accent-strong);
   cursor: pointer;
+  box-shadow: none;
   transition:
-    background 160ms ease,
     color 160ms ease;
 }
 
 .supervisor-dashboard__filters-trigger:hover {
-  background: rgba(0, 124, 192, 0.08);
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  transform: none;
 }
 
 .supervisor-dashboard__filters-trigger svg {
