@@ -200,7 +200,8 @@ textarea:focus-visible {
 
 .app-shell__brand-copy {
   display: grid;
-  gap: 0.22rem;
+  align-content: center;
+  gap: 0.14rem;
 }
 
 .app-shell__brand-copy strong {
@@ -3166,12 +3167,14 @@ h3,
 
 .app-shell__sidebar-brand {
   min-width: 0;
+  align-items: center;
   color: #ffffff;
+  gap: 0.65rem;
 }
 
 .app-shell__sidebar .app-shell__brand-mark {
-  width: 3.15rem;
-  height: 3.15rem;
+  width: 2.7rem;
+  height: 2.7rem;
   overflow: visible;
   border: 0;
   border-radius: 0;
@@ -3204,11 +3207,14 @@ h3,
 }
 
 .app-shell__sidebar .app-shell__brand-copy strong {
-  font-size: 1.9rem;
+  font-size: 1.32rem;
+  line-height: 1;
 }
 
 .app-shell__sidebar .app-shell__brand-copy small {
   color: rgba(233, 244, 255, 0.82);
+  font-size: 0.72rem;
+  line-height: 1.15;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -5978,12 +5984,12 @@ h3,
 }
 
 .app-shell__sidebar .app-shell__brand-copy strong {
-  font-size: 1.62rem;
+  font-size: 1.32rem;
   font-weight: 600;
 }
 
 .app-shell__sidebar .app-shell__brand-copy small {
-  font-size: 0.82rem;
+  font-size: 0.72rem;
   letter-spacing: 0.06em;
 }
 
