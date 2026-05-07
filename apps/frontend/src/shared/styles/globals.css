@@ -2775,15 +2775,15 @@ h3,
 .app-shell__sidebar-badge {
   display: grid;
   gap: 0.25rem;
-  padding: 0.85rem 0.95rem;
-  border: 1px solid rgba(19, 51, 93, 0.08);
+  padding: 0.82rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 1rem;
-  background:
-    linear-gradient(135deg, rgba(232, 244, 251, 0.92), rgba(255, 255, 255, 0.96));
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
 }
 
 .app-shell__sidebar-badge span {
-  color: var(--text-secondary);
+  color: rgba(223, 239, 255, 0.76);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -2791,7 +2791,7 @@ h3,
 }
 
 .app-shell__sidebar-badge strong {
-  color: var(--ink);
+  color: #ffffff;
   font-size: 1.18rem;
   line-height: 1;
 }
@@ -3541,6 +3541,15 @@ h3,
 .app-shell--sidebar-collapsed .app-shell__sidebar-signout-icon svg {
   width: 1.22rem;
   height: 1.22rem;
+}
+
+.app-shell--sidebar-collapsed .app-shell__sidebar-bottom {
+  display: grid;
+  justify-items: center;
+}
+
+.app-shell--sidebar-collapsed .app-shell__sidebar-badge {
+  display: none;
 }
 
 /* Operations workspaces */

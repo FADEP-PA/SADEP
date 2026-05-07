@@ -20,6 +20,15 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - `FT-23` consolidou gates minimos de qualidade do frontend, incluindo `frontend:check`.
 - A leitura de transicao permanece no indice de compatibilidade do roadmap legado.
 
+## FT-20 — Consistencia visual do shell autenticado
+
+- **Status documental:** concluida no recorte frontend.
+- O shell autenticado passou a exibir contexto automatico da rota ativa no header.
+- A sidebar passou a exibir o perfil ativo com rotulo institucional curto.
+- O menu recolhido preserva acesso visual ao logout por icone.
+- Dados demonstrativos, placeholders e fakes das telas foram preservados.
+- Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.

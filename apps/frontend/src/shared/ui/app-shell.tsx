@@ -125,6 +125,10 @@ function getAvatarLabel(displayName: string, email: string | undefined) {
   return (email[0] ?? 'U').toUpperCase();
 }
 
+function isActiveNavigationPath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function AppShell({ children, title, subtitle, headerActions, sidebarFooter }: AppShellProps) {
   const pathname = usePathname();
   const { session, signOut } = useAuth();
@@ -133,6 +137,11 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
   const rolePresentation = session ? getRolePresentation(session.user.role) : null;
   const displayName = getDisplayName(session?.user.name);
   const avatarLabel = getAvatarLabel(displayName, session?.user.email);
+  const currentNavigationItem = navigationGroups
+    .flatMap((group) => group.items)
+    .find((item) => isActiveNavigationPath(pathname, item.href));
+  const headerTitle = title ?? currentNavigationItem?.label;
+  const headerSubtitle = subtitle ?? currentNavigationItem?.description ?? rolePresentation?.description;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -194,7 +203,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
 
               <div className="app-shell__sidebar-links">
                 {group.items.map((item) => {
-                  const isActive = pathname === item.href;
+                  const isActive = isActiveNavigationPath(pathname, item.href);
 
                   return (
                     <Link
@@ -222,6 +231,12 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
 
         <div className="app-shell__sidebar-bottom">
           {sidebarFooter}
+          {rolePresentation ? (
+            <div className="app-shell__sidebar-badge" aria-label={`Perfil atual: ${rolePresentation.label}`}>
+              <span>Perfil ativo</span>
+              <strong>{rolePresentation.shortLabel}</strong>
+            </div>
+          ) : null}
           <button type="button" className="app-shell__sidebar-signout" onClick={signOut}>
             <span className="app-shell__sidebar-signout-icon" aria-hidden="true">
               <SidebarIcon name="logout" />
@@ -241,10 +256,10 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
               </div>
             </div>
 
-            {title || subtitle ? (
+            {headerTitle || headerSubtitle ? (
               <div className="app-shell__header-context">
-                {title ? <strong>{title}</strong> : null}
-                {subtitle ? <span>{subtitle}</span> : null}
+                {headerTitle ? <strong>{headerTitle}</strong> : null}
+                {headerSubtitle ? <span>{headerSubtitle}</span> : null}
               </div>
             ) : null}
           </div>
