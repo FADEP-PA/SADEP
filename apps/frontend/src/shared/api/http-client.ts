@@ -99,6 +99,16 @@ function canRetryWithRefresh(path: string, token: string | undefined, retryOnUna
   return retryOnUnauthorized && Boolean(token) && !path.startsWith('/auth/');
 }
 
+async function getRetryAccessToken(failedToken: string) {
+  const currentAccessToken = getAccessToken();
+
+  if (currentAccessToken && currentAccessToken !== failedToken) {
+    return currentAccessToken;
+  }
+
+  return refreshAccessToken();
+}
+
 async function refreshAccessToken() {
   if (!refreshSessionPromise) {
     refreshSessionPromise = fetch(buildUrl('/auth/refresh'), {
@@ -203,7 +213,7 @@ export async function httpRequest<T>(path: string, options: RequestOptions = {})
       throw error;
     }
 
-    if (!canRetryWithRefresh(path, effectiveToken, retryOnUnauthorized)) {
+    if (!effectiveToken || !canRetryWithRefresh(path, effectiveToken, retryOnUnauthorized)) {
       if (effectiveToken && typeof window !== 'undefined') {
         invalidateSessionOnce(redirectOnUnauthorized ?? true);
       }
@@ -212,7 +222,7 @@ export async function httpRequest<T>(path: string, options: RequestOptions = {})
     }
 
     try {
-      const refreshedToken = await refreshAccessToken();
+      const refreshedToken = await getRetryAccessToken(effectiveToken);
       return await fetchJson<T>(path, {
         ...rest,
         body,

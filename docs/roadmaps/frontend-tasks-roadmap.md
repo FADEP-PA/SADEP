@@ -66,7 +66,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - **Commit funcional aprovado:** `feat(frontend): keep access token in memory`.
 - **Fix funcional aprovado:** `BE-ARCH-01E4A-FIX — fix(frontend): normalize public auth routes`.
 - Atualizacao de 2026-05-04: o `401 público` no bootstrap nao exibe mais aviso indevido de sessao expirada no login porque rotas públicas equivalentes sao normalizadas no helper de auth.
-- `BE-ARCH-01E4B` permanece pendente para retry automatico de `401`, single-flight contra refresh storm e protecao contra loop de refresh.
+- `BE-ARCH-01E4B` foi concluida no recorte frontend com retry automatico de `401`, single-flight contra refresh storm e protecao contra loop de refresh.
 - `BE-ARCH-01E4C` permanece pendente para remover consumidores remanescentes de `session.accessToken` e validar manualmente o fluxo.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
@@ -102,7 +102,7 @@ Relações principais:
 - `DX-POSTCSS-01` permanece alerta pendente e não deve ser confundido com `DX-01`.
 - Ausência de testes frontend permanece risco ou candidata futura de quality gate.
 - `/chefia-imediata` permanece frente frontend/integração ativa em `FE-CHEFIA-01`.
-- `BE-ARCH-01E3` mitigou o gap backend de refresh/rotacao/logout, e `BE-ARCH-01E4A` mitigou o risco de access token persistido em storage e o alerta de UX do `401 público` em rota publica; `BE-ARCH-01E4B/C` permanecem como proximas tarefas de sessao para o frontend.
+- `BE-ARCH-01E3` mitigou o gap backend de refresh/rotacao/logout, `BE-ARCH-01E4A` mitigou o risco de access token persistido em storage e o alerta de UX do `401 público` em rota publica, e `BE-ARCH-01E4B` concluiu o retry automatico com single-flight; `BE-ARCH-01E4C` permanece como proxima tarefa de sessao para o frontend.
 
 ## Regras de leitura
 
@@ -114,7 +114,7 @@ Relações principais:
 - Não confundir `FT-27/DX-01` resolvida com `DX-POSTCSS-01`.
 - Não confundir `FT-05` histórica com integração real da chefia.
 - Não tratar UI de homologação preparada em `FT-17` como fluxo backend completo.
-- `BE-ARCH-01D` está concluída no recorte mínimo de sessão frontend; `BE-ARCH-01E3` está concluída no recorte backend; `BE-ARCH-01E4A` está concluída no recorte frontend inicial; `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+- `BE-ARCH-01D` está concluída no recorte mínimo de sessão frontend; `BE-ARCH-01E3` está concluída no recorte backend; `BE-ARCH-01E4A` está concluída no recorte frontend inicial; `BE-ARCH-01E4B` está concluída no recorte frontend de refresh silencioso; `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
 
 ## Fora do escopo deste índice
 

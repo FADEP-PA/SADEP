@@ -47,7 +47,16 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Nao alterou backend, contracts, Prisma, migrations, workflow, CESAD, permissoes ou regras processuais.
 - Validacoes aprovadas: `npm run typecheck --workspace @sadep/frontend`, `npm run build --workspace @sadep/frontend`, `npm run frontend:check` e `git diff --check`.
 - Ressalva nao bloqueante tratada pelo commit `fix(frontend): normalize public auth routes`: rotas públicas equivalentes sao normalizadas e `401 público` no bootstrap de `/auth/refresh` permanece como anonimo silencioso em rota publica.
-- `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- `BE-ARCH-01E4B` foi concluida posteriormente; `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+
+## BE-ARCH-01E4B — Retry 401 com refresh silencioso
+
+- **Status documental:** concluida no recorte frontend.
+- O `http-client` faz retry automatico uma unica vez apos `401` em rotas autenticadas nao-`/auth`.
+- O refresh usa single-flight por meio de promise compartilhada para evitar storm de `POST /auth/refresh`.
+- Se outra requisicao ja atualizou o access token em memoria, a requisicao falhada reutiliza esse token sem disparar novo refresh.
+- Rotas `/auth/*` nao entram no retry, preservando protecao contra loop de refresh.
+- `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
 
 ## FT-17 — Area de homologacao
 
