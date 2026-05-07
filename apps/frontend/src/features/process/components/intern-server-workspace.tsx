@@ -428,8 +428,10 @@ function buildStageCards(
 }
 
 function StageCard({ item }: { item: StageCardViewModel }) {
+  const isCurrent = item.markerClassName.includes('--current');
+
   return (
-    <article className="intern-stage-card">
+    <article className={isCurrent ? 'intern-stage-card intern-stage-card--current' : 'intern-stage-card'}>
       <div className="intern-stage-card__main">
         <div className={item.markerClassName}>{item.markerLabel}</div>
 
@@ -533,6 +535,16 @@ export function InternServerWorkspace() {
   const currentStagePeriod =
     STAGE_PERIODS[Math.min(Math.max(currentStageSequence - 1, 0), TOTAL_STAGES - 1)];
   const canPersistSelfEvaluation = Boolean(snapshot && canEditSelfEvaluation);
+  const isRealProcessLoaded = Boolean(snapshot);
+  const journeyMode = isRealProcessLoaded
+    ? {
+        label: 'Processo real carregado',
+        detail: `Leitura autenticada do processo ${snapshot?.workflow.id}.`,
+      }
+    : {
+        label: 'Modo demonstrativo preservado',
+        detail: 'Dados fakes continuam disponíveis para apresentação visual da jornada do servidor.',
+      };
 
   async function loadProcessSnapshot(activeProcessId: string, success?: OperationFeedback) {
     if (!session) {
@@ -709,6 +721,11 @@ export function InternServerWorkspace() {
               <StatusBadge label={topStatusBadge.label} tone={topStatusBadge.tone} />
             </div>
 
+            <div className={isRealProcessLoaded ? 'intern-journey-mode intern-journey-mode--real' : 'intern-journey-mode'}>
+              <span>{journeyMode.label}</span>
+              <strong>{journeyMode.detail}</strong>
+            </div>
+
             <form className="inline-form inline-form--elevated" onSubmit={handleLoadProcessSnapshot}>
               <label className="field-group" htmlFor="intern-workspace-process-id">
                 <span>Identificador do processo</span>
@@ -729,13 +746,13 @@ export function InternServerWorkspace() {
 
             <div className="intern-hero__summary">
               <div className="intern-hero__summary-card">
-                <span>Etapa atual</span>
-                <strong>{snapshot ? `${snapshot.workspace.currentStage.sequence}ª etapa` : '3ª etapa'}</strong>
+                <span>Processo</span>
+                <strong>{snapshot?.workflow.id ?? 'Demonstração visual'}</strong>
               </div>
 
               <div className="intern-hero__summary-card">
-                <span>Acompanhamento</span>
-                <strong>{snapshot ? 'Processo real conectado' : 'Modo demonstrativo'}</strong>
+                <span>Etapa atual</span>
+                <strong>{snapshot ? `${snapshot.workspace.currentStage.sequence}ª etapa` : '3ª etapa'}</strong>
               </div>
 
               <div className="intern-hero__summary-card">

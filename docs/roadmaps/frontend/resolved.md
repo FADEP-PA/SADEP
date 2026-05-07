@@ -54,6 +54,15 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - O modo demonstrativo, placeholders e fakes foram preservados para apresentacao visual.
 - Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
 
+## FE-SERVIDOR-01 — Refinar jornada demonstrativa do servidor estagiario
+
+- **Status documental:** concluida no recorte frontend.
+- A tela `/servidor-estagiario` passou a diferenciar visualmente modo demonstrativo e processo real carregado.
+- O resumo superior mostra o processo em foco, preservando a demonstracao visual quando nenhum processo real foi informado.
+- A etapa atual ganhou destaque visual nos cards da jornada.
+- Dados demonstrativos, placeholders e fakes foram preservados.
+- Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.

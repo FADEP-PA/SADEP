@@ -4599,6 +4599,38 @@ h3,
   vertical-align: middle;
 }
 
+.intern-journey-mode {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(0, 124, 192, 0.14);
+  border-radius: 1.1rem;
+  background: linear-gradient(135deg, rgba(232, 244, 251, 0.9), rgba(255, 255, 255, 0.92));
+}
+
+.intern-journey-mode--real {
+  border-color: rgba(60, 123, 87, 0.18);
+  background: linear-gradient(135deg, rgba(60, 123, 87, 0.1), rgba(255, 255, 255, 0.94));
+}
+
+.intern-journey-mode span {
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.intern-journey-mode--real span {
+  color: var(--seduc-green);
+}
+
+.intern-journey-mode strong {
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
 .intern-hero__summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4638,6 +4670,14 @@ h3,
   border-radius: 1.5rem;
   background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   box-shadow: 0 16px 34px rgba(16, 47, 77, 0.05);
+}
+
+.intern-stage-card--current {
+  border-color: rgba(0, 124, 192, 0.18);
+  background:
+    radial-gradient(circle at top left, rgba(0, 124, 192, 0.08), transparent 22%),
+    linear-gradient(180deg, #ffffff 0%, #f4faff 100%);
+  box-shadow: 0 20px 42px rgba(0, 124, 192, 0.08);
 }
 
 .intern-stage-card__main {
