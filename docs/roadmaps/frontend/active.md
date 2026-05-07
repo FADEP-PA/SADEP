@@ -54,7 +54,6 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 ### Backlog frontend documentado
 
 - `FT-16` — preparar layout base do futuro parecer CESAD de etapa.
-- `FT-21` — validar visualmente os fluxos principais com backend local.
 - `FT-26` — limpar scaffolds e placeholders legados do frontend.
 
 ### FE-QUAL-01 — Testes/frontend quality gate

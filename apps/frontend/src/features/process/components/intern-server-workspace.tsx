@@ -7,7 +7,7 @@ import {
   type InternServerWorkspaceSnapshotRef,
   type ProcessAction,
 } from '@sadep/contracts';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import type { WorkflowHistoryItem } from '@/features/dashboard/types/process-dashboard-types';
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
@@ -486,6 +486,10 @@ export function InternServerWorkspace() {
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [actionErrorDetails, setActionErrorDetails] = useState<string[]>([]);
   const [successFeedback, setSuccessFeedback] = useState<OperationFeedback | null>(null);
+  const [processIdInput, setProcessIdInput] = useState('');
+  const [isLoadingSnapshot, setIsLoadingSnapshot] = useState(false);
+  const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
+  const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
   const [activeOperation, setActiveOperation] = useState<ActionOperation>(null);
   const [isSelfEvaluationExpanded, setIsSelfEvaluationExpanded] = useState(false);
 
@@ -566,6 +570,44 @@ export function InternServerWorkspace() {
       ),
     );
     setSuccessFeedback(success ?? null);
+  }
+
+  async function handleLoadProcessSnapshot(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const normalizedProcessId = processIdInput.trim();
+
+    if (!normalizedProcessId) {
+      setLoadErrorMessage('Informe o identificador do processo para consultar a jornada real do servidor.');
+      setLoadErrorDetails([]);
+      return;
+    }
+
+    setIsLoadingSnapshot(true);
+    setLoadErrorMessage(null);
+    setLoadErrorDetails([]);
+    setSuccessFeedback(null);
+
+    try {
+      await loadProcessSnapshot(normalizedProcessId, {
+        title: 'Processo carregado',
+        description: 'A jornada do servidor foi atualizada com os dados reais liberados pelo backend.',
+      });
+    } catch (error) {
+      const payload =
+        typeof error === 'object' && error && 'payload' in error
+          ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
+          : undefined;
+
+      setSnapshot(null);
+      setIsSelfEvaluationExpanded(false);
+      setLoadErrorMessage(
+        getRequestErrorMessage(error, 'Não foi possível carregar a jornada real do servidor.'),
+      );
+      setLoadErrorDetails(getHttpErrorDetails(payload));
+    } finally {
+      setIsLoadingSnapshot(false);
+    }
   }
 
   async function handleSignSupervisorEvaluation() {
@@ -667,6 +709,24 @@ export function InternServerWorkspace() {
               <StatusBadge label={topStatusBadge.label} tone={topStatusBadge.tone} />
             </div>
 
+            <form className="inline-form inline-form--elevated" onSubmit={handleLoadProcessSnapshot}>
+              <label className="field-group" htmlFor="intern-workspace-process-id">
+                <span>Identificador do processo</span>
+                <input
+                  id="intern-workspace-process-id"
+                  name="processId"
+                  placeholder="Informe o ID do processo"
+                  value={processIdInput}
+                  onChange={(event) => setProcessIdInput(event.target.value)}
+                  disabled={isLoadingSnapshot}
+                />
+              </label>
+
+              <button type="submit" disabled={isLoadingSnapshot}>
+                {isLoadingSnapshot ? 'Consultando processo...' : 'Consultar processo'}
+              </button>
+            </form>
+
             <div className="intern-hero__summary">
               <div className="intern-hero__summary-card">
                 <span>Etapa atual</span>
@@ -690,6 +750,30 @@ export function InternServerWorkspace() {
               </div>
             </div>
           </section>
+        ) : null}
+
+        {!snapshot && !isSelfEvaluationExpanded ? (
+          <FeedbackAlert
+            title="Processo real não selecionado"
+            tone="info"
+            description="A tela permanece em modo demonstrativo até um processo real ser informado para validação local."
+          />
+        ) : null}
+
+        {isLoadingSnapshot ? (
+          <InlineLoadingState
+            title="Carregando jornada real do servidor"
+            description="Consultando o backend para substituir dados locais quando o processo estiver disponível para o servidor autenticado."
+          />
+        ) : null}
+
+        {loadErrorMessage ? (
+          <FeedbackAlert
+            title="Falha ao carregar processo do servidor"
+            tone="error"
+            description={loadErrorMessage}
+            details={loadErrorDetails}
+          />
         ) : null}
 
         {activeOperationCopy ? (

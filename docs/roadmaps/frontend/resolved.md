@@ -46,6 +46,14 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Dados demonstrativos, placeholders e fakes foram preservados.
 - Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
 
+## FT-21 — Validacao dos fluxos principais no recorte servidor/chefia
+
+- **Status documental:** concluida no recorte frontend focado em `/servidor-estagiario` e `/chefia-imediata`.
+- A jornada da chefia foi revalidada quanto a consulta manual de processo, modo demonstrativo, linha real quando carregada e acoes condicionadas pelas capacidades do backend.
+- A jornada do servidor foi revalidada e recebeu consulta manual de processo para alinhar a tela ao recorte `FT-24` sem remover o modo demonstrativo.
+- O modo demonstrativo, placeholders e fakes foram preservados para apresentacao visual.
+- Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.
