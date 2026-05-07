@@ -10,7 +10,6 @@ type Primitive = string | number | boolean | null;
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
   params?: Record<string, Primitive | undefined>;
-  token?: string;
   useStoredAccessToken?: boolean;
   redirectOnUnauthorized?: boolean;
   retryOnUnauthorized?: boolean;
@@ -85,14 +84,8 @@ async function parseJsonSafely<T>(response: Response): Promise<T | undefined> {
   return (await response.json()) as T;
 }
 
-function getEffectiveAccessToken(token?: string, useStoredAccessToken?: boolean) {
-  const storedAccessToken = getAccessToken();
-
-  if (storedAccessToken && (token || useStoredAccessToken)) {
-    return storedAccessToken;
-  }
-
-  return token;
+function getEffectiveAccessToken(useStoredAccessToken?: boolean) {
+  return useStoredAccessToken ? getAccessToken() : null;
 }
 
 function canRetryWithRefresh(path: string, token: string | undefined, retryOnUnauthorized: boolean) {
@@ -146,7 +139,7 @@ async function refreshAccessToken() {
 
 async function fetchJson<T>(
   path: string,
-  options: Omit<RequestOptions, 'token' | 'useStoredAccessToken' | 'redirectOnUnauthorized' | 'retryOnUnauthorized'> & {
+  options: Omit<RequestOptions, 'useStoredAccessToken' | 'redirectOnUnauthorized' | 'retryOnUnauthorized'> & {
     body?: unknown;
     token?: string;
     redirectOnUnauthorized?: boolean;
@@ -169,7 +162,7 @@ async function fetchJson<T>(
 
 async function parseResponse<T>(
   response: Response,
-  options?: Pick<RequestOptions, 'token' | 'redirectOnUnauthorized'>,
+  options?: { token?: string; redirectOnUnauthorized?: boolean },
 ): Promise<T> {
   const payload = await parseJsonSafely<T | ApiErrorResponse>(response);
   const token = options?.token;
@@ -191,13 +184,12 @@ export async function httpRequest<T>(path: string, options: RequestOptions = {})
     body,
     headers,
     params,
-    token,
     useStoredAccessToken,
     redirectOnUnauthorized,
     retryOnUnauthorized = true,
     ...rest
   } = options;
-  const effectiveToken = getEffectiveAccessToken(token, useStoredAccessToken);
+  const effectiveToken = getEffectiveAccessToken(useStoredAccessToken) ?? undefined;
 
   try {
     return await fetchJson<T>(path, {

@@ -37,8 +37,8 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 - `BE-ARCH-01E2`: concluída/mitigada no recorte de modelagem persistente `UserSession`; commit funcional aprovado `feat(auth): model user sessions`.
 - `BE-ARCH-01E3`: concluida/mitigada no recorte backend de refresh, rotacao e logout server-side; commit funcional aprovado `feat(auth): add refresh token sessions`.
 - `BE-ARCH-01E4A`: concluida/mitigada no recorte frontend inicial; access token em memoria, bootstrap via refresh, `credentials: include`, logout best-effort e correção do `401 público` em rotas públicas equivalentes; commits funcionais aprovados `feat(frontend): keep access token in memory` e `fix(frontend): normalize public auth routes`.
-- `BE-ARCH-01E4B`: pendente; retry automatico de `401` e single-flight.
-- `BE-ARCH-01E4C`: pendente; remover consumidores remanescentes de `session.accessToken` e validar manualmente o fluxo.
+- `BE-ARCH-01E4B`: mitigada/concluida no frontend; retry automatico de `401` e single-flight.
+- `BE-ARCH-01E4C`: mitigada/concluida no frontend; removeu consumidores/caminhos legados de `session.accessToken` e validou por gates frontend.
 - `BE-ARCH-01E5`: pendente; hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F`: pendente; auditoria e testes de eventos de autenticação.
 
@@ -57,7 +57,7 @@ O resumo operacional dos problemas resolvidos fica em [`cross-cutting/resolved-p
 - `BE-ARCH-01D`: revalidação excessiva de sessão frontend, `401` não idempotente e falhas não-401 apagando sessão foram mitigadas no recorte mínimo.
 - `BE-ARCH-01E2`: gap de modelagem persistente para refresh/revogacao mitigado com `UserSession` e migration `20260430120000_add_user_session`.
 - `BE-ARCH-01E3`: gap backend de refresh, rotacao, cookie `HttpOnly` e logout server-side mitigado.
-- `BE-ARCH-01E4A`: risco de access token persistido em `localStorage`/`sessionStorage` mitigado; a UX do `401 público` no bootstrap tambem foi mitigada por normalizacao de rotas públicas; retry automatico/single-flight e remocao de consumidores remanescentes ficam pendentes em `BE-ARCH-01E4B/C`.
+- `BE-ARCH-01E4A`: risco de access token persistido em `localStorage`/`sessionStorage` mitigado; a UX do `401 público` no bootstrap tambem foi mitigada por normalizacao de rotas públicas; retry automatico/single-flight e remocao de consumidores remanescentes foram concluidos em `BE-ARCH-01E4B/C`.
 
 ## Candidatos a arquivamento futuro
 
@@ -72,7 +72,7 @@ O arquivamento real ocorrerá em fase posterior. Este índice não move document
 - Itens parcialmente resolvidos devem manter ressalva explícita.
 - `/chefia-imediata` não deve ser lida como integração backend real concluída.
 - `DX-POSTCSS-01` não deve ser confundido com `DX-01`, que foi resolvido operacionalmente quanto ao ambiente local.
-- `BE-ARCH-01D`, `BE-ARCH-01E2`, `BE-ARCH-01E3` e `BE-ARCH-01E4A` estão concluídas/mitigadas, sem encerrar `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5`, `BE-ARCH-01F` ou a frente maior `BE-ARCH-01`.
+- `BE-ARCH-01D`, `BE-ARCH-01E2`, `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` estão concluídas/mitigadas, sem encerrar `BE-ARCH-01E5`, `BE-ARCH-01F` ou a frente maior `BE-ARCH-01`.
 - `BE-SEC-03` permanece crítica e pendente.
 
 ## Fora do escopo deste índice

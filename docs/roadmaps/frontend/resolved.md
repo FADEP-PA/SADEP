@@ -42,12 +42,12 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Login, refresh e logout usam `credentials: include`.
 - Logout manual chama `POST /auth/logout` em modo best-effort e preserva limpeza local.
 - `rememberMe` virou preferencia local nao sensivel.
-- `session.accessToken` permanece temporariamente no contexto em memoria para compatibilidade com telas existentes.
+- `session.accessToken` foi removido do contexto; consumidores remanescentes foram tratados no recorte `BE-ARCH-01E4C`.
 - O `http-client` ficou preparado para uso do token do store em memoria.
 - Nao alterou backend, contracts, Prisma, migrations, workflow, CESAD, permissoes ou regras processuais.
 - Validacoes aprovadas: `npm run typecheck --workspace @sadep/frontend`, `npm run build --workspace @sadep/frontend`, `npm run frontend:check` e `git diff --check`.
 - Ressalva nao bloqueante tratada pelo commit `fix(frontend): normalize public auth routes`: rotas públicas equivalentes sao normalizadas e `401 público` no bootstrap de `/auth/refresh` permanece como anonimo silencioso em rota publica.
-- `BE-ARCH-01E4B` foi concluida posteriormente; `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram concluidas posteriormente; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ## BE-ARCH-01E4B — Retry 401 com refresh silencioso
 
@@ -56,7 +56,16 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - O refresh usa single-flight por meio de promise compartilhada para evitar storm de `POST /auth/refresh`.
 - Se outra requisicao ja atualizou o access token em memoria, a requisicao falhada reutiliza esse token sem disparar novo refresh.
 - Rotas `/auth/*` nao entram no retry, preservando protecao contra loop de refresh.
-- `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+- `BE-ARCH-01E4C` foi concluida posteriormente; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+
+## BE-ARCH-01E4C — Remocao de consumidores de access token da sessao
+
+- **Status documental:** concluida no recorte frontend.
+- A varredura de codigo nao encontrou `session.accessToken` em uso no frontend.
+- O caminho legado `getAuthenticatedUser(accessToken)` foi removido do servico de auth.
+- O `http-client` deixou de aceitar token explicito em `RequestOptions`; chamadas autenticadas usam o access token em memoria via `useStoredAccessToken`.
+- A validacao automatizada do fluxo frontend fica registrada pelos gates `frontend:typecheck`, `frontend:check` e `git diff --check`.
+- `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
 
 ## FT-17 — Area de homologacao
 

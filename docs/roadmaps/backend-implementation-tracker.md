@@ -31,7 +31,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - **Commit funcional aprovado:** `feat(auth): add refresh token sessions`.
 - **Escopo entregue:** login cria `UserSession`; refresh token opaco em cookie `HttpOnly`; persistencia apenas de `refreshTokenHash` HMAC-SHA-256; `POST /auth/refresh`; rotacao transacional; sessao anterior `ROTATED` com `replacedBySessionId`; reuso revoga sessoes ativas da familia; `POST /auth/logout` idempotente.
 - **Preservado:** bearer JWT atual, frontend, contracts, Prisma schema/migrations, workflow, CESAD, permissoes e regras processuais.
-- **Etapa frontend seguinte:** `BE-ARCH-01E4A` foi entregue depois com access token em memoria e bootstrap via refresh; `BE-ARCH-01E4B/C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+- **Etapa frontend seguinte:** `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues depois com access token em memoria, bootstrap via refresh, retry silencioso e remocao de caminhos legados de token; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
 
 ### BE-ARCH-01E2 — Modelar sessao e refresh token
 
@@ -51,7 +51,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - **Fora do escopo:** backend, contracts, refresh token, cookies, revogação, logout server-side, CESAD, workflow e regras processuais.
 - **Ressalva:** validacao manual em navegador ainda recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
-Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao frontend. A frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida, pois `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao frontend. A frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida, pois `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
 
 ## Frentes backend pendentes
 
@@ -59,8 +59,8 @@ Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao fr
 - [`BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo`](./backend/tasks/BE-ARCH-02-shared-packages.md): pendente; `BE-ARCH-01C` resolveu contratos mínimos de auth/session, mas não encerrou a dívida estrutural dos packages.
 - [`BE-TECH-02 — Revisar worker e cron`](./backend/tasks/BE-TECH-02-worker-cron.md): pendente / arquitetura futura; decidir se haverá escopo mínimo real ou se a promessa deve sair da arquitetura imediata.
 - `BE-ARCH-01E4A`: concluida/aprovada/mitigada; access token em memoria, bootstrap via refresh, `credentials: include` e logout best-effort no frontend; commit `feat(frontend): keep access token in memory`.
-- `BE-ARCH-01E4B`: pendente; retry automatico de `401` e single-flight.
-- `BE-ARCH-01E4C`: pendente; remover consumidores remanescentes de `session.accessToken` e validar manualmente o fluxo.
+- `BE-ARCH-01E4B`: concluida no recorte frontend; retry automatico de `401` e single-flight.
+- `BE-ARCH-01E4C`: concluida no recorte frontend; removeu consumidores/caminhos legados de `session.accessToken` e validou por gates frontend.
 - `BE-ARCH-01E5`: pendente; hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F`: pendente; auditar e testar eventos de autenticação.
 - `BE-FLOW-*`: backlog processual; consultar [`backend/active.md`](./backend/active.md) para o resumo atual sem detalhamento nesta fase.
@@ -104,7 +104,7 @@ Relações principais:
 - Consultar [`backend/tasks/`](./backend/tasks/) para frentes ativas específicas.
 - Não tratar `BE-SEC-03`, `BE-ARCH-02` ou `BE-TECH-02` como concluídas.
 - Não confundir `BE-ARCH-01C` concluída com encerramento da `BE-ARCH-02`.
-- Não confundir `BE-ARCH-01E3` e `BE-ARCH-01E4A` concluidas com encerramento da frente maior `BE-ARCH-01`; `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+- Não confundir `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` concluidas com encerramento da frente maior `BE-ARCH-01`; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
 - O histórico detalhado anterior foi substituído por links de transição e resumos modulares.
 
 ## Fora do escopo deste índice

@@ -18,11 +18,11 @@ Este painel resume problemas ativos ou alertas transversais. O antigo painel tra
 - `BE-ARCH-01E3` — mitigada/concluida no backend; refresh, rotacao e logout server-side foram implementados, auditados e aprovados.
 - `BE-ARCH-01E4A` — mitigada/concluida no frontend; access token em memoria, bootstrap via `POST /auth/refresh`, `credentials: include` em login/refresh/logout e logout server-side best-effort foram implementados, auditados e aprovados; a ressalva de UX do `401 público` foi corrigida pelo `BE-ARCH-01E4A-FIX`.
 - `BE-ARCH-01E4B` — mitigada/concluida no frontend; retry automatico de `401`, single-flight contra refresh storm e protecao contra loop de refresh.
-- `BE-ARCH-01E4C` — pendente; remover consumidores remanescentes de `session.accessToken` e executar validacao manual completa.
+- `BE-ARCH-01E4C` — mitigada/concluida no frontend; caminho legado de token explicito removido e chamadas autenticadas preservadas via token em memoria.
 - `BE-ARCH-01E5` — pendente; hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F` — futura auditoria e testes de eventos de autenticacao.
 
-Observacao: a estrategia de producao com refresh/revogacao continua fora do escopo da `BE-ARCH-01D`; a ADR da `BE-ARCH-01E1` registra a decisao, a `BE-ARCH-01E2` entregou a modelagem persistente, a `BE-ARCH-01E3` mitigou o gap backend de refresh, rotacao, cookie `HttpOnly` e logout server-side, a `BE-ARCH-01E4A` mitigou o risco de access token persistido em storage web, e a `BE-ARCH-01E4B` mitigou o retry silencioso no frontend. Permanecem pendentes `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F`.
+Observacao: a estrategia de producao com refresh/revogacao continua fora do escopo da `BE-ARCH-01D`; a ADR da `BE-ARCH-01E1` registra a decisao, a `BE-ARCH-01E2` entregou a modelagem persistente, a `BE-ARCH-01E3` mitigou o gap backend de refresh, rotacao, cookie `HttpOnly` e logout server-side, a `BE-ARCH-01E4A` mitigou o risco de access token persistido em storage web, a `BE-ARCH-01E4B` mitigou o retry silencioso no frontend, e a `BE-ARCH-01E4C` removeu consumidores legados de token de sessao no frontend. Permanecem pendentes `BE-ARCH-01E5` e `BE-ARCH-01F`.
 
 ## DX / infra
 
