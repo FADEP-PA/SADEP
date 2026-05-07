@@ -53,7 +53,6 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 
 - `FT-16` — preparar layout base do futuro parecer CESAD de etapa.
 - `FT-18` — revisar consistencia textual e institucional das areas por perfil.
-- `FT-19` — revisar responsividade das telas principais.
 - `FT-21` — validar visualmente os fluxos principais com backend local.
 - `FT-26` — limpar scaffolds e placeholders legados do frontend.
 

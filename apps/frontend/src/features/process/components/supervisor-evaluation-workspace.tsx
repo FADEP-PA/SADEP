@@ -1300,23 +1300,23 @@ export function SupervisorEvaluationWorkspace() {
               <div className="supervisor-dashboard__rows">
                 {filteredRows.map((row) => (
                   <article key={row.id} className="supervisor-dashboard__row">
-                    <div className="supervisor-dashboard__server">
+                    <div className="supervisor-dashboard__server" data-label="Servidor">
                       <strong>{row.serverName}</strong>
                     </div>
 
-                    <div className="supervisor-dashboard__cell supervisor-dashboard__registration">
+                    <div className="supervisor-dashboard__cell supervisor-dashboard__registration" data-label="Matrícula">
                       {row.registration}
                     </div>
-                    <div className="supervisor-dashboard__cell">{row.role}</div>
-                    <div className="supervisor-dashboard__cell">{row.exerciseStart}</div>
-                    <div className="supervisor-dashboard__cell">
+                    <div className="supervisor-dashboard__cell" data-label="Cargo">{row.role}</div>
+                    <div className="supervisor-dashboard__cell" data-label="Exercício">{row.exerciseStart}</div>
+                    <div className="supervisor-dashboard__cell" data-label="Status">
                       <span className={getStatusClassName(row.status)}>{getStatusLabel(row.status)}</span>
                     </div>
-                    <div className="supervisor-dashboard__cell">
+                    <div className="supervisor-dashboard__cell" data-label="Etapa atual">
                       <span className={getStageClassName(row.status)}>{row.stageLabel}</span>
                     </div>
-                    <div className="supervisor-dashboard__cell">{row.deadline}</div>
-                    <div className="supervisor-dashboard__cell supervisor-dashboard__cell--center">
+                    <div className="supervisor-dashboard__cell" data-label="Prazo limite">{row.deadline}</div>
+                    <div className="supervisor-dashboard__cell supervisor-dashboard__cell--center" data-label="Avaliações anteriores">
                       {row.canReviewPrevious ? (
                         <button
                           type="button"
@@ -1329,7 +1329,7 @@ export function SupervisorEvaluationWorkspace() {
                         <span className="supervisor-dashboard__placeholder">-</span>
                       )}
                     </div>
-                    <div className="supervisor-dashboard__cell supervisor-dashboard__cell--end">
+                    <div className="supervisor-dashboard__cell supervisor-dashboard__cell--end" data-label="Ação">
                       <button
                         type="button"
                         className={

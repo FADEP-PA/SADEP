@@ -43,7 +43,6 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 
 - `FT-16` — preparar layout base do futuro parecer CESAD de etapa.
 - `FT-18` — revisar consistência textual e institucional das áreas por perfil.
-- `FT-19` — revisar responsividade das telas principais.
 - `FT-21` — validar visualmente os fluxos principais com backend local.
 - `FT-26` — limpar scaffolds e placeholders legados do frontend.
 - `FE-QUAL-01` — candidata futura para testes/frontend quality gate; não representa task formal concluída.
@@ -79,6 +78,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FT-22` — investigação/mitigação operacional da instabilidade do frontend em modo dev.
 - `FT-23` — gates mínimos do frontend consolidados.
 - `FT-20` — consistência visual do shell autenticado revisada sem remover dados demonstrativos.
+- `FT-19` — responsividade das telas principais revisada sem remover dados demonstrativos.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
 - `FT-01` a `FT-15` — histórico frontend concluído conforme roadmap legado anterior.
 - `FT-25` — triagem de vulnerabilidades e dependências concluída, com alerta residual separado.

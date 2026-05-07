@@ -6263,6 +6263,38 @@ button,
   .operations-hero__copy h2 {
     max-width: none;
   }
+
+  .supervisor-dashboard__table-header {
+    display: none;
+  }
+
+  .supervisor-dashboard__row {
+    gap: 0.8rem;
+    padding: 1rem 1.15rem;
+  }
+
+  .supervisor-dashboard__server,
+  .supervisor-dashboard__cell {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.4fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .supervisor-dashboard__server::before,
+  .supervisor-dashboard__cell::before {
+    content: attr(data-label);
+    color: #7b91ad;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .supervisor-dashboard__cell--center,
+  .supervisor-dashboard__cell--end {
+    justify-content: stretch;
+  }
 }
 
 @media (max-width: 900px) {
@@ -6294,6 +6326,26 @@ button,
 }
 
 @media (max-width: 720px) {
+  .app-shell__header {
+    align-items: flex-start;
+  }
+
+  .app-shell__header-left,
+  .app-shell__header-right {
+    width: 100%;
+  }
+
+  .app-shell__header-branding {
+    width: 100%;
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  .app-shell__header-user {
+    max-width: calc(100% - 3.55rem);
+    text-align: left;
+  }
+
   .evaluation-detail__card,
   .evaluation-detail__factor-body {
     padding: 1rem;
@@ -6318,6 +6370,17 @@ button,
 
   .supervisor-dashboard__hero {
     padding: 1.15rem;
+  }
+
+  .supervisor-dashboard__server,
+  .supervisor-dashboard__cell {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .supervisor-dashboard__primary-action,
+  .supervisor-dashboard__ghost-action {
+    width: 100%;
   }
 
   .supervisor-dashboard__hero-metric {
@@ -6345,19 +6408,26 @@ button,
     padding: 1.6rem 1rem;
   }
 
-  .supervisor-dashboard__table-header {
-    display: none;
-  }
-
-  .supervisor-dashboard__row {
-    gap: 0.7rem;
-    padding: 1rem 1.15rem;
-  }
-
   .supervisor-dashboard__cell,
   .supervisor-dashboard__cell--center,
   .supervisor-dashboard__cell--end {
     justify-content: flex-start;
+  }
+
+  .process-list-card__item,
+  .process-list-card__heading,
+  .previous-evaluations-modal__row {
+    grid-template-columns: 1fr;
+  }
+
+  .previous-evaluations-modal__row--header {
+    display: none;
+  }
+
+  .previous-evaluations-modal__content {
+    width: min(94vw, 760px);
+    padding: 1.15rem;
+    border-radius: 1.15rem;
   }
 
   .supervisor-dashboard__filters {

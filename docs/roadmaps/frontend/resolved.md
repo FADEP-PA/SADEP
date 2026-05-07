@@ -29,6 +29,15 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Dados demonstrativos, placeholders e fakes das telas foram preservados.
 - Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
 
+## FT-19 — Responsividade das telas principais
+
+- **Status documental:** concluida no recorte frontend.
+- A tabela demonstrativa da chefia imediata passou a virar cards rotulados em tablet/mobile.
+- O header autenticado recebeu ajustes de empilhamento para telas estreitas.
+- A lista de processos e o modal de avaliacoes anteriores receberam layout de coluna unica em mobile.
+- Dados demonstrativos, placeholders e fakes foram preservados.
+- Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.
