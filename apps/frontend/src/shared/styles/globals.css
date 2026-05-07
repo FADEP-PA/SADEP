@@ -6456,6 +6456,21 @@ button,
     padding: 1.15rem;
   }
 
+  .supervisor-workspace-mode,
+  .intern-journey-mode {
+    padding: 0.9rem;
+    border-radius: 0.95rem;
+  }
+
+  .supervisor-workspace-mode strong,
+  .intern-journey-mode strong {
+    font-size: 0.9rem;
+  }
+
+  .supervisor-dashboard__row--real {
+    border-left-width: 0.25rem;
+  }
+
   .supervisor-dashboard__server,
   .supervisor-dashboard__cell {
     grid-template-columns: 1fr;
@@ -6531,8 +6546,27 @@ button,
     padding: 1rem;
   }
 
+  .intern-hero__identity {
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .intern-hero__identity .status-badge {
+    justify-self: start;
+  }
+
+  .intern-hero__summary-card {
+    padding: 0.85rem 0.9rem;
+  }
+
   .intern-self-screen__actions {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+  }
+
+  .intern-self-screen__actions button {
+    width: 100%;
   }
 
   .intern-hero__summary,
@@ -6544,9 +6578,21 @@ button,
     padding: 1rem;
   }
 
+  .intern-stage-card__marker {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.85rem;
+    font-size: 1.2rem;
+  }
+
   .intern-stage-card__body,
   .intern-stage-card__documents {
     justify-content: flex-start;
+  }
+
+  .intern-document-chip,
+  .intern-stage-card__body button {
+    width: 100%;
   }
 
   .intern-stage-card__title-row strong {

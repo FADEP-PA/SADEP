@@ -72,6 +72,14 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - A validacao real anterior passou com rascunho, envio, documento `READY_FOR_SIGNATURE` e assinaturas esperadas.
 - A ausencia de listagem segura de processos por perfil deve virar task futura propria e nao reabre este recorte.
 
+## FE-MOBILE-01 — Polimento mobile servidor e chefia
+
+- **Status documental:** concluida no recorte frontend.
+- `/servidor-estagiario` e `/chefia-imediata` receberam ajustes mobile de empilhamento, alinhamento e largura de acoes.
+- Os cards de etapa do servidor ficaram mais legiveis em telas estreitas.
+- Os blocos de modo demonstrativo/processo real foram ajustados para melhor leitura mobile.
+- Dados demonstrativos, placeholders e fakes foram preservados.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.

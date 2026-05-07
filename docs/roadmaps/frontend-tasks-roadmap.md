@@ -16,6 +16,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | Itens frontend resolvidos | [`frontend/resolved.md`](./frontend/resolved.md) |
 | `FE-CHEFIA-01` | [`frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md) |
 | `FE-SERVIDOR-01` | [`frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md`](./frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md) |
+| `FE-MOBILE-01` | [`frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md`](./frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md) |
 | `FT-24` | [`frontend/tasks/FT-24-process-selection-technical-id.md`](./frontend/tasks/FT-24-process-selection-technical-id.md) |
 | `BE-ARCH-01D` | [`backend/tasks/BE-ARCH-01D-frontend-session-alignment.md`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md) |
 | `DX-POSTCSS-01` | [`cross-cutting/tasks/DX-POSTCSS-01-audit-postcss-next.md`](./cross-cutting/tasks/DX-POSTCSS-01-audit-postcss-next.md) |
@@ -76,6 +77,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FT-21` — validação frontend focada em servidor estagiário e chefia imediata concluída sem remover dados demonstrativos.
 - `FE-SERVIDOR-01` — jornada demonstrativa do servidor estagiário refinada sem remover dados demonstrativos.
 - `FE-CHEFIA-01` — jornada da chefia imediata refinada no recorte frontend seguro, com separação visual demo/real e fallback demonstrativo preservado.
+- `FE-MOBILE-01` — polimento mobile de `/servidor-estagiario` e `/chefia-imediata` concluido sem remover dados demonstrativos.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
 - `FT-01` a `FT-15` — histórico frontend concluído conforme roadmap legado anterior.
 - `FT-25` — triagem de vulnerabilidades e dependências concluída, com alerta residual separado.
