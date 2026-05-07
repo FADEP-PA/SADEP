@@ -2,7 +2,7 @@
 
 ## Status
 
-Ativo / parcialmente integrado.
+Concluida no recorte frontend seguro.
 
 ## Area
 
@@ -42,7 +42,10 @@ Atualizacao de 2026-05-07:
 
 - a varredura global nao encontrou consumo de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` no codigo frontend;
 - a pendencia de env tecnica foi encerrada em `FT-24`;
-- `FE-CHEFIA-01` permanece ativa por integracao parcial, fallback demonstrativo/local e ausencia de listagem segura de processos por perfil.
+- a tela passou a diferenciar explicitamente modo demonstrativo e processo real carregado;
+- a linha real carregada ganhou destaque visual, preservando o fallback demonstrativo para apresentacao;
+- `FE-CHEFIA-01` fica concluida no recorte frontend seguro de consulta manual, consumo do workspace real quando informado e separacao visual demo/real;
+- a ausencia de listagem segura de processos por perfil nao reabre esta task e deve nascer como task futura propria, alinhada a contrato/backend.
 
 ## Escopo previsto
 
@@ -53,7 +56,7 @@ Atualizacao de 2026-05-07:
 
 ## Fora do escopo
 
-- marcar integracao como concluida;
+- declarar integracao backend plena com listagem real de processos por perfil;
 - alterar workflow;
 - alterar backend sem varredura;
 - implementar assinatura;
@@ -73,7 +76,9 @@ Atualizacao de 2026-05-07:
 - `npm run frontend:check` passou em 2026-04-30;
 - validacao real via backend local passou em 2026-04-30;
 - validacao visual em navegador passou em 2026-04-30.
+- modo demonstrativo e processo real passaram a ter sinalizacao visual distinta em 2026-05-07;
+- destaque visual da linha real carregada implementado em 2026-05-07.
 
 ## Proxima acao
 
-Decidir se a proxima entrega sera listagem real de processos da chefia ou reducao do fallback demonstrativo.
+Abrir task futura propria para listagem segura de processos por perfil quando houver decisao de contrato/backend. Nao reduzir o fallback demonstrativo sem decisao explicita, pois ele permanece necessario para apresentacao visual.

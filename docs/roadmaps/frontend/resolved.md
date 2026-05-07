@@ -63,6 +63,15 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Dados demonstrativos, placeholders e fakes foram preservados.
 - Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
 
+## FE-CHEFIA-01 — Integracao real da chefia imediata
+
+- **Status documental:** concluida no recorte frontend seguro.
+- `/chefia-imediata` consome o workspace real por processo informado manualmente na tela, sem depender de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
+- A tela passou a diferenciar visualmente modo demonstrativo e processo real carregado.
+- A linha real carregada ganhou destaque visual, preservando dados demonstrativos, placeholders e fakes para apresentacao.
+- A validacao real anterior passou com rascunho, envio, documento `READY_FOR_SIGNATURE` e assinaturas esperadas.
+- A ausencia de listagem segura de processos por perfil deve virar task futura propria e nao reabre este recorte.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.

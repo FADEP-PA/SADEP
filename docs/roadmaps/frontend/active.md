@@ -35,14 +35,6 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - A varredura global confirmou `refreshSessionPromise` no `http-client`, ausencia de `session.accessToken` no frontend e ausencia de persistencia de `accessToken` em `localStorage`/`sessionStorage`.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
-### [FE-CHEFIA-01 — Integracao real da chefia imediata](./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md)
-
-- **Status operacional:** parcialmente integrada.
-- `/chefia-imediata` consome o workspace real por processo informado na tela.
-- A validacao real de backend passou com rascunho, envio, documento `READY_FOR_SIGNATURE` e assinaturas esperadas.
-- A validacao visual em navegador passou na rota `/chefia-imediata` com processo local vinculado a chefia.
-- A tela ainda preserva fallback demonstrativo e nao deve ser tratada como integracao backend real concluida enquanto nao houver listagem real de processos por perfil.
-
 ### [FT-24 — Reduzir dependencia de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./tasks/FT-24-process-selection-technical-id.md)
 
 - **Status operacional:** concluida no recorte frontend.

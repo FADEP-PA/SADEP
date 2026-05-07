@@ -837,6 +837,16 @@ export function SupervisorEvaluationWorkspace() {
   const canSubmitActiveEvaluation =
     !isRealEvaluation || Boolean(workspaceSnapshot?.canSubmit || workspaceSnapshot?.canRectify);
   const submitButtonLabel = workspaceSnapshot?.canRectify ? 'Retificar avaliação' : 'Enviar para assinatura';
+  const isRealProcessLoaded = Boolean(workspaceSnapshot);
+  const workspaceMode = isRealProcessLoaded
+    ? {
+        label: 'Processo real carregado',
+        detail: `Linha real do processo ${workspaceSnapshot?.process.id} exibida junto ao fallback demonstrativo.`,
+      }
+    : {
+        label: 'Modo demonstrativo preservado',
+        detail: 'Dados fakes continuam disponíveis para apresentação visual da jornada da chefia.',
+      };
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
@@ -868,6 +878,17 @@ export function SupervisorEvaluationWorkspace() {
                 {isLoadingWorkspace ? 'Consultando processo...' : 'Consultar processo'}
               </button>
             </form>
+
+            <div
+              className={
+                isRealProcessLoaded
+                  ? 'supervisor-workspace-mode supervisor-workspace-mode--real'
+                  : 'supervisor-workspace-mode'
+              }
+            >
+              <span>{workspaceMode.label}</span>
+              <strong>{workspaceMode.detail}</strong>
+            </div>
 
             {!workspaceSnapshot ? (
               <FeedbackAlert
@@ -1299,9 +1320,17 @@ export function SupervisorEvaluationWorkspace() {
 
               <div className="supervisor-dashboard__rows">
                 {filteredRows.map((row) => (
-                  <article key={row.id} className="supervisor-dashboard__row">
+                  <article
+                    key={row.id}
+                    className={
+                      row.source === 'real'
+                        ? 'supervisor-dashboard__row supervisor-dashboard__row--real'
+                        : 'supervisor-dashboard__row'
+                    }
+                  >
                     <div className="supervisor-dashboard__server" data-label="Servidor">
                       <strong>{row.serverName}</strong>
+                      {row.source === 'real' ? <span>processo real carregado</span> : null}
                     </div>
 
                     <div className="supervisor-dashboard__cell supervisor-dashboard__registration" data-label="Matrícula">
