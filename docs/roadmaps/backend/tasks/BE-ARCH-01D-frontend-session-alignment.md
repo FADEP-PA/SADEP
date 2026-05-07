@@ -93,10 +93,10 @@ O backend ja revalida usuario vivo em requests autenticadas e os contratos minim
 
 Validacao manual em navegador ainda e recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages. Essa ressalva nao bloqueou a aprovacao tecnica.
 
-## Frentes relacionadas pendentes
+## Frentes relacionadas
 
 - `BE-ARCH-01E4A` — concluida depois no recorte de access token em memoria e bootstrap via refresh.
-- `BE-ARCH-01E4B` — retry automatico de `401` e single-flight.
+- `BE-ARCH-01E4B` — concluida no recorte frontend; retry automatico de `401` e single-flight identificados pela varredura global.
 - `BE-ARCH-01E4C` — concluida no recorte frontend; removeu consumidores/caminhos legados de `session.accessToken`.
 - `BE-ARCH-01E5` — hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F` — auditar e testar eventos de autenticacao.

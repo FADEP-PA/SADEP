@@ -28,8 +28,7 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 
 ### Frontend / integração
 
-- [`FE-CHEFIA-01 — Integração real da chefia imediata`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md): ativo e parcialmente integrado; `/chefia-imediata` consome workspace real por processo informado na tela ou `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`, com validacao visual concluida e fallback demonstrativo ainda ativo.
-- [`FT-24 — Reduzir dependência de NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./frontend/tasks/FT-24-process-selection-technical-id.md): ativo e parcialmente mitigado em `/chefia-imediata`; pendente nas demais rotas.
+- [`FE-CHEFIA-01 — Integração real da chefia imediata`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md): ativo e parcialmente integrado; `/chefia-imediata` consome workspace real por processo informado na tela, com validacao visual concluida e fallback demonstrativo ainda ativo.
 
 ### Sessão/auth
 
@@ -37,14 +36,14 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 - `BE-ARCH-01E2`: concluída/mitigada no recorte de modelagem persistente `UserSession`; commit funcional aprovado `feat(auth): model user sessions`.
 - `BE-ARCH-01E3`: concluida/mitigada no recorte backend de refresh, rotacao e logout server-side; commit funcional aprovado `feat(auth): add refresh token sessions`.
 - `BE-ARCH-01E4A`: concluida/mitigada no recorte frontend inicial; access token em memoria, bootstrap via refresh, `credentials: include`, logout best-effort e correção do `401 público` em rotas públicas equivalentes; commits funcionais aprovados `feat(frontend): keep access token in memory` e `fix(frontend): normalize public auth routes`.
-- `BE-ARCH-01E4B`: mitigada/concluida no frontend; retry automatico de `401` e single-flight.
-- `BE-ARCH-01E4C`: mitigada/concluida no frontend; removeu consumidores/caminhos legados de `session.accessToken` e validou por gates frontend.
 - `BE-ARCH-01E5`: pendente; hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F`: pendente; auditoria e testes de eventos de autenticação.
 
 ### DX/infra
 
 - [`DX-POSTCSS-01 — Audit postcss/next`](./cross-cutting/tasks/DX-POSTCSS-01-audit-postcss-next.md): alerta pendente separado do `DX-01`.
+- `DX-DB-SEED-01`: alerta operacional; `db:check` pode falhar quando o banco local existe sem seed minimo, devendo ser preparado por `npm run backend:bootstrap`.
+- `NOM-AEP-COOKIE-01`: alerta de nomenclatura tecnica residual; cookie default ainda usa `aep_pa_refresh` e deve ser tratado futuramente em task pequena propria, sem migracao ampla AEP -> SADEP.
 
 ## Problemas resolvidos ou mitigados
 
@@ -58,6 +57,11 @@ O resumo operacional dos problemas resolvidos fica em [`cross-cutting/resolved-p
 - `BE-ARCH-01E2`: gap de modelagem persistente para refresh/revogacao mitigado com `UserSession` e migration `20260430120000_add_user_session`.
 - `BE-ARCH-01E3`: gap backend de refresh, rotacao, cookie `HttpOnly` e logout server-side mitigado.
 - `BE-ARCH-01E4A`: risco de access token persistido em `localStorage`/`sessionStorage` mitigado; a UX do `401 público` no bootstrap tambem foi mitigada por normalizacao de rotas públicas; retry automatico/single-flight e remocao de consumidores remanescentes foram concluidos em `BE-ARCH-01E4B/C`.
+- `BE-ARCH-01E4B`: retry automatico de `401` com refresh silencioso e single-flight concluido no recorte frontend.
+- `BE-ARCH-01E4C`: remocao de consumidores de `session.accessToken` concluida no recorte frontend.
+- `FT-24`: dependencia frontend de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` removida no recorte identificado.
+- `DOC-AUTH-STATE-01`: inconsistencia documental de `BE-ARCH-01E4B/E4C` reconciliada.
+- `DOC-FT24-STATE-01`: inconsistencia documental de `FT-24` reconciliada.
 
 ## Candidatos a arquivamento futuro
 
@@ -71,6 +75,7 @@ O arquivamento real ocorrerá em fase posterior. Este índice não move document
 - Problemas resolvidos não devem ser tratados como pendências.
 - Itens parcialmente resolvidos devem manter ressalva explícita.
 - `/chefia-imediata` não deve ser lida como integração backend real concluída.
+- `FT-24` resolvida no recorte frontend não equivale a listagem segura de processos por perfil.
 - `DX-POSTCSS-01` não deve ser confundido com `DX-01`, que foi resolvido operacionalmente quanto ao ambiente local.
 - `BE-ARCH-01D`, `BE-ARCH-01E2`, `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` estão concluídas/mitigadas, sem encerrar `BE-ARCH-01E5`, `BE-ARCH-01F` ou a frente maior `BE-ARCH-01`.
 - `BE-SEC-03` permanece crítica e pendente.

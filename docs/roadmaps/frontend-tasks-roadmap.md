@@ -28,7 +28,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 ### [`FE-CHEFIA-01 — Integração real da chefia imediata`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md)
 
 - **Status:** ativo / parcialmente integrado.
-- `/chefia-imediata` consome o workspace real por processo informado na tela ou valor inicial de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
+- `/chefia-imediata` consome o workspace real por processo informado na tela.
 - A validação visual em navegador passou com backend local, login de chefia e processo `local-fe-chefia-01`.
 - Não tratar a tela como integração backend real concluída enquanto houver fallback demonstrativo e ausência de listagem real de processos por perfil.
 
@@ -38,6 +38,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - Reduzir dependência de ID técnico fixo; `/chefia-imediata`, `/processos` e `/servidor-estagiario` permitem consulta manual por processo.
 - O código frontend não consome mais `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
 - Listagem segura por perfil depende de contrato/backend futuro e não permanece como pendência frontend desta task.
+- Melhorias futuras de seleção/listagem segura por perfil devem nascer em task própria.
 
 ### Backlog frontend pendente
 
@@ -102,6 +103,7 @@ Relações principais:
 - `DX-POSTCSS-01` permanece alerta pendente e não deve ser confundido com `DX-01`.
 - Ausência de testes frontend permanece risco ou candidata futura de quality gate.
 - `/chefia-imediata` permanece frente frontend/integração ativa em `FE-CHEFIA-01`.
+- `FT-24` foi resolvida no recorte frontend e nao deve ser confundida com a ausencia futura de listagem segura por perfil.
 - `BE-ARCH-01E3` mitigou o gap backend de refresh/rotacao/logout, `BE-ARCH-01E4A` mitigou o risco de access token persistido em storage e o alerta de UX do `401 público` em rota publica, `BE-ARCH-01E4B` concluiu o retry automatico com single-flight, e `BE-ARCH-01E4C` removeu o caminho legado de token explicito no frontend.
 
 ## Regras de leitura
@@ -110,7 +112,7 @@ Relações principais:
 - Consultar [`frontend/resolved.md`](./frontend/resolved.md) para itens concluídos ou resolvidos.
 - Consultar [`frontend/tasks/`](./frontend/tasks/) para frentes ativas específicas.
 - Não tratar `FE-CHEFIA-01` como concluída.
-- Não tratar `FT-24` como resolvida.
+- Não reabrir `FT-24` por ausência de listagem segura por perfil; essa melhoria deve ser task futura própria.
 - Não confundir `FT-27/DX-01` resolvida com `DX-POSTCSS-01`.
 - Não confundir `FT-05` histórica com integração real da chefia.
 - Não tratar UI de homologação preparada em `FT-17` como fluxo backend completo.

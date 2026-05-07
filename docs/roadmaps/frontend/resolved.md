@@ -74,6 +74,8 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - O refresh usa single-flight por meio de promise compartilhada para evitar storm de `POST /auth/refresh`.
 - Se outra requisicao ja atualizou o access token em memoria, a requisicao falhada reutiliza esse token sem disparar novo refresh.
 - Rotas `/auth/*` nao entram no retry, preservando protecao contra loop de refresh.
+- A varredura global confirmou `refreshSessionPromise`, `POST /auth/refresh` com `credentials: include`, preservacao de `403` como falta de permissao e ausencia de persistencia de `accessToken` em storage web.
+- Permanece recomendada validacao manual ampla de UX, mas isso nao reabre a task no recorte tecnico identificado.
 - `BE-ARCH-01E4C` foi concluida posteriormente; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
 
 ## BE-ARCH-01E4C — Remocao de consumidores de access token da sessao
@@ -83,7 +85,16 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - O caminho legado `getAuthenticatedUser(accessToken)` foi removido do servico de auth.
 - O `http-client` deixou de aceitar token explicito em `RequestOptions`; chamadas autenticadas usam o access token em memoria via `useStoredAccessToken`.
 - A validacao automatizada do fluxo frontend fica registrada pelos gates `frontend:typecheck`, `frontend:check` e `git diff --check`.
+- A varredura global posterior confirmou novamente ausencia de `session.accessToken`; validacao manual ampla permanece nao bloqueante.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+
+## FT-24 — Remover dependencia de NEXT_PUBLIC_TECHNICAL_PROCESS_ID
+
+- **Status documental:** resolvida no recorte frontend.
+- A varredura global nao encontrou `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` no codigo frontend.
+- `/chefia-imediata`, `/processos` e `/servidor-estagiario` dependem de consulta manual/selecao explicita na UI, sem preenchimento por env tecnica.
+- A ausencia de listagem segura por perfil nao reabre `FT-24`; deve ser tratada em task futura propria, alinhada a contrato/backend.
+- `FE-CHEFIA-01` permanece ativa porque `/chefia-imediata` ainda preserva fallback demonstrativo/local.
 
 ## FT-17 — Area de homologacao
 

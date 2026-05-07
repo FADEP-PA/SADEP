@@ -2,7 +2,7 @@
 
 ## Status
 
-Concluido no recorte frontend.
+Resolvido / aprovado no recorte frontend identificado pela varredura global.
 
 ## Area
 
@@ -16,17 +16,17 @@ Frontend e integracao backend/frontend.
 
 ## Contexto
 
-O frontend ainda depende de identificador tecnico de processo em fluxos operacionais. Isso pode ser aceitavel para demonstracao, mas nao para fluxo real.
+O frontend dependia de identificador tecnico de processo em fluxos operacionais. Isso era aceitavel para demonstracao, mas nao para fluxo real.
 
 ## Estado atual
 
-O roadmap frontend mantem `FT-24` como frente ativa para reduzir dependencia operacional de ID tecnico manual de processo em desenvolvimento.
+`FT-24` esta resolvida no recorte frontend. A varredura global confirmou ausencia de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` no codigo frontend.
 
 Atualizacao de 2026-04-30:
 
 - `/chefia-imediata` deixou de depender exclusivamente de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`;
 - a rota agora permite informar o identificador de processo na propria tela;
-- `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` permanece apenas como preenchimento inicial opcional;
+- `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` permanecia apenas como preenchimento inicial opcional naquele recorte;
 - a solucao ainda nao substitui uma listagem segura de processos por perfil.
 
 Atualizacao de 2026-05-04:
@@ -38,11 +38,11 @@ Atualizacao de 2026-05-04:
 - nao ha endpoint real de listagem segura de processos por perfil exposto para o frontend neste momento;
 - a dependencia operacional frontend de ID tecnico fixo foi eliminada nas telas mapeadas.
 
-## Escopo previsto
+## Escopo realizado
 
 - substituir dependencia de ID tecnico fixo;
-- introduzir listagem ou selecao segura de processos conforme perfil;
-- alinhar backend e frontend sobre fonte real de processos disponiveis.
+- permitir consulta manual/selecao explicita de processos nas telas mapeadas;
+- remover consumo de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` do codigo frontend.
 
 ## Fora do escopo
 
@@ -50,11 +50,12 @@ Atualizacao de 2026-05-04:
 - mudar autorizacao;
 - alterar workflow.
 - criar endpoint backend de listagem de processos por perfil.
+- implementar listagem segura de processos por perfil; essa melhoria deve nascer como task futura propria.
 
 ## Evidencias / referencias
 
-- O roadmap frontend registra `FT-24` como pendente.
-- O painel transversal tambem aponta dependencia de process id tecnico como problema de integracao/frontend.
+- A varredura global pos-auth confirmou que o codigo frontend nao consome `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
+- `FE-CHEFIA-01` permanece ativa por integracao parcial e fallback demonstrativo, nao por dependencia de env tecnica.
 
 ## Validacoes esperadas
 
@@ -71,4 +72,4 @@ Validacoes executadas em 2026-05-04:
 
 ## Proxima acao
 
-Seguir para `FE-CHEFIA-01`. A listagem segura por perfil deve ser tratada quando houver contrato/backend disponivel; ate la, o frontend nao depende mais de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
+Manter `FT-24` fechada no recorte frontend. A listagem segura por perfil deve ser tratada quando houver contrato/backend disponivel, em task futura propria; ate la, o frontend nao depende mais de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.

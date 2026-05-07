@@ -4,6 +4,31 @@ Este arquivo resume problemas transversais resolvidos ou mitigados. O antigo pai
 
 Esta separacao nao altera status, nao move documentos legados e nao arquiva historico. Problemas ativos continuam em [`./active-problems.md`](./active-problems.md).
 
+## Varredura global pos-auth — 2026-05-07
+
+- **Status documental:** registrada e reconciliada.
+- A varredura confirmou que backend, frontend e contracts buildam; typechecks passam; testes backend passam; `git diff --check` passa; o worktree permaneceu limpo.
+- `db:check` falhou apenas porque o banco local nao possuia seed minimo de desenvolvimento; para preparar ambiente local, usar `npm run backend:bootstrap`.
+- Backend possui `UserSession`; login cria sessao; refresh rotaciona; logout revoga.
+- Frontend nao persiste `accessToken`, usa bootstrap via `/auth/refresh` e mantem access token em memoria.
+- Packages ativos usam `@sadep/*`; nao foram encontrados imports antigos `@aep-pa/contracts`.
+- A divida estrutural de packages permanece em `BE-ARCH-02`, e o cookie default residual `aep_pa_refresh` permanece como alerta `NOM-AEP-COOKIE-01`.
+
+## DOC-AUTH-STATE-01 — Reconciliar status documental de BE-ARCH-01E4B/E4C
+
+- **Status documental:** resolvida nesta atualizacao documental.
+- A varredura global confirmou que `BE-ARCH-01E4B` estava implementada no codigo com retry automatico de `401`, refresh silencioso e single-flight.
+- A varredura global confirmou que `BE-ARCH-01E4C` estava implementada no codigo quanto a ausencia de consumidores de `session.accessToken`.
+- Os roadmaps foram reconciliados para nao apresentar `BE-ARCH-01E4B` ou `BE-ARCH-01E4C` como proximas implementacoes pendentes.
+- `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta concluida.
+
+## DOC-FT24-STATE-01 — Reconciliar status documental de FT-24
+
+- **Status documental:** resolvida nesta atualizacao documental.
+- A varredura global confirmou ausencia de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` no codigo frontend.
+- `FT-24` foi reclassificada como resolvida no recorte frontend.
+- Melhorias futuras de selecao ou listagem segura de processos por perfil devem nascer em task propria e nao manter `FT-24` aberta.
+
 ## DX-01 — Desalinhamento local do Next
 
 - **Status documental:** resolvido operacionalmente.
@@ -76,6 +101,30 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - O alerta de UX do `401 público` no bootstrap foi mitigado pela normalizacao de rotas públicas no helper de auth; rota publica equivalente permanece como anonimo silencioso.
 - A mitigacao frontend de retry automatico com single-flight e remocao dos consumidores remanescentes de `session.accessToken` foi concluida em `BE-ARCH-01E4B/C`.
 - Hardening operacional amplo e auditoria formal permanecem pendentes em `BE-ARCH-01E5` e `BE-ARCH-01F`; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+
+## BE-ARCH-01E4B — Retry 401 com refresh silencioso
+
+- **Status documental:** resolvida/mitigada no recorte frontend.
+- O `http-client` faz retry automatico apos `401` em rotas autenticadas nao-`/auth`.
+- O refresh usa single-flight por promise compartilhada para evitar refresh storm.
+- O retry reutiliza access token em memoria quando outra request ja concluiu a renovacao.
+- Rotas `/auth/*` nao entram no retry, preservando protecao contra loop.
+- `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+
+## BE-ARCH-01E4C — Remocao de consumidores de session.accessToken
+
+- **Status documental:** resolvida/mitigada no recorte frontend.
+- A varredura global nao encontrou `session.accessToken` no codigo frontend.
+- O caminho legado de token explicito foi removido e as chamadas autenticadas usam access token em memoria.
+- Validacao manual ampla permanece recomendada, mas nao reabre a task no recorte identificado.
+
+## FT-24 — Remover dependencia de NEXT_PUBLIC_TECHNICAL_PROCESS_ID
+
+- **Status documental:** resolvida no recorte frontend.
+- A varredura global nao encontrou `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` no codigo frontend.
+- `/chefia-imediata`, `/processos` e `/servidor-estagiario` dependem de consulta manual/selecao explicita na UI.
+- Listagem segura por perfil deve ser tratada em task futura propria.
+- `FE-CHEFIA-01` permanece ativa por integracao parcial e fallback demonstrativo/local.
 
 ## Problemas antigos resolvidos
 

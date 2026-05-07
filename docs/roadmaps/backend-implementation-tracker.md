@@ -53,17 +53,20 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 
 Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao frontend. A frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida, pois `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
 
-## Frentes backend pendentes
+## Frentes backend pendentes e relacionadas
 
 - [`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): pendente crítico; não é problema de sessão, mas de autorização contextual por processo, comissão e etapa.
 - [`BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo`](./backend/tasks/BE-ARCH-02-shared-packages.md): pendente; `BE-ARCH-01C` resolveu contratos mínimos de auth/session, mas não encerrou a dívida estrutural dos packages.
 - [`BE-TECH-02 — Revisar worker e cron`](./backend/tasks/BE-TECH-02-worker-cron.md): pendente / arquitetura futura; decidir se haverá escopo mínimo real ou se a promessa deve sair da arquitetura imediata.
-- `BE-ARCH-01E4A`: concluida/aprovada/mitigada; access token em memoria, bootstrap via refresh, `credentials: include` e logout best-effort no frontend; commit `feat(frontend): keep access token in memory`.
-- `BE-ARCH-01E4B`: concluida no recorte frontend; retry automatico de `401` e single-flight.
-- `BE-ARCH-01E4C`: concluida no recorte frontend; removeu consumidores/caminhos legados de `session.accessToken` e validou por gates frontend.
 - `BE-ARCH-01E5`: pendente; hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F`: pendente; auditar e testar eventos de autenticação.
 - `BE-FLOW-*`: backlog processual; consultar [`backend/active.md`](./backend/active.md) para o resumo atual sem detalhamento nesta fase.
+
+Frentes relacionadas ja concluidas no recorte identificado:
+
+- `BE-ARCH-01E4A`: concluida/aprovada/mitigada; access token em memoria, bootstrap via refresh, `credentials: include` e logout best-effort no frontend; commit `feat(frontend): keep access token in memory`.
+- `BE-ARCH-01E4B`: concluida no recorte frontend; retry automatico de `401` e single-flight.
+- `BE-ARCH-01E4C`: concluida no recorte frontend; removeu consumidores/caminhos legados de `session.accessToken` e validou por gates frontend.
 
 ## Itens backend resolvidos
 
@@ -94,6 +97,8 @@ Relações principais:
 - `BE-ARCH-01E2` foi concluida/mitigada no recorte de modelagem persistente de sessao/refresh.
 - `BE-ARCH-01E3` foi concluida/mitigada no recorte backend de refresh, rotacao e logout server-side.
 - `BE-ARCH-01E4A` foi concluida/mitigada no recorte frontend inicial de access token em memoria e bootstrap via refresh.
+- `BE-ARCH-01E4B` foi concluida/mitigada no recorte frontend de retry automatico e single-flight.
+- `BE-ARCH-01E4C` foi concluida/mitigada no recorte frontend de remocao de consumidores de `session.accessToken`.
 - `BE-TECH-01`, `BE-ARCH-01B` e `BE-ARCH-01C` aparecem como resolvidos/mitigados nos documentos transversais.
 - `DX-POSTCSS-01` não é item backend, mas pode afetar a cadência frontend.
 

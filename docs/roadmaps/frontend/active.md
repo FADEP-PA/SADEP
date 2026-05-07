@@ -26,18 +26,19 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - Atualizacao de 2026-05-04: as rotas públicas equivalentes sao normalizadas no helper de auth; `401 público` no bootstrap de `/auth/refresh` deixa o usuario anonimo sem exibir aviso indevido de sessao expirada em `/login/`, `/403/` ou `/sessao-expirada/`.
 - Proxima acao tecnica recomendada: seguir para `BE-ARCH-01E5` / `BE-ARCH-01F` conforme escopo de seguranca e auditoria.
 
-### BE-ARCH-01E4B / BE-ARCH-01E4C — Pendencias de refresh silencioso frontend
+### BE-ARCH-01E4B / BE-ARCH-01E4C — Refresh silencioso frontend resolvido no recorte identificado
 
 - **Status operacional:** `BE-ARCH-01E4B` e `BE-ARCH-01E4C` concluidas no recorte frontend.
 - `BE-ARCH-01E4B` implementou retry automatico de `401`, single-flight contra refresh storm e protecao contra loop de refresh.
 - O retry reutiliza o access token em memoria quando outra requisicao ja concluiu o refresh, evitando novo `POST /auth/refresh` desnecessario.
 - `BE-ARCH-01E4C` removeu o caminho legado de token explicito do servico de auth e manteve chamadas autenticadas usando o access token em memoria por `useStoredAccessToken`.
+- A varredura global confirmou `refreshSessionPromise` no `http-client`, ausencia de `session.accessToken` no frontend e ausencia de persistencia de `accessToken` em `localStorage`/`sessionStorage`.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ### [FE-CHEFIA-01 — Integracao real da chefia imediata](./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md)
 
 - **Status operacional:** parcialmente integrada.
-- `/chefia-imediata` consome o workspace real por processo informado na tela ou valor inicial de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
+- `/chefia-imediata` consome o workspace real por processo informado na tela.
 - A validacao real de backend passou com rascunho, envio, documento `READY_FOR_SIGNATURE` e assinaturas esperadas.
 - A validacao visual em navegador passou na rota `/chefia-imediata` com processo local vinculado a chefia.
 - A tela ainda preserva fallback demonstrativo e nao deve ser tratada como integracao backend real concluida enquanto nao houver listagem real de processos por perfil.
@@ -48,6 +49,7 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - `/chefia-imediata`, `/processos` e `/servidor-estagiario` permitem consulta manual de processo.
 - O codigo frontend nao consome mais `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
 - Listagem segura por perfil depende de contrato/backend futuro e nao permanece como pendencia frontend desta task.
+- Melhorias futuras de selecao/listagem real por perfil devem nascer em task propria, sem reabrir `FT-24`.
 
 ### Backlog frontend documentado
 
