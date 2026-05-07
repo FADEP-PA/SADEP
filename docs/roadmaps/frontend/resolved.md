@@ -136,7 +136,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - A varredura global nao encontrou `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` no codigo frontend.
 - `/chefia-imediata`, `/processos` e `/servidor-estagiario` dependem de consulta manual/selecao explicita na UI, sem preenchimento por env tecnica.
 - A ausencia de listagem segura por perfil nao reabre `FT-24`; deve ser tratada em task futura propria, alinhada a contrato/backend.
-- `FE-CHEFIA-01` permanece ativa porque `/chefia-imediata` ainda preserva fallback demonstrativo/local.
+- `FE-CHEFIA-01` foi concluida no recorte frontend seguro e arquivada em [`../../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md`](../../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md).
 
 ## FT-17 — Area de homologacao
 
@@ -154,6 +154,6 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 
 - `FT-05` pode ser preservada como historico de refinamento visual/estrutural anterior da jornada da chefia.
 - Ela nao deve ser interpretada como integracao backend real da chefia.
-- A integracao real de `/chefia-imediata` continua pendente em [`./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md`](./tasks/FE-CHEFIA-01-supervisor-workspace-integration.md).
+- A integracao backend plena de `/chefia-imediata` com listagem segura por perfil continua fora do recorte arquivado de [`FE-CHEFIA-01`](../../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md).
 
 Para a leitura de transicao e links modulares, consultar [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md).

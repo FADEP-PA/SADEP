@@ -10,9 +10,9 @@ Frontend e integracao backend/frontend.
 
 ## Fonte de transicao
 
-- [`../../frontend-tasks-roadmap.md`](../../frontend-tasks-roadmap.md)
-- [`../active.md`](../active.md)
-- [`../../problemas-atuais-do-projeto.md`](../../problemas-atuais-do-projeto.md)
+- [`../../../roadmaps/frontend-tasks-roadmap.md`](../../../roadmaps/frontend-tasks-roadmap.md)
+- [`../../../roadmaps/frontend/active.md`](../../../roadmaps/frontend/active.md)
+- [`../../../roadmaps/problemas-atuais-do-projeto.md`](../../../roadmaps/problemas-atuais-do-projeto.md)
 
 ## Contexto
 
@@ -55,7 +55,7 @@ Atualizacao de 2026-05-04:
 ## Evidencias / referencias
 
 - A varredura global pos-auth confirmou que o codigo frontend nao consome `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
-- `FE-CHEFIA-01` permanece ativa por integracao parcial e fallback demonstrativo, nao por dependencia de env tecnica.
+- `FE-CHEFIA-01` foi concluida posteriormente no recorte frontend seguro e tambem arquivada; listagem segura por perfil permanece melhoria futura propria.
 
 ## Validacoes esperadas
 

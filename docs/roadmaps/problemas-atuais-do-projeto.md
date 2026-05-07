@@ -26,10 +26,6 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 
 - [`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): crítico e pendente; ver também [`cross-cutting/active-problems.md`](./cross-cutting/active-problems.md).
 
-### Frontend / integração
-
-- [`FE-CHEFIA-01 — Integração real da chefia imediata`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md): ativo e parcialmente integrado; `/chefia-imediata` consome workspace real por processo informado na tela, com validacao visual concluida e fallback demonstrativo ainda ativo.
-
 ### Sessão/auth
 
 - [`BE-ARCH-01D — Alinhar frontend de sessão`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md): concluída/mitigada no recorte mínimo de sessão frontend; commit funcional aprovado `fix(frontend): align session invalidation`.
@@ -60,6 +56,7 @@ O resumo operacional dos problemas resolvidos fica em [`cross-cutting/resolved-p
 - `BE-ARCH-01E4B`: retry automatico de `401` com refresh silencioso e single-flight concluido no recorte frontend.
 - `BE-ARCH-01E4C`: remocao de consumidores de `session.accessToken` concluida no recorte frontend.
 - `FT-24`: dependencia frontend de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` removida no recorte identificado.
+- `FE-CHEFIA-01`: recorte frontend seguro da chefia imediata concluido e arquivado; listagem segura por perfil deve nascer como task futura propria.
 - `DOC-AUTH-STATE-01`: inconsistencia documental de `BE-ARCH-01E4B/E4C` reconciliada.
 - `DOC-FT24-STATE-01`: inconsistencia documental de `FT-24` reconciliada.
 
@@ -74,7 +71,7 @@ O arquivamento real ocorrerá em fase posterior. Este índice não move document
 - Problemas ativos devem ser consultados primeiro em [`cross-cutting/active-problems.md`](./cross-cutting/active-problems.md).
 - Problemas resolvidos não devem ser tratados como pendências.
 - Itens parcialmente resolvidos devem manter ressalva explícita.
-- `/chefia-imediata` não deve ser lida como integração backend real concluída.
+- `/chefia-imediata` não deve ser lida como integração backend plena com listagem segura por perfil concluída.
 - `FT-24` resolvida no recorte frontend não equivale a listagem segura de processos por perfil.
 - `DX-POSTCSS-01` não deve ser confundido com `DX-01`, que foi resolvido operacionalmente quanto ao ambiente local.
 - `BE-ARCH-01D`, `BE-ARCH-01E2`, `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` estão concluídas/mitigadas, sem encerrar `BE-ARCH-01E5`, `BE-ARCH-01F` ou a frente maior `BE-ARCH-01`.

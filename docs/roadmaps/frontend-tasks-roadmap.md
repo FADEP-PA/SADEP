@@ -14,10 +14,10 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 |---|---|
 | Painel frontend ativo | [`frontend/active.md`](./frontend/active.md) |
 | Itens frontend resolvidos | [`frontend/resolved.md`](./frontend/resolved.md) |
-| `FE-CHEFIA-01` | [`frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md) |
-| `FE-SERVIDOR-01` | [`frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md`](./frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md) |
-| `FE-MOBILE-01` | [`frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md`](./frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md) |
-| `FT-24` | [`frontend/tasks/FT-24-process-selection-technical-id.md`](./frontend/tasks/FT-24-process-selection-technical-id.md) |
+| `FE-CHEFIA-01` | [`../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md`](../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md) |
+| `FE-SERVIDOR-01` | [`../archive/frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md`](../archive/frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md) |
+| `FE-MOBILE-01` | [`../archive/frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md`](../archive/frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md) |
+| `FT-24` | [`../archive/frontend/tasks/FT-24-process-selection-technical-id.md`](../archive/frontend/tasks/FT-24-process-selection-technical-id.md) |
 | `BE-ARCH-01D` | [`backend/tasks/BE-ARCH-01D-frontend-session-alignment.md`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md) |
 | `DX-POSTCSS-01` | [`cross-cutting/tasks/DX-POSTCSS-01-audit-postcss-next.md`](./cross-cutting/tasks/DX-POSTCSS-01-audit-postcss-next.md) |
 | Problemas transversais ativos | [`cross-cutting/active-problems.md`](./cross-cutting/active-problems.md) |
@@ -26,14 +26,6 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | Tracker backend legado | [`backend-implementation-tracker.md`](./backend-implementation-tracker.md) |
 
 ## Frentes frontend ativas ou pendentes
-
-### [`FT-24 — Reduzir dependência de NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./frontend/tasks/FT-24-process-selection-technical-id.md)
-
-- **Status:** concluído no recorte frontend.
-- Reduzir dependência de ID técnico fixo; `/chefia-imediata`, `/processos` e `/servidor-estagiario` permitem consulta manual por processo.
-- O código frontend não consome mais `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
-- Listagem segura por perfil depende de contrato/backend futuro e não permanece como pendência frontend desta task.
-- Melhorias futuras de seleção/listagem segura por perfil devem nascer em task própria.
 
 ### Backlog frontend pendente
 
@@ -85,7 +77,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 ### Ressalvas importantes
 
 - `FT-05` pode ser preservada como histórico visual/estrutural da jornada da chefia, mas não deve ser lida como integração backend real da chefia.
-- A listagem segura de processos por perfil para `/chefia-imediata` deve ser task futura própria, sem reabrir [`FE-CHEFIA-01`](./frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md).
+- A listagem segura de processos por perfil para `/chefia-imediata` deve ser task futura própria, sem reabrir [`FE-CHEFIA-01`](../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md).
 - `FT-17` indica painel preparado de homologação; não indica homologação backend funcional completa.
 
 ## Relação com backend e problemas transversais
@@ -108,7 +100,7 @@ Relações principais:
 
 - Consultar primeiro [`frontend/active.md`](./frontend/active.md) para o estado operacional frontend.
 - Consultar [`frontend/resolved.md`](./frontend/resolved.md) para itens concluídos ou resolvidos.
-- Consultar [`frontend/tasks/`](./frontend/tasks/) para frentes ativas específicas.
+- Consultar [`frontend/tasks/`](./frontend/tasks/) para frentes ativas específicas e [`../archive/frontend/tasks/`](../archive/frontend/tasks/) para tasks frontend ja resolvidas e arquivadas.
 - Não tratar `FE-CHEFIA-01` como integração backend plena com listagem real de processos por perfil.
 - Não reabrir `FT-24` por ausência de listagem segura por perfil; essa melhoria deve ser task futura própria.
 - Não confundir `FT-27/DX-01` resolvida com `DX-POSTCSS-01`.

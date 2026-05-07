@@ -19,6 +19,7 @@ Os itens abaixo podem ser avaliados futuramente para arquivamento, desde que os 
 - `FT-22`;
 - `FT-23`;
 - demais `FT-*` concluidas conforme roadmap legado.
+- `FT-24`, `FE-SERVIDOR-01`, `FE-CHEFIA-01` e `FE-MOBILE-01` ja foram arquivadas em [`../../archive/frontend/tasks/`](../../archive/frontend/tasks/).
 
 ## Cross-cutting
 
@@ -29,5 +30,5 @@ Os itens abaixo podem ser avaliados futuramente para arquivamento, desde que os 
 
 - Nao arquivar `BE-ARCH-01D` nesta fase; ela foi concluida recentemente, mas o arquivamento real fica fora desta atualizacao documental.
 - Nao arquivar `BE-SEC-03`, pois continua critica e pendente.
-- Nao tratar `/chefia-imediata` como integrada; `FE-CHEFIA-01` continua ativa.
+- Nao tratar `/chefia-imediata` como integracao backend plena com listagem segura por perfil; o recorte `FE-CHEFIA-01` arquivado e apenas frontend seguro.
 - Nao misturar `DX-01` resolvida com `DX-POSTCSS-01`, que permanece alerta pendente.

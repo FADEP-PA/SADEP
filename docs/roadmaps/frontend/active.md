@@ -35,14 +35,6 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - A varredura global confirmou `refreshSessionPromise` no `http-client`, ausencia de `session.accessToken` no frontend e ausencia de persistencia de `accessToken` em `localStorage`/`sessionStorage`.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
-### [FT-24 — Reduzir dependencia de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`](./tasks/FT-24-process-selection-technical-id.md)
-
-- **Status operacional:** concluida no recorte frontend.
-- `/chefia-imediata`, `/processos` e `/servidor-estagiario` permitem consulta manual de processo.
-- O codigo frontend nao consome mais `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
-- Listagem segura por perfil depende de contrato/backend futuro e nao permanece como pendencia frontend desta task.
-- Melhorias futuras de selecao/listagem real por perfil devem nascer em task propria, sem reabrir `FT-24`.
-
 ### Backlog frontend documentado
 
 - `FT-16` — preparar layout base do futuro parecer CESAD de etapa.

@@ -124,7 +124,7 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - A varredura global nao encontrou `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` no codigo frontend.
 - `/chefia-imediata`, `/processos` e `/servidor-estagiario` dependem de consulta manual/selecao explicita na UI.
 - Listagem segura por perfil deve ser tratada em task futura propria.
-- `FE-CHEFIA-01` permanece ativa por integracao parcial e fallback demonstrativo/local.
+- `FE-CHEFIA-01` foi concluida no recorte frontend seguro; listagem segura por perfil deve ser tratada em task futura propria.
 
 ## Problemas antigos resolvidos
 

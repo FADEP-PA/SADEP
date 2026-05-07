@@ -10,9 +10,9 @@ Frontend e integracao backend/frontend.
 
 ## Fonte de transicao
 
-- [`../../frontend-tasks-roadmap.md`](../../frontend-tasks-roadmap.md)
-- [`../active.md`](../active.md)
-- [`../../problemas-atuais-do-projeto.md`](../../problemas-atuais-do-projeto.md)
+- [`../../../roadmaps/frontend-tasks-roadmap.md`](../../../roadmaps/frontend-tasks-roadmap.md)
+- [`../../../roadmaps/frontend/active.md`](../../../roadmaps/frontend/active.md)
+- [`../../../roadmaps/problemas-atuais-do-projeto.md`](../../../roadmaps/problemas-atuais-do-projeto.md)
 
 ## Contexto
 
