@@ -287,14 +287,14 @@ export function ProcessWorkspace() {
                   <p>Leitura oficial do workflow autenticado para o processo em foco.</p>
                 </article>
                 <article className="workspace-service-card">
-                  <span>Ultimo evento</span>
+                  <span>Último evento</span>
                   <strong>
                     {lastHistoryEntry ? formatDateTime(lastHistoryEntry.occurredAt) : 'Sem eventos'}
                   </strong>
-                  <p>Referencia mais recente da trilha auditavel retornada pelo backend.</p>
+                  <p>Referência mais recente da trilha auditável retornada pelo backend.</p>
                 </article>
                 <article className="workspace-service-card">
-                  <span>Acoes liberadas</span>
+                  <span>Ações liberadas</span>
                   <strong>{snapshot.workflow.availableActions.length}</strong>
                   <p>Quantidade de operacoes que o backend permitiu para este momento processual.</p>
                 </article>

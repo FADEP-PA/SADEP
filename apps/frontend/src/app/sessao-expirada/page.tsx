@@ -14,10 +14,10 @@ export default function SessionExpiredPage() {
           </span>
         </div>
 
-        <span className="forbidden-page__badge">Sessao expirada</span>
-        <h1 id="session-expired-title">Sua autenticacao nao e mais valida</h1>
+        <span className="forbidden-page__badge">Sessão expirada</span>
+        <h1 id="session-expired-title">Sua autenticação não é mais válida</h1>
         <p>
-          O sistema encerrou a navegacao protegida porque a sessao local perdeu validade ou nao
+          O sistema encerrou a navegação protegida porque a sessão local perdeu validade ou não
           conseguiu mais ser confirmada junto ao backend.
         </p>
         <p>Faca login novamente para restabelecer o acesso ao ambiente autenticado.</p>

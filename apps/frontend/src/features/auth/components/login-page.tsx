@@ -25,7 +25,7 @@ export function LoginPage() {
         rememberMe,
       });
     } catch (error) {
-      setErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel realizar o login.'));
+      setErrorMessage(getRequestErrorMessage(error, 'Não foi possível realizar o login.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -87,7 +87,7 @@ export function LoginPage() {
                   onChange={(event) => setRememberMe(event.target.checked)}
                   disabled={isSubmitting || status === 'loading'}
                 />
-                <span>Manter sessao</span>
+                <span>Manter sessão</span>
               </label>
 
               <span className="login-form__hint">Acesso restrito</span>

@@ -15,10 +15,10 @@ export default function ForbiddenPage() {
         </div>
 
         <span className="forbidden-page__badge">Acesso bloqueado</span>
-        <h1 id="forbidden-title">Seu perfil nao pode abrir esta rota</h1>
+        <h1 id="forbidden-title">Seu perfil não pode abrir esta rota</h1>
         <p>
           A pagina solicitada continua protegida pela politica atual de permissao. O ambiente
-          manteve a navegacao dentro do escopo liberado para o perfil autenticado.
+          manteve a navegação dentro do escopo liberado para o perfil autenticado.
         </p>
 
         <div className="forbidden-page__actions">

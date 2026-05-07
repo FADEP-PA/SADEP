@@ -206,7 +206,7 @@ export function CesadStageReadWorkspace() {
                   },
                   {
                     label: 'status macro',
-                    value: snapshot ? formatProcessStatus(snapshot.process.status) : 'Nao disponivel',
+                    value: snapshot ? formatProcessStatus(snapshot.process.status) : 'Não disponível',
                   },
                   {
                     label: 'status documental',
@@ -214,7 +214,7 @@ export function CesadStageReadWorkspace() {
                   },
                   {
                     label: 'servidor',
-                    value: snapshot?.server.displayName ?? snapshot?.server.email ?? 'Nao disponivel',
+                    value: snapshot?.server.displayName ?? snapshot?.server.email ?? 'Não disponível',
                   },
                 ]}
               />

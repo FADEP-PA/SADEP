@@ -38,6 +38,14 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Dados demonstrativos, placeholders e fakes foram preservados.
 - Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
 
+## FT-18 — Consistencia textual e institucional por perfil
+
+- **Status documental:** concluida no recorte frontend.
+- Textos de perfis, menus, paginas de apoio e jornadas principais foram revisados para linguagem institucional mais consistente.
+- Acentuacao e termos administrativos foram padronizados em areas de servidor, chefia, CESAD, homologacao, administracao, sessao e recursos.
+- Dados demonstrativos, placeholders e fakes foram preservados.
+- Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.

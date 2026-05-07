@@ -5,7 +5,7 @@ import { AppProviders } from '@/shared/auth/app-providers';
 
 export const metadata: Metadata = {
   title: 'SADEP | Portal institucional',
-  description: 'Portal interno do SADEP para autenticacao, consulta processual e operacao por perfil.',
+  description: 'Portal interno do SADEP para autenticação, consulta processual e operação por perfil.',
 };
 
 export default function RootLayout({

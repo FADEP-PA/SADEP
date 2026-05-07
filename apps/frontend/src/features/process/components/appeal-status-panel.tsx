@@ -32,7 +32,7 @@ export function AppealStatusPanel({ workspace }: AppealStatusPanelProps) {
         <FeedbackAlert
           title="Prazo recursal depende do marco temporal oficial"
           tone="warning"
-          description="A interface identificou cabimento material em pelo menos um eixo recursal, mas ainda nao recebeu do backend a data/hora juridicamente valida para abrir contagem regressiva e protocolo."
+          description="A interface identificou cabimento material em pelo menos um eixo recursal, mas ainda não recebeu do backend a data/hora juridicamente válida para abrir contagem regressiva e protocolo."
         />
       ) : null}
 
@@ -58,7 +58,7 @@ export function AppealStatusPanel({ workspace }: AppealStatusPanelProps) {
               <FeedbackAlert
                 title="Bloqueios operacionais atuais"
                 tone={item.canRenderAction ? 'warning' : 'info'}
-                description="O frontend nao libera recurso fora de contexto ou sem dados suficientes para contagem segura."
+                description="O frontend não libera recurso fora de contexto ou sem dados suficientes para contagem segura."
                 details={item.blockers}
               />
               {item.canRenderAction ? (

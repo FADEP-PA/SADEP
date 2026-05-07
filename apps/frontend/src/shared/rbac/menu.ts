@@ -19,7 +19,7 @@ const processGroup: NavigationGroup = {
     {
       label: 'Processos',
       href: '/processos',
-      description: 'Consultar status, ações disponíveis, histórico e dados operacionais do processo.',
+      description: 'Consultar status, ações disponíveis, histórico e leitura operacional do processo.',
     },
   ],
 };
@@ -30,7 +30,7 @@ const accountGroup: NavigationGroup = {
     {
       label: 'Meu perfil',
       href: '/perfil',
-      description: 'Consultar dados da sessão autenticada, perfil de acesso e informações do usuário.',
+      description: 'Consultar dados da sessão autenticada, perfil de acesso e informações do usuário logado.',
     },
   ],
 };
@@ -56,7 +56,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
         {
           label: 'Avaliações da chefia',
           href: '/chefia-imediata',
-          description: 'Criar, salvar, submeter e retificar a avaliação da chefia imediata.',
+          description: 'Elaborar, salvar, submeter e retificar a avaliação sob responsabilidade da chefia imediata.',
         },
       ],
     },
@@ -70,7 +70,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
         {
           label: getRolePresentation(UserRole.CESAD_MEMBER).label,
           href: '/cesad-comissao',
-          description: 'Analisar processos, consultar histórico e acompanhar a etapa colegiada.',
+          description: 'Analisar processos, consultar histórico e acompanhar a etapa colegiada da comissão.',
         },
       ],
     },
@@ -84,7 +84,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
         {
           label: getRolePresentation(UserRole.COMMISSION_ASSISTANT).label,
           href: '/cesad-comissao',
-          description: 'Consultar processos, histórico e leitura consolidada da etapa em modo de apoio.',
+          description: 'Consultar processos, histórico e leitura consolidada da etapa para apoio à comissão.',
         },
       ],
     },
@@ -97,7 +97,7 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
         {
           label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
           href: '/homologacao-autoridade',
-          description: 'Conferir o processo e acompanhar os atos finais de homologação.',
+          description: 'Conferir o processo e acompanhar os atos finais vinculados à homologação.',
         },
       ],
     },
@@ -110,12 +110,12 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
         {
           label: getRolePresentation(UserRole.ADMIN).label,
           href: '/admin',
-          description: 'Suporte operacional, administração do ambiente e acompanhamento técnico.',
+          description: 'Suporte operacional, administração do ambiente e acompanhamento técnico da plataforma.',
         },
         {
           label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
           href: '/homologacao-autoridade',
-          description: 'Consultar a área de homologação e os marcos finais do processo.',
+          description: 'Consultar a área de homologação e os marcos finais do processo administrativo.',
         },
       ],
     },

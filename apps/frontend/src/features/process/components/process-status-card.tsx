@@ -14,7 +14,7 @@ export function ProcessStatusCard({ snapshot }: ProcessStatusCardProps) {
   return (
     <InfoCard
       eyebrow="Status do processo"
-      title="Situacao atual"
+      title="Situação atual"
       description="Leitura do estado atual do workflow com base no backend autenticado."
     >
       <KeyValueList
@@ -29,14 +29,14 @@ export function ProcessStatusCard({ snapshot }: ProcessStatusCardProps) {
               />
             ),
           },
-          { label: 'Acoes disponiveis', value: snapshot.workflow.availableActions.length },
+          { label: 'Ações disponíveis', value: snapshot.workflow.availableActions.length },
           { label: 'Eventos registrados', value: snapshot.history.length },
           {
             label: 'Modo da tela',
             value:
               snapshot.workflow.availableActions.length > 0
-                ? 'Leitura com proximas acoes'
-                : 'Leitura bloqueada para acoes',
+                ? 'Leitura com próximas ações'
+                : 'Leitura bloqueada para ações',
           },
         ]}
       />

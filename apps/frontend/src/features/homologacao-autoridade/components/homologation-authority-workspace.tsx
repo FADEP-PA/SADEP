@@ -56,29 +56,29 @@ export function HomologationAuthorityWorkspace() {
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
       <section className="portal-dashboard">
         <PageSection
-          eyebrow="Homologacao"
-          title="Jornada de homologacao final"
-          description="Fila homologatoria, leitura do parecer conclusivo final, documentos obrigatorios e decisao controlada da autoridade."
+          eyebrow="Homologação"
+          title="Jornada de homologação final"
+          description="Fila homologatória, leitura do parecer conclusivo final, documentos obrigatórios e decisão controlada da autoridade."
         >
           <div className="workspace-overview workspace-overview--lilac">
             <div className="workspace-overview__copy">
               <span className="section-chip">Autoridade homologadora</span>
-              <h3>Homologacao preparada para o rito juridico real</h3>
+              <h3>Homologação preparada para o rito jurídico real</h3>
               <p>
-                A area foi reorganizada para refletir a trilha correta da homologacao:
-                fila apta, parecer conclusivo final, documentos formais, decisao controlada,
-                notificacao final e preparo para recurso final.
+                A área foi reorganizada para refletir a trilha correta da homologação:
+                fila apta, parecer conclusivo final, documentos formais, decisão controlada,
+                notificação final e preparo para recurso final.
               </p>
             </div>
 
             <aside className="workspace-overview__panel">
               <KeyValueList
                 items={[
-                  { label: 'autoridade', value: session?.user.name ?? 'Nao informado' },
-                  { label: 'email', value: session?.user.email ?? 'Nao informado' },
+                  { label: 'autoridade', value: session?.user.name ?? 'Não informado' },
+                  { label: 'email', value: session?.user.email ?? 'Não informado' },
                   { label: 'perfil ativo', value: 'Autoridade homologadora' },
                   {
-                    label: 'ultima sincronizacao',
+                    label: 'última sincronização',
                     value: snapshot ? formatDateTime(snapshot.updatedAt) : 'Aguardando carregamento',
                   },
                 ]}
@@ -94,7 +94,7 @@ export function HomologationAuthorityWorkspace() {
                   <strong>{snapshot?.finalOpinion.statusLabel ?? 'Aguardando leitura'}</strong>
                 </div>
                 <div className="workspace-stat">
-                  <span>decisao</span>
+                  <span>decisão</span>
                   <strong>{snapshot?.decision.statusLabel ?? 'Aguardando carga'}</strong>
                 </div>
               </div>
@@ -103,8 +103,8 @@ export function HomologationAuthorityWorkspace() {
 
           {isLoading ? (
             <InlineLoadingState
-              title="Abrindo jornada homologatoria"
-              description="A tela esta carregando a estrutura segura da homologacao final e seus bloqueios atuais."
+              title="Abrindo jornada homologatória"
+              description="A tela está carregando a estrutura segura da homologação final e seus bloqueios atuais."
             />
           ) : null}
 
@@ -119,19 +119,19 @@ export function HomologationAuthorityWorkspace() {
 
               <div className="workspace-service-strip">
                 <article className="workspace-service-card">
-                  <span>Fila homologatoria</span>
+                  <span>Fila homologatória</span>
                   <strong>{snapshot.queue.length}</strong>
-                  <p>Processos aptos a homologacao aparecerao aqui quando a fila dedicada existir.</p>
+                  <p>Processos aptos à homologação aparecerão aqui quando a fila dedicada existir.</p>
                 </article>
                 <article className="workspace-service-card">
                   <span>Parecer conclusivo final</span>
                   <strong>{snapshot.finalOpinion.statusLabel}</strong>
-                  <p>A homologacao final deve sempre se apoiar neste documento consolidado.</p>
+                  <p>A homologação final deve sempre se apoiar neste documento consolidado.</p>
                 </article>
                 <article className="workspace-service-card">
                   <span>Documentos finais</span>
                   <strong>{snapshot.documents.length}</strong>
-                  <p>Leitura unificada dos documentos que sustentam a decisao homologatoria.</p>
+                  <p>Leitura unificada dos documentos que sustentam a decisão homologatória.</p>
                 </article>
                 <article className="workspace-service-card">
                   <span>Decisao controlada</span>
@@ -143,7 +143,7 @@ export function HomologationAuthorityWorkspace() {
               <div className="metrics-grid">
                 <InfoCard
                   eyebrow="Fila"
-                  title="Fila de processos aptos a homologacao"
+                  title="Fila de processos aptos à homologação"
                   description="A autoridade deve receber apenas processos aptos ao ato final, nunca uma fila misturada com casos ainda bloqueados."
                 >
                   {snapshot.queue.length > 0 ? (
@@ -165,7 +165,7 @@ export function HomologationAuthorityWorkspace() {
                   ) : (
                     <ContentState
                       title="Nenhum processo homologatorio carregado"
-                      description="A fila homologatoria ainda nao esta conectada ao backend dedicado. A estrutura da tela ja separa o que deve aparecer aqui quando a integracao estiver pronta."
+                      description="A fila homologatória ainda não está conectada ao backend dedicado. A estrutura da tela já separa o que deve aparecer aqui quando a integração estiver pronta."
                       tone="warning"
                     />
                   )}
@@ -174,13 +174,13 @@ export function HomologationAuthorityWorkspace() {
                 <InfoCard
                   eyebrow="Base formal"
                   title="Parecer conclusivo final"
-                  description="A autoridade homologadora deve atuar sobre o parecer conclusivo final, e nao sobre parecer isolado de etapa."
+                  description="A autoridade homologadora deve atuar sobre o parecer conclusivo final, e não sobre parecer isolado de etapa."
                 >
                   <div className="cesad-stage-read__stack">
                     <StatusBadge label={snapshot.finalOpinion.statusLabel} tone="warning" />
                     <p>{snapshot.finalOpinion.detail}</p>
                     <div>
-                      <strong>Requisitos de habilitacao</strong>
+                      <strong>Requisitos de habilitação</strong>
                       <ul className="content-list">
                         {snapshot.finalOpinion.requirements.map((item) => (
                           <li key={item}>{item}</li>
@@ -192,8 +192,8 @@ export function HomologationAuthorityWorkspace() {
 
                 <InfoCard
                   eyebrow="Documentos"
-                  title="Documentos necessarios para a decisao"
-                  description="Leitura dos artefatos que precisam sustentar o ato homologatorio e seus desdobramentos."
+                  title="Documentos necessários para a decisão"
+                  description="Leitura dos artefatos que precisam sustentar o ato homologatório e seus desdobramentos."
                 >
                   <div className="history-list">
                     {snapshot.documents.map((document) => (
@@ -212,8 +212,8 @@ export function HomologationAuthorityWorkspace() {
               <div className="metrics-grid">
                 <InfoCard
                   eyebrow="Decisao"
-                  title="Decisao homologatoria controlada"
-                  description="O cliente nao deve homologar nem devolver fora do snapshot juridico correto."
+                  title="Decisão homologatória controlada"
+                  description="O cliente não deve homologar nem devolver fora do snapshot jurídico correto."
                 >
                   <div className="cesad-stage-read__stack">
                     <StatusBadge label={snapshot.decision.statusLabel} tone="warning" />
@@ -241,20 +241,20 @@ export function HomologationAuthorityWorkspace() {
                 <InfoCard
                   eyebrow="Ato formal"
                   title="Assinaturas e comunicacao final"
-                  description="Ato homologatorio, notificacao final e recurso final devem permanecer organizados como desdobramentos separados."
+                  description="Ato homologatório, notificação final e recurso final devem permanecer organizados como desdobramentos separados."
                 >
                   <KeyValueList
                     items={[
                       {
-                        label: 'assinar registro de homologacao',
+                        label: 'assinar registro de homologação',
                         value: snapshot.decision.canSignHomologationRecord ? 'Liberado' : 'Bloqueado',
                       },
                       {
-                        label: 'assinar notificacao final',
+                        label: 'assinar notificação final',
                         value: snapshot.decision.canSignNotification ? 'Liberado' : 'Bloqueado',
                       },
                       {
-                        label: 'status da notificacao',
+                        label: 'status da notificação',
                         value: snapshot.finalCommunication.notificationStatusLabel,
                       },
                       {

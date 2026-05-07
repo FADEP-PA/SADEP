@@ -30,22 +30,22 @@ export function RolePlaceholderPage({
     ? canAccessProcessWorkspace(activeRole)
     : false;
   const highlightDescriptions = [
-    'Area preparada para cards, filtros e acompanhamentos operacionais sem perder a clareza institucional.',
-    'Base pronta para receber leitura documental, status decisorio e trilha auditavel do modulo.',
-    'Estrutura visual alinhada ao shell do portal para crescimento seguro das proximas entregas.',
+    'Área preparada para cards, filtros e acompanhamentos operacionais sem perder a clareza institucional.',
+    'Base pronta para receber leitura documental, status decisório e trilha auditável do módulo.',
+    'Estrutura visual alinhada ao shell do portal para crescimento seguro das próximas entregas.',
   ];
 
   return (
     <AuthGuard allowedRoles={allowedRoles}>
       <section className="portal-dashboard">
-        <PageSection eyebrow="Area do perfil" title={title} description={description}>
+        <PageSection eyebrow="Área do perfil" title={title} description={description}>
           <div className="workspace-overview workspace-overview--accent">
             <div className="workspace-overview__copy">
-              <span className="section-chip">Area em consolidacao</span>
-              <h3>{rolePresentation?.label ?? 'Perfil nao identificado'}</h3>
+              <span className="section-chip">Área em consolidação</span>
+              <h3>{rolePresentation?.label ?? 'Perfil não identificado'}</h3>
               <p>
-                Esta area ja segue a linguagem visual do portal e fica pronta para receber os
-                proximos fluxos funcionais sem perder consistencia com o restante do frontend.
+                Esta área já segue a linguagem visual do portal e fica pronta para receber os
+                próximos fluxos funcionais sem perder consistência com o restante do frontend.
               </p>
 
               <div className="portal-hero__actions">
@@ -55,7 +55,7 @@ export function RolePlaceholderPage({
                   </Link>
                 ) : null}
                 <Link href="/perfil" className="ghost-button portal-link-button">
-                  Ver sessao
+                  Ver sessão
                 </Link>
               </div>
             </div>
@@ -63,10 +63,10 @@ export function RolePlaceholderPage({
             <aside className="workspace-overview__panel">
               <KeyValueList
                 items={[
-                  { label: 'usuario', value: session?.user.name ?? 'Nao informado' },
-                  { label: 'email', value: session?.user.email ?? 'Nao informado' },
-                  { label: 'perfil', value: rolePresentation?.label ?? 'Nao informado' },
-                  { label: 'rota principal', value: rolePresentation?.homePath ?? 'Nao informada' },
+                  { label: 'usuário', value: session?.user.name ?? 'Não informado' },
+                  { label: 'email', value: session?.user.email ?? 'Não informado' },
+                  { label: 'perfil', value: rolePresentation?.label ?? 'Não informado' },
+                  { label: 'rota principal', value: rolePresentation?.homePath ?? 'Não informada' },
                 ]}
               />
 
@@ -76,7 +76,7 @@ export function RolePlaceholderPage({
                   <strong>{highlights.length}</strong>
                 </div>
                 <div className="workspace-stat">
-                  <span>navegacao</span>
+                  <span>navegação</span>
                   <strong>Portal integrado</strong>
                 </div>
                 <div className="workspace-stat">
@@ -91,7 +91,7 @@ export function RolePlaceholderPage({
             {highlights.map((item, index) => (
               <InfoCard
                 key={item}
-                eyebrow="Modulo"
+                eyebrow="Módulo"
                 title={item}
                 description={
                   highlightDescriptions[index] ??
@@ -103,26 +103,26 @@ export function RolePlaceholderPage({
 
           <div className="portal-callout">
             <div className="portal-callout__copy">
-              <span className="section-chip">Proxima etapa</span>
+              <span className="section-chip">Próxima etapa</span>
               <h2>Estrutura pronta para crescimento funcional</h2>
               <p>
                 O layout deste perfil acompanha a mesma hierarquia, tipografia e ritmo do portal,
-                deixando o modulo pronto para ganhar funcionalidade real sem precisar refazer a base visual.
+                deixando o módulo pronto para ganhar funcionalidade real sem precisar refazer a base visual.
               </p>
             </div>
 
             <div className="portal-callout__panel">
               <KeyValueList
                 items={[
-                  { label: 'perfil curto', value: rolePresentation?.shortLabel ?? 'Nao informado' },
-                  { label: 'descricao', value: rolePresentation?.description ?? 'Nao informada' },
-                  { label: 'area inicial', value: rolePresentation?.homePath ?? 'Nao informada' },
+                  { label: 'perfil curto', value: rolePresentation?.shortLabel ?? 'Não informado' },
+                  { label: 'descrição', value: rolePresentation?.description ?? 'Não informada' },
+                  { label: 'área inicial', value: rolePresentation?.homePath ?? 'Não informada' },
                 ]}
               />
               <ul className="content-list">
                 <li>Tipografia e hierarquia alinhadas ao shell institucional.</li>
                 <li>Cards preparados para indicadores, filas e alertas do perfil.</li>
-                <li>Espaco pronto para evoluir sem quebrar a coerencia entre rotas.</li>
+                <li>Espaço pronto para evoluir sem quebrar a coerência entre rotas.</li>
               </ul>
             </div>
           </div>

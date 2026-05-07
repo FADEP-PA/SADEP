@@ -14,17 +14,17 @@ const ADMIN_FOCUS_ITEMS = [
   {
     title: 'Acompanhamento operacional',
     description:
-      'Consulta de processos e verificacao rapida dos fluxos ja disponiveis para perfis operacionais.',
+      'Consulta de processos e verificação rápida dos fluxos já disponíveis para perfis operacionais.',
   },
   {
     title: 'Perfis e acessos',
     description:
-      'Referencia visual para acompanhar papeis institucionais enquanto o modulo administrativo dedicado nao e exposto pela API.',
+      'Referência visual para acompanhar papéis institucionais enquanto o módulo administrativo dedicado não é exposto pela API.',
   },
   {
-    title: 'Saude da plataforma',
+    title: 'Saúde da plataforma',
     description:
-      'Atalhos para validar sessao, consultar areas funcionais e apoiar o suporte local durante o uso assistido.',
+      'Atalhos para validar sessão, consultar áreas funcionais e apoiar o suporte local durante o uso assistido.',
   },
 ];
 
@@ -38,17 +38,17 @@ export default function AdminPage() {
     <AuthGuard allowedRoles={[UserRole.ADMIN]}>
       <section className="portal-dashboard">
         <PageSection
-          eyebrow="Administracao"
+          eyebrow="Administração"
           title="Painel administrativo"
-          description="Visao de apoio para administradores acompanharem rotas funcionais, sessao ativa e pontos de suporte do portal."
+          description="Visão de apoio para administradores acompanharem rotas funcionais, sessão ativa e pontos de suporte do portal."
         >
           <div className="workspace-overview workspace-overview--accent">
             <div className="workspace-overview__copy">
               <span className="section-chip">Suporte institucional</span>
-              <h3>Operacao administrativa do portal</h3>
+              <h3>Operação administrativa do portal</h3>
               <p>
-                Este painel concentra atalhos seguros para as areas ja disponiveis e organiza a
-                leitura basica da sessao administrativa sem depender de inferencias no cliente.
+                Este painel concentra atalhos seguros para as áreas já disponíveis e organiza a
+                leitura básica da sessão administrativa sem depender de inferências no cliente.
               </p>
 
               <div className="portal-hero__actions">
@@ -58,7 +58,7 @@ export default function AdminPage() {
                   </Link>
                 ) : null}
                 <Link href="/perfil" className="ghost-button portal-link-button">
-                  Ver sessao
+                  Ver sessão
                 </Link>
               </div>
             </div>
@@ -66,10 +66,10 @@ export default function AdminPage() {
             <aside className="workspace-overview__panel">
               <KeyValueList
                 items={[
-                  { label: 'administrador', value: session?.user.name ?? 'Nao informado' },
-                  { label: 'email', value: session?.user.email ?? 'Nao informado' },
+                  { label: 'administrador', value: session?.user.name ?? 'Não informado' },
+                  { label: 'email', value: session?.user.email ?? 'Não informado' },
                   { label: 'perfil ativo', value: 'Administrador' },
-                  { label: 'area inicial', value: '/admin' },
+                  { label: 'área inicial', value: '/admin' },
                 ]}
               />
 
@@ -92,17 +92,17 @@ export default function AdminPage() {
 
           <div className="metrics-grid">
             {ADMIN_FOCUS_ITEMS.map((item) => (
-              <InfoCard key={item.title} eyebrow="Administracao" title={item.title} description={item.description} />
+              <InfoCard key={item.title} eyebrow="Administração" title={item.title} description={item.description} />
             ))}
           </div>
 
           <div className="portal-callout">
             <div className="portal-callout__copy">
-              <span className="section-chip">Proximas entregas</span>
+              <span className="section-chip">Próximas entregas</span>
               <h2>Base administrativa pronta para evoluir</h2>
               <p>
-                A tela ja separa a experiencia administrativa do placeholder generico e preserva
-                espaco para futuras filas, auditoria e gestao de usuarios quando os contratos de API
+                A tela já separa a experiência administrativa do placeholder genérico e preserva
+                espaço para futuras filas, auditoria e gestão de usuários quando os contratos de API
                 estiverem definidos.
               </p>
             </div>
@@ -111,14 +111,14 @@ export default function AdminPage() {
               <KeyValueList
                 items={[
                   { label: 'processos', value: 'consulta operacional existente' },
-                  { label: 'sessao', value: 'dados autenticados do usuario' },
-                  { label: 'gestao dedicada', value: 'aguardando API especifica' },
+                  { label: 'sessão', value: 'dados autenticados do usuário' },
+                  { label: 'gestão dedicada', value: 'aguardando API específica' },
                 ]}
               />
               <ul className="content-list">
-                <li>Administradores acessam o resumo sem depender da tela generica de perfil.</li>
-                <li>Atalhos apontam apenas para rotas ja existentes no frontend.</li>
-                <li>O modulo permanece preparado para receber funcionalidades administrativas reais.</li>
+                <li>Administradores acessam o resumo sem depender da tela genérica de perfil.</li>
+                <li>Atalhos apontam apenas para rotas já existentes no frontend.</li>
+                <li>O módulo permanece preparado para receber funcionalidades administrativas reais.</li>
               </ul>
             </div>
           </div>
