@@ -13,7 +13,6 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 ## Itens ativos ou retomaveis
 
 - `BE-ARCH-01E5` — hardening operacional de cookies/CORS/env.
-- `BE-ARCH-01F` — auditar e testar eventos de autenticacao.
 - `BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo.
 - `BE-FLOW-*` — backlog processual documentado no tracker legado.
 
@@ -24,9 +23,10 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 - `BE-ARCH-01E4A` — access token em memoria e bootstrap via refresh concluidos/aprovados; commit funcional aprovado `feat(frontend): keep access token in memory`.
 - `BE-ARCH-01E4B` — retry automatico de `401` e single-flight identificados como implementados pela varredura global documental.
 - `BE-ARCH-01E4C` — consumidores/caminhos legados de `session.accessToken` removidos no recorte frontend identificado pela varredura.
+- `BE-ARCH-01F` — eventos estruturados de auth e testes unitarios concluidos no recorte backend.
 - `BE-ARCH-02` — packages compartilhados estabilizados no recorte de `@sadep/contracts`, com `dist/` como entrypoint de consumo.
 - `BE-TECH-02` — worker e cron revisados; `apps/worker` e `apps/cron` permanecem como estrutura reservada, sem execucao no MVP.
-- `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes, portanto a frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida.
+- `BE-ARCH-01E5` permanece pendente, portanto a frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida.
 
 ## Regras de transicao
 

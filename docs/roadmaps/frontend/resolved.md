@@ -117,7 +117,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Nao alterou backend, contracts, Prisma, migrations, workflow, CESAD, permissoes ou regras processuais.
 - Validacoes aprovadas: `npm run typecheck --workspace @sadep/frontend`, `npm run build --workspace @sadep/frontend`, `npm run frontend:check` e `git diff --check`.
 - Ressalva nao bloqueante tratada pelo commit `fix(frontend): normalize public auth routes`: rotas públicas equivalentes sao normalizadas e `401 público` no bootstrap de `/auth/refresh` permanece como anonimo silencioso em rota publica.
-- `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram concluidas posteriormente; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram concluidas posteriormente; `BE-ARCH-01F` foi concluida no recorte backend de eventos estruturados de auth; `BE-ARCH-01E5` permanece pendente; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ## BE-ARCH-01E4B — Retry 401 com refresh silencioso
 
@@ -128,7 +128,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Rotas `/auth/*` nao entram no retry, preservando protecao contra loop de refresh.
 - A varredura global confirmou `refreshSessionPromise`, `POST /auth/refresh` com `credentials: include`, preservacao de `403` como falta de permissao e ausencia de persistencia de `accessToken` em storage web.
 - Permanece recomendada validacao manual ampla de UX, mas isso nao reabre a task no recorte tecnico identificado.
-- `BE-ARCH-01E4C` foi concluida posteriormente; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+- `BE-ARCH-01E4C` foi concluida posteriormente; `BE-ARCH-01F` foi concluida no recorte backend de eventos estruturados de auth; `BE-ARCH-01E5` permanece pendente.
 
 ## BE-ARCH-01E4C — Remocao de consumidores de access token da sessao
 
@@ -138,7 +138,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - O `http-client` deixou de aceitar token explicito em `RequestOptions`; chamadas autenticadas usam o access token em memoria via `useStoredAccessToken`.
 - A validacao automatizada do fluxo frontend fica registrada pelos gates `frontend:typecheck`, `frontend:check` e `git diff --check`.
 - A varredura global posterior confirmou novamente ausencia de `session.accessToken`; validacao manual ampla permanece nao bloqueante.
-- `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+- `BE-ARCH-01E5` permanece pendente; `BE-ARCH-01F` foi concluida no recorte backend.
 
 ## FT-24 — Remover dependencia de NEXT_PUBLIC_TECHNICAL_PROCESS_ID
 

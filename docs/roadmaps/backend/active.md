@@ -11,7 +11,7 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 - **Escopo entregue:** login cria `UserSession` sem alterar `LoginResponse`; refresh token opaco e salvo apenas como `refreshTokenHash` HMAC-SHA-256; cookie `HttpOnly`; `POST /auth/refresh`; rotacao transacional com sessao anterior `ROTATED` e `replacedBySessionId`; deteccao de reuso com revogacao das sessoes ativas da familia; `POST /auth/logout` idempotente; CORS com `credentials: true` mantendo origem explicita.
 - **Preservado:** bearer JWT atual, `/auth/me`, `/auth/admin-check`, frontend existente, contracts, Prisma schema/migrations, workflow, CESAD, permissoes e regras processuais.
 - **Validacoes/auditoria:** implementacao auditada e aprovada; as validacoes obrigatorias passaram.
-- **Etapa frontend seguinte:** `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues depois com access token em memoria, bootstrap via refresh, retry silencioso e remocao de caminhos legados de token; permanecem pendentes `BE-ARCH-01E5` e `BE-ARCH-01F`.
+- **Etapa frontend seguinte:** `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues depois com access token em memoria, bootstrap via refresh, retry silencioso e remocao de caminhos legados de token; `BE-ARCH-01F` foi concluida no recorte de eventos estruturados de auth; permanece pendente `BE-ARCH-01E5`.
 
 ### BE-ARCH-01E2 — Modelar sessao e refresh token
 
@@ -27,19 +27,19 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 - **Escopo entregue:** alinhamento minimo de sessao frontend, bootstrap, `/auth/me`, `401` idempotente, preservacao de `403` e falhas nao-401 sem limpeza indevida de sessao.
 - **Commit funcional aprovado:** `fix(frontend): align session invalidation`.
 - **Ressalva:** validacao manual em navegador ainda recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
-- **Observacao:** a frente maior `BE-ARCH-01` ainda nao esta totalmente concluida, pois `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
+- **Observacao:** a frente maior `BE-ARCH-01` ainda nao esta totalmente concluida, pois `BE-ARCH-01E5` permanece pendente.
 
 ## Pendentes relevantes
 
 - `BE-ARCH-01E5` — hardening operacional de cookies/CORS/env.
-- `BE-ARCH-01F` — auditar e testar eventos de autenticacao.
 - [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md).
 
 ## Resolvidos por varredura global
 
 - `BE-ARCH-01E4B` — retry automatico de `401`, refresh silencioso com single-flight e protecao contra loop foram identificados no `http-client` do frontend.
 - `BE-ARCH-01E4C` — a varredura nao encontrou `session.accessToken` no frontend e confirmou o consumo autenticado via access token em memoria.
-- A frente maior `BE-ARCH-01` continua aberta enquanto `BE-ARCH-01E5` e `BE-ARCH-01F` permanecerem pendentes.
+- A frente maior `BE-ARCH-01` continua aberta enquanto `BE-ARCH-01E5` permanecer pendente.
+- `BE-ARCH-01F` — eventos estruturados de auth e testes unitarios concluidos no recorte backend.
 - `BE-ARCH-02` — `@sadep/contracts` passou a expor `dist/` como entrypoint e consumidores constroem contracts antes dos gates.
 - `BE-TECH-02` — worker e cron revisados; `apps/worker` e `apps/cron` permanecem como estrutura reservada, sem execucao no MVP.
 

@@ -50,7 +50,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Preservou sessao local em falhas nao-401 durante bootstrap/refresh.
 - Manteve `AuthSession`, `rememberMe`, contratos de auth e storage atual.
 - Nao implementou refresh token, cookies, revogacao nem logout server-side.
-- `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues depois no recorte frontend; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues depois no recorte frontend; `BE-ARCH-01F` foi concluida no recorte backend de eventos estruturados de auth; `BE-ARCH-01E5` permanece pendente; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 - Validacao manual em navegador ainda e recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
 ## BE-ARCH-01E2 — Modelar sessao e refresh token
@@ -68,7 +68,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Validacoes aprovadas: `npm run prisma:generate --workspace @sadep/backend`, `npm run db:check --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npm run backend:build`, `npm run backend:bootstrap` e `git diff --check`.
 - A validacao `npx prisma migrate diff` continua falhando por limitacao historica P3006 em migration antiga com `ALTER TABLE ... ADD CONSTRAINT` no SQLite shadow DB; a falha e preexistente, nao foi causada pela migration nova e nao bloqueia esta task porque o fluxo oficial local com `db push` passou.
 - Nao implementou refresh real, endpoints, cookies, CORS, frontend, contracts, auditoria formal, rotacao real, revogacao real ou logout server-side.
-- A implementacao funcional ficou fora da `BE-ARCH-01E2` e foi entregue depois na `BE-ARCH-01E3`; `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues posteriormente no frontend; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes, e a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- A implementacao funcional ficou fora da `BE-ARCH-01E2` e foi entregue depois na `BE-ARCH-01E3`; `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues posteriormente no frontend; `BE-ARCH-01F` foi concluida no recorte backend de eventos estruturados de auth; `BE-ARCH-01E5` permanece pendente, e a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ## BE-ARCH-01E3 — Implementar refresh, rotacao e logout server-side
 
@@ -83,7 +83,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - `POST /auth/logout` foi implementado de forma idempotente, revogando a sessao quando encontrada e limpando o cookie sempre.
 - O bearer JWT atual, `/auth/me`, `/auth/admin-check`, frontend existente, contracts, Prisma schema/migrations, workflow, CESAD, permissoes e regras processuais foram preservados.
 - Validacoes aprovadas: `npm run prisma:generate --workspace @sadep/backend`, `npm run db:check --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npm run backend:build` e `git diff --check`.
-- As etapas frontend `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues depois com access token em memoria, bootstrap via refresh, retry silencioso e remocao dos caminhos legados de token de sessao; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes, e a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- As etapas frontend `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues depois com access token em memoria, bootstrap via refresh, retry silencioso e remocao dos caminhos legados de token de sessao; `BE-ARCH-01F` foi concluida no recorte backend de eventos estruturados de auth; `BE-ARCH-01E5` permanece pendente, e a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
 ## BE-TECH-02 — Revisar worker e cron
 
@@ -104,6 +104,15 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Scripts backend/frontend constroem `@sadep/contracts` antes de typecheck, build ou teste quando necessario.
 - Nao foram adicionados novos contratos funcionais, DTOs de auth, refresh token, UX frontend, dados demonstrativos, fakes, placeholders ou fallback visual.
 - Validacoes aprovadas: `npm run build --workspace @sadep/contracts`, `node -e "require('@sadep/contracts')"`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/frontend`, `npm run backend:build`, `npm run frontend:check`, `npm run test --workspace @sadep/backend` e `git diff --check`.
+
+## BE-ARCH-01F — Auditar e testar eventos de autenticacao
+
+- **Status documental:** concluida no recorte backend de eventos estruturados de auth.
+- `AuthService` passou a emitir eventos JSON com codigos estaveis para login, refresh, reuso de refresh token, logout e rejeicao de access token.
+- Os eventos registram metadados operacionais minimos e nao incluem senha, access token nem refresh token em texto puro.
+- `auth.service.spec.ts` cobre sucesso/falha de login, refresh aceito/rejeitado, reuso detectado, logout idempotente e rejeicoes de access token por usuario inexistente, inativo ou role divergente.
+- Nao houve alteracao de contracts, schema Prisma, frontend, dados demonstrativos, fakes, placeholders, fallback visual, CESAD, workflow, homologacao, assinatura ou regras processuais.
+- Validacoes aprovadas: `npm run test:unit --workspace @sadep/backend -- auth.service.spec.ts`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npm run backend:build` e `git diff --check`.
 
 ## Outros concluidos no legado
 

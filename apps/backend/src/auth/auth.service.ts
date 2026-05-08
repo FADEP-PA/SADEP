@@ -36,6 +36,18 @@ type SessionRequestContext = {
   userAgent?: string | null;
 };
 
+type AuthAuditEvent =
+  | 'AUTH_LOGIN_SUCCEEDED'
+  | 'AUTH_LOGIN_FAILED'
+  | 'AUTH_REFRESH_SUCCEEDED'
+  | 'AUTH_REFRESH_REJECTED'
+  | 'AUTH_REFRESH_REUSE_DETECTED'
+  | 'AUTH_LOGOUT_SUCCEEDED'
+  | 'AUTH_LOGOUT_SKIPPED'
+  | 'AUTH_ACCESS_TOKEN_REJECTED';
+
+type AuthAuditMetadata = Record<string, string | number | boolean | null>;
+
 type LoginWithRefreshSession = LoginResponse & {
   refreshExpiresAt: Date;
   refreshToken: string;
@@ -71,14 +83,20 @@ export class AuthService {
     const user = await this.prismaService.user.findUnique({ where: { email: normalizedEmail } });
 
     if (!user || !user.isActive) {
-      this.logger.warn(`Login failed for ${normalizedEmail}`);
+      this.logAuthWarning('AUTH_LOGIN_FAILED', {
+        email: normalizedEmail,
+        reason: 'invalid_credentials',
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const isValidPassword = await verifyPassword(password, user.passwordHash);
 
     if (!isValidPassword) {
-      this.logger.warn(`Login failed for ${normalizedEmail}`);
+      this.logAuthWarning('AUTH_LOGIN_FAILED', {
+        email: normalizedEmail,
+        reason: 'invalid_credentials',
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -89,9 +107,14 @@ export class AuthService {
       role: this.toUserRole(user.role),
     };
 
-    this.logger.log(`Login succeeded for ${user.email}`);
-
     const refreshSession = await this.createRefreshSession(user.id, authenticatedUser, context);
+
+    this.logAuthInfo('AUTH_LOGIN_SUCCEEDED', {
+      email: user.email,
+      role: authenticatedUser.role,
+      sessionFamilyId: refreshSession.familyId,
+      userId: user.id,
+    });
 
     return {
       accessToken: this.signToken(authenticatedUser),
@@ -106,6 +129,9 @@ export class AuthService {
     context: SessionRequestContext = {},
   ): Promise<LoginWithRefreshSession> {
     if (!refreshToken) {
+      this.logAuthWarning('AUTH_REFRESH_REJECTED', {
+        reason: 'missing_token',
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -126,15 +152,40 @@ export class AuthService {
     });
 
     if (!session) {
+      this.logAuthWarning('AUTH_REFRESH_REJECTED', {
+        reason: 'session_not_found',
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
     if (this.isRotatedOrReusedSession(session)) {
       await this.revokeActiveSessionFamily(session.familyId, REFRESH_TOKEN_REVOKED_REASON.REUSE_DETECTED);
+      this.logAuthWarning('AUTH_REFRESH_REUSE_DETECTED', {
+        familyId: session.familyId,
+        reason: 'rotated_or_reused_session',
+        sessionId: session.id,
+        userId: session.userId,
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
-    if (session.revokedAt || session.expiresAt <= new Date()) {
+    if (session.revokedAt) {
+      this.logAuthWarning('AUTH_REFRESH_REJECTED', {
+        familyId: session.familyId,
+        reason: 'revoked_session',
+        sessionId: session.id,
+        userId: session.userId,
+      });
+      throw new UnauthorizedException('Invalid refresh session');
+    }
+
+    if (session.expiresAt <= new Date()) {
+      this.logAuthWarning('AUTH_REFRESH_REJECTED', {
+        familyId: session.familyId,
+        reason: 'expired_session',
+        sessionId: session.id,
+        userId: session.userId,
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -173,6 +224,12 @@ export class AuthService {
               revokedReason: REFRESH_TOKEN_REVOKED_REASON.REUSE_DETECTED,
             },
           });
+          this.logAuthWarning('AUTH_REFRESH_REUSE_DETECTED', {
+            familyId: session.familyId,
+            reason: 'rotation_conflict',
+            sessionId: session.id,
+            userId: session.userId,
+          });
           throw new UnauthorizedException('Invalid refresh session');
         }
 
@@ -195,11 +252,24 @@ export class AuthService {
       }
 
       if (this.isPrismaUniqueConstraintError(error)) {
+        this.logAuthWarning('AUTH_REFRESH_REJECTED', {
+          familyId: session.familyId,
+          reason: 'next_session_unique_constraint',
+          sessionId: session.id,
+          userId: session.userId,
+        });
         throw new UnauthorizedException('Invalid refresh session');
       }
 
       throw error;
     }
+
+    this.logAuthInfo('AUTH_REFRESH_SUCCEEDED', {
+      familyId: session.familyId,
+      previousSessionId: session.id,
+      nextSessionId,
+      userId: session.userId,
+    });
 
     return {
       accessToken: this.signToken(authenticatedUser),
@@ -211,6 +281,9 @@ export class AuthService {
 
   async logout(refreshToken: string | null): Promise<void> {
     if (!refreshToken) {
+      this.logAuthInfo('AUTH_LOGOUT_SKIPPED', {
+        reason: 'missing_token',
+      });
       return;
     }
 
@@ -221,10 +294,13 @@ export class AuthService {
     });
 
     if (!session) {
+      this.logAuthInfo('AUTH_LOGOUT_SKIPPED', {
+        reason: 'session_not_found',
+      });
       return;
     }
 
-    await this.prismaService.userSession.updateMany({
+    const logoutResult = await this.prismaService.userSession.updateMany({
       where: {
         id: session.id,
         revokedAt: null,
@@ -233,6 +309,11 @@ export class AuthService {
         revokedAt: new Date(),
         revokedReason: REFRESH_TOKEN_REVOKED_REASON.LOGOUT,
       },
+    });
+
+    this.logAuthInfo('AUTH_LOGOUT_SUCCEEDED', {
+      changed: logoutResult.count,
+      sessionId: session.id,
     });
   }
 
@@ -296,21 +377,30 @@ export class AuthService {
     });
 
     if (!currentUser) {
-      this.logger.warn(`Authenticated session rejected because user ${userId} no longer exists`);
+      this.logAuthWarning('AUTH_ACCESS_TOKEN_REJECTED', {
+        reason: 'user_not_found',
+        userId,
+      });
       throw new UnauthorizedException('Invalid session');
     }
 
     if (!currentUser.isActive) {
-      this.logger.warn(`Authenticated session rejected because user ${userId} is inactive`);
+      this.logAuthWarning('AUTH_ACCESS_TOKEN_REJECTED', {
+        reason: 'inactive_user',
+        userId,
+      });
       throw new UnauthorizedException('Invalid session');
     }
 
     const currentRole = this.toUserRole(currentUser.role);
 
     if (tokenUser.role !== currentRole) {
-      this.logger.warn(
-        `Authenticated session rejected because role changed for user ${userId}: token=${tokenUser.role} current=${currentRole}`,
-      );
+      this.logAuthWarning('AUTH_ACCESS_TOKEN_REJECTED', {
+        currentRole,
+        reason: 'role_changed',
+        tokenRole: tokenUser.role,
+        userId,
+      });
       throw new UnauthorizedException('Invalid session');
     }
 
@@ -416,16 +506,17 @@ export class AuthService {
     userId: string,
     authenticatedUser: AuthenticatedUser,
     context: SessionRequestContext,
-  ): Promise<{ expiresAt: Date; token: string }> {
+  ): Promise<{ expiresAt: Date; familyId: string; token: string }> {
     const token = this.refreshTokenService.generateToken();
     const refreshTokenHash = this.refreshTokenService.hashToken(token);
     const expiresAt = this.calculateRefreshExpiresAt();
+    const familyId = randomUUID();
 
     await this.prismaService.userSession.create({
       data: {
         userId,
         refreshTokenHash,
-        familyId: randomUUID(),
+        familyId,
         expiresAt,
         ipAddress: normalizeNullableString(context.ipAddress),
         userAgent: normalizeNullableString(context.userAgent),
@@ -433,7 +524,7 @@ export class AuthService {
       },
     });
 
-    return { expiresAt, token };
+    return { expiresAt, familyId, token };
   }
 
   private calculateRefreshExpiresAt(from = new Date()): Date {
@@ -442,7 +533,12 @@ export class AuthService {
 
   private resolveUserFromSession(session: PersistedUserSessionWithUser): AuthenticatedUser {
     if (!session.user.isActive) {
-      this.logger.warn(`Refresh session rejected because user ${session.userId} is inactive`);
+      this.logAuthWarning('AUTH_REFRESH_REJECTED', {
+        familyId: session.familyId,
+        reason: 'inactive_user',
+        sessionId: session.id,
+        userId: session.userId,
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -450,7 +546,14 @@ export class AuthService {
     const currentRole = this.toUserRole(session.user.role);
 
     if (!issuedRole || issuedRole !== currentRole) {
-      this.logger.warn(`Refresh session rejected because role changed for user ${session.userId}`);
+      this.logAuthWarning('AUTH_REFRESH_REJECTED', {
+        currentRole,
+        familyId: session.familyId,
+        issuedRole,
+        reason: 'role_changed',
+        sessionId: session.id,
+        userId: session.userId,
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -500,6 +603,21 @@ export class AuthService {
 
   private isPrismaUniqueConstraintError(error: unknown): boolean {
     return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+  }
+
+  private logAuthInfo(event: AuthAuditEvent, metadata: AuthAuditMetadata = {}): void {
+    this.logger.log(this.formatAuthAuditEvent(event, metadata));
+  }
+
+  private logAuthWarning(event: AuthAuditEvent, metadata: AuthAuditMetadata = {}): void {
+    this.logger.warn(this.formatAuthAuditEvent(event, metadata));
+  }
+
+  private formatAuthAuditEvent(event: AuthAuditEvent, metadata: AuthAuditMetadata): string {
+    return JSON.stringify({
+      event,
+      ...metadata,
+    });
   }
 }
 
