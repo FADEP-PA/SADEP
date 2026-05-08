@@ -31,7 +31,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - **Commit funcional aprovado:** `feat(auth): add refresh token sessions`.
 - **Escopo entregue:** login cria `UserSession`; refresh token opaco em cookie `HttpOnly`; persistencia apenas de `refreshTokenHash` HMAC-SHA-256; `POST /auth/refresh`; rotacao transacional; sessao anterior `ROTATED` com `replacedBySessionId`; reuso revoga sessoes ativas da familia; `POST /auth/logout` idempotente.
 - **Preservado:** bearer JWT atual, frontend, contracts, Prisma schema/migrations, workflow, CESAD, permissoes e regras processuais.
-- **Etapa frontend seguinte:** `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues depois com access token em memoria, bootstrap via refresh, retry silencioso e remocao de caminhos legados de token; `BE-ARCH-01F` foi concluida no recorte de eventos estruturados de auth; `BE-ARCH-01E5` permanece pendente.
+- **Etapa frontend seguinte:** `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues depois com access token em memoria, bootstrap via refresh, retry silencioso e remocao de caminhos legados de token; `BE-ARCH-01F` foi concluida no recorte de eventos estruturados de auth; `BE-ARCH-01E5` foi concluida no recorte de hardening operacional de cookies/CORS/env.
 
 ### BE-ARCH-01E2 — Modelar sessao e refresh token
 
@@ -51,14 +51,14 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - **Fora do escopo:** backend, contracts, refresh token, cookies, revogação, logout server-side, CESAD, workflow e regras processuais.
 - **Ressalva:** validacao manual em navegador ainda recomendada para login, logout, reload autenticado, `401` concorrente, `403` e limpeza dos storages.
 
-Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao frontend. A frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida, pois `BE-ARCH-01E5` permanece pendente.
+Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao frontend. A frente maior `BE-ARCH-01` pode ser lida como concluida no recorte planejado de sessao/auth.
 
 ## Frentes backend pendentes e relacionadas
 
 - [`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): pendente crítico; não é problema de sessão, mas de autorização contextual por processo, comissão e etapa.
 - [`BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo`](./backend/tasks/BE-ARCH-02-shared-packages.md): concluida no recorte estrutural de `@sadep/contracts`; `dist/` passou a ser entrypoint de consumo e os consumidores constroem contracts antes dos gates.
 - [`BE-TECH-02 — Revisar worker e cron`](./backend/tasks/BE-TECH-02-worker-cron.md): concluida no recorte de varredura tecnica; `apps/worker` e `apps/cron` permanecem como estrutura reservada sem execucao no MVP.
-- `BE-ARCH-01E5`: pendente; hardening operacional de cookies/CORS/env.
+- [`BE-ARCH-01E5 — Hardening operacional de cookies/CORS/env`](./backend/tasks/BE-ARCH-01E5-cookie-cors-env-hardening.md): concluida no recorte backend de validacao operacional de ambiente.
 - [`BE-ARCH-01F — Auditar e testar eventos de autenticação`](./backend/tasks/BE-ARCH-01F-auth-event-audit.md): concluida no recorte backend de eventos estruturados de auth e testes unitarios.
 - `BE-FLOW-*`: backlog processual; consultar [`backend/active.md`](./backend/active.md) para o resumo atual sem detalhamento nesta fase.
 
@@ -109,7 +109,7 @@ Relações principais:
 - Consultar [`backend/tasks/`](./backend/tasks/) para frentes ativas específicas.
 - Não tratar `BE-SEC-03` como concluída.
 - Não confundir `BE-ARCH-02` concluida no recorte estrutural com novos contratos funcionais de endpoint, schemas de validacao ou eventos de dominio.
-- Não confundir `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B`, `BE-ARCH-01E4C` e `BE-ARCH-01F` concluidas com encerramento da frente maior `BE-ARCH-01`; `BE-ARCH-01E5` permanece pendente.
+- `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` estao concluidas no recorte planejado de sessao/auth.
 - O histórico detalhado anterior foi substituído por links de transição e resumos modulares.
 
 ## Fora do escopo deste índice

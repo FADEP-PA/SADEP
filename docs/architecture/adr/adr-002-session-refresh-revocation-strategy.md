@@ -457,7 +457,7 @@ Decisões e pendências operacionais:
 - localhost pode usar `COOKIE_SECURE=false`;
 - produção nunca deve usar cookie inseguro.
 
-Variáveis futuras candidatas:
+Variáveis adotadas no recorte incremental:
 
 - `ACCESS_TOKEN_TTL`;
 - `REFRESH_TOKEN_TTL`;
@@ -528,5 +528,5 @@ Subtasks propostas:
 - `BE-ARCH-01E2 — Modelar sessão e refresh token`;
 - `BE-ARCH-01E3 — Implementar refresh, rotação e logout server-side`;
 - `BE-ARCH-01E4 — Alinhar frontend para access em memória e refresh silencioso`;
-- `BE-ARCH-01E5 — Hardening operacional de cookies/CORS/env`;
-- `BE-ARCH-01F — Auditar e testar eventos de autenticação`.
+- `BE-ARCH-01E5 — Hardening operacional de cookies/CORS/env` concluida no recorte backend;
+- `BE-ARCH-01F — Auditar e testar eventos de autenticação` concluida no recorte backend.

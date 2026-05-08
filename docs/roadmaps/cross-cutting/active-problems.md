@@ -13,9 +13,9 @@ Este painel resume problemas ativos ou alertas transversais. O antigo painel tra
 
 ## Sessao / auth
 
-- `BE-ARCH-01E5` — pendente; hardening operacional de cookies/CORS/env.
+Sem pendencia ativa nesta categoria apos o recorte `BE-ARCH-01E5`.
 
-Observacao: a estrategia de producao com refresh/revogacao continua fora do escopo da `BE-ARCH-01D`; a ADR da `BE-ARCH-01E1` registra a decisao, a `BE-ARCH-01E2` entregou a modelagem persistente, a `BE-ARCH-01E3` mitigou o gap backend de refresh, rotacao, cookie `HttpOnly` e logout server-side, a `BE-ARCH-01E4A` mitigou o risco de access token persistido em storage web, a `BE-ARCH-01E4B` mitigou o retry silencioso no frontend, a `BE-ARCH-01E4C` removeu consumidores legados de token de sessao no frontend, e a `BE-ARCH-01F` mitigou a pendencia de eventos estruturados de auth. Permanece pendente `BE-ARCH-01E5`; a frente maior `BE-ARCH-01` nao esta concluida.
+Observacao: a estrategia de producao com refresh/revogacao foi tratada incrementalmente em `BE-ARCH-01E2`, `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F`. Novas evolucoes de auth devem nascer como tasks proprias.
 
 ## Backend / arquitetura
 

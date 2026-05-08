@@ -24,7 +24,7 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - `rememberMe` passou a ser apenas preferencia local nao sensivel.
 - `session.accessToken` nao existe mais em `AuthSession`; consumidores remanescentes foram removidos no recorte `BE-ARCH-01E4C`.
 - Atualizacao de 2026-05-04: as rotas públicas equivalentes sao normalizadas no helper de auth; `401 público` no bootstrap de `/auth/refresh` deixa o usuario anonimo sem exibir aviso indevido de sessao expirada em `/login/`, `/403/` ou `/sessao-expirada/`.
-- Proxima acao tecnica recomendada: seguir para `BE-ARCH-01E5` conforme escopo de seguranca operacional; `BE-ARCH-01F` foi concluida no recorte backend de eventos estruturados de auth.
+- Proxima acao tecnica recomendada fora do frontend: seguir para `BE-SEC-03` se a prioridade for seguranca CESAD contextual.
 
 ### BE-ARCH-01E4B / BE-ARCH-01E4C — Refresh silencioso frontend resolvido no recorte identificado
 
@@ -33,7 +33,7 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - O retry reutiliza o access token em memoria quando outra requisicao ja concluiu o refresh, evitando novo `POST /auth/refresh` desnecessario.
 - `BE-ARCH-01E4C` removeu o caminho legado de token explicito do servico de auth e manteve chamadas autenticadas usando o access token em memoria por `useStoredAccessToken`.
 - A varredura global confirmou `refreshSessionPromise` no `http-client`, ausencia de `session.accessToken` no frontend e ausencia de persistencia de `accessToken` em `localStorage`/`sessionStorage`.
-- `BE-ARCH-01E5` permanece pendente; `BE-ARCH-01F` foi concluida no recorte backend; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- `BE-ARCH-01E5` e `BE-ARCH-01F` foram concluidas no recorte backend; a frente maior `BE-ARCH-01` pode ser lida como concluida no recorte planejado de sessao/auth.
 
 ### Backlog frontend documentado
 

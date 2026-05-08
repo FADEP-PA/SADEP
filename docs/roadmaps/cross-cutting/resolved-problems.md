@@ -20,13 +20,22 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - A varredura global confirmou que `BE-ARCH-01E4B` estava implementada no codigo com retry automatico de `401`, refresh silencioso e single-flight.
 - A varredura global confirmou que `BE-ARCH-01E4C` estava implementada no codigo quanto a ausencia de consumidores de `session.accessToken`.
 - Os roadmaps foram reconciliados para nao apresentar `BE-ARCH-01E4B` ou `BE-ARCH-01E4C` como proximas implementacoes pendentes.
-- `BE-ARCH-01E5` permanece pendente; a frente maior `BE-ARCH-01` nao esta concluida.
+- `BE-ARCH-01E5` foi concluida posteriormente no recorte de hardening operacional; a frente maior `BE-ARCH-01` pode ser lida como concluida no recorte planejado de sessao/auth.
 
 ## BE-ARCH-01F — Eventos de autenticacao
 
 - **Status documental:** resolvida no recorte backend de eventos estruturados e testes unitarios.
 - Login, refresh, reuso de refresh token, logout e rejeicoes de access token passaram a emitir eventos JSON com codigos estaveis.
 - Os testes unitarios cobrem os principais eventos positivos e negativos e confirmam que senha recebida em login rejeitado nao aparece nos logs.
+- Nao houve alteracao de frontend, dados demonstrativos, fakes, placeholders ou fallback visual.
+
+## BE-ARCH-01E5 — Cookies/CORS/env
+
+- **Status documental:** resolvida no recorte backend de hardening operacional.
+- `FRONTEND_ORIGIN` exige origin explicita `http`/`https`, sem wildcard, path, query, fragmento ou credenciais, e exige `https` em producao.
+- `COOKIE_DOMAIN` e `COOKIE_PATH` passaram a ter validacoes adicionais contra valores ambiguos ou invalidos.
+- As exigencias de `COOKIE_SECURE=true` em producao e `COOKIE_SAMESITE=none` apenas com cookie seguro foram preservadas.
+- O cookie default residual `aep_pa_refresh` permanece como alerta `NOM-AEP-COOKIE-01`, fora deste recorte.
 - Nao houve alteracao de frontend, dados demonstrativos, fakes, placeholders ou fallback visual.
 
 ## DOC-FT24-STATE-01 — Reconciliar status documental de FT-24
@@ -112,7 +121,7 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - O login cria `UserSession`, o refresh token e opaco, o hash HMAC-SHA-256 e persistido em `refreshTokenHash` e o transporte usa cookie `HttpOnly`.
 - `POST /auth/refresh` e `POST /auth/logout` foram implementados; refresh rotaciona a sessao e reuso revoga sessoes ativas da familia.
 - A etapa frontend `BE-ARCH-01E4A` foi entregue depois para access token em memoria e bootstrap via refresh.
-- Hardening operacional amplo permanece pendente em `BE-ARCH-01E5`; auditoria formal de eventos foi concluida no recorte `BE-ARCH-01F`; `BE-ARCH-01E4B/C` foram concluidas no recorte frontend.
+- Hardening operacional foi concluido no recorte `BE-ARCH-01E5`; auditoria formal de eventos foi concluida no recorte `BE-ARCH-01F`; `BE-ARCH-01E4B/C` foram concluidas no recorte frontend.
 
 ## BE-ARCH-01E4A — Access token em memoria e bootstrap via refresh
 
@@ -124,7 +133,7 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - `rememberMe` passou a ser preferencia local nao sensivel e o storage legado `sadep:auth:session` deixou de ser prova de sessao autenticada.
 - O alerta de UX do `401 público` no bootstrap foi mitigado pela normalizacao de rotas públicas no helper de auth; rota publica equivalente permanece como anonimo silencioso.
 - A mitigacao frontend de retry automatico com single-flight e remocao dos consumidores remanescentes de `session.accessToken` foi concluida em `BE-ARCH-01E4B/C`.
-- Hardening operacional amplo permanece pendente em `BE-ARCH-01E5`; auditoria formal de eventos foi concluida no recorte `BE-ARCH-01F`; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- Hardening operacional foi concluido no recorte `BE-ARCH-01E5`; auditoria formal de eventos foi concluida no recorte `BE-ARCH-01F`; a frente maior `BE-ARCH-01` pode ser lida como concluida no recorte planejado de sessao/auth.
 
 ## BE-ARCH-01E4B — Retry 401 com refresh silencioso
 
@@ -133,7 +142,7 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - O refresh usa single-flight por promise compartilhada para evitar refresh storm.
 - O retry reutiliza access token em memoria quando outra request ja concluiu a renovacao.
 - Rotas `/auth/*` nao entram no retry, preservando protecao contra loop.
-- `BE-ARCH-01E5` permanece pendente.
+- `BE-ARCH-01E5` foi concluida no recorte backend de hardening operacional.
 
 ## BE-ARCH-01E4C — Remocao de consumidores de session.accessToken
 

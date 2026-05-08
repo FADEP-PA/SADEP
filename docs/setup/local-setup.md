@@ -45,7 +45,11 @@ DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
 - `DEV_SEED_PASSWORD` e obrigatorio para o seed local.
 - Os usuarios seed mantem e-mails previsiveis; a senha de todos passa a ser o valor de `DEV_SEED_PASSWORD`.
 - Nao ha mais senha fixa versionada para usuarios seed.
-- Em desenvolvimento local, os defaults de sessao usam `ACCESS_TOKEN_TTL=1h`, `REFRESH_TOKEN_TTL=7d`, cookie `HttpOnly` em `/auth`, `COOKIE_SECURE=false` e `COOKIE_SAMESITE=lax`.
+- Em desenvolvimento local, os defaults de sessao usam `ACCESS_TOKEN_TTL=1h`, `REFRESH_TOKEN_TTL=7d`, cookie `HttpOnly` em `/auth`, `COOKIE_SECURE=false`, `COOKIE_SAMESITE=lax` e `FRONTEND_ORIGIN=http://localhost:3001`.
+- `FRONTEND_ORIGIN` deve ser uma origin `http` ou `https` sem path, query, fragmento, credenciais ou wildcard. Em producao, deve usar `https`.
+- `COOKIE_DOMAIN`, quando definido, deve ser apenas dominio, sem protocolo, porta, wildcard ou path. Em producao, `localhost` nao e permitido como dominio de cookie.
+- `COOKIE_PATH` deve iniciar com `/` e nao deve conter whitespace, semicolon, query ou fragmento.
+- `COOKIE_SAMESITE=none` exige `COOKIE_SECURE=true`; em producao, `COOKIE_SECURE=true` e obrigatorio.
 
 ### 2. Executar o bootstrap determinístico do backend
 
@@ -186,6 +190,7 @@ Checklist mínimo para validar o ambiente:
 - `npm install` executado com sucesso
 - `apps/backend/.env` criado com `JWT_SECRET` e `DEV_SEED_PASSWORD`
 - `REFRESH_TOKEN_HMAC_SECRET` definido no ambiente local
+- `FRONTEND_ORIGIN` valido e sem path/query/fragmento
 - `apps/backend/prisma.config.ts` presente com schema e seed do backend
 - `npm run backend:bootstrap` executado com sucesso
 - Prisma Client gerado

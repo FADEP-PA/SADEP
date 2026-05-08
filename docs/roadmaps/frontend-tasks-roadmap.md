@@ -52,7 +52,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - Atualizacao de 2026-05-04: o `401 público` no bootstrap nao exibe mais aviso indevido de sessao expirada no login porque rotas públicas equivalentes sao normalizadas no helper de auth.
 - `BE-ARCH-01E4B` foi concluida no recorte frontend com retry automatico de `401`, single-flight contra refresh storm e protecao contra loop de refresh.
 - `BE-ARCH-01E4C` foi concluida no recorte frontend com remocao do caminho legado de token explicito e validacao por gates frontend.
-- `BE-ARCH-01E5` permanece pendente; `BE-ARCH-01F` foi concluida no recorte backend de eventos estruturados de auth; a frente maior `BE-ARCH-01` nao esta totalmente concluida.
+- `BE-ARCH-01E5` e `BE-ARCH-01F` foram concluidas no recorte backend; a frente maior `BE-ARCH-01` pode ser lida como concluida no recorte planejado de sessao/auth.
 
 ## Itens frontend resolvidos
 
@@ -107,7 +107,7 @@ Relações principais:
 - Não confundir `FT-27/DX-01` resolvida com `DX-POSTCSS-01`.
 - Não confundir `FT-05` histórica com integração real da chefia.
 - Não tratar UI de homologação preparada em `FT-17` como fluxo backend completo.
-- `BE-ARCH-01D` está concluída no recorte mínimo de sessão frontend; `BE-ARCH-01E3` está concluída no recorte backend; `BE-ARCH-01E4A` está concluída no recorte frontend inicial; `BE-ARCH-01E4B` e `BE-ARCH-01E4C` estão concluídas no recorte frontend de refresh silencioso; `BE-ARCH-01F` está concluída no recorte backend de eventos estruturados de auth; `BE-ARCH-01E5` permanece pendente.
+- `BE-ARCH-01D` está concluída no recorte mínimo de sessão frontend; `BE-ARCH-01E3` está concluída no recorte backend; `BE-ARCH-01E4A` está concluída no recorte frontend inicial; `BE-ARCH-01E4B` e `BE-ARCH-01E4C` estão concluídas no recorte frontend de refresh silencioso; `BE-ARCH-01E5` e `BE-ARCH-01F` estão concluídas no recorte backend.
 
 ## Fora do escopo deste índice
 

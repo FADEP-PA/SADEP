@@ -103,4 +103,4 @@ Validacao manual em navegador ainda e recomendada para login, logout, reload aut
 
 ## Proxima acao
 
-Manter `BE-ARCH-01E5` como proxima frente pendente da familia de autenticacao. `BE-ARCH-01F` foi concluida posteriormente no recorte backend de eventos estruturados de auth. A frente maior `BE-ARCH-01` nao deve ser tratada como totalmente concluida enquanto `BE-ARCH-01E5` permanecer aberta.
+`BE-ARCH-01E5` e `BE-ARCH-01F` foram concluidas posteriormente no recorte backend. A frente maior `BE-ARCH-01` pode ser lida como concluida no recorte planejado de sessao/auth.

@@ -87,8 +87,20 @@ export function validateEnvironmentVariables(config: Record<string, unknown>): A
   const cookieDomain = String(config.COOKIE_DOMAIN ?? '').trim();
   const cookiePath = String(config.COOKIE_PATH ?? '/auth').trim();
 
+  if (cookieDomain && !isValidCookieDomain(cookieDomain)) {
+    throw new Error('Invalid COOKIE_DOMAIN: expected a plain domain name without protocol, path or wildcard.');
+  }
+
+  if (nodeEnv === 'production' && isLocalhostCookieDomain(cookieDomain)) {
+    throw new Error('Invalid COOKIE_DOMAIN: localhost cookie domain is not allowed in production.');
+  }
+
   if (!cookiePath.startsWith('/')) {
     throw new Error('Invalid COOKIE_PATH: expected a path starting with /.');
+  }
+
+  if (/[\s;?#]/.test(cookiePath)) {
+    throw new Error('Invalid COOKIE_PATH: expected a path without whitespace, semicolon, query or fragment.');
   }
 
   const configuredRefreshTokenHmacSecret =
@@ -108,6 +120,8 @@ export function validateEnvironmentVariables(config: Record<string, unknown>): A
     throw new Error('Invalid FRONTEND_ORIGIN: value is required.');
   }
 
+  const normalizedFrontendOrigin = normalizeFrontendOrigin(frontendOrigin, nodeEnv as NodeEnv);
+
   return {
     ACCESS_TOKEN_TTL_SECONDS: accessTokenTtlSeconds,
     COOKIE_DOMAIN: cookieDomain,
@@ -121,7 +135,7 @@ export function validateEnvironmentVariables(config: Record<string, unknown>): A
     REFRESH_TOKEN_HMAC_SECRET: refreshTokenHmacSecret,
     REFRESH_TOKEN_TTL_SECONDS: refreshTokenTtlSeconds,
     JWT_SECRET: jwtSecret,
-    FRONTEND_ORIGIN: frontendOrigin,
+    FRONTEND_ORIGIN: normalizedFrontendOrigin,
   };
 }
 
@@ -175,4 +189,47 @@ function parseBoolean(value: unknown, defaultValue: boolean): boolean {
   }
 
   throw new Error(`Invalid boolean value: ${String(value)}. Expected true or false.`);
+}
+
+function normalizeFrontendOrigin(value: string, nodeEnv: NodeEnv): string {
+  let parsedUrl: URL;
+
+  try {
+    parsedUrl = new URL(value);
+  } catch {
+    throw new Error('Invalid FRONTEND_ORIGIN: expected a valid http or https origin.');
+  }
+
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new Error('Invalid FRONTEND_ORIGIN: expected http or https protocol.');
+  }
+
+  if (parsedUrl.username || parsedUrl.password || parsedUrl.pathname !== '/' || parsedUrl.search || parsedUrl.hash) {
+    throw new Error('Invalid FRONTEND_ORIGIN: expected only protocol, host and optional port.');
+  }
+
+  if (nodeEnv === 'production' && parsedUrl.protocol !== 'https:') {
+    throw new Error('Invalid FRONTEND_ORIGIN: https is required in production.');
+  }
+
+  return parsedUrl.origin;
+}
+
+function isValidCookieDomain(value: string): boolean {
+  if (value.includes('*') || value.includes('://') || value.includes('/') || value.includes(':')) {
+    return false;
+  }
+
+  if (value.startsWith('.') || value.endsWith('.') || value.includes('..')) {
+    return false;
+  }
+
+  return value
+    .split('.')
+    .every((label) => /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(label));
+}
+
+function isLocalhostCookieDomain(value: string): boolean {
+  const normalizedValue = value.toLowerCase();
+  return normalizedValue === 'localhost' || normalizedValue.endsWith('.localhost');
 }
