@@ -70,6 +70,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FE-SERVIDOR-01` — jornada demonstrativa do servidor estagiário refinada sem remover dados demonstrativos.
 - `FE-CHEFIA-01` — jornada da chefia imediata refinada no recorte frontend seguro, com separação visual demo/real e fallback demonstrativo preservado.
 - `FE-MOBILE-01` — polimento mobile de `/servidor-estagiario` e `/chefia-imediata` concluido sem remover dados demonstrativos.
+- `FE-DEMO-UX-01` — refinamento visual dos modos demonstrativos de `/servidor-estagiario` e `/chefia-imediata` concluido sem remover dados demonstrativos.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
 - `FT-01` a `FT-15` — histórico frontend concluído conforme roadmap legado anterior.
 - `FT-25` — triagem de vulnerabilidades e dependências concluída, com alerta residual separado.

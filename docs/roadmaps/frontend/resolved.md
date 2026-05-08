@@ -80,6 +80,16 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Os blocos de modo demonstrativo/processo real foram ajustados para melhor leitura mobile.
 - Dados demonstrativos, placeholders e fakes foram preservados.
 
+## FE-DEMO-UX-01 — Refinamento visual dos modos demonstrativos
+
+- **Status documental:** concluida no recorte frontend seguro.
+- Os banners de modo demonstrativo/processo real de `/servidor-estagiario` e `/chefia-imediata` ganharam marcador visual lateral e estrutura mais estavel.
+- A quebra de texto dos detalhes de modo foi reforcada para evitar estouro visual com identificadores longos de processo.
+- Os cards de resumo do servidor receberam altura minima e alinhamento mais previsiveis.
+- Dados demonstrativos, placeholders, fakes, fallback visual e modo demonstrativo foram preservados.
+- Nao houve alteracao de backend, contracts, workflow, CESAD, homologacao, assinatura ou regras juridicas/processuais.
+- Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.
