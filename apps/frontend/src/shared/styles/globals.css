@@ -4601,16 +4601,30 @@ h3,
 
 .intern-journey-mode {
   display: grid;
-  gap: 0.2rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.2rem 0.75rem;
   padding: 0.95rem 1rem;
   border: 1px solid rgba(0, 124, 192, 0.14);
   border-radius: 1.1rem;
   background: linear-gradient(135deg, rgba(232, 244, 251, 0.9), rgba(255, 255, 255, 0.92));
 }
 
+.intern-journey-mode::before {
+  content: '';
+  grid-row: 1 / span 2;
+  width: 0.55rem;
+  min-height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
 .intern-journey-mode--real {
   border-color: rgba(60, 123, 87, 0.18);
   background: linear-gradient(135deg, rgba(60, 123, 87, 0.1), rgba(255, 255, 255, 0.94));
+}
+
+.intern-journey-mode--real::before {
+  background: var(--seduc-green);
 }
 
 .intern-journey-mode span {
@@ -4629,6 +4643,7 @@ h3,
   color: var(--ink);
   font-size: 0.98rem;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .intern-hero__summary {
@@ -4640,6 +4655,8 @@ h3,
 .intern-hero__summary-card {
   display: grid;
   gap: 0.35rem;
+  align-content: start;
+  min-height: 5.35rem;
   padding: 1rem 1.05rem;
   border: 1px solid rgba(19, 51, 93, 0.08);
   border-radius: 1.15rem;
@@ -4917,12 +4934,22 @@ h3,
 
 .supervisor-workspace-mode {
   display: grid;
-  gap: 0.35rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.35rem 0.8rem;
   padding: 1rem 1.2rem;
   border: 1px dashed rgba(19, 51, 93, 0.18);
   border-radius: 1rem;
   background: rgba(247, 249, 252, 0.86);
   color: #49698f;
+}
+
+.supervisor-workspace-mode::before {
+  content: '';
+  grid-row: 1 / span 2;
+  width: 0.55rem;
+  min-height: 100%;
+  border-radius: 999px;
+  background: #7e95b1;
 }
 
 .supervisor-workspace-mode span {
@@ -4937,6 +4964,7 @@ h3,
   color: #274a70;
   font-size: 0.94rem;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .supervisor-workspace-mode--real {
@@ -4949,6 +4977,10 @@ h3,
 
 .supervisor-workspace-mode--real span {
   color: var(--accent-strong);
+}
+
+.supervisor-workspace-mode--real::before {
+  background: linear-gradient(180deg, var(--accent), var(--seduc-green));
 }
 
 .supervisor-dashboard__hero,
