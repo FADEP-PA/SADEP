@@ -228,6 +228,8 @@ Conclusão de governança técnica: qualquer referência externa só é válida 
 - Documentos oficiais versionados por estado, com hash e bloqueio de mutação após assinatura.
 - Contratos de integração preparados para legado (eventos de domínio + APIs estáveis), mas sem dependência imediata.
 
+Observação posterior (`BE-TECH-02`): `apps/worker` e `apps/cron` permanecem como estrutura reservada para essa stack alvo, sem execução operacional no MVP.
+
 ---
 
 ## 8) O que aproveitar / evitar

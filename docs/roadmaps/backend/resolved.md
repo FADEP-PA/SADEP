@@ -85,6 +85,16 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Validacoes aprovadas: `npm run prisma:generate --workspace @sadep/backend`, `npm run db:check --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npm run backend:build` e `git diff --check`.
 - As etapas frontend `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram entregues depois com access token em memoria, bootstrap via refresh, retry silencioso e remocao dos caminhos legados de token de sessao; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes, e a frente maior `BE-ARCH-01` nao esta totalmente concluida.
 
+## BE-TECH-02 — Revisar worker e cron
+
+- **Status documental:** concluida no recorte de varredura tecnica.
+- `apps/worker` e `apps/cron` existem apenas como estrutura reservada para arquitetura futura.
+- As duas apps possuem READMEs e diretorios preservados por `.gitkeep`, sem `package.json`, scripts npm, entrypoint executavel, jobs, processors, queues, schedules ou tasks implementadas.
+- A decisao registrada e manter worker e cron fora do escopo operacional imediato do MVP, evitando promessa de execucao assincrona ou rotina agendada ja disponivel.
+- Nao houve implementacao de notificacoes, assinatura, publicacao, producao, workflow, CESAD ou regras processuais.
+- Frontend, dados demonstrativos, fakes, placeholders e fallback visual nao foram alterados.
+- Validacoes aprovadas: `npm run backend:build` e `git diff --check`.
+
 ## Outros concluidos no legado
 
 Os blocos abaixo aparecem como concluidos no tracker legado e devem ser tratados como historico ate a fase de arquivamento:

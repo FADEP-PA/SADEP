@@ -57,7 +57,7 @@ Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao fr
 
 - [`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): pendente crítico; não é problema de sessão, mas de autorização contextual por processo, comissão e etapa.
 - [`BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo`](./backend/tasks/BE-ARCH-02-shared-packages.md): pendente; `BE-ARCH-01C` resolveu contratos mínimos de auth/session, mas não encerrou a dívida estrutural dos packages.
-- [`BE-TECH-02 — Revisar worker e cron`](./backend/tasks/BE-TECH-02-worker-cron.md): pendente / arquitetura futura; decidir se haverá escopo mínimo real ou se a promessa deve sair da arquitetura imediata.
+- [`BE-TECH-02 — Revisar worker e cron`](./backend/tasks/BE-TECH-02-worker-cron.md): concluida no recorte de varredura tecnica; `apps/worker` e `apps/cron` permanecem como estrutura reservada sem execucao no MVP.
 - `BE-ARCH-01E5`: pendente; hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F`: pendente; auditar e testar eventos de autenticação.
 - `BE-FLOW-*`: backlog processual; consultar [`backend/active.md`](./backend/active.md) para o resumo atual sem detalhamento nesta fase.
@@ -107,7 +107,7 @@ Relações principais:
 - Consultar primeiro [`backend/active.md`](./backend/active.md) para o estado operacional backend.
 - Consultar [`backend/resolved.md`](./backend/resolved.md) para itens concluídos ou resolvidos.
 - Consultar [`backend/tasks/`](./backend/tasks/) para frentes ativas específicas.
-- Não tratar `BE-SEC-03`, `BE-ARCH-02` ou `BE-TECH-02` como concluídas.
+- Não tratar `BE-SEC-03` ou `BE-ARCH-02` como concluídas.
 - Não confundir `BE-ARCH-01C` concluída com encerramento da `BE-ARCH-02`.
 - Não confundir `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` concluidas com encerramento da frente maior `BE-ARCH-01`; `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes.
 - O histórico detalhado anterior foi substituído por links de transição e resumos modulares.

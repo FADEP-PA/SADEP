@@ -16,7 +16,6 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 - `BE-ARCH-01F` — auditar e testar eventos de autenticacao.
 - `BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo.
 - `BE-ARCH-02` — fortalecer pacotes compartilhados do monorepo.
-- `BE-TECH-02` — revisar estrutura de workspaces, worker e cron.
 - `BE-FLOW-*` — backlog processual documentado no tracker legado.
 
 ## Concluido recente
@@ -26,6 +25,7 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 - `BE-ARCH-01E4A` — access token em memoria e bootstrap via refresh concluidos/aprovados; commit funcional aprovado `feat(frontend): keep access token in memory`.
 - `BE-ARCH-01E4B` — retry automatico de `401` e single-flight identificados como implementados pela varredura global documental.
 - `BE-ARCH-01E4C` — consumidores/caminhos legados de `session.accessToken` removidos no recorte frontend identificado pela varredura.
+- `BE-TECH-02` — worker e cron revisados; `apps/worker` e `apps/cron` permanecem como estrutura reservada, sem execucao no MVP.
 - `BE-ARCH-01E5` e `BE-ARCH-01F` permanecem pendentes, portanto a frente maior `BE-ARCH-01` nao deve ser lida como totalmente concluida.
 
 ## Regras de transicao

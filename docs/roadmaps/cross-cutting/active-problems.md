@@ -21,7 +21,6 @@ Observacao: a estrategia de producao com refresh/revogacao continua fora do esco
 ## Backend / arquitetura
 
 - `BE-ARCH-02` — pendente; divida estrutural de packages compartilhados e consumo `src`/`dist`.
-- `BE-TECH-02` — pendente; revisar worker e cron e decidir escopo imediato ou promessa futura.
 
 ## DX / infra
 

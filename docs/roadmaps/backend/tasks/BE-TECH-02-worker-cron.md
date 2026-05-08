@@ -2,7 +2,7 @@
 
 ## Status
 
-Pendente / arquitetura futura.
+Concluida no recorte documental e de varredura tecnica.
 
 ## Area
 
@@ -20,14 +20,18 @@ Worker e cron existem ou sao prometidos na arquitetura, mas ainda e preciso deci
 
 ## Estado atual
 
-O tracker backend registra `BE-TECH-02` como planejada. O painel transversal indica a necessidade de escolher entre implementar escopo minimo real ou retirar promessas imediatas.
+Varredura concluida: `apps/worker` e `apps/cron` existem apenas como estrutura reservada, com READMEs e diretorios vazios preservados por `.gitkeep`. Nao ha `package.json`, scripts npm, entrypoint executavel, processador, fila, schedule ou job real nessas duas apps.
 
-## Escopo previsto
+Decisao: worker e cron permanecem como arquitetura futura reservada, mas nao fazem parte do escopo operacional imediato do MVP. A documentacao deve descreve-los como estrutura sem implementacao nesta fase, evitando promessa de execucao assincrona ou rotinas agendadas ja disponiveis.
 
-- verificar estado real de `apps/worker` e `apps/cron`;
-- decidir se permanecem na arquitetura imediata;
-- documentar uso futuro quando aplicavel;
-- retirar promessa imediata se nao houver escopo real aprovado.
+## Escopo realizado
+
+- verificado o estado real de `apps/worker` e `apps/cron`;
+- confirmada ausencia de scripts e pacotes npm dedicados para worker/cron;
+- confirmada ausencia de jobs, processors, queues, schedules ou tasks implementadas;
+- mantidas as pastas como placeholders arquiteturais futuros;
+- documentado que nao ha escopo minimo real aprovado para MVP nesta frente;
+- preservada a separacao entre promessa futura e funcionalidade disponivel agora.
 
 ## Fora do escopo
 
@@ -36,18 +40,25 @@ O tracker backend registra `BE-TECH-02` como planejada. O painel transversal ind
 - assinatura;
 - publicacao;
 - rotinas de producao.
+- alterar frontend, dados demonstrativos, fakes, placeholders ou fallback visual.
 
 ## Evidencias / referencias
 
-- O indice backend e o painel ativo registram `BE-TECH-02` como pendente / arquitetura futura.
-- O painel transversal relaciona a frente a worker e cron.
+- `apps/worker/README.md` registra processamento assincrono futuro e informa ausencia de implementacao nesta fase.
+- `apps/cron/README.md` registra rotinas agendadas futuras e informa ausencia de implementacao nesta fase.
+- `apps/worker/src/**` contem apenas diretorios e `.gitkeep`.
+- `apps/cron/src/**` contem apenas diretorios e `.gitkeep`.
+- `package.json` raiz nao possui scripts para worker ou cron.
+- `docs/architecture/repository-structure.md` registra que o escopo inicial do monorepo e apenas estrutura de diretorios/arquivos, sem codigo de implementacao.
 
-## Validacoes esperadas
+## Validacoes executadas
 
 - varredura de arquivos e scripts de worker/cron;
 - verificacao de referencias em docs e package scripts;
-- recomendacao documentada antes de implementacao funcional.
+- recomendacao documentada antes de implementacao funcional;
+- `npm run backend:build`;
+- `git diff --check`.
 
 ## Proxima acao
 
-Executar varredura curta de worker/cron.
+Abrir task futura propria apenas quando houver decisao explicita de implementar job real, fila, schedule, notificacao, rotina de producao ou worker executavel. Ate la, manter worker e cron como estrutura reservada sem promessa operacional imediata.

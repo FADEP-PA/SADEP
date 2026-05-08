@@ -38,6 +38,14 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - Nao houve alteracao versionada.
 - O alerta `postcss`/audit permanece pendente em [`./tasks/DX-POSTCSS-01-audit-postcss-next.md`](./tasks/DX-POSTCSS-01-audit-postcss-next.md).
 
+## BE-TECH-02 — Worker e cron como arquitetura futura
+
+- **Status documental:** resolvida no recorte de varredura tecnica.
+- `apps/worker` e `apps/cron` foram confirmados como estrutura sem implementacao nesta fase.
+- Nao existem scripts npm, package dedicado, entrypoint, jobs, processors, queues, schedules ou tasks reais para worker/cron.
+- A promessa operacional imediata foi retirada dos problemas ativos: worker e cron permanecem apenas como estrutura reservada para task futura propria.
+- Nao houve alteracao de frontend, dados demonstrativos, fakes, placeholders ou fallback visual.
+
 ## BE-TECH-01 — Configuracao Prisma depreciada
 
 - **Status documental:** resolvida no painel transversal e no tracker backend.
