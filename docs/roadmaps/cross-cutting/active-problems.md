@@ -20,7 +20,7 @@ Observacao: a estrategia de producao com refresh/revogacao continua fora do esco
 
 ## Backend / arquitetura
 
-- `BE-ARCH-02` — pendente; divida estrutural de packages compartilhados e consumo `src`/`dist`.
+Sem pendencia estrutural ativa nesta categoria apos o recorte `BE-ARCH-02`. Novos contratos funcionais devem nascer como tasks proprias.
 
 ## DX / infra
 

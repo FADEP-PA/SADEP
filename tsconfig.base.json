@@ -13,7 +13,7 @@
     "baseUrl": ".",
     "paths": {
       "@sadep/contracts": [
-        "packages/contracts/src/index.ts"
+        "packages/contracts/dist/index"
       ]
     }
   }

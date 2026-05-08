@@ -34,13 +34,13 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 - `BE-ARCH-01E5` — hardening operacional de cookies/CORS/env.
 - `BE-ARCH-01F` — auditar e testar eventos de autenticacao.
 - [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md).
-- [`BE-ARCH-02` — fortalecer pacotes compartilhados do monorepo](./tasks/BE-ARCH-02-shared-packages.md).
 
 ## Resolvidos por varredura global
 
 - `BE-ARCH-01E4B` — retry automatico de `401`, refresh silencioso com single-flight e protecao contra loop foram identificados no `http-client` do frontend.
 - `BE-ARCH-01E4C` — a varredura nao encontrou `session.accessToken` no frontend e confirmou o consumo autenticado via access token em memoria.
 - A frente maior `BE-ARCH-01` continua aberta enquanto `BE-ARCH-01E5` e `BE-ARCH-01F` permanecerem pendentes.
+- `BE-ARCH-02` — `@sadep/contracts` passou a expor `dist/` como entrypoint e consumidores constroem contracts antes dos gates.
 - `BE-TECH-02` — worker e cron revisados; `apps/worker` e `apps/cron` permanecem como estrutura reservada, sem execucao no MVP.
 
 ## Backlog processual

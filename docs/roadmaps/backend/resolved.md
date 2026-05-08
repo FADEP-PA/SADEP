@@ -95,6 +95,16 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Frontend, dados demonstrativos, fakes, placeholders e fallback visual nao foram alterados.
 - Validacoes aprovadas: `npm run backend:build` e `git diff --check`.
 
+## BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo
+
+- **Status documental:** concluida no recorte estrutural de contracts.
+- `@sadep/contracts` passou a expor `main`, `types` e `exports` a partir de `dist/`.
+- O `tsconfig.base.json` passou a resolver `@sadep/contracts` pelo build compilado, reduzindo acoplamento direto com `packages/contracts/src`.
+- Os tsconfigs backend deixaram de incluir `packages/contracts/src/**/*.ts`, e o Jest backend passou a mapear o pacote para `packages/contracts/dist/index.js`.
+- Scripts backend/frontend constroem `@sadep/contracts` antes de typecheck, build ou teste quando necessario.
+- Nao foram adicionados novos contratos funcionais, DTOs de auth, refresh token, UX frontend, dados demonstrativos, fakes, placeholders ou fallback visual.
+- Validacoes aprovadas: `npm run build --workspace @sadep/contracts`, `node -e "require('@sadep/contracts')"`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/frontend`, `npm run backend:build`, `npm run frontend:check`, `npm run test --workspace @sadep/backend` e `git diff --check`.
+
 ## Outros concluidos no legado
 
 Os blocos abaixo aparecem como concluidos no tracker legado e devem ser tratados como historico ate a fase de arquivamento:

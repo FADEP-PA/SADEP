@@ -12,7 +12,7 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - Backend possui `UserSession`; login cria sessao; refresh rotaciona; logout revoga.
 - Frontend nao persiste `accessToken`, usa bootstrap via `/auth/refresh` e mantem access token em memoria.
 - Packages ativos usam `@sadep/*`; nao foram encontrados imports antigos `@aep-pa/contracts`.
-- A divida estrutural de packages permanece em `BE-ARCH-02`, e o cookie default residual `aep_pa_refresh` permanece como alerta `NOM-AEP-COOKIE-01`.
+- A divida estrutural inicial de packages foi tratada no recorte `BE-ARCH-02`; o cookie default residual `aep_pa_refresh` permanece como alerta `NOM-AEP-COOKIE-01`.
 
 ## DOC-AUTH-STATE-01 — Reconciliar status documental de BE-ARCH-01E4B/E4C
 
@@ -44,6 +44,15 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - `apps/worker` e `apps/cron` foram confirmados como estrutura sem implementacao nesta fase.
 - Nao existem scripts npm, package dedicado, entrypoint, jobs, processors, queues, schedules ou tasks reais para worker/cron.
 - A promessa operacional imediata foi retirada dos problemas ativos: worker e cron permanecem apenas como estrutura reservada para task futura propria.
+- Nao houve alteracao de frontend, dados demonstrativos, fakes, placeholders ou fallback visual.
+
+## BE-ARCH-02 — Packages compartilhados do monorepo
+
+- **Status documental:** resolvida no recorte estrutural de `@sadep/contracts`.
+- `@sadep/contracts` passou a usar `dist/` como entrypoint de `main`, `types` e `exports`.
+- Backend e frontend constroem contracts antes dos gates relevantes, evitando dependencia runtime direta de `packages/contracts/src`.
+- O backend deixou de incluir `packages/contracts/src/**/*.ts` nos tsconfigs de app/spec.
+- Novos contratos funcionais, DTOs, schemas e eventos de dominio permanecem fora deste recorte e devem nascer como tasks proprias.
 - Nao houve alteracao de frontend, dados demonstrativos, fakes, placeholders ou fallback visual.
 
 ## BE-TECH-01 — Configuracao Prisma depreciada

@@ -17,13 +17,13 @@ Este pacote concentra contratos compartilhados entre os apps, especialmente:
 
 ## Compatibilidade de runtime
 
-Para permitir que o backend compilado rode com Node puro em produção, este pacote expõe um build CommonJS mínimo em `dist/` para chamadas `require()`:
+Para permitir que backend e frontend consumam o pacote pelo entrypoint versionado, este pacote expõe um build CommonJS mínimo em `dist/` para chamadas `require()` e para resolução de tipos:
 
 ```powershell
 npm run build --workspace @sadep/contracts
 ```
 
-Esse build compila apenas os contratos existentes e mantém o pacote pequeno. Ele não altera a modelagem dos contratos, não introduz nova arquitetura de pacotes compartilhados e não substitui uma revisão futura mais ampla do monorepo.
+Esse build compila apenas os contratos existentes e mantém o pacote pequeno. O `package.json` aponta `main`, `types` e `exports` para `dist/`, e os scripts dos consumidores constroem `@sadep/contracts` antes de typecheck, build ou teste quando necessário. Isso evita consumo direto de `src` em runtime sem alterar a modelagem dos contratos.
 
 ## Deliberadamente fora deste incremento
 
