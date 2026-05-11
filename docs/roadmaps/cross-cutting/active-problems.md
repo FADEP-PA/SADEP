@@ -4,7 +4,7 @@ Este painel resume problemas ativos ou alertas transversais. O antigo painel tra
 
 ## Seguranca
 
-- `BE-SEC-03` — autorizacao contextual CESAD por processo; permanece pendente critica e nao deve ser encerrada ate a politica estar aplicada aos endpoints/fluxos sensiveis.
+- `BE-SEC-03` — autorizacao contextual CESAD por processo; a primeira fatia executiva (`BE-CESAD-AUTH-01`) foi concluida, auditada e aprovada com ressalvas, aplicando politica contextual aos endpoints sensiveis atuais. O guarda-chuva permanece ativo por lacunas estruturais futuras: vinculo persistido comissao-processo/etapa, refinamento por comissao vinculada ao processo, assinatura colegiada, workflow completo e pareceres futuros.
 - [`SEC-HARD-01` — hardening adicional de seguranca HTTP, rate limit e CSRF](./tasks/SEC-HARD-01-http-rate-limit-csrf.md): melhoria futura separada de `BE-ARCH-01E5`.
 - `BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao; task backend futura, separada de `BE-ARCH-01F`.
 

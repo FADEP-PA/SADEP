@@ -4,6 +4,24 @@ Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker 
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis
+
+- **Status documental:** concluida / auditada / aprovada com ressalvas.
+- **Commit funcional aprovado:** `211a4d4 feat(backend): apply contextual CESAD authorization`.
+- Aplicou `CesadContextAuthorizationService` aos fluxos sensiveis atuais de processos/CESAD.
+- Protegeu workflow e historico para leitores CESAD com validacao contextual.
+- Protegeu as transicoes CESAD sensiveis `ISSUE_CESAD_OPINION` e `REQUEST_ADJUSTMENT`.
+- Protegeu a leitura consolidada CESAD por etapa.
+- Protegeu leitura, rascunho e conclusao do parecer CESAD de etapa.
+- Bloqueou `CESAD_MEMBER` e `COMMISSION_ASSISTANT` sem vinculo ativo em comissao CESAD vigente.
+- Manteve `COMMISSION_ASSISTANT` vinculado restrito a leitura/apoio, sem escrita de parecer nem transicao CESAD.
+- Preservou os fluxos de servidor avaliado, chefia imediata e admin.
+- Ampliou testes backend para cenarios positivos e negativos de autorizacao contextual.
+- Validacoes aprovadas: `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria e `git diff --check`.
+- Nao alterou schema, migrations, seeds, contracts, frontend, assinatura colegiada, workflow de quatro etapas, parecer conclusivo final, homologacao, notificacao, ciencia, recurso, cookie `aep_pa_refresh` ou documentacao de status durante o patch funcional.
+- Ressalvas remanescentes: a politica ainda usa comissao/membresia vigente como referencia transitoria; nao ha vinculo persistido comissao-processo/etapa; testes futuros podem cobrir `COMMISSION_ASSISTANT` tentando `REQUEST_ADJUSTMENT`, comissao `SUPERSEDED` e cobertura HTTP adicional para `REQUEST_ADJUSTMENT`.
+- `BE-SEC-03` permanece aberta como guarda-chuva estrutural.
+
 ## BE-ARCH-01 — Revisar estrategia de autenticacao web
 
 - **Status documental:** resolvida no recorte planejado de sessao/auth.

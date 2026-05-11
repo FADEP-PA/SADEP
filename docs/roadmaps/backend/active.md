@@ -4,6 +4,15 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Concluido recente
 
+### BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis
+
+- **Status operacional:** concluida / auditada / aprovada com ressalvas.
+- **Commit funcional aprovado:** `211a4d4 feat(backend): apply contextual CESAD authorization`.
+- **Escopo entregue:** `CesadContextAuthorizationService` passou a proteger os fluxos sensiveis atuais de workflow, historico, transicoes CESAD sensiveis, leitura consolidada CESAD e leitura/rascunho/conclusao do parecer CESAD de etapa.
+- **Efeito de seguranca:** `CESAD_MEMBER` e `COMMISSION_ASSISTANT` sem vinculo ativo sao bloqueados; `COMMISSION_ASSISTANT` vinculado permanece restrito a leitura/apoio, sem escrita de parecer nem transicao CESAD; servidor avaliado, chefia imediata e admin preservam o comportamento anterior.
+- **Validacoes/auditoria:** testes backend ampliados; typecheck, typecheck de specs, suite backend, Prisma validate com `DATABASE_URL` temporaria e `git diff --check` aprovados.
+- **Ressalvas:** a politica ainda usa comissao/membresia vigente como referencia transitoria e nao persiste vinculo comissao-processo/etapa. `BE-SEC-03` permanece ativa como guarda-chuva estrutural.
+
 ### BE-ARCH-01E3 — Implementar refresh, rotacao e logout server-side
 
 - **Status operacional:** concluida / auditada / aprovada.
@@ -31,8 +40,7 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Pendentes relevantes
 
-- [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md): pendente critica; ha estruturas auxiliares e testes parciais, mas a autorizacao contextual ainda precisa ser aplicada aos endpoints/fluxos sensiveis.
-- [`BE-CESAD-AUTH-01` — aplicar autorizacao contextual CESAD aos endpoints sensiveis](./tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md): subtask executiva vinculada a `BE-SEC-03`, sem encerrar o guarda-chuva de seguranca contextual.
+- [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md): pendente critica como guarda-chuva estrutural; a primeira fatia executiva (`BE-CESAD-AUTH-01`) foi concluida, mas ainda faltam vinculo persistido comissao-processo/etapa e refinamentos futuros conforme o workflow/documentos evoluirem.
 - [`BE-DOC-CESAD-SIGN-01` — modelar e validar assinatura colegiada do parecer CESAD](./tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md): pendente alta para pareceres com multiplos signatarios obrigatorios.
 - [`BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas](./tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): pendente alta para nao confundir o fluxo reduzido atual com o Caso 2 completo.
 - [`BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD](./tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao para homologacao final valida.

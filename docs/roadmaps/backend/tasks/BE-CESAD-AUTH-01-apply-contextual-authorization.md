@@ -2,7 +2,7 @@
 
 ## Status
 
-Pendente critica.
+Concluida / auditada / aprovada com ressalvas.
 
 ## Area
 
@@ -13,6 +13,20 @@ Backend, seguranca, CESAD e autorizacao contextual.
 `BE-SEC-03` permanece como guarda-chuva de seguranca contextual CESAD. A varredura global confirmou que ha estruturas auxiliares e testes parciais de autorizacao contextual, mas a politica ainda precisa ser aplicada aos endpoints e fluxos sensiveis.
 
 Esta task detalha a primeira fatia executiva de `BE-SEC-03`: deixar de aceitar acesso CESAD sensivel apenas por role global e status do processo.
+
+## Resultado entregue
+
+- `CesadContextAuthorizationService` foi reaproveitado como camada central de autorizacao contextual.
+- Workflow e historico de processos CESAD passaram a exigir vinculo contextual para `CESAD_MEMBER` e `COMMISSION_ASSISTANT`.
+- As transicoes CESAD sensiveis `ISSUE_CESAD_OPINION` e `REQUEST_ADJUSTMENT` passaram a exigir autorizacao contextual.
+- A leitura consolidada CESAD por etapa passou a exigir autorizacao contextual.
+- A leitura, o rascunho e a conclusao do parecer CESAD de etapa passaram a exigir autorizacao contextual.
+- `CESAD_MEMBER` sem vinculo ativo e bloqueado.
+- `COMMISSION_ASSISTANT` sem vinculo ativo e bloqueado.
+- `COMMISSION_ASSISTANT` vinculado permanece restrito a leitura/apoio, sem escrita de parecer nem transicao CESAD.
+- Fluxos de servidor avaliado, chefia imediata e admin foram preservados.
+- Testes backend foram ampliados para cenarios positivos e negativos.
+- Commit funcional aprovado: `211a4d4 feat(backend): apply contextual CESAD authorization`.
 
 ## Escopo previsto
 
@@ -40,6 +54,24 @@ Esta task detalha a primeira fatia executiva de `BE-SEC-03`: deixar de aceitar a
 - testes cobrem pelo menos um caso positivo e um negativo por grupo de endpoint afetado;
 - lacunas estruturais remanescentes ficam documentadas sem marcar `BE-SEC-03` como resolvida.
 
+## Validacoes executadas no recorte aprovado
+
+- `npm run typecheck --workspace @sadep/backend`;
+- `npm run typecheck:spec --workspace @sadep/backend`;
+- `npm run test --workspace @sadep/backend`;
+- `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria;
+- `git diff --check`.
+
+## Ressalvas remanescentes
+
+- A politica ainda usa comissao/membresia vigente como referencia transitoria.
+- Ainda nao ha vinculo persistido comissao-processo/etapa.
+- Assinatura colegiada CESAD permanece em `BE-DOC-CESAD-SIGN-01`.
+- Workflow completo de quatro etapas permanece em `BE-FLOW-4STAGE-01`.
+- Parecer conclusivo final permanece em `BE-CESAD-FINAL-01`.
+- Homologacao, notificacao e ciencia permanecem em `BE-HOMOLOG-01`.
+- Testes adicionais futuros podem cobrir `COMMISSION_ASSISTANT` tentando `REQUEST_ADJUSTMENT`, comissao `SUPERSEDED` e cobertura HTTP adicional para `REQUEST_ADJUSTMENT`.
+
 ## Validacoes esperadas
 
 - `npm run typecheck --workspace @sadep/backend`;
@@ -56,4 +88,4 @@ Esta task detalha a primeira fatia executiva de `BE-SEC-03`: deixar de aceitar a
 
 ## Proxima acao
 
-Inventariar endpoints CESAD sensiveis e decidir a menor camada comum para aplicar a politica contextual sem duplicar regras entre controllers e services.
+Manter `BE-SEC-03` aberta para os refinamentos estruturais de vinculo persistido comissao-processo/etapa e integracoes futuras com assinatura colegiada, workflow completo e pareceres posteriores.
