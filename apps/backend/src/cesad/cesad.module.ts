@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module';
 import { PrismaService } from '../infrastructure/database/prisma.service';
+import { CesadContextAuthorizationService } from './authorization/cesad-context-authorization.service';
 import { CesadCommissionActsController } from './cesad-commission-acts.controller';
 import { CesadCommissionActsService } from './cesad-commission-acts.service';
 import { CesadCommissionMembersController } from './cesad-commission-members.controller';
@@ -24,6 +25,7 @@ import { CesadCurrentCommissionService } from './cesad-current-commission.servic
     CesadCommissionsService,
     CesadCommissionActsService,
     CesadCommissionMembersService,
+    CesadContextAuthorizationService,
     PrismaService,
   ],
 })

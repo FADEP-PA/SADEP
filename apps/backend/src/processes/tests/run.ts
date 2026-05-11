@@ -12,6 +12,7 @@ async function main() {
     { runCesadCommissionMembersServiceTests },
     { runCesadCommissionsEndpointTests },
     { runCesadCommissionsServiceTests },
+    { runCesadContextAuthorizationServiceTests },
     { runCesadCurrentCommissionEndpointTests },
     { runCesadCurrentCommissionServiceTests },
     { runCesadStageOpinionsServiceTests },
@@ -29,6 +30,7 @@ async function main() {
     import('../../cesad/tests/cesad-commission-members.service.spec'),
     import('../../cesad/tests/cesad-commissions.endpoint.spec'),
     import('../../cesad/tests/cesad-commissions.service.spec'),
+    import('../../cesad/tests/cesad-context-authorization.service.spec'),
     import('../../cesad/tests/cesad-current-commission.endpoint.spec'),
     import('../../cesad/tests/cesad-current-commission.service.spec'),
     import('./cesad-stage-opinions.service.spec'),
@@ -49,6 +51,7 @@ async function main() {
   await runCesadCommissionMembersEndpointTests();
   await runCesadCommissionsServiceTests();
   await runCesadCommissionsEndpointTests();
+  await runCesadContextAuthorizationServiceTests();
   await runCesadCurrentCommissionServiceTests();
   await runCesadCurrentCommissionEndpointTests();
   await runCesadStageReadServiceTests();
