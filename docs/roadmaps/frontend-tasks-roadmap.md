@@ -38,7 +38,6 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - `FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo.
 - `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado, sem reabrir `FT-24`.
 - `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, documentos e autorizacao contextual.
-- `FE-ENV-01` — documentar variaveis de ambiente frontend e evitar fallback inseguro de API.
 - `FE-QUAL-01` — candidata futura para testes/frontend quality gate; não representa task formal concluída.
 
 ## Relação com BE-ARCH-01D
@@ -79,6 +78,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FE-CHEFIA-01` — integracao inicial da chefia imediata entregue no recorte frontend seguro, mas ainda parcial como fluxo final porque fallback demonstrativo/local, dados demonstrativos e dependencia de ID manual permanecem. Continuidade em `FE-CHEFIA-02`.
 - `FE-MOBILE-01` — polimento mobile de `/servidor-estagiario` e `/chefia-imediata` concluido sem remover dados demonstrativos.
 - `FE-DEMO-UX-01` — refinamento visual dos modos demonstrativos de `/servidor-estagiario` e `/chefia-imediata` concluido sem remover dados demonstrativos.
+- `FE-ENV-01` — variavel publica `NEXT_PUBLIC_API_BASE_URL` documentada para ambiente local, homologacao e producao; fallback local preservado apenas como comportamento atual.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
 - `FT-01` a `FT-15` — histórico frontend concluído conforme roadmap legado anterior.
 - `FT-25` — triagem de vulnerabilidades e dependências concluída, com alerta residual separado.

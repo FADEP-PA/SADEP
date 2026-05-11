@@ -91,6 +91,16 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Nao houve alteracao de backend, contracts, workflow, CESAD, homologacao, assinatura ou regras juridicas/processuais.
 - Validacoes aprovadas: `npm run frontend:typecheck`, `npm run frontend:check` e `git diff --check`.
 
+## FE-ENV-01 — Documentar variaveis de ambiente do frontend
+
+- **Status documental:** concluida no recorte frontend operacional.
+- `NEXT_PUBLIC_API_BASE_URL` foi documentada como a variavel publica que define a origin da API consumida pelo frontend.
+- O comportamento local atual foi registrado: quando a variavel nao esta definida, `apps/frontend/src/shared/api/http-client.ts` usa fallback para `http://localhost:3000`.
+- Homologacao e producao devem definir `NEXT_PUBLIC_API_BASE_URL` explicitamente com origin HTTPS da API institucional, sem path final, query, fragmento, credenciais ou wildcard.
+- `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` permanece removida e nao deve ser reintroduzida como configuracao frontend.
+- Nao houve alteracao de codigo, backend, Prisma, contracts, services/backend, autenticacao backend, dados demonstrativos ou lockfile.
+- Limitacao conhecida: transformar o fallback local em falha explicita de producao exige task propria de codigo, pois este recorte foi documental/operacional.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.

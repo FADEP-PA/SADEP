@@ -50,7 +50,6 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - [`FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo](./tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md).
 - [`FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado](./tasks/FE-PROCESS-LIST-01-authenticated-process-list.md).
 - [`FE-CESAD-01` — integracao real das telas CESAD com processos e pareceres](./tasks/FE-CESAD-01-real-cesad-screens.md).
-- [`FE-ENV-01` — documentar variaveis de ambiente do frontend e evitar fallback inseguro de API](./tasks/FE-ENV-01-frontend-env-documentation.md).
 
 ### FE-QUAL-01 — Testes/frontend quality gate
 

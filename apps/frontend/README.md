@@ -9,6 +9,21 @@ Interface operacional desacoplada para os perfis:
 
 Nesta etapa, o frontend já está autenticado, consome o backend real para login/sessão e também possui um dashboard técnico autenticado para consultar endpoints processuais iniciais.
 
+## Configuracao de API
+
+O cliente HTTP centralizado em `src/shared/api/http-client.ts` usa `NEXT_PUBLIC_API_BASE_URL` para montar as chamadas ao backend.
+
+- Em desenvolvimento local, o fallback atual e `http://localhost:3000` quando `NEXT_PUBLIC_API_BASE_URL` nao esta definida.
+- Em homologacao e producao, `NEXT_PUBLIC_API_BASE_URL` deve ser definida explicitamente com a origin HTTPS da API institucional.
+- O valor deve ser apenas a origin da API, sem path final, query, fragmento, credenciais ou wildcard.
+- `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` nao deve ser reintroduzida; a selecao/consulta de processos deve continuar pela UI ou por listagens reais futuras.
+
+Exemplo local opcional:
+
+```powershell
+$env:NEXT_PUBLIC_API_BASE_URL='http://localhost:3000'
+```
+
 ## Estrutura atual
 
 - `src/app`: composição de rotas, layouts, páginas técnicas e pontos de entrada do App Router.
