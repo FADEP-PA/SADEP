@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "check": "npm run build --workspace @sadep/contracts && tsc --noEmit -p tsconfig.json && next build",
+    "check": "npm run copy-check --workspace @sadep/frontend && npm run build --workspace @sadep/contracts && tsc --noEmit -p tsconfig.json && next build",
     "clean": "node ../../scripts/clean-frontend-cache.mjs",
+    "copy-check": "node ../../scripts/check-frontend-copy.mjs",
     "dev": "npm run build --workspace @sadep/contracts && next dev --port 3001",
     "build": "npm run build --workspace @sadep/contracts && next build",
     "start": "next start --port 3001",

@@ -121,6 +121,16 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Dados demonstrativos uteis, fakes seguros, fallbacks visuais e modos demonstrativos foram preservados.
 - Nao houve alteracao de backend, Prisma, contracts, autenticacao backend, endpoints ou integracao real inexistente.
 
+## FE-QUAL-01 — Quality gate frontend de texto e scaffolds legados
+
+- **Status documental:** concluida no recorte frontend.
+- Criado `scripts/check-frontend-copy.mjs` para varrer `apps/frontend/src` e `apps/frontend/README.md`.
+- Adicionado `frontend:copy-check` na raiz e `copy-check` no workspace `@sadep/frontend`.
+- `npm run frontend:check` passou a executar o gate antes de typecheck/build.
+- O gate bloqueia regressao de `AEP-PA` em texto frontend atual, `Lorem ipsum`, `TODO`, `em breve`, placeholders genericos e referencias a scaffolds legados.
+- Dados demonstrativos, fallbacks visuais e placeholders de input foram preservados.
+- Nao houve alteracao de backend, Prisma, contracts, autenticacao backend, endpoints ou integracao real inexistente.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.

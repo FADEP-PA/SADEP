@@ -49,11 +49,6 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - [`FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado](./tasks/FE-PROCESS-LIST-01-authenticated-process-list.md).
 - [`FE-CESAD-01` — integracao real das telas CESAD com processos e pareceres](./tasks/FE-CESAD-01-real-cesad-screens.md).
 
-### FE-QUAL-01 — Testes/frontend quality gate
-
-- Candidata futura derivada da varredura documental.
-- Nao representa task formal concluida nesta fase.
-
 ## Resolvido operacionalmente
 
 ### [FT-24 — Remover dependencia de NEXT_PUBLIC_TECHNICAL_PROCESS_ID](./resolved.md#ft-24--remover-dependencia-de-next_public_technical_process_id)

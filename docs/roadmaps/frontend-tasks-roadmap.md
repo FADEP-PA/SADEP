@@ -36,7 +36,6 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - `FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo.
 - `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado, sem reabrir `FT-24`.
 - `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, documentos e autorizacao contextual.
-- `FE-QUAL-01` — candidata futura para testes/frontend quality gate; não representa task formal concluída.
 
 ## Relação com BE-ARCH-01D
 
@@ -79,6 +78,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FE-ENV-01` — variavel publica `NEXT_PUBLIC_API_BASE_URL` documentada para ambiente local, homologacao e producao; fallback local preservado apenas como comportamento atual.
 - `FT-16` — layout base do futuro parecer CESAD de etapa preparado em `/cesad-comissao`, com dados demonstrativos seguros e sem emissao, assinatura, homologacao ou persistencia real.
 - `FT-26` — scaffolds e placeholders legados do frontend limpos sem remover dados demonstrativos uteis.
+- `FE-QUAL-01` — quality gate frontend de texto e scaffolds legados integrado ao `frontend:check`.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
 - `FT-01` a `FT-15` — histórico frontend concluído conforme roadmap legado anterior.
 - `FT-25` — triagem de vulnerabilidades e dependências concluída, com alerta residual separado.
@@ -100,7 +100,7 @@ Relações principais:
 
 - `DX-01` foi resolvido operacionalmente quanto ao desalinhamento local do Next.
 - `DX-POSTCSS-01` permanece alerta pendente e não deve ser confundido com `DX-01`.
-- Ausência de testes frontend permanece risco ou candidata futura de quality gate.
+- Ausência de testes frontend de interação permanece risco futuro; o recorte `FE-QUAL-01` cobre apenas texto institucional e scaffolds legados.
 - `/chefia-imediata` concluiu o recorte frontend seguro de `FE-CHEFIA-01`; listagem segura por perfil permanece melhoria futura dependente de contrato/backend.
 - `FT-24` foi resolvida no recorte frontend e nao deve ser confundida com a ausencia futura de listagem segura por perfil.
 - `BE-ARCH-01E3` mitigou o gap backend de refresh/rotacao/logout, `BE-ARCH-01E4A` mitigou o risco de access token persistido em storage e o alerta de UX do `401 público` em rota publica, `BE-ARCH-01E4B` concluiu o retry automatico com single-flight, e `BE-ARCH-01E4C` removeu o caminho legado de token explicito no frontend.
