@@ -12,6 +12,7 @@ import {
 
 import {
   authenticatedUser,
+  createActiveCesadCommission,
   createProcess,
   createProcessStage,
   createTestContext,
@@ -25,10 +26,48 @@ export async function runCesadStageOpinionsServiceTests() {
   try {
     const intern = await createUser(context.prisma, UserRole.INTERN_SERVER, 'opinion-intern@test.local');
     const cesad = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'opinion-cesad@test.local');
+    const assistant = await createUser(
+      context.prisma,
+      UserRole.COMMISSION_ASSISTANT,
+      'opinion-assistant@test.local',
+    );
+    const unrelatedCesad = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'opinion-unrelated-cesad@test.local',
+    );
+    const endedCesad = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'opinion-ended-cesad@test.local',
+    );
+    const inactiveCommissionCesad = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'opinion-inactive-commission-cesad@test.local',
+    );
     const supervisor = await createUser(
       context.prisma,
       UserRole.IMMEDIATE_SUPERVISOR,
       'opinion-supervisor@test.local',
+    );
+    const activeCommission = await createActiveCesadCommission(context.prisma, [
+      { userId: cesad.id, roleType: 'TITULAR' },
+      {
+        userId: endedCesad.id,
+        roleType: 'TITULAR',
+        endDate: new Date('2021-12-31T23:59:59.000Z'),
+      },
+      { userId: assistant.id, roleType: 'SUPLENTE' },
+    ]);
+    await createActiveCesadCommission(
+      context.prisma,
+      [{ userId: inactiveCommissionCesad.id, roleType: 'TITULAR' }],
+      {
+        name: 'Comissao CESAD inativa para testes de parecer',
+        status: 'INACTIVE',
+        effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
+      },
     );
 
     const process = await createProcess(context.prisma, ProcessStatus.EM_ANALISE_CESAD, intern.id);
@@ -100,6 +139,13 @@ export async function runCesadStageOpinionsServiceTests() {
     assert.equal(readDraft.processStageId, stageOne.id);
     assert.equal(readDraft.status, CesadStageOpinionStatus.DRAFT);
 
+    const assistantReadDraft = await context.cesadStageOpinionsService.getByStageSequence(
+      process.id,
+      1,
+      authenticatedUser(assistant.id, assistant.role),
+    );
+    assert.equal(assistantReadDraft?.id, draft.id);
+
     const completed = await context.cesadStageOpinionsService.complete(
       process.id,
       1,
@@ -141,7 +187,73 @@ export async function runCesadStageOpinionsServiceTests() {
             conclusion: '',
           },
         ),
-      /Only CESAD_MEMBER can manipulate CESAD stage opinion artifacts/,
+      /CESAD contextual authorization denied/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.cesadStageOpinionsService.saveDraft(
+          process.id,
+          2,
+          authenticatedUser(assistant.id, assistant.role),
+          {
+            reportText: 'Tentativa indevida da assistente.',
+            conclusion: '',
+          },
+        ),
+      /CESAD contextual authorization denied/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.cesadStageOpinionsService.getByStageSequence(
+          process.id,
+          1,
+          authenticatedUser(unrelatedCesad.id, unrelatedCesad.role),
+        ),
+      /CESAD contextual authorization denied/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.cesadStageOpinionsService.saveDraft(
+          process.id,
+          2,
+          authenticatedUser(unrelatedCesad.id, unrelatedCesad.role),
+          {
+            reportText: 'Tentativa sem vinculo ativo.',
+            conclusion: '',
+          },
+        ),
+      /CESAD contextual authorization denied/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.cesadStageOpinionsService.saveDraft(
+          process.id,
+          2,
+          authenticatedUser(endedCesad.id, endedCesad.role),
+          {
+            reportText: 'Tentativa de membro encerrado.',
+            conclusion: '',
+          },
+        ),
+      /CESAD contextual authorization denied/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.cesadStageOpinionsService.saveDraft(
+          process.id,
+          2,
+          authenticatedUser(inactiveCommissionCesad.id, inactiveCommissionCesad.role),
+          {
+            reportText: 'Tentativa por comissao inativa.',
+            conclusion: '',
+          },
+        ),
+      /CESAD contextual authorization denied/,
     );
 
     const processOutsideCesadWindow = await createProcess(
@@ -163,6 +275,8 @@ export async function runCesadStageOpinionsServiceTests() {
         ),
       /CESAD stage opinion artifact can only be manipulated while process is in EM_ANALISE_CESAD status/,
     );
+
+    assert.equal(activeCommission.status, 'ACTIVE');
 
     const processAfterWrites = await context.prisma.evaluationProcess.findUniqueOrThrow({
       where: { id: process.id },

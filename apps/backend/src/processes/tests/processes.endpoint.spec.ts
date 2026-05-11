@@ -8,6 +8,7 @@ import { GlobalExceptionFilter } from '../../common/filters/global-exception.fil
 import { AppLogger } from '../../common/logging/app-logger.service';
 import {
   buildSupervisorEvaluationPayload,
+  createActiveCesadCommission,
   createProcess,
   createTestContext,
   createUser,
@@ -41,10 +42,20 @@ export async function runProcessesEndpointTests() {
       evaluatedUser.id,
     );
     const cesadUser = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'endpoint-cesad@test.local');
+    const unrelatedCesadUser = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'endpoint-unrelated-cesad@test.local',
+    );
     const assistantUser = await createUser(
       context.prisma,
       UserRole.COMMISSION_ASSISTANT,
       'endpoint-assistant@test.local',
+    );
+    const unrelatedAssistantUser = await createUser(
+      context.prisma,
+      UserRole.COMMISSION_ASSISTANT,
+      'endpoint-unrelated-assistant@test.local',
     );
     const supervisorUser = await createUser(
       context.prisma,
@@ -63,6 +74,10 @@ export async function runProcessesEndpointTests() {
       evaluatedUser.id,
       supervisorUser.id,
     );
+    await createActiveCesadCommission(context.prisma, [
+      { userId: cesadUser.id, roleType: 'TITULAR' },
+      { userId: assistantUser.id, roleType: 'SUPLENTE' },
+    ]);
 
     await context.prisma.auditEvent.create({
       data: {
@@ -121,6 +136,34 @@ export async function runProcessesEndpointTests() {
       user: { email: string; name: string; role: UserRole };
     };
     assert.equal(assistantLoginPayload.user.name, assistantUser.name);
+
+    const unrelatedCesadLoginResponse = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: unrelatedCesadUser.email,
+        password: 'Test123456!',
+      }),
+    });
+
+    assert.equal(unrelatedCesadLoginResponse.status, 200);
+    const unrelatedCesadLoginPayload = (await unrelatedCesadLoginResponse.json()) as {
+      accessToken: string;
+    };
+
+    const unrelatedAssistantLoginResponse = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: unrelatedAssistantUser.email,
+        password: 'Test123456!',
+      }),
+    });
+
+    assert.equal(unrelatedAssistantLoginResponse.status, 200);
+    const unrelatedAssistantLoginPayload = (await unrelatedAssistantLoginResponse.json()) as {
+      accessToken: string;
+    };
 
     const assistantMeResponse = await fetch(`${baseUrl}/auth/me`, {
       method: 'GET',
@@ -336,6 +379,21 @@ export async function runProcessesEndpointTests() {
     assert.equal(assistantWorkflowPayload.status, ProcessStatus.EM_ANALISE_CESAD);
     assert.deepEqual(assistantWorkflowPayload.availableActions, []);
 
+    const unrelatedCesadWorkflowResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/workflow`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${unrelatedCesadLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(unrelatedCesadWorkflowResponse.status, 403);
+    const unrelatedCesadWorkflowPayload =
+      (await unrelatedCesadWorkflowResponse.json()) as { message: string };
+    assert.match(unrelatedCesadWorkflowPayload.message, /CESAD contextual authorization denied/);
+
     const historyResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/history`,
       {
@@ -380,6 +438,21 @@ export async function runProcessesEndpointTests() {
       action: ProcessAction | null;
     }>;
     assert.deepEqual(assistantHistoryPayload, []);
+
+    const unrelatedAssistantHistoryResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/history`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${unrelatedAssistantLoginPayload.accessToken}`,
+        },
+      },
+    );
+
+    assert.equal(unrelatedAssistantHistoryResponse.status, 403);
+    const unrelatedAssistantHistoryPayload =
+      (await unrelatedAssistantHistoryResponse.json()) as { message: string };
+    assert.match(unrelatedAssistantHistoryPayload.message, /CESAD contextual authorization denied/);
 
     const supervisorTransitionWithoutEvaluationResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/workflow/transition`,
@@ -529,7 +602,7 @@ export async function runProcessesEndpointTests() {
       (await forbiddenAssistantOpinionResponse.json()) as { message: string };
     assert.match(
       forbiddenAssistantOpinionPayload.message,
-      /Only CESAD_MEMBER can manipulate CESAD stage opinion artifacts/,
+      /CESAD contextual authorization denied/,
     );
 
     const forbiddenAssistantTransitionResponse = await fetch(
@@ -552,6 +625,28 @@ export async function runProcessesEndpointTests() {
     assert.match(
       forbiddenAssistantTransitionPayload.message,
       /Role COMMISSION_ASSISTANT cannot execute action ISSUE_CESAD_OPINION/,
+    );
+
+    const forbiddenUnrelatedCesadTransitionResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/workflow/transition`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${unrelatedCesadLoginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: workflowActions.issueOpinion,
+        }),
+      },
+    );
+
+    assert.equal(forbiddenUnrelatedCesadTransitionResponse.status, 403);
+    const forbiddenUnrelatedCesadTransitionPayload =
+      (await forbiddenUnrelatedCesadTransitionResponse.json()) as { message: string };
+    assert.match(
+      forbiddenUnrelatedCesadTransitionPayload.message,
+      /CESAD contextual authorization denied/,
     );
 
     const opinionDraftResponse = await fetch(
@@ -741,7 +836,7 @@ export async function runProcessesEndpointTests() {
     const forbiddenOpinionPayload = (await forbiddenOpinionResponse.json()) as { message: string };
     assert.match(
       forbiddenOpinionPayload.message,
-      /Only CESAD_MEMBER can manipulate CESAD stage opinion artifacts/,
+      /CESAD contextual authorization denied/,
     );
 
     const forbiddenStageReadResponse = await fetch(

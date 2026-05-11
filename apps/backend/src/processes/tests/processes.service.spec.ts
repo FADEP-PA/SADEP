@@ -12,6 +12,7 @@ import {
 
 import {
   authenticatedUser,
+  createActiveCesadCommission,
   createProcess,
   createTestContext,
   createUser,
@@ -36,8 +37,22 @@ export async function runProcessesServiceTests() {
       UserRole.COMMISSION_ASSISTANT,
       'assistant@test.local',
     );
+    const unrelatedCesad = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'unrelated-cesad@test.local',
+    );
+    const unrelatedAssistant = await createUser(
+      context.prisma,
+      UserRole.COMMISSION_ASSISTANT,
+      'unrelated-assistant@test.local',
+    );
     const intern = await createUser(context.prisma, UserRole.INTERN_SERVER, 'intern@test.local');
     const admin = await createUser(context.prisma, UserRole.ADMIN, 'workflow-admin@test.local');
+    const commission = await createActiveCesadCommission(context.prisma, [
+      { userId: cesad.id, roleType: 'SUPLENTE' },
+      { userId: assistant.id, roleType: 'SUPLENTE' },
+    ]);
 
     const process = await createProcess(
       context.prisma,
@@ -291,6 +306,15 @@ export async function runProcessesServiceTests() {
     );
     assert.deepEqual(assistantWorkflow.availableActions, []);
 
+    await assert.rejects(
+      () =>
+        context.service.getWorkflow(
+          cesadReadableProcess.id,
+          authenticatedUser(unrelatedCesad.id, unrelatedCesad.role),
+        ),
+      /CESAD contextual authorization denied/,
+    );
+
     const assistantHistory = await context.service.getWorkflowHistory(
       historyProcess.id,
       authenticatedUser(assistant.id, assistant.role),
@@ -303,6 +327,15 @@ export async function runProcessesServiceTests() {
         ProcessAction.ISSUE_CESAD_OPINION,
         ProcessAction.REQUEST_ADJUSTMENT,
       ],
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.getWorkflowHistory(
+          historyProcess.id,
+          authenticatedUser(unrelatedAssistant.id, unrelatedAssistant.role),
+        ),
+      /CESAD contextual authorization denied/,
     );
 
     await assert.rejects(
@@ -331,6 +364,26 @@ export async function runProcessesServiceTests() {
           { action: workflowActions.issueOpinion },
         ),
       /Role COMMISSION_ASSISTANT cannot execute action ISSUE_CESAD_OPINION/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          cesadReadableProcess.id,
+          authenticatedUser(unrelatedCesad.id, unrelatedCesad.role),
+          { action: workflowActions.issueOpinion },
+        ),
+      /CESAD contextual authorization denied/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          cesadReadableProcess.id,
+          authenticatedUser(unrelatedCesad.id, unrelatedCesad.role),
+          { action: workflowActions.requestAdjustment, comment: 'Solicitar ajuste.' },
+        ),
+      /CESAD contextual authorization denied/,
     );
 
     await assert.rejects(
@@ -463,13 +516,6 @@ export async function runProcessesServiceTests() {
       'expected-signer-suplente@test.local',
       'Suplente Fora do Snapshot',
     );
-    const commission = await context.prisma.cesadCommission.create({
-      data: {
-        name: 'Comissão CESAD vigente para snapshot',
-        status: 'ACTIVE',
-        effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
-      },
-    });
     const titularOneMember = await context.prisma.cesadCommissionMember.create({
       data: {
         commissionId: commission.id,
@@ -631,7 +677,7 @@ export async function runProcessesServiceTests() {
           authenticatedUser(cesad.id, cesad.role),
           { action: workflowActions.issueOpinion },
         ),
-      /more than one active CESAD commission/,
+      /CESAD contextual authorization denied/,
     );
   } finally {
     await disposeTestContext(context);

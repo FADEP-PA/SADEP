@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ProcessDocumentsModule as ApiProcessDocumentsModule } from '../api/documents/process-documents.module';
 import { ProcessDocumentsService } from '../application/documents/process-documents.service';
 import { AuthModule } from '../auth/auth.module';
+import { CesadModule } from '../cesad/cesad.module';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { CesadStageOpinionsController } from './cesad-stage-opinions/cesad-stage-opinions.controller';
 import { CesadStageOpinionsService } from './cesad-stage-opinions/cesad-stage-opinions.service';
@@ -17,7 +18,7 @@ import { SupervisorEvaluationsController } from './supervisor-evaluations/superv
 import { SupervisorEvaluationsService } from './supervisor-evaluations/supervisor-evaluations.service';
 
 @Module({
-  imports: [AuthModule, ApiProcessDocumentsModule],
+  imports: [AuthModule, ApiProcessDocumentsModule, CesadModule],
   controllers: [
     ProcessesController,
     CesadStageOpinionsController,

@@ -31,6 +31,7 @@ import {
 } from '@sadep/contracts';
 
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { CesadContextAuthorizationService } from '../cesad/authorization/cesad-context-authorization.service';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import type {
   WorkflowHistoryItemDto,
@@ -47,6 +48,11 @@ import {
 const CESAD_PROCESS_ACCESS_ALLOWED_STATUSES = new Set<ProcessStatus>([
   ProcessStatus.EM_ANALISE_CESAD,
   ProcessStatus.PARECER_EMITIDO,
+]);
+
+const CESAD_CONTEXTUAL_TRANSITION_ACTIONS = new Set<ProcessAction>([
+  ProcessAction.ISSUE_CESAD_OPINION,
+  ProcessAction.REQUEST_ADJUSTMENT,
 ]);
 
 type ProcessAccessContext = {
@@ -68,7 +74,10 @@ export type PrismaTransactionClient = Omit<
 
 @Injectable()
 export class ProcessesService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly cesadContextAuthorizationService: CesadContextAuthorizationService,
+  ) {}
 
   async getWorkflow(processId: string, user: AuthenticatedUser): Promise<WorkflowResponseDto> {
     const process = await this.ensureUserHasProcessAccess(this.prismaService, processId, user);
@@ -284,6 +293,13 @@ export class ProcessesService {
 
     if (!transition.allowedRoles.includes(user.role)) {
       throw new ForbiddenException(`Role ${user.role} cannot execute action ${payload.action}`);
+    }
+
+    if (CESAD_CONTEXTUAL_TRANSITION_ACTIONS.has(payload.action)) {
+      await this.cesadContextAuthorizationService.ensureCanTransitionCesadProcess({
+        user,
+        allowAdmin: true,
+      });
     }
 
     if (transition.requiresComment && !normalizedComment) {
@@ -530,6 +546,7 @@ export class ProcessesService {
             'Authenticated CESAD reader does not have an active link to this process',
           );
         }
+        await this.cesadContextAuthorizationService.ensureCanReadCesadStage({ user });
         return process;
       default:
         throw new ForbiddenException('Authenticated user does not have a legitimate link to this process');

@@ -20,6 +20,7 @@ import {
 
 import {
   authenticatedUser,
+  createActiveCesadCommission,
   createProcess,
   createProcessStage,
   createTestContext,
@@ -43,6 +44,21 @@ export async function runCesadStageReadServiceTests() {
       UserRole.COMMISSION_ASSISTANT,
       'stage-read-assistant@test.local',
     );
+    const unrelatedCesad = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'stage-read-unrelated-cesad@test.local',
+    );
+    const unrelatedAssistant = await createUser(
+      context.prisma,
+      UserRole.COMMISSION_ASSISTANT,
+      'stage-read-unrelated-assistant@test.local',
+    );
+
+    await createActiveCesadCommission(context.prisma, [
+      { userId: cesad.id, roleType: 'TITULAR' },
+      { userId: assistant.id, roleType: 'SUPLENTE' },
+    ]);
 
     const process = await createProcess(context.prisma, ProcessStatus.EM_ANALISE_CESAD, intern.id);
     const stageOne = await context.prisma.processStage.findUniqueOrThrow({
@@ -483,6 +499,26 @@ export async function runCesadStageReadServiceTests() {
     assert.equal(assistantSnapshot.readOnly, true);
     assert.equal(assistantSnapshot.stage.stageId, stageTwo.id);
     assert.equal(assistantSnapshot.history.length, snapshot.history.length);
+
+    await assert.rejects(
+      () =>
+        context.cesadStageReadService.getStageReadSnapshot(
+          process.id,
+          2,
+          authenticatedUser(unrelatedCesad.id, unrelatedCesad.role),
+        ),
+      /CESAD contextual authorization denied/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.cesadStageReadService.getStageReadSnapshot(
+          process.id,
+          2,
+          authenticatedUser(unrelatedAssistant.id, unrelatedAssistant.role),
+        ),
+      /CESAD contextual authorization denied/,
+    );
 
     await assert.rejects(
       () =>

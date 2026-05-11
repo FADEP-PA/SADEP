@@ -38,6 +38,7 @@ import {
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { ProcessDocumentsService } from '../application/documents/process-documents.service';
+import { CesadContextAuthorizationService } from '../cesad/authorization/cesad-context-authorization.service';
 import { isSupervisorEvaluationContentDto } from './supervisor-evaluations/dto/supervisor-evaluation.dto';
 
 const RELEVANT_HISTORY_EVENT_TYPES = new Set<AuditEventType>([
@@ -74,6 +75,7 @@ export class CesadStageReadService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly processDocumentsService: ProcessDocumentsService,
+    private readonly cesadContextAuthorizationService: CesadContextAuthorizationService,
   ) {}
 
   async getStageReadSnapshot(
@@ -117,6 +119,7 @@ export class CesadStageReadService {
 
     const processStatus = this.toContractProcessStatus(process.status);
     this.ensureProcessStatusAllowsStageRead(processStatus);
+    await this.cesadContextAuthorizationService.ensureCanReadCesadStage({ user });
 
     const stage = await this.prismaService.processStage.findFirst({
       where: {

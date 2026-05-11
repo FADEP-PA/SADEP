@@ -28,5 +28,6 @@ import { CesadCurrentCommissionService } from './cesad-current-commission.servic
     CesadContextAuthorizationService,
     PrismaService,
   ],
+  exports: [CesadContextAuthorizationService],
 })
 export class CesadModule {}

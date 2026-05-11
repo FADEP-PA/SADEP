@@ -16,6 +16,7 @@ import {
 
 import { hashPassword } from '../../common/security/password-hasher';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
+import { CesadContextAuthorizationService } from '../../cesad/authorization/cesad-context-authorization.service';
 import { CesadStageOpinionsService } from '../cesad-stage-opinions/cesad-stage-opinions.service';
 import { CesadStageReadService } from '../cesad-stage-read.service';
 import { ProcessesService } from '../processes.service';
@@ -30,6 +31,7 @@ export type TestContext = {
   cesadStageReadService: CesadStageReadService;
   supervisorEvaluationsService: SupervisorEvaluationsService;
   selfEvaluationsService: SelfEvaluationsService;
+  cesadContextAuthorizationService: CesadContextAuthorizationService;
   databaseFile: string;
 };
 
@@ -78,15 +80,18 @@ export async function createTestContext(databaseName: string): Promise<TestConte
   const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
   await prisma.$connect();
 
-  const processesService = new ProcessesService(prisma as never);
+  const cesadContextAuthorizationService = new CesadContextAuthorizationService(prisma as never);
+  const processesService = new ProcessesService(prisma as never, cesadContextAuthorizationService);
   const processDocumentsService = new ProcessDocumentsService(prisma as never, processesService);
   const cesadStageOpinionsService = new CesadStageOpinionsService(
     prisma as never,
     processesService,
+    cesadContextAuthorizationService,
   );
   const cesadStageReadService = new CesadStageReadService(
     prisma as never,
     processDocumentsService,
+    cesadContextAuthorizationService,
   );
   const selfEvaluationsService = new SelfEvaluationsService(
     prisma as never,
@@ -100,6 +105,7 @@ export async function createTestContext(databaseName: string): Promise<TestConte
     processDocumentsService,
     cesadStageOpinionsService,
     cesadStageReadService,
+    cesadContextAuthorizationService,
     supervisorEvaluationsService: new SupervisorEvaluationsService(
       prisma as never,
       processesService,
@@ -175,6 +181,47 @@ export async function createUser(
       isActive: true,
     },
   });
+}
+
+export async function createActiveCesadCommission(
+  prisma: PrismaClient,
+  members: Array<{
+    userId: string;
+    roleType?: 'TITULAR' | 'SUPLENTE';
+    startDate?: Date;
+    endDate?: Date;
+  }> = [],
+  overrides: Partial<{
+    name: string;
+    effectiveStartDate: Date;
+    effectiveEndDate: Date | null;
+    status: 'ACTIVE' | 'INACTIVE' | 'SUPERSEDED';
+  }> = {},
+) {
+  const commission = await prisma.cesadCommission.create({
+    data: {
+      name: overrides.name ?? 'Comissao CESAD vigente para testes',
+      status: overrides.status ?? 'ACTIVE',
+      effectiveStartDate: overrides.effectiveStartDate ?? new Date('2020-01-01T00:00:00.000Z'),
+      ...(overrides.effectiveEndDate !== undefined
+        ? { effectiveEndDate: overrides.effectiveEndDate }
+        : {}),
+    },
+  });
+
+  if (members.length > 0) {
+    await prisma.cesadCommissionMember.createMany({
+      data: members.map((member) => ({
+        commissionId: commission.id,
+        userId: member.userId,
+        roleType: member.roleType ?? 'TITULAR',
+        startDate: member.startDate ?? new Date('2020-01-01T00:00:00.000Z'),
+        ...(member.endDate ? { endDate: member.endDate } : {}),
+      })),
+    });
+  }
+
+  return commission;
 }
 
 export async function createProcess(

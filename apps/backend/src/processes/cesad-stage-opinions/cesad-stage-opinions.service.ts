@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
 } from '@nestjs/common';
 import {
@@ -26,6 +25,7 @@ import {
 } from '@sadep/contracts';
 
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
+import { CesadContextAuthorizationService } from '../../cesad/authorization/cesad-context-authorization.service';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { ProcessesService, type PrismaTransactionClient } from '../processes.service';
 import type {
@@ -47,6 +47,7 @@ export class CesadStageOpinionsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly processesService: ProcessesService,
+    private readonly cesadContextAuthorizationService: CesadContextAuthorizationService,
   ) {}
 
   async getByStageSequence(
@@ -54,10 +55,9 @@ export class CesadStageOpinionsService {
     stageSequence: number,
     user: AuthenticatedUser,
   ): Promise<CesadStageOpinionResponseDto | null> {
-    this.ensureCesadUser(user);
-
     const process = await this.processesService.findProcessOrThrow(this.prismaService, processId);
     this.ensureReadAllowedForProcessStatus(this.toContractProcessStatus(process.status));
+    await this.cesadContextAuthorizationService.ensureCanReadCesadStage({ user });
 
     const stage = await this.processesService.findStageBySequenceOrThrow(
       this.prismaService,
@@ -83,13 +83,13 @@ export class CesadStageOpinionsService {
     user: AuthenticatedUser,
     payload: UpsertCesadStageOpinionDto,
   ): Promise<CesadStageOpinionResponseDto> {
-    this.ensureCesadUser(user);
     const normalizedPayload = this.normalizePayload(payload, false);
 
     return this.prismaService.$transaction(async (transaction) => {
       const process = await this.processesService.findProcessOrThrow(transaction, processId);
       const processStatus = this.toContractProcessStatus(process.status);
       this.ensureWriteAllowedForProcessStatus(processStatus);
+      await this.cesadContextAuthorizationService.ensureCanWriteCesadStageOpinion({ user });
 
       const stage = await this.processesService.findStageBySequenceOrThrow(
         transaction,
@@ -185,13 +185,13 @@ export class CesadStageOpinionsService {
     user: AuthenticatedUser,
     payload: UpsertCesadStageOpinionDto,
   ): Promise<CesadStageOpinionResponseDto> {
-    this.ensureCesadUser(user);
     const normalizedPayload = this.normalizePayload(payload, true);
 
     return this.prismaService.$transaction(async (transaction) => {
       const process = await this.processesService.findProcessOrThrow(transaction, processId);
       const processStatus = this.toContractProcessStatus(process.status);
       this.ensureWriteAllowedForProcessStatus(processStatus);
+      await this.cesadContextAuthorizationService.ensureCanWriteCesadStageOpinion({ user });
 
       const stage = await this.processesService.findStageBySequenceOrThrow(
         transaction,
@@ -286,12 +286,6 @@ export class CesadStageOpinionsService {
 
       return this.toResponseDto(completedOpinion);
     });
-  }
-
-  private ensureCesadUser(user: AuthenticatedUser): void {
-    if (user.role !== UserRole.CESAD_MEMBER) {
-      throw new ForbiddenException('Only CESAD_MEMBER can manipulate CESAD stage opinion artifacts');
-    }
   }
 
   private ensureReadAllowedForProcessStatus(status: ProcessStatus): void {
