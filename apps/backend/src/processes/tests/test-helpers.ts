@@ -224,6 +224,90 @@ export async function createActiveCesadCommission(
   return commission;
 }
 
+export async function createCesadStageAssignment(
+  prisma: PrismaClient,
+  processId: string,
+  processStageId: string,
+  commissionId: string,
+  assignedByUserId?: string,
+  referenceDate = new Date('2026-01-20T12:00:00.000Z'),
+) {
+  return prisma.cesadStageAssignment.create({
+    data: {
+      processId,
+      processStageId,
+      commissionId,
+      status: 'ACTIVE',
+      assignedAt: referenceDate,
+      ...(assignedByUserId ? { assignedByUserId } : {}),
+      referenceDate,
+    },
+  });
+}
+
+export async function createSignedRequiredStageDocuments(
+  prisma: PrismaClient,
+  processId: string,
+  processStageId: string,
+  supervisorUserId: string,
+  evaluatedUserId: string,
+) {
+  const supervisorDocument = await prisma.processDocument.create({
+    data: {
+      evaluationProcessId: processId,
+      processStageId,
+      documentType: 'SUPERVISOR_EVALUATION',
+      documentStatus: 'SIGNED',
+      signatureRecords: {
+        create: [
+          {
+            signatoryUserId: supervisorUserId,
+            signatoryRole: 'IMMEDIATE_SUPERVISOR',
+            provider: 'INTERNAL',
+            status: 'COMPLETED',
+            signedAt: new Date('2026-01-20T10:00:00.000Z'),
+          },
+          {
+            signatoryUserId: evaluatedUserId,
+            signatoryRole: 'INTERN_SERVER',
+            provider: 'INTERNAL',
+            status: 'COMPLETED',
+            signedAt: new Date('2026-01-20T10:05:00.000Z'),
+          },
+        ],
+      },
+    },
+  });
+  const selfDocument = await prisma.processDocument.create({
+    data: {
+      evaluationProcessId: processId,
+      processStageId,
+      documentType: 'SELF_EVALUATION',
+      documentStatus: 'SIGNED',
+      signatureRecords: {
+        create: [
+          {
+            signatoryUserId: evaluatedUserId,
+            signatoryRole: 'INTERN_SERVER',
+            provider: 'INTERNAL',
+            status: 'COMPLETED',
+            signedAt: new Date('2026-01-20T11:00:00.000Z'),
+          },
+          {
+            signatoryUserId: supervisorUserId,
+            signatoryRole: 'IMMEDIATE_SUPERVISOR',
+            provider: 'INTERNAL',
+            status: 'COMPLETED',
+            signedAt: new Date('2026-01-20T11:05:00.000Z'),
+          },
+        ],
+      },
+    },
+  });
+
+  return { supervisorDocument, selfDocument };
+}
+
 export async function createProcess(
   prisma: PrismaClient,
   status: ProcessStatus,

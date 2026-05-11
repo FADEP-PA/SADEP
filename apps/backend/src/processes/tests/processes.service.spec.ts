@@ -13,7 +13,9 @@ import {
 import {
   authenticatedUser,
   createActiveCesadCommission,
+  createCesadStageAssignment,
   createProcess,
+  createSignedRequiredStageDocuments,
   createTestContext,
   createUser,
   disposeTestContext,
@@ -137,6 +139,20 @@ export async function runProcessesServiceTests() {
       context.prisma,
       ProcessStatus.EM_ANALISE_CESAD,
       evaluatedUser.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      historyProcess.id,
+      historyProcess.defaultStageId,
+      commission.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      cesadReadableProcess.id,
+      cesadReadableProcess.defaultStageId,
+      commission.id,
       supervisor.id,
     );
 
@@ -483,10 +499,85 @@ export async function runProcessesServiceTests() {
       /public workflow endpoint/,
     );
 
+    const sendToCesadProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.AGUARDANDO_ASSINATURA,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createSignedRequiredStageDocuments(
+      context.prisma,
+      sendToCesadProcess.id,
+      sendToCesadProcess.defaultStageId,
+      supervisor.id,
+      evaluatedUser.id,
+    );
+    const sendToCesadWorkflow = await context.service.transitionWorkflowAsResponsibleSupervisorInTransaction(
+      context.prisma,
+      sendToCesadProcess.id,
+      authenticatedUser(supervisor.id, supervisor.role),
+      { action: workflowActions.sendToCesad },
+    );
+    assert.equal(sendToCesadWorkflow, ProcessStatus.EM_ANALISE_CESAD);
+    const createdAssignment = await context.prisma.cesadStageAssignment.findFirstOrThrow({
+      where: {
+        processId: sendToCesadProcess.id,
+        processStageId: sendToCesadProcess.defaultStageId,
+        status: 'ACTIVE',
+      },
+    });
+    assert.equal(createdAssignment.commissionId, commission.id);
+    assert.equal(createdAssignment.assignedByUserId, supervisor.id);
+    assert.ok(createdAssignment.assignedAt);
+    assert.ok(createdAssignment.referenceDate);
+
+    const duplicateAssignmentProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.AGUARDANDO_ASSINATURA,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createSignedRequiredStageDocuments(
+      context.prisma,
+      duplicateAssignmentProcess.id,
+      duplicateAssignmentProcess.defaultStageId,
+      supervisor.id,
+      evaluatedUser.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      duplicateAssignmentProcess.id,
+      duplicateAssignmentProcess.defaultStageId,
+      commission.id,
+      supervisor.id,
+    );
+    await context.service.transitionWorkflowAsResponsibleSupervisorInTransaction(
+      context.prisma,
+      duplicateAssignmentProcess.id,
+      authenticatedUser(supervisor.id, supervisor.role),
+      { action: workflowActions.sendToCesad },
+    );
+    assert.equal(
+      await context.prisma.cesadStageAssignment.count({
+        where: {
+          processStageId: duplicateAssignmentProcess.defaultStageId,
+          status: 'ACTIVE',
+        },
+      }),
+      1,
+    );
+
     const cesadProcess = await createProcess(
       context.prisma,
       ProcessStatus.EM_ANALISE_CESAD,
       evaluatedUser.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      cesadProcess.id,
+      cesadProcess.defaultStageId,
+      commission.id,
+      supervisor.id,
     );
 
     const cesadWorkflow = await context.service.getWorkflow(
@@ -610,6 +701,53 @@ export async function runProcessesServiceTests() {
       2,
     );
 
+    const adjustmentProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      adjustmentProcess.id,
+      adjustmentProcess.defaultStageId,
+      commission.id,
+      supervisor.id,
+    );
+    const adjustmentWorkflow = await context.service.transitionWorkflow(
+      adjustmentProcess.id,
+      authenticatedUser(cesad.id, cesad.role),
+      { action: workflowActions.requestAdjustment, comment: 'Solicitar ajuste pela comissão atribuída.' },
+    );
+    assert.equal(adjustmentWorkflow.status, ProcessStatus.EM_AVALIACAO);
+
+    const unassignedOpinionProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await context.prisma.cesadStageOpinion.create({
+      data: {
+        processId: unassignedOpinionProcess.id,
+        processStageId: unassignedOpinionProcess.defaultStageId,
+        authorUserId: cesad.id,
+        status: 'COMPLETED',
+        reportText: 'Relatório final sem assignment ativa.',
+        conclusion: 'Conclusão final sem assignment ativa.',
+        completedAt: new Date('2026-04-24T12:15:00.000Z'),
+      },
+    });
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          unassignedOpinionProcess.id,
+          authenticatedUser(cesad.id, cesad.role),
+          { action: workflowActions.issueOpinion },
+        ),
+      /CESAD contextual authorization denied/,
+    );
+
     await context.prisma.user.update({
       where: { id: titularOne.id },
       data: {
@@ -659,25 +797,137 @@ export async function runProcessesServiceTests() {
       ProcessStatus.EM_ANALISE_CESAD,
       evaluatedUser.id,
     );
-    await context.prisma.cesadStageOpinion.create({
+    await createCesadStageAssignment(
+      context.prisma,
+      conflictingProcess.id,
+      conflictingProcess.defaultStageId,
+      commission.id,
+      supervisor.id,
+    );
+    const conflictingOpinion = await context.prisma.cesadStageOpinion.create({
       data: {
         processId: conflictingProcess.id,
         processStageId: conflictingProcess.defaultStageId,
         authorUserId: cesad.id,
         status: 'COMPLETED',
-        reportText: 'Relatório final com comissão conflitante.',
-        conclusion: 'Conclusão final com comissão conflitante.',
+        reportText: 'Relatório final com comissão vigente conflitante.',
+        conclusion: 'Conclusão final com comissão vigente conflitante.',
         completedAt: new Date('2026-04-24T12:30:00.000Z'),
+      },
+    });
+    const conflictingIssuedWorkflow = await context.service.transitionWorkflow(
+      conflictingProcess.id,
+      authenticatedUser(cesad.id, cesad.role),
+      { action: workflowActions.issueOpinion },
+    );
+    assert.equal(conflictingIssuedWorkflow.status, ProcessStatus.PARECER_EMITIDO);
+    const assignmentBasedExpectedSigners =
+      await context.prisma.cesadStageOpinionExpectedSigner.findMany({
+        where: { cesadStageOpinionId: conflictingOpinion.id },
+      });
+    assert(assignmentBasedExpectedSigners.length > 0);
+    assert(
+      assignmentBasedExpectedSigners.every((signer) => signer.commissionId === commission.id),
+    );
+    assert(
+      assignmentBasedExpectedSigners.every((signer) => signer.commissionId !== conflictingCommission.id),
+    );
+
+    await context.prisma.cesadCommission.updateMany({
+      data: { status: 'INACTIVE' },
+    });
+
+    const noActiveCommissionProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.AGUARDANDO_ASSINATURA,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createSignedRequiredStageDocuments(
+      context.prisma,
+      noActiveCommissionProcess.id,
+      noActiveCommissionProcess.defaultStageId,
+      supervisor.id,
+      evaluatedUser.id,
+    );
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflowAsResponsibleSupervisorInTransaction(
+          context.prisma,
+          noActiveCommissionProcess.id,
+          authenticatedUser(supervisor.id, supervisor.role),
+          { action: workflowActions.sendToCesad },
+        ),
+      /no active CESAD commission/,
+    );
+
+    const supersededCommissionProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.AGUARDANDO_ASSINATURA,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createSignedRequiredStageDocuments(
+      context.prisma,
+      supersededCommissionProcess.id,
+      supersededCommissionProcess.defaultStageId,
+      supervisor.id,
+      evaluatedUser.id,
+    );
+    await context.prisma.cesadCommission.create({
+      data: {
+        name: 'Comissão CESAD superada',
+        status: 'SUPERSEDED',
+        effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
       },
     });
     await assert.rejects(
       () =>
-        context.service.transitionWorkflow(
-          conflictingProcess.id,
-          authenticatedUser(cesad.id, cesad.role),
-          { action: workflowActions.issueOpinion },
+        context.service.transitionWorkflowAsResponsibleSupervisorInTransaction(
+          context.prisma,
+          supersededCommissionProcess.id,
+          authenticatedUser(supervisor.id, supervisor.role),
+          { action: workflowActions.sendToCesad },
         ),
-      /CESAD contextual authorization denied/,
+      /no active CESAD commission/,
+    );
+
+    await context.prisma.cesadCommission.createMany({
+      data: [
+        {
+          name: 'Comissão CESAD ativa concorrente A',
+          status: 'ACTIVE',
+          effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
+        },
+        {
+          name: 'Comissão CESAD ativa concorrente B',
+          status: 'ACTIVE',
+          effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
+        },
+      ],
+    });
+    const multipleActiveCommissionProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.AGUARDANDO_ASSINATURA,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createSignedRequiredStageDocuments(
+      context.prisma,
+      multipleActiveCommissionProcess.id,
+      multipleActiveCommissionProcess.defaultStageId,
+      supervisor.id,
+      evaluatedUser.id,
+    );
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflowAsResponsibleSupervisorInTransaction(
+          context.prisma,
+          multipleActiveCommissionProcess.id,
+          authenticatedUser(supervisor.id, supervisor.role),
+          { action: workflowActions.sendToCesad },
+        ),
+      /more than one active CESAD commission/,
     );
   } finally {
     await disposeTestContext(context);

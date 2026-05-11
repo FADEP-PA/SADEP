@@ -21,6 +21,7 @@ import {
 import {
   authenticatedUser,
   createActiveCesadCommission,
+  createCesadStageAssignment,
   createProcess,
   createProcessStage,
   createTestContext,
@@ -55,7 +56,7 @@ export async function runCesadStageReadServiceTests() {
       'stage-read-unrelated-assistant@test.local',
     );
 
-    await createActiveCesadCommission(context.prisma, [
+    const commission = await createActiveCesadCommission(context.prisma, [
       { userId: cesad.id, roleType: 'TITULAR' },
       { userId: assistant.id, roleType: 'SUPLENTE' },
     ]);
@@ -65,6 +66,13 @@ export async function runCesadStageReadServiceTests() {
       where: { id: process.defaultStageId },
     });
     const stageTwo = await createProcessStage(context.prisma, process.id, 2, 'ETAPA_2');
+    await createCesadStageAssignment(
+      context.prisma,
+      process.id,
+      stageTwo.id,
+      commission.id,
+      supervisor.id,
+    );
 
     await context.prisma.supervisorEvaluation.createMany({
       data: [

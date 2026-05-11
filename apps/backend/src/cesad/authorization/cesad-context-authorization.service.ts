@@ -4,7 +4,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import {
-  CesadCommissionStatus as PrismaCesadCommissionStatus,
+  CesadStageAssignmentStatus as PrismaCesadStageAssignmentStatus,
+  Prisma,
   UserRole as PrismaUserRole,
 } from '@prisma/client';
 import { UserRole } from '@sadep/contracts';
@@ -14,7 +15,9 @@ import { PrismaService } from '../../infrastructure/database/prisma.service';
 
 type CesadContextReference = {
   user?: AuthenticatedUser;
+  processStageId: string;
   referenceDate?: Date;
+  transaction?: Prisma.TransactionClient;
 };
 
 type CesadTransitionContextReference = CesadContextReference & {
@@ -30,13 +33,13 @@ export class CesadContextAuthorizationService {
   async ensureCanReadCesadStage(params: CesadContextReference): Promise<void> {
     const user = this.ensureAuthenticatedUser(params.user);
     this.ensureCompatibleRole(user.role, [UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]);
-    await this.ensureActiveCommissionMembership(user, params.referenceDate);
+    await this.ensureAssignedCommissionMembership(params.processStageId, user, params.referenceDate, params.transaction);
   }
 
   async ensureCanWriteCesadStageOpinion(params: CesadContextReference): Promise<void> {
     const user = this.ensureAuthenticatedUser(params.user);
     this.ensureCompatibleRole(user.role, [UserRole.CESAD_MEMBER]);
-    await this.ensureActiveCommissionMembership(user, params.referenceDate);
+    await this.ensureAssignedCommissionMembership(params.processStageId, user, params.referenceDate, params.transaction);
   }
 
   async ensureCanTransitionCesadProcess(params: CesadTransitionContextReference): Promise<void> {
@@ -47,7 +50,7 @@ export class CesadContextAuthorizationService {
     }
 
     this.ensureCompatibleRole(user.role, [UserRole.CESAD_MEMBER]);
-    await this.ensureActiveCommissionMembership(user, params.referenceDate);
+    await this.ensureAssignedCommissionMembership(params.processStageId, user, params.referenceDate, params.transaction);
   }
 
   private ensureAuthenticatedUser(user?: AuthenticatedUser): AuthenticatedUser {
@@ -64,36 +67,42 @@ export class CesadContextAuthorizationService {
     }
   }
 
-  private async ensureActiveCommissionMembership(
+  private async ensureAssignedCommissionMembership(
+    processStageId: string,
     user: AuthenticatedUser,
     referenceDate = new Date(),
+    transaction?: Prisma.TransactionClient,
   ): Promise<void> {
-    // Transitional policy until process/stage records persist an explicit CESAD commission link.
-    const matchingCommissions = await this.prismaService.cesadCommission.findMany({
+    const client = transaction ?? this.prismaService;
+    const assignment = await client.cesadStageAssignment.findFirst({
       where: {
-        status: PrismaCesadCommissionStatus.ACTIVE,
-        effectiveStartDate: { lte: referenceDate },
-        OR: [{ effectiveEndDate: null }, { effectiveEndDate: { gte: referenceDate } }],
+        processStageId,
+        status: PrismaCesadStageAssignmentStatus.ACTIVE,
       },
       select: {
         id: true,
-        members: {
-          where: {
-            userId: user.sub,
-            startDate: { lte: referenceDate },
-            OR: [{ endDate: null }, { endDate: { gte: referenceDate } }],
-            user: {
-              role: this.toDatabaseRole(user.role),
-              isActive: true,
+        commission: {
+          select: {
+            members: {
+              where: {
+                userId: user.sub,
+                startDate: { lte: referenceDate },
+                OR: [{ endDate: null }, { endDate: { gte: referenceDate } }],
+                user: {
+                  role: this.toDatabaseRole(user.role),
+                  isActive: true,
+                },
+              },
+              select: { id: true },
+              take: 1,
             },
           },
-          select: { id: true },
         },
       },
-      orderBy: [{ effectiveStartDate: 'desc' }, { createdAt: 'desc' }],
+      orderBy: { assignedAt: 'desc' },
     });
 
-    if (matchingCommissions.length !== 1 || matchingCommissions[0]!.members.length === 0) {
+    if (!assignment || assignment.commission.members.length === 0) {
       throw this.contextDenied();
     }
   }
@@ -110,4 +119,3 @@ export class CesadContextAuthorizationService {
     return new ForbiddenException(CONTEXT_DENIED_MESSAGE);
   }
 }
-

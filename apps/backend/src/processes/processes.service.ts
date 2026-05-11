@@ -9,6 +9,7 @@ import {
   AuditEventType as PrismaAuditEventType,
   CesadCommissionMemberRoleType as PrismaCesadCommissionMemberRoleType,
   CesadCommissionStatus as PrismaCesadCommissionStatus,
+  CesadStageAssignmentStatus as PrismaCesadStageAssignmentStatus,
   CesadStageOpinionExpectedSignerDerivationType as PrismaCesadStageOpinionExpectedSignerDerivationType,
   CesadStageOpinionSigningCapacity as PrismaCesadStageOpinionSigningCapacity,
   CesadStageOpinionStatus as PrismaCesadStageOpinionStatus,
@@ -65,6 +66,13 @@ type ProcessAccessContext = {
     stageCode: string;
     responsibleSupervisorUserId: string | null;
   };
+};
+
+type CesadStageAssignmentTransitionContext = {
+  id: string;
+  commissionId: string;
+  status: PrismaCesadStageAssignmentStatus;
+  created: boolean;
 };
 
 export type PrismaTransactionClient = Omit<
@@ -299,6 +307,8 @@ export class ProcessesService {
       await this.cesadContextAuthorizationService.ensureCanTransitionCesadProcess({
         user,
         allowAdmin: true,
+        processStageId: process.currentStage.id,
+        transaction,
       });
     }
 
@@ -319,6 +329,9 @@ export class ProcessesService {
       }
     }
 
+    const occurredAt = new Date().toISOString();
+    let cesadStageAssignment: CesadStageAssignmentTransitionContext | null = null;
+
     if (payload.action === ProcessAction.SEND_TO_CESAD) {
       const documentsComplete = await this.areRequiredStageDocumentsComplete(
         transaction,
@@ -331,9 +344,14 @@ export class ProcessesService {
           'Process can only move to EM_ANALISE_CESAD after both required stage documents are fully signed',
         );
       }
-    }
 
-    const occurredAt = new Date().toISOString();
+      cesadStageAssignment = await this.ensureActiveCesadStageAssignment(
+        transaction,
+        process,
+        user,
+        new Date(occurredAt),
+      );
+    }
 
     if (payload.action === ProcessAction.ISSUE_CESAD_OPINION) {
       await this.ensureCompletedCesadStageOpinionAndFreezeExpectedSigners(
@@ -358,6 +376,14 @@ export class ProcessesService {
       processStageId: process.currentStage.id,
       stageSequence: process.currentStage.sequence,
       stageCode: process.currentStage.stageCode,
+      ...(cesadStageAssignment
+        ? {
+            cesadStageAssignmentId: cesadStageAssignment.id,
+            cesadCommissionId: cesadStageAssignment.commissionId,
+            cesadStageAssignmentStatus: cesadStageAssignment.status,
+            cesadStageAssignmentCreated: cesadStageAssignment.created,
+          }
+        : {}),
       ...(normalizedComment ? { comment: normalizedComment } : {}),
     };
 
@@ -421,6 +447,89 @@ export class ProcessesService {
     );
   }
 
+  private async ensureActiveCesadStageAssignment(
+    transaction: PrismaTransactionClient,
+    process: ProcessAccessContext,
+    user: AuthenticatedUser,
+    assignedAt: Date,
+  ): Promise<CesadStageAssignmentTransitionContext> {
+    const activeAssignments = await transaction.cesadStageAssignment.findMany({
+      where: {
+        processStageId: process.currentStage.id,
+        status: PrismaCesadStageAssignmentStatus.ACTIVE,
+      },
+      select: {
+        id: true,
+        commissionId: true,
+        status: true,
+      },
+      orderBy: { assignedAt: 'desc' },
+    });
+
+    if (activeAssignments.length > 1) {
+      throw new ConflictException(
+        'Process stage has more than one active CESAD stage assignment',
+      );
+    }
+
+    if (activeAssignments.length === 1) {
+      const assignment = activeAssignments[0]!;
+
+      return {
+        id: assignment.id,
+        commissionId: assignment.commissionId,
+        status: assignment.status,
+        created: false,
+      };
+    }
+
+    const matchingCommissions = await transaction.cesadCommission.findMany({
+      where: {
+        status: PrismaCesadCommissionStatus.ACTIVE,
+        effectiveStartDate: { lte: assignedAt },
+        OR: [{ effectiveEndDate: null }, { effectiveEndDate: { gte: assignedAt } }],
+      },
+      select: { id: true },
+      orderBy: [{ effectiveStartDate: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    if (matchingCommissions.length === 0) {
+      throw new BadRequestException(
+        'Cannot assign CESAD stage because no active CESAD commission was found for the assignment date',
+      );
+    }
+
+    if (matchingCommissions.length > 1) {
+      throw new ConflictException(
+        'Cannot assign CESAD stage because more than one active CESAD commission was found for the assignment date',
+      );
+    }
+
+    const createdAssignment = await transaction.cesadStageAssignment.create({
+      data: {
+        processId: process.id,
+        processStageId: process.currentStage.id,
+        commissionId: matchingCommissions[0]!.id,
+        status: PrismaCesadStageAssignmentStatus.ACTIVE,
+        assignedAt,
+        assignedByUserId: user.sub,
+        referenceDate: assignedAt,
+      },
+      select: {
+        id: true,
+        commissionId: true,
+        status: true,
+      },
+    });
+
+    return {
+      id: createdAssignment.id,
+      commissionId: createdAssignment.commissionId,
+      status: createdAssignment.status,
+      created: true,
+    };
+  }
+
   private async ensureCompletedCesadStageOpinionAndFreezeExpectedSigners(
     transaction: PrismaTransactionClient,
     process: ProcessAccessContext,
@@ -447,12 +556,26 @@ export class ProcessesService {
       return;
     }
 
-    const matchingCommissions = await transaction.cesadCommission.findMany({
+    const assignment = await transaction.cesadStageAssignment.findFirst({
       where: {
-        status: PrismaCesadCommissionStatus.ACTIVE,
-        effectiveStartDate: { lte: frozenAt },
-        OR: [{ effectiveEndDate: null }, { effectiveEndDate: { gte: frozenAt } }],
+        processStageId: process.currentStage.id,
+        status: PrismaCesadStageAssignmentStatus.ACTIVE,
       },
+      select: {
+        id: true,
+        commissionId: true,
+      },
+      orderBy: { assignedAt: 'desc' },
+    });
+
+    if (!assignment) {
+      throw new BadRequestException(
+        'Cannot derive CESAD opinion expected signers because no active CESAD stage assignment was found for the current stage',
+      );
+    }
+
+    const commission = await transaction.cesadCommission.findUnique({
+      where: { id: assignment.commissionId },
       select: {
         id: true,
         members: {
@@ -462,6 +585,7 @@ export class ProcessesService {
             OR: [{ endDate: null }, { endDate: { gte: frozenAt } }],
             user: {
               role: { not: PrismaUserRole.COMMISSION_ASSISTANT },
+              isActive: true,
             },
           },
           select: {
@@ -480,32 +604,16 @@ export class ProcessesService {
           orderBy: [{ startDate: 'asc' }, { createdAt: 'asc' }],
         },
       },
-      orderBy: [{ effectiveStartDate: 'desc' }, { createdAt: 'desc' }],
     });
 
-    if (matchingCommissions.length === 0) {
+    if (!commission || commission.members.length === 0) {
       throw new BadRequestException(
-        'Cannot derive CESAD opinion expected signers because no active CESAD commission was found for the freeze date',
-      );
-    }
-
-    if (matchingCommissions.length > 1) {
-      throw new ConflictException(
-        'Cannot derive CESAD opinion expected signers because more than one active CESAD commission was found for the freeze date',
-      );
-    }
-
-    const commission = matchingCommissions[0]!;
-    const titularMembers = commission.members;
-
-    if (titularMembers.length === 0) {
-      throw new BadRequestException(
-        'Cannot derive CESAD opinion expected signers because the active CESAD commission has no active titular member for the freeze date',
+        'Cannot derive CESAD opinion expected signers because the assigned CESAD commission has no active titular member for the freeze date',
       );
     }
 
     await transaction.cesadStageOpinionExpectedSigner.createMany({
-      data: titularMembers.map((member, index) => ({
+      data: commission.members.map((member, index) => ({
         cesadStageOpinionId: opinion.id,
         commissionId: commission.id,
         actingCommissionMemberId: member.id,
@@ -546,7 +654,11 @@ export class ProcessesService {
             'Authenticated CESAD reader does not have an active link to this process',
           );
         }
-        await this.cesadContextAuthorizationService.ensureCanReadCesadStage({ user });
+        await this.cesadContextAuthorizationService.ensureCanReadCesadStage({
+          user,
+          processStageId: process.currentStage.id,
+          transaction,
+        });
         return process;
       default:
         throw new ForbiddenException('Authenticated user does not have a legitimate link to this process');

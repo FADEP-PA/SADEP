@@ -13,6 +13,7 @@ import {
 import {
   authenticatedUser,
   createActiveCesadCommission,
+  createCesadStageAssignment,
   createProcess,
   createProcessStage,
   createTestContext,
@@ -75,6 +76,13 @@ export async function runCesadStageOpinionsServiceTests() {
       where: { id: process.defaultStageId },
     });
     await createProcessStage(context.prisma, process.id, 2, 'ETAPA_2');
+    await createCesadStageAssignment(
+      context.prisma,
+      process.id,
+      stageOne.id,
+      activeCommission.id,
+      undefined,
+    );
 
     const draft = await context.cesadStageOpinionsService.saveDraft(
       process.id,

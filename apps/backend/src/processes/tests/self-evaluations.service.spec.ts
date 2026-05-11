@@ -15,6 +15,7 @@ import {
   authenticatedUser,
   buildSelfEvaluationPayload,
   buildSupervisorEvaluationPayload,
+  createActiveCesadCommission,
   createProcess,
   createTestContext,
   createUser,
@@ -38,6 +39,7 @@ export async function runSelfEvaluationsTests() {
       'other-self-supervisor@test.local',
     );
     const admin = await createUser(context.prisma, UserRole.ADMIN, 'self-admin@test.local');
+    await createActiveCesadCommission(context.prisma);
 
     const process = await createProcess(
       context.prisma,

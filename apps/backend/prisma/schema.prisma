@@ -106,6 +106,12 @@ enum CesadCommissionStatus {
   SUPERSEDED
 }
 
+enum CesadStageAssignmentStatus {
+  ACTIVE
+  SUPERSEDED
+  CANCELED
+}
+
 enum CesadCommissionActType {
   CONSTITUTION
   AMENDMENT
@@ -145,6 +151,7 @@ model User {
   cesadStageOpinions       CesadStageOpinion[]    @relation("CesadStageOpinionAuthor")
   cesadCommissionMembers   CesadCommissionMember[]
   cesadStageOpinionExpectedSigners CesadStageOpinionExpectedSigner[] @relation("CesadStageOpinionExpectedSignerActingUser")
+  cesadStageAssignmentsCreated CesadStageAssignment[] @relation("CesadStageAssignmentAssignedByUser")
 }
 
 model UserSession {
@@ -185,6 +192,7 @@ model EvaluationProcess {
   supervisorEvaluations SupervisorEvaluation[]
   selfEvaluations       SelfEvaluation[]
   cesadStageOpinions    CesadStageOpinion[]
+  cesadStageAssignments CesadStageAssignment[]
 
   @@index([evaluatedUserId])
   @@index([status])
@@ -206,6 +214,7 @@ model ProcessStage {
   supervisorEvaluation        SupervisorEvaluation?
   selfEvaluation              SelfEvaluation?
   cesadStageOpinion           CesadStageOpinion?
+  cesadStageAssignments       CesadStageAssignment[]
 
   @@unique([evaluationProcessId, sequence])
   @@unique([evaluationProcessId, stageCode])
@@ -328,6 +337,7 @@ model CesadCommission {
   effectiveEndDate   DateTime?
   acts               CesadCommissionAct[]
   members            CesadCommissionMember[]
+  stageAssignments   CesadStageAssignment[]
   stageOpinionExpectedSigners CesadStageOpinionExpectedSigner[]
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
@@ -411,6 +421,37 @@ model CesadStageOpinionExpectedSigner {
   @@index([actingUserId])
   @@index([substitutedCommissionMemberId])
   @@index([derivationType])
+}
+
+model CesadStageAssignment {
+  id                        String                      @id @default(cuid())
+  processId                 String
+  processStageId            String
+  commissionId              String
+  status                    CesadStageAssignmentStatus  @default(ACTIVE)
+  assignedAt                DateTime
+  assignedByUserId          String?
+  assignmentReason          String?
+  referenceDate             DateTime
+  supersededAt              DateTime?
+  supersededByAssignmentId  String?
+  supersededReason          String?
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  evaluationProcess         EvaluationProcess           @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  processStage              ProcessStage                @relation(fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  commission                CesadCommission             @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  assignedByUser            User?                       @relation("CesadStageAssignmentAssignedByUser", fields: [assignedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  supersededByAssignment    CesadStageAssignment?       @relation("CesadStageAssignmentSupersession", fields: [supersededByAssignmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supersededAssignments     CesadStageAssignment[]      @relation("CesadStageAssignmentSupersession")
+
+  @@index([processId])
+  @@index([processStageId])
+  @@index([commissionId])
+  @@index([assignedByUserId])
+  @@index([supersededByAssignmentId])
+  @@index([status])
+  @@index([processStageId, status])
 }
 
 model SignatureRecord {

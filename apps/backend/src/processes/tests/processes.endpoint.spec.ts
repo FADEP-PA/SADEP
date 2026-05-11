@@ -9,6 +9,7 @@ import { AppLogger } from '../../common/logging/app-logger.service';
 import {
   buildSupervisorEvaluationPayload,
   createActiveCesadCommission,
+  createCesadStageAssignment,
   createProcess,
   createTestContext,
   createUser,
@@ -74,10 +75,17 @@ export async function runProcessesEndpointTests() {
       evaluatedUser.id,
       supervisorUser.id,
     );
-    await createActiveCesadCommission(context.prisma, [
+    const commission = await createActiveCesadCommission(context.prisma, [
       { userId: cesadUser.id, roleType: 'TITULAR' },
       { userId: assistantUser.id, roleType: 'SUPLENTE' },
     ]);
+    await createCesadStageAssignment(
+      context.prisma,
+      processInCesadWindow.id,
+      processInCesadWindow.defaultStageId,
+      commission.id,
+      supervisorUser.id,
+    );
 
     await context.prisma.auditEvent.create({
       data: {

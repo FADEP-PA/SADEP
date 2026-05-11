@@ -4,11 +4,13 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UserRole } from '@sadep/contracts';
+import { ProcessStatus, UserRole } from '@sadep/contracts';
 
 import { CesadContextAuthorizationService } from '../authorization/cesad-context-authorization.service';
 import {
   authenticatedUser,
+  createCesadStageAssignment,
+  createProcess,
   createTestContext,
   createUser,
   disposeTestContext,
@@ -47,11 +49,17 @@ export async function runCesadContextAuthorizationServiceTests() {
       UserRole.CESAD_MEMBER,
       'context-inactive-commission-cesad@test.local',
     );
+    const inactiveUser = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'context-inactive-user-cesad@test.local',
+    );
     const intern = await createUser(
       context.prisma,
       UserRole.INTERN_SERVER,
       'context-intern@test.local',
     );
+    const process = await createProcess(context.prisma, ProcessStatus.EM_ANALISE_CESAD, intern.id);
 
     const activeCommission = await context.prisma.cesadCommission.create({
       data: {
@@ -82,8 +90,24 @@ export async function runCesadContextAuthorizationServiceTests() {
           startDate: new Date('2026-01-01T00:00:00.000Z'),
           endDate: new Date('2026-01-10T23:59:59.000Z'),
         },
+        {
+          commissionId: activeCommission.id,
+          userId: inactiveUser.id,
+          roleType: 'TITULAR',
+          startDate: new Date('2026-01-01T00:00:00.000Z'),
+        },
       ],
     });
+    await context.prisma.user.update({
+      where: { id: inactiveUser.id },
+      data: { isActive: false },
+    });
+    await createCesadStageAssignment(
+      context.prisma,
+      process.id,
+      process.defaultStageId,
+      activeCommission.id,
+    );
 
     const inactiveCommission = await context.prisma.cesadCommission.create({
       data: {
@@ -104,27 +128,32 @@ export async function runCesadContextAuthorizationServiceTests() {
 
     await service.ensureCanReadCesadStage({
       user: authenticatedUser(cesadMember.id, cesadMember.role),
+      processStageId: process.defaultStageId,
       referenceDate,
     });
 
     await service.ensureCanWriteCesadStageOpinion({
       user: authenticatedUser(cesadMember.id, cesadMember.role),
+      processStageId: process.defaultStageId,
       referenceDate,
     });
 
     await service.ensureCanTransitionCesadProcess({
       user: authenticatedUser(cesadMember.id, cesadMember.role),
+      processStageId: process.defaultStageId,
       referenceDate,
     });
 
     await service.ensureCanReadCesadStage({
       user: authenticatedUser(assistant.id, assistant.role),
+      processStageId: process.defaultStageId,
       referenceDate,
     });
 
     await assertForbiddenWithoutSensitiveDetails(() =>
       service.ensureCanWriteCesadStageOpinion({
         user: authenticatedUser(assistant.id, assistant.role),
+        processStageId: process.defaultStageId,
         referenceDate,
       }),
     );
@@ -132,6 +161,7 @@ export async function runCesadContextAuthorizationServiceTests() {
     await assertForbiddenWithoutSensitiveDetails(() =>
       service.ensureCanReadCesadStage({
         user: authenticatedUser(unrelatedCesadMember.id, unrelatedCesadMember.role),
+        processStageId: process.defaultStageId,
         referenceDate,
       }),
     );
@@ -139,6 +169,7 @@ export async function runCesadContextAuthorizationServiceTests() {
     await assertForbiddenWithoutSensitiveDetails(() =>
       service.ensureCanReadCesadStage({
         user: authenticatedUser(endedMember.id, endedMember.role),
+        processStageId: process.defaultStageId,
         referenceDate,
       }),
     );
@@ -146,19 +177,38 @@ export async function runCesadContextAuthorizationServiceTests() {
     await assertForbiddenWithoutSensitiveDetails(() =>
       service.ensureCanReadCesadStage({
         user: authenticatedUser(inactiveCommissionMember.id, inactiveCommissionMember.role),
+        processStageId: process.defaultStageId,
         referenceDate: new Date('2027-01-20T12:00:00.000Z'),
       }),
     );
 
     await assertForbiddenWithoutSensitiveDetails(() =>
       service.ensureCanReadCesadStage({
+        user: authenticatedUser(inactiveUser.id, inactiveUser.role),
+        processStageId: process.defaultStageId,
+        referenceDate,
+      }),
+    );
+
+    await assertForbiddenWithoutSensitiveDetails(() =>
+      service.ensureCanReadCesadStage({
         user: authenticatedUser(intern.id, intern.role),
+        processStageId: process.defaultStageId,
+        referenceDate,
+      }),
+    );
+
+    const unassignedProcess = await createProcess(context.prisma, ProcessStatus.EM_ANALISE_CESAD, intern.id);
+    await assertForbiddenWithoutSensitiveDetails(() =>
+      service.ensureCanReadCesadStage({
+        user: authenticatedUser(cesadMember.id, cesadMember.role),
+        processStageId: unassignedProcess.defaultStageId,
         referenceDate,
       }),
     );
 
     await assert.rejects(
-      () => service.ensureCanReadCesadStage({ referenceDate }),
+      () => service.ensureCanReadCesadStage({ processStageId: process.defaultStageId, referenceDate }),
       (error: unknown) => {
         assert(error instanceof UnauthorizedException);
         assert.match(error.message, /Authenticated user not found/);
@@ -178,4 +228,3 @@ async function assertForbiddenWithoutSensitiveDetails(action: () => Promise<void
     return true;
   });
 }
-

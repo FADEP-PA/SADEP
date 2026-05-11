@@ -57,13 +57,16 @@ export class CesadStageOpinionsService {
   ): Promise<CesadStageOpinionResponseDto | null> {
     const process = await this.processesService.findProcessOrThrow(this.prismaService, processId);
     this.ensureReadAllowedForProcessStatus(this.toContractProcessStatus(process.status));
-    await this.cesadContextAuthorizationService.ensureCanReadCesadStage({ user });
 
     const stage = await this.processesService.findStageBySequenceOrThrow(
       this.prismaService,
       processId,
       stageSequence,
     );
+    await this.cesadContextAuthorizationService.ensureCanReadCesadStage({
+      user,
+      processStageId: stage.id,
+    });
 
     const opinion = await this.prismaService.cesadStageOpinion.findUnique({
       where: { processStageId: stage.id },
@@ -89,13 +92,17 @@ export class CesadStageOpinionsService {
       const process = await this.processesService.findProcessOrThrow(transaction, processId);
       const processStatus = this.toContractProcessStatus(process.status);
       this.ensureWriteAllowedForProcessStatus(processStatus);
-      await this.cesadContextAuthorizationService.ensureCanWriteCesadStageOpinion({ user });
 
       const stage = await this.processesService.findStageBySequenceOrThrow(
         transaction,
         processId,
         stageSequence,
       );
+      await this.cesadContextAuthorizationService.ensureCanWriteCesadStageOpinion({
+        user,
+        processStageId: stage.id,
+        transaction,
+      });
       const existingOpinion = await transaction.cesadStageOpinion.findUnique({
         where: { processStageId: stage.id },
       });
@@ -191,13 +198,17 @@ export class CesadStageOpinionsService {
       const process = await this.processesService.findProcessOrThrow(transaction, processId);
       const processStatus = this.toContractProcessStatus(process.status);
       this.ensureWriteAllowedForProcessStatus(processStatus);
-      await this.cesadContextAuthorizationService.ensureCanWriteCesadStageOpinion({ user });
 
       const stage = await this.processesService.findStageBySequenceOrThrow(
         transaction,
         processId,
         stageSequence,
       );
+      await this.cesadContextAuthorizationService.ensureCanWriteCesadStageOpinion({
+        user,
+        processStageId: stage.id,
+        transaction,
+      });
       const existingOpinion = await transaction.cesadStageOpinion.findUnique({
         where: { processStageId: stage.id },
       });

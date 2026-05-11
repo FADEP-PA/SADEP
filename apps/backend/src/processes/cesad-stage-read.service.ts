@@ -119,7 +119,6 @@ export class CesadStageReadService {
 
     const processStatus = this.toContractProcessStatus(process.status);
     this.ensureProcessStatusAllowsStageRead(processStatus);
-    await this.cesadContextAuthorizationService.ensureCanReadCesadStage({ user });
 
     const stage = await this.prismaService.processStage.findFirst({
       where: {
@@ -206,6 +205,11 @@ export class CesadStageReadService {
         `Process stage ${stageSequence} was not found for evaluation process ${processId}`,
       );
     }
+
+    await this.cesadContextAuthorizationService.ensureCanReadCesadStage({
+      user,
+      processStageId: stage.id,
+    });
 
     const documents = await this.processDocumentsService.getCesadStageDocumentReadModel(
       this.prismaService,
