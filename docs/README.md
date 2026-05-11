@@ -75,6 +75,8 @@ Regra de uso:
 - [`architecture/README.md`](./architecture/README.md): porta de entrada para referências arquiteturais, estrutura do monorepo e organização das ADRs.
 - [`architecture/adr/README.md`](./architecture/adr/README.md): índice das decisões arquiteturais formais do projeto.
 - [`architecture/adr/adr-001-workflow-engine-strategy.md`](./architecture/adr/adr-001-workflow-engine-strategy.md): ADR que registra a decisão de adotar workflow próprio com state machine no backend para o MVP, sem engine BPM externa no início.
+- [`architecture/adr/adr-002-session-refresh-revocation-strategy.md`](./architecture/adr/adr-002-session-refresh-revocation-strategy.md): ADR que registra a estratégia de sessão, refresh token opaco, rotação, revogação e logout server-side.
+- [`architecture/adr/adr-003-cesad-stage-assignment.md`](./architecture/adr/adr-003-cesad-stage-assignment.md): ADR que registra `CesadStageAssignment` como vínculo persistido entre comissão CESAD, processo e etapa.
 - [`architecture/repository-structure.md`](./architecture/repository-structure.md): referência arquitetural da estrutura inicial do monorepo; pode ser atualizada em task futura quando houver evolução estrutural relevante.
 - [`architecture/`](./architecture/): área de referências arquiteturais, estrutura do monorepo e ADRs formais do projeto.
 
