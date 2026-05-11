@@ -11,7 +11,7 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - `db:check` falhou apenas porque o banco local nao possuia seed minimo de desenvolvimento; para preparar ambiente local, usar `npm run backend:bootstrap`.
 - Backend possui `UserSession`; login cria sessao; refresh rotaciona; logout revoga.
 - Frontend nao persiste `accessToken`, usa bootstrap via `/auth/refresh` e mantem access token em memoria.
-- Packages ativos usam `@sadep/*`; nao foram encontrados imports antigos `@aep-pa/contracts`.
+- Packages ativos usam `@sadep/*`; nao foram encontrados imports com a nomenclatura antiga de contracts.
 - A divida estrutural inicial de packages foi tratada no recorte `BE-ARCH-02`; o cookie default residual `aep_pa_refresh` permanece como alerta `NOM-AEP-COOKIE-01`.
 
 ## DOC-AUTH-STATE-01 — Reconciliar status documental de BE-ARCH-01E4B/E4C
@@ -28,6 +28,7 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - Login, refresh, reuso de refresh token, logout e rejeicoes de access token passaram a emitir eventos JSON com codigos estaveis.
 - Os testes unitarios cobrem os principais eventos positivos e negativos e confirmam que senha recebida em login rejeitado nao aparece nos logs.
 - Nao houve alteracao de frontend, dados demonstrativos, fakes, placeholders ou fallback visual.
+- Auditoria persistida formal de eventos de auth permanece fora deste recorte e fica registrada em `BE-AUDIT-AUTH-01`.
 
 ## BE-ARCH-01E5 — Cookies/CORS/env
 
@@ -37,6 +38,7 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - As exigencias de `COOKIE_SECURE=true` em producao e `COOKIE_SAMESITE=none` apenas com cookie seguro foram preservadas.
 - O cookie default residual `aep_pa_refresh` permanece como alerta `NOM-AEP-COOKIE-01`, fora deste recorte.
 - Nao houve alteracao de frontend, dados demonstrativos, fakes, placeholders ou fallback visual.
+- Helmet/security headers, rate limit/throttling, politica CSRF/cookie ampla e revisao de logs com PII permanecem fora deste recorte e ficam em `SEC-HARD-01`.
 
 ## DOC-FT24-STATE-01 — Reconciliar status documental de FT-24
 
@@ -157,7 +159,7 @@ Esta separacao nao altera status, nao move documentos legados e nao arquiva hist
 - A varredura global nao encontrou `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` no codigo frontend.
 - `/chefia-imediata`, `/processos` e `/servidor-estagiario` dependem de consulta manual/selecao explicita na UI.
 - Listagem segura por perfil deve ser tratada em task futura propria.
-- `FE-CHEFIA-01` foi concluida no recorte frontend seguro; listagem segura por perfil deve ser tratada em task futura propria.
+- `FE-CHEFIA-01` permanece parcial como fluxo final de chefia; listagem segura por perfil deve ser tratada em `FE-CHEFIA-02` e/ou `FE-PROCESS-LIST-01`.
 
 ## Problemas antigos resolvidos
 

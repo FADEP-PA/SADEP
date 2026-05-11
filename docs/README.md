@@ -106,11 +106,16 @@ Em caso de conflito entre documentos, deve prevalecer:
    - [`skills/process-document-skill.md`](./skills/process-document-skill.md);
    - [`domain/audit-event-semantics.md`](./domain/audit-event-semantics.md);
 4. roadmaps operacionais:
-   - [`roadmaps/backend-implementation-tracker.md`](./roadmaps/backend-implementation-tracker.md);
-   - [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md);
-   - [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md);
+   - [`roadmaps/backend/active.md`](./roadmaps/backend/active.md);
+   - [`roadmaps/backend/resolved.md`](./roadmaps/backend/resolved.md);
+   - [`roadmaps/frontend/active.md`](./roadmaps/frontend/active.md);
+   - [`roadmaps/frontend/resolved.md`](./roadmaps/frontend/resolved.md);
+   - [`roadmaps/cross-cutting/active-problems.md`](./roadmaps/cross-cutting/active-problems.md);
+   - [`roadmaps/cross-cutting/resolved-problems.md`](./roadmaps/cross-cutting/resolved-problems.md);
 5. setup e DX;
 6. referências visuais, pesquisa, sprints e documentos históricos.
+
+Os indices legados em `roadmaps/backend-implementation-tracker.md`, `roadmaps/frontend-tasks-roadmap.md` e `roadmaps/problemas-atuais-do-projeto.md` permanecem como compatibilidade e rastreabilidade, mas nao substituem os paineis modulares.
 
 ---
 
@@ -121,6 +126,12 @@ Em caso de conflito entre documentos, deve prevalecer:
 Ler obrigatoriamente:
 
 - [`../AGENTS.md`](../AGENTS.md)
+- [`roadmaps/backend/active.md`](./roadmaps/backend/active.md)
+- [`roadmaps/backend/resolved.md`](./roadmaps/backend/resolved.md)
+- [`roadmaps/cross-cutting/active-problems.md`](./roadmaps/cross-cutting/active-problems.md)
+
+Consultar indices legados apenas para compatibilidade:
+
 - [`roadmaps/backend-implementation-tracker.md`](./roadmaps/backend-implementation-tracker.md)
 - [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md)
 
@@ -140,6 +151,12 @@ Ler adicionalmente conforme impacto:
 Ler obrigatoriamente:
 
 - [`../AGENTS.md`](../AGENTS.md)
+- [`roadmaps/frontend/active.md`](./roadmaps/frontend/active.md)
+- [`roadmaps/frontend/resolved.md`](./roadmaps/frontend/resolved.md)
+- [`roadmaps/cross-cutting/active-problems.md`](./roadmaps/cross-cutting/active-problems.md)
+
+Consultar indices legados apenas para compatibilidade:
+
 - [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md)
 - [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md)
 
@@ -170,7 +187,8 @@ Ler:
 
 - [`../AGENTS.md`](../AGENTS.md)
 - [`setup/local-setup.md`](./setup/local-setup.md)
-- [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md)
+- [`roadmaps/cross-cutting/active-problems.md`](./roadmaps/cross-cutting/active-problems.md)
+- [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md), apenas como indice de compatibilidade
 
 ---
 
@@ -189,9 +207,10 @@ Ler:
 
 Após cada implementação aprovada, deve-se avaliar atualização de:
 
-- [`roadmaps/backend-implementation-tracker.md`](./roadmaps/backend-implementation-tracker.md), quando a task for backend;
-- [`roadmaps/frontend-tasks-roadmap.md`](./roadmaps/frontend-tasks-roadmap.md), quando a task for frontend;
-- [`roadmaps/problemas-atuais-do-projeto.md`](./roadmaps/problemas-atuais-do-projeto.md), quando houver impacto transversal;
+- [`roadmaps/backend/active.md`](./roadmaps/backend/active.md) e [`roadmaps/backend/resolved.md`](./roadmaps/backend/resolved.md), quando a task for backend;
+- [`roadmaps/frontend/active.md`](./roadmaps/frontend/active.md) e [`roadmaps/frontend/resolved.md`](./roadmaps/frontend/resolved.md), quando a task for frontend;
+- [`roadmaps/cross-cutting/active-problems.md`](./roadmaps/cross-cutting/active-problems.md) e [`roadmaps/cross-cutting/resolved-problems.md`](./roadmaps/cross-cutting/resolved-problems.md), quando houver impacto transversal;
+- indices legados correspondentes, somente quando necessario para compatibilidade;
 - documentos normativos, somente quando houver decisão de negócio ou arquitetura consolidada;
 - [`setup/local-setup.md`](./setup/local-setup.md), quando houver mudança de setup, scripts ou DX.
 

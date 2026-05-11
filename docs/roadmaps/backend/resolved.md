@@ -4,6 +4,13 @@ Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker 
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## BE-ARCH-01 — Revisar estrategia de autenticacao web
+
+- **Status documental:** resolvida no recorte planejado de sessao/auth.
+- A frente consolidou semantica de sessao, revalidacao de usuario atual, contratos minimos, alinhamento frontend, refresh token opaco, `UserSession`, rotacao, revogacao por familia, cookie `HttpOnly`, access token em memoria, retry silencioso, validacao operacional de env/CORS/cookies e logs/testes estruturados de auth.
+- Esta conclusao nao cobre todo o hardening institucional de seguranca HTTP, rate limit, CSRF, SIEM, auditoria persistida formal ou governanca completa de producao.
+- Pendencias futuras relacionadas ficam separadas em `SEC-HARD-01` e `BE-AUDIT-AUTH-01`, sem reabrir as subtasks concluidas de `BE-ARCH-01`.
+
 ## BE-TECH-01 — Migrar configuracao Prisma depreciada
 
 - **Status documental:** concluida/aprovada no tracker legado.

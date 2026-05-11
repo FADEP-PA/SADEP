@@ -17,6 +17,9 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 | Candidatos a arquivamento | [`cross-cutting/archive-candidates.md`](./cross-cutting/archive-candidates.md) |
 | Roadmap backend modular | [`backend/active.md`](./backend/active.md) |
 | Roadmap frontend modular | [`frontend/active.md`](./frontend/active.md) |
+| `SEC-HARD-01` | [`cross-cutting/tasks/SEC-HARD-01-http-rate-limit-csrf.md`](./cross-cutting/tasks/SEC-HARD-01-http-rate-limit-csrf.md) |
+| `DX-DB-SEED-01` | [`cross-cutting/tasks/DX-DB-SEED-01-local-seed-bootstrap.md`](./cross-cutting/tasks/DX-DB-SEED-01-local-seed-bootstrap.md) |
+| `NOM-AEP-COOKIE-01` | [`cross-cutting/tasks/NOM-AEP-COOKIE-01-refresh-cookie-name.md`](./cross-cutting/tasks/NOM-AEP-COOKIE-01-refresh-cookie-name.md) |
 | Tracker backend legado | [`backend-implementation-tracker.md`](./backend-implementation-tracker.md) |
 | Roadmap frontend legado | [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md) |
 
@@ -25,6 +28,8 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 ### Segurança
 
 - [`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): crítico e pendente; ver também [`cross-cutting/active-problems.md`](./cross-cutting/active-problems.md).
+- [`SEC-HARD-01 — Hardening adicional de seguranca HTTP, rate limit e CSRF`](./cross-cutting/tasks/SEC-HARD-01-http-rate-limit-csrf.md): melhoria futura separada de `BE-ARCH-01E5`.
+- [`BE-AUDIT-AUTH-01 — Auditoria persistida de eventos de autenticacao`](./backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura separada de `BE-ARCH-01F`.
 
 ### Sessão/auth
 
@@ -38,8 +43,8 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 ### DX/infra
 
 - [`DX-POSTCSS-01 — Audit postcss/next`](./cross-cutting/tasks/DX-POSTCSS-01-audit-postcss-next.md): alerta pendente separado do `DX-01`.
-- `DX-DB-SEED-01`: alerta operacional; `db:check` pode falhar quando o banco local existe sem seed minimo, devendo ser preparado por `npm run backend:bootstrap`.
-- `NOM-AEP-COOKIE-01`: alerta de nomenclatura tecnica residual; cookie default ainda usa `aep_pa_refresh` e deve ser tratado futuramente em task pequena propria, sem migracao ampla AEP -> SADEP.
+- [`DX-DB-SEED-01`](./cross-cutting/tasks/DX-DB-SEED-01-local-seed-bootstrap.md): alerta operacional; `db:check` pode falhar quando o banco local existe sem seed minimo, devendo ser preparado por `npm run backend:bootstrap`.
+- [`NOM-AEP-COOKIE-01`](./cross-cutting/tasks/NOM-AEP-COOKIE-01-refresh-cookie-name.md): alerta de nomenclatura tecnica residual; cookie default ainda usa `aep_pa_refresh` e deve ser tratado futuramente em task pequena propria, sem migracao ampla AEP -> SADEP.
 
 ## Problemas resolvidos ou mitigados
 
@@ -58,7 +63,7 @@ O resumo operacional dos problemas resolvidos fica em [`cross-cutting/resolved-p
 - `BE-ARCH-01E5`: hardening operacional de cookies/CORS/env concluido no recorte backend.
 - `BE-ARCH-01F`: eventos estruturados de auth e testes unitarios concluidos no recorte backend.
 - `FT-24`: dependencia frontend de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` removida no recorte identificado.
-- `FE-CHEFIA-01`: recorte frontend seguro da chefia imediata concluido e arquivado; listagem segura por perfil deve nascer como task futura propria.
+- `FE-CHEFIA-01`: integracao inicial da chefia imediata entregue no recorte frontend seguro, mas permanece parcial como fluxo final; listagem segura por perfil segue por `FE-CHEFIA-02` e/ou `FE-PROCESS-LIST-01`.
 - `DOC-AUTH-STATE-01`: inconsistencia documental de `BE-ARCH-01E4B/E4C` reconciliada.
 - `DOC-FT24-STATE-01`: inconsistencia documental de `FT-24` reconciliada.
 
@@ -74,6 +79,7 @@ O arquivamento real ocorrerá em fase posterior. Este índice não move document
 - Problemas resolvidos não devem ser tratados como pendências.
 - Itens parcialmente resolvidos devem manter ressalva explícita.
 - `/chefia-imediata` não deve ser lida como integração backend plena com listagem segura por perfil concluída.
+- `FE-CHEFIA-01` não deve ser tratada como fluxo final concluído enquanto houver fallback demonstrativo/local, dados demonstrativos ou dependencia de ID manual.
 - `FT-24` resolvida no recorte frontend não equivale a listagem segura de processos por perfil.
 - `DX-POSTCSS-01` não deve ser confundido com `DX-01`, que foi resolvido operacionalmente quanto ao ambiente local.
 - `BE-ARCH-01D`, `BE-ARCH-01E2`, `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` estão concluídas/mitigadas no recorte planejado de sessão/auth.

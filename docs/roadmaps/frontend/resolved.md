@@ -65,12 +65,13 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 
 ## FE-CHEFIA-01 — Integracao real da chefia imediata
 
-- **Status documental:** concluida no recorte frontend seguro.
+- **Status documental:** parcialmente resolvida / integracao inicial entregue no recorte frontend seguro.
 - `/chefia-imediata` consome o workspace real por processo informado manualmente na tela, sem depender de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID`.
 - A tela passou a diferenciar visualmente modo demonstrativo e processo real carregado.
 - A linha real carregada ganhou destaque visual, preservando dados demonstrativos, placeholders e fakes para apresentacao.
 - A validacao real anterior passou com rascunho, envio, documento `READY_FOR_SIGNATURE` e assinaturas esperadas.
-- A ausencia de listagem segura de processos por perfil deve virar task futura propria e nao reabre este recorte.
+- Este recorte nao conclui o fluxo final da chefia imediata: fallback demonstrativo/local, dados demonstrativos e dependencia de ID manual permanecem.
+- A continuidade fica registrada em [`FE-CHEFIA-02`](./tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md). A ausencia de listagem segura de processos por perfil nao reabre `FT-24`.
 
 ## FE-MOBILE-01 — Polimento mobile servidor e chefia
 
@@ -146,7 +147,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - A varredura global nao encontrou `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` no codigo frontend.
 - `/chefia-imediata`, `/processos` e `/servidor-estagiario` dependem de consulta manual/selecao explicita na UI, sem preenchimento por env tecnica.
 - A ausencia de listagem segura por perfil nao reabre `FT-24`; deve ser tratada em task futura propria, alinhada a contrato/backend.
-- `FE-CHEFIA-01` foi concluida no recorte frontend seguro e arquivada em [`../../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md`](../../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md).
+- `FE-CHEFIA-01` permanece parcial no recorte de fluxo final; a continuidade fica em [`FE-CHEFIA-02`](./tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md).
 
 ## FT-17 — Area de homologacao
 

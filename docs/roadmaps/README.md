@@ -36,6 +36,7 @@ Os documentos abaixo continuam existindo como indices de compatibilidade durante
 - `DOC-R3` — separa resolvidos e candidatos a archive, sem mover arquivos legados nem arquivar historicos.
 - `DOC-R4` — reduzir arquivos legados e atualizar links.
 - `DOC-R5` — validar documentacao final.
+- `DOC-R6` — reconciliacao documental controlada pos-varredura global: consolidar auth/session resolvido no recorte, manter pendencias criticas ativas e criar task files estruturais.
 
 ## Criterios de ciclo de vida
 
@@ -58,6 +59,7 @@ Criar ADR quando houver decisao duravel de arquitetura, impacto em backend, fron
 - alteracoes de status devem respeitar aprovacao humana;
 - o agente nao deve marcar task backend ou frontend como concluida sem validacao adequada e confirmacao humana;
 - ajustes documentais de caminho, indice ou organizacao nao autorizam mudanca de status operacional.
+- a atualizacao DOC-R6 foi autorizada como reconciliacao documental controlada, sem alteracao de codigo funcional, packages, Prisma, migrations ou configs de runtime.
 
 ## Relacao com docs/README.md
 

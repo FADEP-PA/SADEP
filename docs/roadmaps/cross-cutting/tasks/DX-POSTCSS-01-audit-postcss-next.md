@@ -20,14 +20,14 @@ Cross-cutting, DX, infra e seguranca de dependencias.
 
 ## Estado atual
 
-`npm audit fix --force` sugere downgrade para `next@9.3.3`, solucao nao aceitavel para o projeto. O alerta nao deve bloquear a `BE-ARCH-01D`, salvo decisao futura explicita.
+`npm audit --workspaces` e `npm audit --workspaces --omit=dev` indicam vulnerabilidade moderada em `postcss` via `next`. `npm audit fix --force` sugere downgrade para `next@9.3.3`, solucao nao aceitavel para o projeto. O alerta nao deve bloquear frentes nao relacionadas, salvo decisao futura explicita.
 
 ## Escopo previsto
 
 - monitorar atualizacao segura de `next`/`postcss`;
 - avaliar correcao sem downgrade ou breaking change;
 - manter o alerta separado de `DX-01`;
-- nao bloquear `BE-ARCH-01D` sem decisao futura.
+- nao bloquear frentes documentais ou de auth ja concluidas sem decisao futura.
 
 ## Fora do escopo
 
@@ -52,4 +52,3 @@ Cross-cutting, DX, infra e seguranca de dependencias.
 ## Proxima acao
 
 Manter como alerta ou planejar task especifica de dependencia quando houver caminho seguro.
-

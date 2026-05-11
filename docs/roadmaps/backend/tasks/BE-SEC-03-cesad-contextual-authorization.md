@@ -20,13 +20,18 @@ A varredura de autenticacao identificou que endpoints CESAD sensiveis podem depe
 
 ## Estado atual
 
-O problema esta registrado como frente separada da `BE-ARCH-01D`. A autorizacao deve considerar vinculo real da comissao ou assistente com processo e etapa.
+O problema esta registrado como frente separada da familia `BE-ARCH-01`. A varredura global confirmou que ha estrutura auxiliar de autorizacao contextual CESAD e testes parciais, mas a politica ainda precisa ser efetivamente aplicada aos endpoints e fluxos sensiveis.
+
+Enquanto a autorizacao depender apenas de role global como `CESAD_MEMBER` ou `COMMISSION_ASSISTANT`, mesmo combinada com status do processo, a task continua pendente. A autorizacao deve considerar vinculo contextual com comissao, processo, etapa e/ou parecer.
 
 ## Escopo previsto
 
 - revisar leitura consolidada CESAD;
 - revisar parecer CESAD por etapa;
+- mapear endpoints CESAD sensiveis e transicoes relacionadas;
+- aplicar service, policy ou guard contextual nos pontos de entrada;
 - exigir vinculo contextual real com comissao, processo e etapa;
+- bloquear acesso baseado apenas em role global sem vinculo contextual;
 - adicionar testes positivos e negativos de autorizacao.
 
 ## Fora do escopo
@@ -43,6 +48,7 @@ O problema esta registrado como frente separada da `BE-ARCH-01D`. A autorizacao 
 
 - O indice backend e o painel ativo registram `BE-SEC-03` como pendente critico.
 - O painel transversal registra o achado CESAD separadamente da estrategia de sessao.
+- `BE-CESAD-AUTH-01` detalha a aplicacao executiva da autorizacao contextual aos endpoints sensiveis, sem substituir nem encerrar este guarda-chuva.
 
 ## Validacoes esperadas
 
@@ -53,4 +59,4 @@ O problema esta registrado como frente separada da `BE-ARCH-01D`. A autorizacao 
 
 ## Proxima acao
 
-Executar varredura tecnica especifica dos endpoints CESAD sensiveis antes de qualquer implementacao.
+Executar `BE-CESAD-AUTH-01` como primeira fatia tecnica, mantendo esta task ativa ate a autorizacao contextual estar aplicada, testada e compatibilizada com a modelagem documental/processual.

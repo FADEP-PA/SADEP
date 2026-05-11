@@ -13,7 +13,13 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 ## Itens ativos ou retomaveis
 
 - `BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo.
-- `BE-FLOW-*` — backlog processual documentado no tracker legado.
+- `BE-CESAD-AUTH-01` — aplicar autorizacao contextual CESAD aos endpoints sensiveis, como subtask executiva de `BE-SEC-03`.
+- `BE-DOC-CESAD-SIGN-01` — modelar e validar assinatura colegiada do parecer CESAD.
+- `BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas.
+- `BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD.
+- `BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia.
+- `BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao.
+- `BE-FLOW-*` — backlog processual documentado no tracker legado e agora gradualmente detalhado em task files modulares.
 
 ## Concluido recente
 
@@ -26,7 +32,7 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 - `BE-ARCH-01F` — eventos estruturados de auth e testes unitarios concluidos no recorte backend.
 - `BE-ARCH-02` — packages compartilhados estabilizados no recorte de `@sadep/contracts`, com `dist/` como entrypoint de consumo.
 - `BE-TECH-02` — worker e cron revisados; `apps/worker` e `apps/cron` permanecem como estrutura reservada, sem execucao no MVP.
-- A frente maior `BE-ARCH-01` pode ser lida como concluida no recorte planejado de sessao/auth.
+- A frente maior `BE-ARCH-01` pode ser lida como concluida no recorte planejado de sessao/auth. Hardening HTTP amplo, CSRF, rate limit e auditoria persistida formal permanecem em tasks proprias futuras.
 
 ## Regras de transicao
 

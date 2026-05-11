@@ -31,7 +31,13 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Pendentes relevantes
 
-- [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md).
+- [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md): pendente critica; ha estruturas auxiliares e testes parciais, mas a autorizacao contextual ainda precisa ser aplicada aos endpoints/fluxos sensiveis.
+- [`BE-CESAD-AUTH-01` — aplicar autorizacao contextual CESAD aos endpoints sensiveis](./tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md): subtask executiva vinculada a `BE-SEC-03`, sem encerrar o guarda-chuva de seguranca contextual.
+- [`BE-DOC-CESAD-SIGN-01` — modelar e validar assinatura colegiada do parecer CESAD](./tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md): pendente alta para pareceres com multiplos signatarios obrigatorios.
+- [`BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas](./tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): pendente alta para nao confundir o fluxo reduzido atual com o Caso 2 completo.
+- [`BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD](./tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao para homologacao final valida.
+- [`BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia](./tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente futura dependente de parecer conclusivo final.
+- [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`, que foi concluida no recorte de logs/testes.
 
 ## Resolvidos por varredura global
 
@@ -45,4 +51,11 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Backlog processual
 
-O tracker legado documenta blocos `BE-FLOW-*`, incluindo formalizacao de documento de parecer CESAD, assinatura do parecer e substituicao por suplente. Nesta fase, esses itens permanecem resumidos aqui e detalhados apenas no tracker legado.
+O tracker legado documenta blocos `BE-FLOW-*`, incluindo formalizacao de documento de parecer CESAD, assinatura do parecer e substituicao por suplente. A partir da reconciliacao documental controlada pos-varredura, as pendencias estruturais acima passam a ter arquivos proprios neste diretorio. O tracker legado permanece apenas como indice de compatibilidade.
+
+## Ressalvas de recorte
+
+- `BE-ARCH-01` esta concluida no recorte planejado de sessao/auth; isso nao encerra hardening HTTP amplo, CSRF, rate limit ou auditoria persistida formal.
+- `BE-ARCH-01E5` esta concluida no recorte de validacao operacional de env/CORS/cookies; hardening adicional fica em `SEC-HARD-01`.
+- `BE-ARCH-01F` esta concluida no recorte de logs estruturados e testes de autenticacao; auditoria persistida formal fica em `BE-AUDIT-AUTH-01`.
+- Homologacao, notificacao, ciencia e recursos nao devem ser tratados como implementados ate haver parecer conclusivo final, workflow e documentos correspondentes.

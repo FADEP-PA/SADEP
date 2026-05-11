@@ -16,6 +16,12 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | Itens backend resolvidos | [`backend/resolved.md`](./backend/resolved.md) |
 | `BE-ARCH-01D` | [`backend/tasks/BE-ARCH-01D-frontend-session-alignment.md`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md) |
 | `BE-SEC-03` | [`backend/tasks/BE-SEC-03-cesad-contextual-authorization.md`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md) |
+| `BE-CESAD-AUTH-01` | [`backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md`](./backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md) |
+| `BE-DOC-CESAD-SIGN-01` | [`backend/tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md`](./backend/tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md) |
+| `BE-FLOW-4STAGE-01` | [`backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md) |
+| `BE-CESAD-FINAL-01` | [`backend/tasks/BE-CESAD-FINAL-01-final-opinion.md`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md) |
+| `BE-HOMOLOG-01` | [`backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md`](./backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md) |
+| `BE-AUDIT-AUTH-01` | [`backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md`](./backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md) |
 | `BE-ARCH-02` | [`backend/tasks/BE-ARCH-02-shared-packages.md`](./backend/tasks/BE-ARCH-02-shared-packages.md) |
 | `BE-TECH-02` | [`backend/tasks/BE-TECH-02-worker-cron.md`](./backend/tasks/BE-TECH-02-worker-cron.md) |
 | Problemas transversais ativos | [`cross-cutting/active-problems.md`](./cross-cutting/active-problems.md) |
@@ -56,6 +62,12 @@ Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao fr
 ## Frentes backend pendentes e relacionadas
 
 - [`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): pendente crítico; não é problema de sessão, mas de autorização contextual por processo, comissão e etapa.
+- [`BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis`](./backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md): subtask executiva de `BE-SEC-03`, sem encerrar o guarda-chuva.
+- [`BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD`](./backend/tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md): pendente alta de documentos/assinaturas.
+- [`BE-FLOW-4STAGE-01 — Estruturar progressao formal das quatro etapas avaliativas`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): pendente alta de workflow Caso 2.
+- [`BE-CESAD-FINAL-01 — Modelar parecer conclusivo final da CESAD`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao de homologacao.
+- [`BE-HOMOLOG-01 — Modelar fluxo de homologacao, notificacao e ciencia`](./backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente futura dependente de parecer final.
+- [`BE-AUDIT-AUTH-01 — Auditoria persistida de eventos de autenticacao`](./backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura separada de `BE-ARCH-01F`.
 - [`BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo`](./backend/tasks/BE-ARCH-02-shared-packages.md): concluida no recorte estrutural de `@sadep/contracts`; `dist/` passou a ser entrypoint de consumo e os consumidores constroem contracts antes dos gates.
 - [`BE-TECH-02 — Revisar worker e cron`](./backend/tasks/BE-TECH-02-worker-cron.md): concluida no recorte de varredura tecnica; `apps/worker` e `apps/cron` permanecem como estrutura reservada sem execucao no MVP.
 - [`BE-ARCH-01E5 — Hardening operacional de cookies/CORS/env`](./backend/tasks/BE-ARCH-01E5-cookie-cors-env-hardening.md): concluida no recorte backend de validacao operacional de ambiente.

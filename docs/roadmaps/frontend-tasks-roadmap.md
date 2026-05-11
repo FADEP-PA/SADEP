@@ -15,6 +15,10 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | Painel frontend ativo | [`frontend/active.md`](./frontend/active.md) |
 | Itens frontend resolvidos | [`frontend/resolved.md`](./frontend/resolved.md) |
 | `FE-CHEFIA-01` | [`../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md`](../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md) |
+| `FE-CHEFIA-02` | [`frontend/tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md`](./frontend/tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md) |
+| `FE-PROCESS-LIST-01` | [`frontend/tasks/FE-PROCESS-LIST-01-authenticated-process-list.md`](./frontend/tasks/FE-PROCESS-LIST-01-authenticated-process-list.md) |
+| `FE-CESAD-01` | [`frontend/tasks/FE-CESAD-01-real-cesad-screens.md`](./frontend/tasks/FE-CESAD-01-real-cesad-screens.md) |
+| `FE-ENV-01` | [`frontend/tasks/FE-ENV-01-frontend-env-documentation.md`](./frontend/tasks/FE-ENV-01-frontend-env-documentation.md) |
 | `FE-SERVIDOR-01` | [`../archive/frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md`](../archive/frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md) |
 | `FE-MOBILE-01` | [`../archive/frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md`](../archive/frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md) |
 | `FT-24` | [`../archive/frontend/tasks/FT-24-process-selection-technical-id.md`](../archive/frontend/tasks/FT-24-process-selection-technical-id.md) |
@@ -31,6 +35,10 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 
 - `FT-16` — preparar layout base do futuro parecer CESAD de etapa.
 - `FT-26` — limpar scaffolds e placeholders legados do frontend.
+- `FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo.
+- `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado, sem reabrir `FT-24`.
+- `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, documentos e autorizacao contextual.
+- `FE-ENV-01` — documentar variaveis de ambiente frontend e evitar fallback inseguro de API.
 - `FE-QUAL-01` — candidata futura para testes/frontend quality gate; não representa task formal concluída.
 
 ## Relação com BE-ARCH-01D
@@ -68,7 +76,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FT-18` — consistência textual e institucional das áreas por perfil revisada sem remover dados demonstrativos.
 - `FT-21` — validação frontend focada em servidor estagiário e chefia imediata concluída sem remover dados demonstrativos.
 - `FE-SERVIDOR-01` — jornada demonstrativa do servidor estagiário refinada sem remover dados demonstrativos.
-- `FE-CHEFIA-01` — jornada da chefia imediata refinada no recorte frontend seguro, com separação visual demo/real e fallback demonstrativo preservado.
+- `FE-CHEFIA-01` — integracao inicial da chefia imediata entregue no recorte frontend seguro, mas ainda parcial como fluxo final porque fallback demonstrativo/local, dados demonstrativos e dependencia de ID manual permanecem. Continuidade em `FE-CHEFIA-02`.
 - `FE-MOBILE-01` — polimento mobile de `/servidor-estagiario` e `/chefia-imediata` concluido sem remover dados demonstrativos.
 - `FE-DEMO-UX-01` — refinamento visual dos modos demonstrativos de `/servidor-estagiario` e `/chefia-imediata` concluido sem remover dados demonstrativos.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
@@ -78,7 +86,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 ### Ressalvas importantes
 
 - `FT-05` pode ser preservada como histórico visual/estrutural da jornada da chefia, mas não deve ser lida como integração backend real da chefia.
-- A listagem segura de processos por perfil para `/chefia-imediata` deve ser task futura própria, sem reabrir [`FE-CHEFIA-01`](../archive/frontend/tasks/FE-CHEFIA-01-supervisor-workspace-integration.md).
+- A listagem segura de processos por perfil para `/chefia-imediata` deve seguir por [`FE-CHEFIA-02`](./frontend/tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md) e/ou [`FE-PROCESS-LIST-01`](./frontend/tasks/FE-PROCESS-LIST-01-authenticated-process-list.md), sem reabrir `FT-24`.
 - `FT-17` indica painel preparado de homologação; não indica homologação backend funcional completa.
 
 ## Relação com backend e problemas transversais

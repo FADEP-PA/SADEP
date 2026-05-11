@@ -4,6 +4,14 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 
 ## Ativos / pendentes
 
+### FE-CHEFIA-01 — Integracao inicial da chefia imediata
+
+- **Status operacional:** parcialmente resolvida / integracao inicial entregue.
+- `/chefia-imediata` consome backend real quando um processo e informado manualmente.
+- O recorte entregue nao deve ser lido como fluxo final da chefia imediata.
+- Permanecem pendentes: fallback demonstrativo/local, dados demonstrativos, dependencia de ID manual e ausencia de listagem segura de processos por chefia autenticada.
+- A continuidade fica registrada em [`FE-CHEFIA-02`](./tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md), sem reabrir `FT-24`.
+
 ### BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status operacional:** concluido / aprovado na frente backend/frontend de sessao.
@@ -39,6 +47,10 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 
 - `FT-16` — preparar layout base do futuro parecer CESAD de etapa.
 - `FT-26` — limpar scaffolds e placeholders legados do frontend.
+- [`FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo](./tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md).
+- [`FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado](./tasks/FE-PROCESS-LIST-01-authenticated-process-list.md).
+- [`FE-CESAD-01` — integracao real das telas CESAD com processos e pareceres](./tasks/FE-CESAD-01-real-cesad-screens.md).
+- [`FE-ENV-01` — documentar variaveis de ambiente do frontend e evitar fallback inseguro de API](./tasks/FE-ENV-01-frontend-env-documentation.md).
 
 ### FE-QUAL-01 — Testes/frontend quality gate
 
@@ -46,6 +58,11 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 - Nao representa task formal concluida nesta fase.
 
 ## Resolvido operacionalmente
+
+### [FT-24 — Remover dependencia de NEXT_PUBLIC_TECHNICAL_PROCESS_ID](./resolved.md#ft-24--remover-dependencia-de-next_public_technical_process_id)
+
+- Resolvida no recorte frontend identificado.
+- A ausencia de listagem segura de processos por perfil nao reabre `FT-24`; essa melhoria fica em `FE-PROCESS-LIST-01` e no recorte especifico `FE-CHEFIA-02`.
 
 ### [FT-27 / DX-01 — Reconciliar dependencias locais do frontend](./resolved.md#ft-27--dx-01--reconciliar-dependencias-locais-do-frontend)
 

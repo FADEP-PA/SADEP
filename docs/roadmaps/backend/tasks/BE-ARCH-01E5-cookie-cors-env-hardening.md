@@ -33,6 +33,7 @@ A frente `BE-ARCH-01E5` era a pendencia operacional restante da familia `BE-ARCH
 ## Fora do escopo
 
 - renomear o cookie default residual `aep_pa_refresh`, que permanece em `NOM-AEP-COOKIE-01`;
+- Helmet/security headers, rate limit/throttling, politica CSRF/cookie ampla, revisao de logs com PII e endurecimento adicional de producao, agora registrados em `SEC-HARD-01`;
 - alterar contratos `@sadep/contracts`;
 - alterar schema Prisma, seeds, dados demonstrativos, fakes, placeholders ou fallback visual;
 - alterar frontend, CESAD, workflow, homologacao, assinatura ou regras processuais;
@@ -56,4 +57,4 @@ A frente `BE-ARCH-01E5` era a pendencia operacional restante da familia `BE-ARCH
 
 ## Proxima acao
 
-Seguir para `BE-SEC-03` quando a prioridade for seguranca CESAD contextual. Tratar `NOM-AEP-COOKIE-01` separadamente se a prioridade for apenas nomenclatura tecnica residual do cookie.
+Seguir para `BE-SEC-03` quando a prioridade for seguranca CESAD contextual. Tratar `SEC-HARD-01` quando a prioridade for hardening HTTP amplo. Tratar `NOM-AEP-COOKIE-01` separadamente se a prioridade for apenas nomenclatura tecnica residual do cookie.

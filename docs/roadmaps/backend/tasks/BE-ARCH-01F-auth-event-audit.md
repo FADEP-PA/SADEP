@@ -31,6 +31,7 @@ A frente maior `BE-ARCH-01` ja havia entregue revalidacao de usuario atual, refr
 
 - alteracao de contratos `@sadep/contracts`;
 - alteracao de schema Prisma ou tabela `AuditEvent`;
+- persistencia formal dos eventos de autenticacao como auditoria institucional, agora registrada em `BE-AUDIT-AUTH-01`;
 - alteracao de cookies/CORS/env da `BE-ARCH-01E5`;
 - frontend, UX, dados demonstrativos, fakes, placeholders ou fallback visual;
 - CESAD, workflow, homologacao, assinatura e regras processuais.
@@ -52,4 +53,4 @@ A frente maior `BE-ARCH-01` ja havia entregue revalidacao de usuario atual, refr
 
 ## Proxima acao
 
-Tratar `BE-ARCH-01E5` em task separada para hardening operacional de cookies/CORS/env. Nao reabrir `BE-ARCH-01F` para novos destinos de observabilidade, SIEM, persistencia formal de eventos de auth ou auditoria juridico-processual.
+Nao reabrir `BE-ARCH-01F` para novos destinos de observabilidade, SIEM, persistencia formal de eventos de auth ou auditoria juridico-processual. Esses itens devem seguir por task propria, especialmente `BE-AUDIT-AUTH-01`.

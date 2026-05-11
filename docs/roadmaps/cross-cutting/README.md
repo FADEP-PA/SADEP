@@ -20,6 +20,15 @@ O documento legado [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-
 - documentacao;
 - decisoes arquiteturais.
 
+## Itens ativos estruturados
+
+- `DX-POSTCSS-01` — alerta de audit `postcss`/`next`, sem `npm audit fix --force`.
+- `DX-DB-SEED-01` — seed minimo local e checagem de banco.
+- `NOM-AEP-COOKIE-01` — nomenclatura residual do cookie de refresh.
+- `SEC-HARD-01` — hardening adicional de seguranca HTTP, rate limit e CSRF.
+- `BE-AUDIT-AUTH-01` — task backend relacionada a auditoria persistida de eventos de autenticacao.
+- `FE-CHEFIA-02`, `FE-PROCESS-LIST-01`, `FE-CESAD-01` e `FE-ENV-01` — tasks frontend relacionadas a integracao real e DX.
+
 ## Regras de transicao
 
 - Esta fase nao marca problemas como resolvidos.
