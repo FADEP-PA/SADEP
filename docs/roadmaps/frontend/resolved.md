@@ -101,6 +101,16 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Nao houve alteracao de codigo, backend, Prisma, contracts, services/backend, autenticacao backend, dados demonstrativos ou lockfile.
 - Limitacao conhecida: transformar o fallback local em falha explicita de producao exige task propria de codigo, pois este recorte foi documental/operacional.
 
+## FT-16 — Layout base do parecer CESAD de etapa
+
+- **Status documental:** concluida no recorte frontend.
+- `/cesad-comissao` recebeu um shell institucional para o futuro parecer CESAD por etapa.
+- O layout cobre parecer ausente, parecer em elaboracao, parecer pronto/consolidado e modo demonstrativo.
+- Dados demonstrativos seguros foram isolados em `apps/frontend/src/features/cesad/data/cesad-stage-opinion-demo.ts`.
+- O componente `ReadOnlyOpinionShell` permanece sem emissao, assinatura, homologacao, persistencia ou integracao com endpoint inexistente.
+- A consulta real de leitura consolidada da etapa foi preservada sem alterar backend, Prisma, contracts, autenticacao backend ou dados demonstrativos existentes.
+- Limitacoes conhecidas: elaboracao real, assinatura colegiada, autorizacao contextual e remocao de fallback dependem de tasks backend e de `FE-CESAD-01`.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.

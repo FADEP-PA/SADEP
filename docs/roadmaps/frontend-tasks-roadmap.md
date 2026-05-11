@@ -33,7 +33,6 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 
 ### Backlog frontend pendente
 
-- `FT-16` — preparar layout base do futuro parecer CESAD de etapa.
 - `FT-26` — limpar scaffolds e placeholders legados do frontend.
 - `FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo.
 - `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado, sem reabrir `FT-24`.
@@ -79,6 +78,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FE-MOBILE-01` — polimento mobile de `/servidor-estagiario` e `/chefia-imediata` concluido sem remover dados demonstrativos.
 - `FE-DEMO-UX-01` — refinamento visual dos modos demonstrativos de `/servidor-estagiario` e `/chefia-imediata` concluido sem remover dados demonstrativos.
 - `FE-ENV-01` — variavel publica `NEXT_PUBLIC_API_BASE_URL` documentada para ambiente local, homologacao e producao; fallback local preservado apenas como comportamento atual.
+- `FT-16` — layout base do futuro parecer CESAD de etapa preparado em `/cesad-comissao`, com dados demonstrativos seguros e sem emissao, assinatura, homologacao ou persistencia real.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
 - `FT-01` a `FT-15` — histórico frontend concluído conforme roadmap legado anterior.
 - `FT-25` — triagem de vulnerabilidades e dependências concluída, com alerta residual separado.

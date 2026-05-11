@@ -1934,6 +1934,66 @@ textarea {
   gap: 0.25rem;
 }
 
+.cesad-opinion-shell {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgba(19, 51, 93, 0.12);
+  border-radius: 1.2rem;
+  padding: 1.15rem;
+  background: #ffffff;
+  box-shadow: var(--shadow-sm);
+}
+
+.cesad-opinion-shell__header,
+.cesad-opinion-shell__state-header,
+.cesad-opinion-shell__document-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+
+.cesad-opinion-shell__header h3,
+.cesad-opinion-shell__state-header strong {
+  margin: 0.35rem 0 0;
+}
+
+.cesad-opinion-shell__header p {
+  max-width: 62ch;
+  margin: 0.5rem 0 0;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.cesad-opinion-shell__demo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.cesad-opinion-shell__state-card,
+.cesad-opinion-shell__document {
+  display: grid;
+  gap: 0.9rem;
+  border: 1px solid rgba(0, 124, 192, 0.14);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: var(--background-alt);
+}
+
+.cesad-opinion-shell__state-header span,
+.cesad-opinion-shell__document-status span,
+.cesad-opinion-shell__pending strong {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.cesad-opinion-shell__pending {
+  display: grid;
+  gap: 0.45rem;
+}
+
 .supervisor-evaluation-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.95fr);
@@ -2014,6 +2074,7 @@ textarea {
   .workspace-panel-grid--lead,
   .supervisor-evaluation-layout,
   .cesad-stage-read__hero,
+  .cesad-opinion-shell__demo-grid,
   .public-portal__access-grid {
     grid-template-columns: 1fr;
   }
@@ -2062,6 +2123,9 @@ textarea {
   .portal-spotlight__actions,
   .public-portal__spotlight-actions,
   .workspace-badge-row,
+  .cesad-opinion-shell__header,
+  .cesad-opinion-shell__state-header,
+  .cesad-opinion-shell__document-status,
   .supervisor-evaluation-criteria__header,
   .supervisor-evaluation-criterion__header,
   .supervisor-evaluation-actions {

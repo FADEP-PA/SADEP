@@ -45,7 +45,6 @@ Este painel resume itens frontend ativos, pendentes ou resolvidos operacionalmen
 
 ### Backlog frontend documentado
 
-- `FT-16` — preparar layout base do futuro parecer CESAD de etapa.
 - `FT-26` — limpar scaffolds e placeholders legados do frontend.
 - [`FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo](./tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md).
 - [`FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado](./tasks/FE-PROCESS-LIST-01-authenticated-process-list.md).

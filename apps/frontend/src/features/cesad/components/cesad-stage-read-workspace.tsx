@@ -4,13 +4,11 @@ import { useState, type FormEvent } from 'react';
 import { UserRole, type CesadStageReadSnapshotRef } from '@sadep/contracts';
 
 import {
-  formatCesadStageOpinionStatus,
   formatDateTime,
   formatProcessStatus,
   formatRole,
   formatStageInstructionStatus,
   formatSupervisorEvaluationStatus,
-  getCesadStageOpinionStatusTone,
   getProcessStatusTone,
   getStageInstructionStatusTone,
   getSupervisorEvaluationStatusTone,
@@ -37,6 +35,7 @@ import { StatusBadge } from '@/shared/ui/status-badge';
 
 import { ProcessHeaderCard } from './process-header-card';
 import { ProcessWarningsPanel } from './process-warnings-panel';
+import { ReadOnlyOpinionShell } from './read-only-opinion-shell';
 import { StageDocumentList } from './stage-document-list';
 import { StageHistoryPanel } from './stage-history-panel';
 import { StageSummaryCard } from './stage-summary-card';
@@ -281,11 +280,14 @@ export function CesadStageReadWorkspace() {
           ) : null}
 
           {!snapshot && !errorMessage ? (
-            <ContentState
-              title="Nenhuma etapa carregada"
-              description="Informe o processo e o numero da etapa para abrir a visao consolidada da CESAD em modo somente leitura."
-              tone="info"
-            />
+            <>
+              <ContentState
+                title="Nenhuma etapa carregada"
+                description="Informe o processo e o numero da etapa para abrir a visao consolidada da CESAD em modo somente leitura."
+                tone="info"
+              />
+              <ReadOnlyOpinionShell isDemo />
+            </>
           ) : null}
 
           {snapshot ? (
@@ -446,44 +448,11 @@ export function CesadStageReadWorkspace() {
                   )}
                 </InfoCard>
 
-                <InfoCard title="Parecer CESAD da etapa" eyebrow="Parecer funcional">
-                  {snapshot.cesadStageOpinion ? (
-                    <div className="cesad-stage-read__stack">
-                      <StatusBadge
-                        label={formatCesadStageOpinionStatus(snapshot.cesadStageOpinion.status)}
-                        tone={getCesadStageOpinionStatusTone(snapshot.cesadStageOpinion.status)}
-                      />
-                      <KeyValueList
-                        items={[
-                          { label: 'Relatório', value: snapshot.cesadStageOpinion.reportText },
-                          {
-                            label: 'Fundamento legal',
-                            value: snapshot.cesadStageOpinion.legalBasis ?? 'Não informado',
-                          },
-                          { label: 'Conclusão', value: snapshot.cesadStageOpinion.conclusion },
-                          {
-                            label: 'Conceito da etapa',
-                            value: snapshot.cesadStageOpinion.stageConcept ?? 'Não informado',
-                          },
-                          {
-                            label: 'Resultado da etapa',
-                            value: snapshot.cesadStageOpinion.stageResult ?? 'Não informado',
-                          },
-                          {
-                            label: 'Concluído em',
-                            value: formatDateTime(snapshot.cesadStageOpinion.completedAt),
-                          },
-                        ]}
-                      />
-                    </div>
-                  ) : (
-                    <ContentState
-                      title="Parecer funcional indisponível"
-                      description="Nenhum parecer funcional da CESAD foi localizado para esta etapa."
-                      tone="warning"
-                    />
-                  )}
-                </InfoCard>
+                <ReadOnlyOpinionShell
+                  opinion={snapshot.cesadStageOpinion}
+                  stageLabel={`Etapa ${snapshot.stage.sequence} - ${snapshot.stage.stageCode}`}
+                  processLabel={snapshot.process.id}
+                />
               </div>
 
               <StageDocumentList documents={snapshot.documents} />
