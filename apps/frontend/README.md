@@ -29,7 +29,7 @@ $env:NEXT_PUBLIC_API_BASE_URL='http://localhost:3000'
 - `src/app`: composição de rotas, layouts, páginas técnicas e pontos de entrada do App Router.
 - `src/features/auth`: tela de login e experiência de entrada no sistema.
 - `src/features/dashboard`: dashboard técnico inicial para consultar workflow, histórico e avaliação da chefia.
-- `src/features/home`: placeholders por perfil antes do workflow real.
+- `src/features/home`: area historica de apoio por perfil, sem uso operacional ativo nesta etapa.
 - `src/shared/api`: cliente HTTP, tipos de convenção de API e organização dos serviços autenticados.
 - `src/shared/api/services`: serviços HTTP por contexto (`auth`, `processes`).
 - `src/shared/auth`: sessão, provider, bootstrap autenticado, guards e redirects.
@@ -233,11 +233,11 @@ Catálogo centralizado usado pelo frontend:
 Cada perfil também possui:
 - descrição curta padronizada
 - rota inicial autenticada
-- placeholder técnico antes do workflow real
+- rota inicial autenticada
 
-## Páginas placeholder antes do workflow real
+## Areas operacionais e demonstrativas
 
-Mantidas nesta etapa:
+Mantidas nesta etapa como telas reais, paineis de leitura ou areas demonstrativas controladas:
 
 - `/servidor-estagiario`
 - `/chefia-imediata`
@@ -245,7 +245,7 @@ Mantidas nesta etapa:
 - `/homologacao-autoridade`
 - `/admin`
 
-Essas páginas continuam sem lógica de negócio e funcionam como espaço reservado validado por autenticação + RBAC inicial.
+Essas paginas nao devem ser tratadas como scaffolds vazios. Quando ainda dependem de backend futuro, devem explicitar a limitacao de forma institucional e preservar dados demonstrativos seguros para validacao visual.
 
 ## Estratégia de token no frontend
 

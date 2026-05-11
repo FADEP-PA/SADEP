@@ -324,8 +324,7 @@ button:disabled,
 .ghost-button,
 .portal-link-button,
 .public-portal__anchor-button,
-.app-shell__banner-link,
-.technical-home__link-button {
+.app-shell__banner-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4093,29 +4092,6 @@ h3,
   gap: 0.9rem;
 }
 
-.operations-hero__placeholder,
-.operations-panel-placeholder {
-  display: grid;
-  gap: 0.5rem;
-  padding: 1rem 1.05rem;
-  border: 1px solid rgba(19, 51, 93, 0.08);
-  border-radius: 1.2rem;
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.operations-hero__placeholder strong,
-.operations-panel-placeholder strong {
-  color: var(--ink);
-  font-size: 1.02rem;
-}
-
-.operations-hero__placeholder p,
-.operations-panel-placeholder p {
-  margin: 0;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
 .operations-highlight-card {
   display: grid;
   gap: 0.45rem;
@@ -4578,8 +4554,6 @@ h3,
 .operations-meta span,
 .operations-pill-row .status-badge,
 .operations-highlight-card,
-.operations-hero__placeholder,
-.operations-panel-placeholder,
 .operations-flow-card,
 .document-tile,
 .history-item {
@@ -5302,10 +5276,11 @@ h3,
   color: #90a3bc;
 }
 
-.supervisor-dashboard__placeholder {
+.supervisor-dashboard__empty-value {
   color: #b2bfd1;
-  font-size: 1.5rem;
-  line-height: 1;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .supervisor-dashboard__filters {

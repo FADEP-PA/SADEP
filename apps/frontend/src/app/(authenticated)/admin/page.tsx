@@ -101,7 +101,7 @@ export default function AdminPage() {
               <span className="section-chip">Próximas entregas</span>
               <h2>Base administrativa pronta para evoluir</h2>
               <p>
-                A tela já separa a experiência administrativa do placeholder genérico e preserva
+                A tela ja separa a experiencia administrativa em um painel institucional e preserva
                 espaço para futuras filas, auditoria e gestão de usuários quando os contratos de API
                 estiverem definidos.
               </p>

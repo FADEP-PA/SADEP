@@ -1355,7 +1355,7 @@ export function SupervisorEvaluationWorkspace() {
                           Visualizar
                         </button>
                       ) : (
-                        <span className="supervisor-dashboard__placeholder">-</span>
+                        <span className="supervisor-dashboard__empty-value">Nao aplicavel</span>
                       )}
                     </div>
                     <div className="supervisor-dashboard__cell supervisor-dashboard__cell--end" data-label="Ação">

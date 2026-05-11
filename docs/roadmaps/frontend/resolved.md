@@ -111,6 +111,16 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - A consulta real de leitura consolidada da etapa foi preservada sem alterar backend, Prisma, contracts, autenticacao backend ou dados demonstrativos existentes.
 - Limitacoes conhecidas: elaboracao real, assinatura colegiada, autorizacao contextual e remocao de fallback dependem de tasks backend e de `FE-CESAD-01`.
 
+## FT-26 — Limpeza de scaffolds e placeholders legados
+
+- **Status documental:** concluida no recorte frontend.
+- Componentes antigos sem uso em `apps/frontend/src/features/home/components/` foram removidos.
+- Textos visiveis e documentacao do frontend deixaram de tratar as telas atuais como placeholders genericos.
+- CSS orfao de placeholders operacionais antigos foi removido.
+- Marcador vazio na tabela da chefia foi refinado para "Nao aplicavel".
+- Dados demonstrativos uteis, fakes seguros, fallbacks visuais e modos demonstrativos foram preservados.
+- Nao houve alteracao de backend, Prisma, contracts, autenticacao backend, endpoints ou integracao real inexistente.
+
 ## BE-ARCH-01D — Alinhamento minimo de sessao frontend
 
 - **Status documental:** concluida/aprovada na frente backend/frontend de sessao.
