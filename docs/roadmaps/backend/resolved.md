@@ -4,6 +4,29 @@ Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker 
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## BE-CESAD-ASSIGN-REPLACE-01 — Modelar reatribuicao e supersessao formal de comissao CESAD por etapa
+
+- **Status documental:** concluida / auditada / aprovada com ressalvas.
+- Implementou o endpoint `POST /processes/:id/stages/:sequence/cesad-stage-assignment/supersede`.
+- O payload aceita `newCommissionId`, `reason`, `referenceDate` opcional e `formalActReference` opcional.
+- A autorizacao ficou restrita a `ADMIN` e `HOMOLOGATION_AUTHORITY`.
+- Bloqueia `CESAD_MEMBER`, `COMMISSION_ASSISTANT`, chefia imediata, servidor avaliado e usuario nao autenticado/invalido.
+- Exige processo em `EM_ANALISE_CESAD`.
+- Exige exatamente uma assignment `ACTIVE` para a etapa.
+- Valida a nova comissao CESAD, impedindo comissao inexistente, `INACTIVE`, `SUPERSEDED`, fora de vigencia na `referenceDate` ou igual a comissao atual.
+- Bloqueia reatribuicao quando ja existe `CesadStageOpinion` da etapa.
+- Bloqueia reatribuicao quando ja existem `CesadStageOpinionExpectedSigner` congelados.
+- Bloqueia reatribuicao quando ja existe `ProcessDocument.CESAD_OPINION` da etapa.
+- Nao faz update simples de `commissionId`: a assignment antiga e preservada e marcada como `SUPERSEDED`.
+- A assignment antiga recebe `supersededAt`, `supersededReason` e `supersededByAssignmentId`.
+- A nova assignment nasce como `ACTIVE`, com `assignedByUserId`, `assignmentReason` e `referenceDate`.
+- Criou auditoria por `AuditEventType.CESAD_STAGE_ASSIGNMENT_SUPERSEDED` e action `SUPERSEDE_CESAD_STAGE_ASSIGNMENT`.
+- Ampliou testes backend para sucesso com admin/autoridade, bloqueios por papel e estado, bloqueios por artefatos CESAD, persistencia historica, auditoria e regressao de autorizacao contextual.
+- Validacoes aprovadas: build de `@sadep/contracts`, `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria, typecheck frontend adicional e `git diff --check`.
+- Nao alterou frontend, assinatura colegiada, quatro etapas, parecer conclusivo final, homologacao, notificacao, ciencia, `SignatureRecord` ou versionamento documental.
+- Ressalvas remanescentes: `referenceDate` ainda usa parsing por `new Date(...)`; testes HTTP adicionais podem cobrir `referenceDate` invalida, `newCommissionId` vazio/nao string e `formalActReference` nao string; reatribuicao apos parecer, expected signers ou documento CESAD permanece bloqueada e depende de versionamento, invalidacao ou supersessao documental formal.
+- `BE-SEC-03` permanece aberta como guarda-chuva para assinatura colegiada, documentos, workflow completo de quatro etapas, parecer conclusivo final e homologacao/notificacao/ciencia futuras.
+
 ## BE-CESAD-AUTH-02 — Implementar CesadStageAssignment
 
 - **Status documental:** concluida / auditada / aprovada com ressalvas.
@@ -24,8 +47,8 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Ampliou testes backend para criacao de assignment, falhas de comissao, autorizacao por assignment, transicoes CESAD e expected signers.
 - Validacoes aprovadas: `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria e `git diff --check`.
 - Nao alterou frontend, contracts, roadmaps/status durante o patch funcional, assinatura colegiada completa, quatro etapas, parecer conclusivo final, homologacao, notificacao, ciencia, recursos, cookie `aep_pa_refresh` ou migracao ampla AEP -> SADEP.
-- Ressalvas remanescentes: unicidade de assignment `ACTIVE` por etapa garantida em service/transacao; bases locais/dev com processos ja em `EM_ANALISE_CESAD` ou `PARECER_EMITIDO` podem exigir fixture/backfill controlado; metadata de `SENT_TO_CESAD` pode explicitar `assignedAt`/`referenceDate`; teste futuro pode afirmar status inalterado quando a criacao da assignment falha; substituicao/supersessao formal deve virar task propria.
-- `BE-SEC-03` permanece aberta como guarda-chuva estrutural para supersessao, assinatura colegiada, workflow completo, parecer final e homologacao/notificacao/ciencia futuras.
+- Ressalvas remanescentes: unicidade de assignment `ACTIVE` por etapa garantida em service/transacao; bases locais/dev com processos ja em `EM_ANALISE_CESAD` ou `PARECER_EMITIDO` podem exigir fixture/backfill controlado; metadata de `SENT_TO_CESAD` pode explicitar `assignedAt`/`referenceDate`; teste futuro pode afirmar status inalterado quando a criacao da assignment falha.
+- `BE-SEC-03` permanece aberta como guarda-chuva estrutural para assinatura colegiada, documentos, workflow completo, parecer final e homologacao/notificacao/ciencia futuras.
 
 ## BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis
 

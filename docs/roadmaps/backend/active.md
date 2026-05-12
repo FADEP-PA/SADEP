@@ -4,6 +4,19 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Concluido recente
 
+### BE-CESAD-ASSIGN-REPLACE-01 — Modelar reatribuicao e supersessao formal de comissao CESAD por etapa
+
+- **Status operacional:** concluida / auditada / aprovada com ressalvas.
+- **Escopo entregue:** operacao formal para superseder a assignment CESAD ativa de uma etapa e criar nova assignment ativa, sem update simples de `commissionId`.
+- **Endpoint entregue:** `POST /processes/:id/stages/:sequence/cesad-stage-assignment/supersede`, com payload `newCommissionId`, `reason`, `referenceDate` opcional e `formalActReference` opcional.
+- **Politica de autorizacao:** restrita a `ADMIN` e `HOMOLOGATION_AUTHORITY`; `CESAD_MEMBER`, `COMMISSION_ASSISTANT`, chefia imediata e servidor avaliado sao bloqueados.
+- **Guardas processuais:** exige processo em `EM_ANALISE_CESAD`, exatamente uma assignment `ACTIVE`, nova comissao existente, `ACTIVE`, vigente na `referenceDate` e diferente da comissao atual.
+- **Guardas documentais/CESAD:** bloqueia reatribuicao quando ja houver `CesadStageOpinion`, `CesadStageOpinionExpectedSigner` ou `ProcessDocument.CESAD_OPINION` para a etapa.
+- **Efeito de historico:** assignment antiga e marcada como `SUPERSEDED`, recebe motivo e aponta para a nova por `supersededByAssignmentId`; a nova assignment nasce `ACTIVE`.
+- **Auditoria:** registra `AuditEventType.CESAD_STAGE_ASSIGNMENT_SUPERSEDED` e action `SUPERSEDE_CESAD_STAGE_ASSIGNMENT`, com metadata de processo, etapa, assignments, comissoes, ator, papel, motivo, `referenceDate`, `occurredAt` e ato formal quando informado.
+- **Validacoes/auditoria:** testes backend ampliados; build de contracts, `prisma:generate`, typecheck, typecheck de specs, suite backend, Prisma validate com `DATABASE_URL` temporaria, typecheck frontend adicional e `git diff --check` aprovados.
+- **Ressalvas:** `referenceDate` ainda usa parsing por `new Date(...)`; testes HTTP adicionais podem cobrir `referenceDate` invalida, `newCommissionId` vazio/nao string e `formalActReference` nao string; reatribuicao apos parecer, signatarios esperados ou documento CESAD permanece bloqueada e exigira versionamento, invalidacao ou supersessao documental formal em evolucao futura.
+
 ### BE-CESAD-AUTH-02 — Implementar CesadStageAssignment
 
 - **Status operacional:** concluida / auditada / aprovada com ressalvas.
@@ -14,7 +27,7 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 - **Efeito de seguranca:** a autorizacao contextual CESAD passou a usar assignment ativa da etapa; membros de outra comissao e fluxos sem assignment ativa sao bloqueados; `COMMISSION_ASSISTANT` permanece restrito a leitura/apoio.
 - **Efeito documental futuro:** `CesadStageOpinionExpectedSigner` passou a derivar a comissao da assignment da etapa, preservando o contexto formal do envio a CESAD.
 - **Validacoes/auditoria:** testes backend ampliados; `prisma:generate`, typecheck, typecheck de specs, suite backend, Prisma validate com `DATABASE_URL` temporaria e `git diff --check` aprovados.
-- **Ressalvas:** unicidade de assignment `ACTIVE` por etapa garantida em service/transacao; bases locais/dev com processos ja em `EM_ANALISE_CESAD` ou `PARECER_EMITIDO` podem exigir fixture/backfill controlado; metadata de `SENT_TO_CESAD` pode explicitar `assignedAt`/`referenceDate` em recorte futuro; `BE-SEC-03` permanece aberta para supersessao, reatribuicao e integracoes estruturais.
+- **Ressalvas:** unicidade de assignment `ACTIVE` por etapa garantida em service/transacao; bases locais/dev com processos ja em `EM_ANALISE_CESAD` ou `PARECER_EMITIDO` podem exigir fixture/backfill controlado; metadata de `SENT_TO_CESAD` pode explicitar `assignedAt`/`referenceDate` em recorte futuro; `BE-SEC-03` permanece aberta para assinatura colegiada, documentos, workflow completo e pareceres futuros.
 
 ### BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis
 
@@ -23,7 +36,7 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 - **Escopo entregue:** `CesadContextAuthorizationService` passou a proteger os fluxos sensiveis atuais de workflow, historico, transicoes CESAD sensiveis, leitura consolidada CESAD e leitura/rascunho/conclusao do parecer CESAD de etapa.
 - **Efeito de seguranca:** `CESAD_MEMBER` e `COMMISSION_ASSISTANT` sem vinculo ativo sao bloqueados; `COMMISSION_ASSISTANT` vinculado permanece restrito a leitura/apoio, sem escrita de parecer nem transicao CESAD; servidor avaliado, chefia imediata e admin preservam o comportamento anterior.
 - **Validacoes/auditoria:** testes backend ampliados; typecheck, typecheck de specs, suite backend, Prisma validate com `DATABASE_URL` temporaria e `git diff --check` aprovados.
-- **Ressalvas:** a politica foi depois fortalecida por `BE-CESAD-AUTH-02`, que criou o vinculo persistido comissao-processo-etapa. `BE-SEC-03` permanece ativa como guarda-chuva estrutural para supersessao, assinatura colegiada, workflow completo e pareceres futuros.
+- **Ressalvas:** a politica foi depois fortalecida por `BE-CESAD-AUTH-02`, que criou o vinculo persistido comissao-processo-etapa, e por `BE-CESAD-ASSIGN-REPLACE-01`, que implementou reatribuicao/supersessao formal em recorte seguro. `BE-SEC-03` permanece ativa como guarda-chuva estrutural para assinatura colegiada, documentos, workflow completo e pareceres futuros.
 
 ### BE-ARCH-01E3 — Implementar refresh, rotacao e logout server-side
 
@@ -52,8 +65,7 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Pendentes relevantes
 
-- [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md): pendente critica como guarda-chuva estrutural; `BE-CESAD-AUTH-01` concluiu a protecao dos endpoints sensiveis e `BE-CESAD-AUTH-02` concluiu o vinculo persistido comissao-processo-etapa via assignment. Permanecem refinamentos futuros de reatribuicao/supersessao formal, assinatura colegiada, workflow completo e pareceres futuros.
-- [`BE-CESAD-ASSIGN-REPLACE-01` — modelar reatribuicao e supersessao formal de comissao CESAD por etapa](./tasks/BE-CESAD-ASSIGN-REPLACE-01-assignment-supersession.md): pendente futura para substituir assignment ativa por ato formal auditado, sem troca automatica invisivel.
+- [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md): guarda-chuva estrutural ainda ativo; `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02` e `BE-CESAD-ASSIGN-REPLACE-01` reduziram substancialmente o risco imediato ao proteger endpoints sensiveis, persistir assignment por etapa e permitir supersessao formal em recorte seguro. Permanecem integracoes futuras com assinatura colegiada, documentos, workflow completo de quatro etapas, parecer conclusivo final e homologacao/notificacao/ciencia.
 - [`BE-DOC-CESAD-SIGN-01` — modelar e validar assinatura colegiada do parecer CESAD](./tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md): pendente alta para pareceres com multiplos signatarios obrigatorios.
 - [`BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas](./tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): pendente alta para nao confundir o fluxo reduzido atual com o Caso 2 completo.
 - [`BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD](./tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao para homologacao final valida.
