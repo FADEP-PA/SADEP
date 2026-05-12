@@ -18,7 +18,7 @@ export default function SessionExpiredPage() {
         <h1 id="session-expired-title">Sua autenticação não é mais válida</h1>
         <p>
           O sistema encerrou a navegação protegida porque a sessão local perdeu validade ou não
-          conseguiu mais ser confirmada junto ao backend.
+          conseguiu mais ser confirmada pelo serviço de autenticação.
         </p>
         <p>Faca login novamente para restabelecer o acesso ao ambiente autenticado.</p>
 

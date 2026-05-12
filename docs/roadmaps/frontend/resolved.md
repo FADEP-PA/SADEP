@@ -4,6 +4,19 @@ Este arquivo resume itens frontend ja concluidos ou resolvidos. O antigo roadmap
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## FE-QUAL-02 - Reforco do quality gate visual/textual frontend
+
+- **Status documental:** concluida no recorte frontend.
+- Recorte executado: reforco do `scripts/check-frontend-copy.mjs` para bloquear termos tecnicos ou de prototipo em `apps/frontend/src`, sem criar suite ampla de testes.
+- Arquivos/telas afetados: gate textual do frontend, mensagens de sessao, tela de sessao expirada, dados demonstrativos CESAD e textos de indisponibilidade/consulta CESAD.
+- Decisoes de qualidade: manter regras globais para SADEP/scaffolds legados e adicionar regras source-only para `backend`, `mock(s)`, `fake(s)` e `dados falsos`.
+- O gate preserva leitura tecnica do `apps/frontend/README.md`, permitindo documentacao de manutencao sem expor termos inadequados na interface.
+- Dados demonstrativos, fakes seguros, placeholders de input e fallbacks visuais foram preservados sem mudanca de origem.
+- Nao houve alteracao de backend, Prisma, contracts, services/backend, autenticacao backend, endpoints, regras de negocio, lockfile ou dados sensiveis.
+- Limitacao conhecida: o gate e textual e nao substitui validacao visual em navegador, testes de interacao ou auditoria completa de conteudo dinamico.
+- Dependencias futuras: `FE-PROCESS-LIST-01`, `FE-CHEFIA-02` e `FE-CESAD-01` continuam dependendo de backend/contracts seguros.
+- Proxima task recomendada: `FE-A11Y-02` para acessibilidade interna de listas, tabelas, modais e estados autenticados.
+
 ## FE-UI-01 - Consistencia visual autenticada
 
 - **Status documental:** concluida no recorte frontend.

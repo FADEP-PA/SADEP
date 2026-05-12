@@ -93,7 +93,7 @@ export function ReadOnlyOpinionShell({
           <h3 id="cesad-stage-opinion-shell-title">Parecer CESAD da etapa</h3>
           <p>
             Estrutura visual preparada para o parecer de etapa, sem emissao,
-            assinatura, homologacao ou persistencia enquanto o backend nao
+            assinatura, homologacao ou persistencia enquanto a API nao
             expuser contrato proprio.
           </p>
         </div>
@@ -133,14 +133,14 @@ export function ReadOnlyOpinionShell({
 
           <ContentState
             title="Acoes formais indisponiveis nesta tela"
-            description="O frontend exibe apenas a estrutura de leitura. Emissao, assinatura e conclusao dependem de contrato e capacidades do backend."
+            description="A interface exibe apenas a estrutura de leitura. Emissao, assinatura e conclusao dependem de contrato e capacidades da integracao."
             tone="info"
           />
         </div>
       ) : (
         <ContentState
           title="Parecer da etapa ausente"
-          description="A etapa carregada ainda nao possui parecer CESAD retornado pelo backend. O espaco permanece reservado para a integracao futura."
+          description="A etapa carregada ainda nao possui parecer CESAD retornado pela integracao. O espaco permanece reservado para a integracao futura."
           tone="warning"
         />
       )}

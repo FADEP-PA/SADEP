@@ -78,7 +78,7 @@ function mapDocumentToOverviewItem(
         title={`${documentTitle} ausente`}
         description={
           document.missingReason ??
-          'O backend sinalizou ausência deste documento no escopo da etapa.'
+          'A integração sinalizou ausência deste documento no escopo da etapa.'
         }
       />
     ),

@@ -52,11 +52,11 @@ export function buildAppealReadinessItems(
         ? 'Aguardando timestamp oficial de ciencia/visualizacao no snapshot'
         : 'Prazo ainda não iniciado',
       countdownLabel: stageAppealEligible
-        ? 'Indisponível até o backend informar o marco temporal válido'
+        ? 'Indisponível até a integração informar o marco temporal válido'
         : 'Não aplicável',
       blockers: stageAppealEligible
         ? [
-            'O backend ainda não informa a data/hora juridicamente válida que inicia o prazo recursal da etapa.',
+            'A integração ainda não informa a data/hora juridicamente válida que inicia o prazo recursal da etapa.',
             'Não existe endpoint recursal exposto para protocolar o recurso de etapa a partir desta área.',
           ]
         : [workspace.cesadOpinionAccess.blockedReason ?? 'Parecer da etapa ainda indisponivel para leitura.'],
@@ -84,7 +84,7 @@ export function buildAppealReadinessItems(
         ? 'Aguardando timestamp de notificação ou ciência no snapshot'
         : 'Prazo ainda não iniciado',
       countdownLabel: finalAppealEligible
-        ? 'Indisponível até o backend expor notificação final e seu marco temporal'
+        ? 'Indisponível até a integração expor notificação final e seu marco temporal'
         : 'Não aplicável',
       blockers: finalAppealEligible
         ? [

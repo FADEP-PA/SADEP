@@ -61,7 +61,7 @@ function buildStageTimelineItems(snapshot: CesadStageReadSnapshotRef): StageTime
         statusLabel: formatStageInstructionStatus(stageInstructionStatus),
         tone: getStageInstructionStatusTone(stageInstructionStatus),
         description:
-          'Etapa aberta nesta consulta consolidada, com status documental retornado pelo backend.',
+          'Etapa aberta nesta consulta consolidada, com status documental retornado pela integração.',
         isActive: true,
       };
     }
@@ -72,7 +72,7 @@ function buildStageTimelineItems(snapshot: CesadStageReadSnapshotRef): StageTime
       statusLabel: 'Fora da consulta atual',
       tone: 'neutral',
       description:
-        'Consulte esta etapa para exibir o status documental informado pelo backend.',
+        'Consulte esta etapa para exibir o status documental informado pela integração.',
     };
   });
 }

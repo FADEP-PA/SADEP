@@ -5,15 +5,16 @@ import { dirname } from 'node:path';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const frontendRoot = resolve(repoRoot, 'apps', 'frontend');
+const sourceRoot = resolve(frontendRoot, 'src');
 const scanRoots = [
-  resolve(frontendRoot, 'src'),
+  sourceRoot,
   resolve(frontendRoot, 'README.md'),
 ];
 
 const scannedExtensions = new Set(['.css', '.ts', '.tsx', '.md']);
 const ignoredDirectories = new Set(['.next', 'node_modules']);
 
-const forbiddenPatterns = [
+const globalForbiddenPatterns = [
   {
     pattern: /\bAEP-PA\b|\bAEP PA\b/g,
     message: 'Use SADEP em texto frontend atual; AEP-PA deve ficar restrito a legado/historico.',
@@ -41,6 +42,26 @@ const forbiddenPatterns = [
   {
     pattern: /P[aá]ginas placeholder|placeholders por perfil/gi,
     message: 'A documentacao frontend deve diferenciar areas reais, demonstrativas e futuras.',
+  },
+];
+
+// Source-only rules protect visible UI copy. Technical README guidance remains allowed.
+const sourceOnlyForbiddenPatterns = [
+  {
+    pattern: /\bbackend\b/gi,
+    message: 'Evite termo tecnico "backend" em texto de interface; prefira servico, integracao ou API.',
+  },
+  {
+    pattern: /\bmock(?:s)?\b/gi,
+    message: 'Evite mock(s) em texto de interface; use dados demonstrativos quando for visivel.',
+  },
+  {
+    pattern: /\bfake(?:s)?\b/gi,
+    message: 'Evite fake(s) em texto de interface; use dados ficticios/demonstrativos seguros.',
+  },
+  {
+    pattern: /dados falsos/gi,
+    message: 'Use dados ficticios/demonstrativos seguros em vez de dados falsos.',
   },
 ];
 
@@ -73,6 +94,11 @@ function getLineNumber(content, index) {
   return content.slice(0, index).split('\n').length;
 }
 
+function isUnderRoot(file, root) {
+  const relativePath = relative(root, file);
+  return relativePath === '' || (!relativePath.startsWith('..') && relativePath !== '..');
+}
+
 const files = (await Promise.all(scanRoots.map((root) => collectFiles(root)))).flat();
 const findings = [];
 
@@ -82,6 +108,9 @@ for (const file of files) {
   }
 
   const content = await readFile(file, 'utf8');
+  const forbiddenPatterns = isUnderRoot(file, sourceRoot)
+    ? [...globalForbiddenPatterns, ...sourceOnlyForbiddenPatterns]
+    : globalForbiddenPatterns;
 
   for (const { pattern, message } of forbiddenPatterns) {
     pattern.lastIndex = 0;
@@ -109,4 +138,5 @@ if (findings.length > 0) {
   process.exit(1);
 }
 
-console.log(`Frontend copy/scaffold check passed (${files.length} files scanned).`);
+const totalRuleCount = globalForbiddenPatterns.length + sourceOnlyForbiddenPatterns.length;
+console.log(`Frontend copy/scaffold check passed (${files.length} files scanned, ${totalRuleCount} rules active).`);

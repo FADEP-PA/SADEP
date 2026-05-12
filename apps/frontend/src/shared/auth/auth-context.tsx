@@ -35,15 +35,15 @@ function getSessionValidationErrorMessage(error: unknown) {
   }
 
   if (error instanceof HttpError && error.status >= 500) {
-    return 'Não foi possível validar sua sessão porque o backend está indisponível no momento.';
+    return 'Não foi possível validar sua sessão porque o serviço de autenticação está indisponível no momento.';
   }
 
   if (error instanceof Error && error.name === 'AbortError') {
-    return 'Não foi possível validar sua sessão porque a resposta do backend excedeu o tempo limite.';
+    return 'Não foi possível validar sua sessão porque o serviço de autenticação excedeu o tempo limite.';
   }
 
   if (error instanceof TypeError) {
-    return 'Não foi possível validar sua sessão porque o backend não respondeu ou houve falha de rede.';
+    return 'Não foi possível validar sua sessão porque o serviço de autenticação não respondeu ou houve falha de rede.';
   }
 
   if (error instanceof HttpError) {
@@ -181,7 +181,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     try {
       await logoutSession();
     } catch {
-      // Logout local must complete even if the backend is temporarily unavailable.
+      // Local sign-out must complete even if the remote service is temporarily unavailable.
     } finally {
       clearAccessToken();
       clearSession();

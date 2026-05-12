@@ -26,7 +26,7 @@ export const DEMO_CESAD_STAGE_OPINIONS: DemoCesadStageOpinion[] = [
     legalBasis: 'Fundamentacao sera exibida somente quando houver contrato proprio.',
     conclusion: 'Sem conclusao demonstrativa.',
     pendingItems: [
-      'Contrato backend para parecer de etapa',
+      'Contrato da API para parecer de etapa',
       'Capacidades de elaboracao e conclusao retornadas pela API',
       'Politica de assinatura colegiada',
     ],
@@ -43,7 +43,7 @@ export const DEMO_CESAD_STAGE_OPINIONS: DemoCesadStageOpinion[] = [
     legalBasis:
       'Referencia normativa demonstrativa, sem valor juridico e sem vinculo com documento real.',
     conclusion:
-      'Conclusao preliminar demonstrativa, aguardando contrato backend antes de qualquer acao real.',
+      'Conclusao preliminar demonstrativa, aguardando contrato oficial antes de qualquer acao real.',
     pendingItems: [
       'Salvar rascunho apenas quando o endpoint existir',
       'Validar campos obrigatorios pelo contrato oficial',
@@ -64,7 +64,7 @@ export const DEMO_CESAD_STAGE_OPINIONS: DemoCesadStageOpinion[] = [
     conclusion:
       'Resultado demonstrativo da etapa apresentado como leitura institucional, sem emitir ato real.',
     pendingItems: [
-      'Associar documento formal retornado pelo backend',
+      'Associar documento formal retornado pela integracao',
       'Exibir trilha real de assinaturas quando modelada',
       'Diferenciar parecer de etapa de parecer conclusivo final',
     ],
