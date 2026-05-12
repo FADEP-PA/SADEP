@@ -168,7 +168,11 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
 
   return (
     <div className={isSidebarCollapsed ? 'app-shell app-shell--sidebar-collapsed' : 'app-shell'}>
-      <aside className="app-shell__sidebar">
+      <a className="app-shell__skip-link" href="#conteudo-principal">
+        Pular para o conteudo principal
+      </a>
+
+      <aside className="app-shell__sidebar" aria-label="Menu lateral do ambiente autenticado">
         <div className="app-shell__sidebar-top">
           <Link
             href={rolePresentation?.homePath ?? '/perfil'}
@@ -210,6 +214,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
                       key={item.href}
                       href={item.href}
                       title={item.description}
+                      aria-label={item.label}
                       aria-current={isActive ? 'page' : undefined}
                       className={
                         isActive
@@ -237,7 +242,12 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
               <strong>{rolePresentation.shortLabel}</strong>
             </div>
           ) : null}
-          <button type="button" className="app-shell__sidebar-signout" onClick={signOut}>
+          <button
+            type="button"
+            className="app-shell__sidebar-signout"
+            onClick={signOut}
+            aria-label="Sair do sistema"
+          >
             <span className="app-shell__sidebar-signout-icon" aria-hidden="true">
               <SidebarIcon name="logout" />
             </span>
@@ -278,7 +288,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
           </div>
         </header>
 
-        <main className="app-shell__body">
+        <main id="conteudo-principal" className="app-shell__body" tabIndex={-1}>
           <div className="app-shell__content">{children}</div>
         </main>
       </div>

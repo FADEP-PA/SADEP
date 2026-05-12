@@ -18,6 +18,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | `FE-CHEFIA-02` | [`frontend/tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md`](./frontend/tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md) |
 | `FE-PROCESS-LIST-01` | [`frontend/tasks/FE-PROCESS-LIST-01-authenticated-process-list.md`](./frontend/tasks/FE-PROCESS-LIST-01-authenticated-process-list.md) |
 | `FE-CESAD-01` | [`frontend/tasks/FE-CESAD-01-real-cesad-screens.md`](./frontend/tasks/FE-CESAD-01-real-cesad-screens.md) |
+| `FE-A11Y-01` | [`frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md`](./frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md) |
 | `FE-ENV-01` | [`frontend/tasks/FE-ENV-01-frontend-env-documentation.md`](./frontend/tasks/FE-ENV-01-frontend-env-documentation.md) |
 | `FE-SERVIDOR-01` | [`../archive/frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md`](../archive/frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md) |
 | `FE-MOBILE-01` | [`../archive/frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md`](../archive/frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md) |
@@ -87,6 +88,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FT-26` — scaffolds e placeholders legados do frontend limpos sem remover dados demonstrativos uteis.
 - `FE-QUAL-01` — quality gate frontend de texto e scaffolds legados integrado ao `frontend:check`.
 - `FE-ROADMAP-01` - painel ativo frontend reconciliado para separar pendencias reais de itens resolvidos.
+- `FE-A11Y-01` - acessibilidade basica do shell autenticado com skip link, landmark principal e nomes acessiveis estaveis.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
 - `FT-01` a `FT-15` — histórico frontend concluído conforme roadmap legado anterior.
 - `FT-25` — triagem de vulnerabilidades e dependências concluída, com alerta residual separado.

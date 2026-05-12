@@ -16,6 +16,18 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Limitacao conhecida: a conclusao desta task e documental; listagem real por perfil, remocao de fallback operacional da chefia e integracao real CESAD seguem dependentes de backend/contracts.
 - Proxima task recomendada: aguardar contrato backend seguro para `FE-PROCESS-LIST-01` ou executar novo recorte frontend estritamente visual/documental se os contratos ainda nao estiverem disponiveis.
 
+## FE-A11Y-01 - Acessibilidade basica do shell autenticado
+
+- **Status documental:** concluida no recorte frontend.
+- O shell autenticado recebeu link de pular para o conteudo principal, alvo explicito em `main#conteudo-principal` e rotulo acessivel no menu lateral.
+- Links de navegacao e o botao de saida passaram a ter nomes acessiveis estaveis mesmo quando a sidebar esta recolhida.
+- O estilo de foco do skip link foi criado em `globals.css`, mantendo a interface institucional.
+- Arquivos afetados: `apps/frontend/src/shared/ui/app-shell.tsx`, `apps/frontend/src/shared/styles/globals.css` e `docs/roadmaps/frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md`.
+- Dados demonstrativos, fakes seguros, placeholders de input e fallback visual foram preservados sem alteracao.
+- Nao houve alteracao de backend, Prisma, contracts, services/backend, autenticacao backend, endpoints, regras de negocio, dados demonstrativos ou lockfile.
+- Limitacao conhecida: a task nao substitui auditoria completa de acessibilidade por tela; componentes internos complexos ainda podem exigir recortes futuros.
+- Proxima task recomendada: `FE-UX-01` para padronizar estados vazios, loading e erro nas areas autenticadas.
+
 ## FT-27 / DX-01 — Reconciliar dependencias locais do frontend
 
 - **Status documental:** resolvida operacionalmente.
