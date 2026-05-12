@@ -6737,3 +6737,122 @@ button,
     padding: 1.15rem;
   }
 }
+
+.app-shell__content,
+.portal-dashboard,
+.operations-page,
+.process-workspace,
+.cesad-stage-read,
+.workspace-overview,
+.workspace-overview > *,
+.workspace-panel-grid,
+.workspace-panel-grid > *,
+.workspace-service-strip,
+.workspace-service-card,
+.metrics-grid,
+.metrics-grid > *,
+.intern-layout-grid,
+.intern-layout-grid > *,
+.supervisor-dashboard,
+.supervisor-dashboard__table-card,
+.supervisor-dashboard__row,
+.previous-evaluations-modal__content {
+  min-width: 0;
+}
+
+.workspace-overview,
+.workspace-service-card,
+.metrics-grid,
+.process-list-card__item,
+.intern-stage-card,
+.intern-signature-card,
+.evaluation-detail__card,
+.supervisor-dashboard__row,
+.previous-evaluations-modal__row,
+.cesad-stage-read__stack,
+.content-state,
+.feedback-alert {
+  overflow-wrap: anywhere;
+}
+
+.workspace-service-card strong,
+.workspace-stat strong,
+.intern-hero__summary-card strong,
+.supervisor-dashboard__server strong,
+.previous-evaluations-modal__row strong,
+.key-value-list dd {
+  word-break: break-word;
+}
+
+@media (max-width: 900px) {
+  .inline-form--elevated button,
+  .cesad-stage-read__form button,
+  .supervisor-evaluation-actions button,
+  .evaluation-detail__actions button {
+    width: 100%;
+  }
+
+  .workspace-service-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace-overview,
+  .workspace-overview__panel,
+  .operations-card,
+  .evaluation-detail__card,
+  .supervisor-dashboard__table-card,
+  .previous-evaluations-modal__content {
+    border-radius: 1rem;
+  }
+
+  .workspace-stat-grid,
+  .workspace-service-strip,
+  .metrics-grid,
+  .intern-layout-grid,
+  .evaluation-detail__actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .evaluation-detail__actions {
+    display: grid;
+    justify-content: stretch;
+  }
+}
+
+@media (max-width: 560px) {
+  .workspace-overview,
+  .workspace-overview__panel,
+  .workspace-service-card,
+  .intern-stage-card,
+  .intern-signature-card,
+  .evaluation-detail__card,
+  .supervisor-dashboard__row {
+    padding: 0.95rem;
+  }
+
+  .workspace-stat-grid,
+  .metrics-grid,
+  .workspace-service-strip,
+  .workspace-panel-grid,
+  .workspace-panel-grid--lead {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace-service-card strong,
+  .workspace-stat strong {
+    font-size: 1rem;
+  }
+
+  .previous-evaluations-modal {
+    place-items: stretch;
+  }
+
+  .previous-evaluations-modal__content {
+    width: auto;
+    max-height: none;
+    margin: 0.75rem;
+    align-self: center;
+  }
+}

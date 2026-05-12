@@ -4,6 +4,18 @@ Este arquivo resume itens frontend ja concluidos ou resolvidos. O antigo roadmap
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## FE-RESP-01 - Responsividade das telas autenticadas principais
+
+- **Status documental:** concluida no recorte frontend.
+- Recorte executado: ajustes responsivos compartilhados para containers, grids, cards, modais e botoes das areas autenticadas principais.
+- Telas afetadas: `/processos`, `/servidor-estagiario`, `/chefia-imediata`, `/cesad-comissao` e `/homologacao-autoridade`.
+- Decisoes de responsividade: reforcar `min-width: 0`, quebra segura de texto, empilhamento de grids densos e botoes com largura total em telas menores.
+- Dados demonstrativos, fakes seguros, placeholders e fallbacks visuais foram preservados sem mudanca de origem.
+- Nao houve alteracao de backend, Prisma, contracts, services/backend, autenticacao backend, endpoints, regras de negocio, lockfile ou dados sensiveis.
+- Limitacao conhecida: o recorte nao substitui validacao visual em navegador/dispositivos reais nem redesenha telas completas.
+- Dependencias futuras: `FE-PROCESS-LIST-01`, `FE-CHEFIA-02` e `FE-CESAD-01` continuam dependendo de backend/contracts seguros.
+- Proxima task recomendada: `FE-UI-01` para padronizacao visual de cards, badges e secoes entre perfis autenticados.
+
 ## FE-COPY-01 - Microcopy institucional autenticada
 
 - **Status documental:** concluida no recorte frontend.
