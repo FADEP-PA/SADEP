@@ -8,11 +8,11 @@ import { getHttpErrorDetails, getRequestErrorMessage, isHttpErrorStatus } from '
 import { getTechnicalProcessSnapshot } from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
-import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InfoCard } from '@/shared/ui/info-card';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { KeyValueList } from '@/shared/ui/key-value-list';
+import { EmptyState } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
 import { ProcessRequestFeedback } from '@/shared/ui/process-request-feedback';
 import { StatusBadge } from '@/shared/ui/status-badge';
@@ -271,10 +271,9 @@ export function ProcessWorkspace() {
           </div>
 
           {!snapshot && !errorMessage ? (
-            <ContentState
+            <EmptyState
               title="Nenhum processo carregado"
               description="Faça uma consulta para abrir o painel principal do processo com os dados liberados para este perfil."
-              tone="info"
             />
           ) : null}
 

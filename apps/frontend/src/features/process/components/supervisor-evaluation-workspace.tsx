@@ -20,6 +20,7 @@ import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
+import { DemonstrationModeState } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
 
 const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
@@ -891,9 +892,8 @@ export function SupervisorEvaluationWorkspace() {
             </div>
 
             {!workspaceSnapshot ? (
-              <FeedbackAlert
+              <DemonstrationModeState
                 title="Processo real não selecionado"
-                tone="info"
                 description="A tela permanece em modo demonstrativo até um processo real ser informado para validação local."
               />
             ) : null}

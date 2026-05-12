@@ -4,6 +4,19 @@ Este arquivo resume itens frontend ja concluidos ou resolvidos. O antigo roadmap
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## FE-UX-01A - Estados institucionais compartilhados para areas autenticadas
+
+- **Status documental:** concluida no recorte frontend.
+- Recorte executado: primeira fatia de `FE-UX-01`, limitada a wrappers compartilhados e aplicacao em estados locais ja existentes.
+- Criados `EmptyState`, `TemporaryUnavailableState` e `DemonstrationModeState` em `apps/frontend/src/shared/ui/operational-states.tsx`.
+- Telas afetadas: `/processos`, `/servidor-estagiario`, `/chefia-imediata`, `/cesad-comissao` e `/homologacao-autoridade`.
+- A consulta CESAD de etapa recebeu loading institucional explicito sem alterar a chamada real ja existente.
+- Dados demonstrativos, fakes seguros, placeholders de input e fallbacks visuais foram preservados sem mudanca de origem.
+- Nao houve alteracao de backend, Prisma, contracts, services/backend, autenticacao backend, endpoints, regras de negocio, dados demonstrativos ou lockfile.
+- Limitacao conhecida: a task nao padroniza todos os estados internos de listas, tabelas, modais e formularios; isso deve seguir em `FE-UX-01B` se necessario.
+- Dependencias futuras: `FE-PROCESS-LIST-01`, `FE-CHEFIA-02` e `FE-CESAD-01` continuam dependendo de backend/contracts seguros.
+- Proxima task recomendada: `FE-UX-01B` para estados internos de listas/tabelas/modais ou `FE-COPY-01` para microcopy institucional.
+
 ## FE-ROADMAP-01 - Reconciliar painel ativo frontend
 
 - **Status documental:** concluida no recorte frontend.

@@ -104,3 +104,39 @@ export function InsufficientHistoryState({
     </OperationalStateFrame>
   );
 }
+
+export function EmptyState({
+  title = 'Nenhum registro disponivel',
+  description = 'Ainda nao ha informacoes para exibir neste painel.',
+  children,
+}: OperationalStateProps) {
+  return (
+    <OperationalStateFrame badge="Sem dados" title={title} description={description} tone="info">
+      {children}
+    </OperationalStateFrame>
+  );
+}
+
+export function TemporaryUnavailableState({
+  title = 'Conteudo temporariamente indisponivel',
+  description = 'Este conteudo ainda depende de uma integracao ou liberacao operacional para aparecer aqui.',
+  children,
+}: OperationalStateProps) {
+  return (
+    <OperationalStateFrame badge="Indisponivel" title={title} description={description} tone="warning">
+      {children}
+    </OperationalStateFrame>
+  );
+}
+
+export function DemonstrationModeState({
+  title = 'Modo demonstrativo preservado',
+  description = 'Esta visualizacao usa dados ficticios para manter a validacao visual enquanto a integracao real nao esta disponivel.',
+  children,
+}: OperationalStateProps) {
+  return (
+    <OperationalStateFrame badge="Demonstracao" title={title} description={description} tone="info">
+      {children}
+    </OperationalStateFrame>
+  );
+}

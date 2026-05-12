@@ -6,11 +6,11 @@ import { useEffect, useState } from 'react';
 import { formatDateTime } from '@/features/process/components/process-formatters';
 import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
-import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InfoCard } from '@/shared/ui/info-card';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { KeyValueList } from '@/shared/ui/key-value-list';
+import { TemporaryUnavailableState } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
@@ -163,10 +163,9 @@ export function HomologationAuthorityWorkspace() {
                       ))}
                     </div>
                   ) : (
-                    <ContentState
-                      title="Nenhum processo homologatorio carregado"
+                    <TemporaryUnavailableState
+                      title="Fila homologatoria ainda indisponivel"
                       description="A fila homologatória ainda não está conectada ao backend dedicado. A estrutura da tela já separa o que deve aparecer aqui quando a integração estiver pronta."
-                      tone="warning"
                     />
                   )}
                 </InfoCard>

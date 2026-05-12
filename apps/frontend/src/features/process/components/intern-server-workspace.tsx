@@ -25,6 +25,7 @@ import { AuthGuard } from '@/shared/auth/auth-guard';
 import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
+import { DemonstrationModeState } from '@/shared/ui/operational-states';
 import { StatusBadge, type StatusBadgeTone } from '@/shared/ui/status-badge';
 
 import {
@@ -770,9 +771,8 @@ export function InternServerWorkspace() {
         ) : null}
 
         {!snapshot && !isSelfEvaluationExpanded ? (
-          <FeedbackAlert
+          <DemonstrationModeState
             title="Processo real não selecionado"
-            tone="info"
             description="A tela permanece em modo demonstrativo até um processo real ser informado para validação local."
           />
         ) : null}
@@ -869,9 +869,8 @@ export function InternServerWorkspace() {
                 ) : null}
 
                 {!snapshot ? (
-                  <FeedbackAlert
+                  <DemonstrationModeState
                     title="Modo demonstrativo"
-                    tone="info"
                     description="Esta tela usa dados falsos para visualização. O salvamento fica habilitado quando um processo real estiver carregado."
                   />
                 ) : null}

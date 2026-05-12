@@ -25,9 +25,11 @@ import { AuthGuard } from '@/shared/auth/auth-guard';
 import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InfoCard } from '@/shared/ui/info-card';
+import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { KeyValueList } from '@/shared/ui/key-value-list';
 import {
   AccessBlockedState,
+  EmptyState,
   StageUnavailableState,
 } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
@@ -248,6 +250,13 @@ export function CesadStageReadWorkspace() {
             </aside>
           </div>
 
+          {isLoading ? (
+            <InlineLoadingState
+              title="Carregando leitura da etapa"
+              description="A tela esta consultando o processo e a etapa informados para montar a leitura consolidada."
+            />
+          ) : null}
+
           {errorMessage ? (
             errorStatus === 404 ? (
               <StageUnavailableState>
@@ -281,10 +290,9 @@ export function CesadStageReadWorkspace() {
 
           {!snapshot && !errorMessage ? (
             <>
-              <ContentState
+              <EmptyState
                 title="Nenhuma etapa carregada"
                 description="Informe o processo e o numero da etapa para abrir a visao consolidada da CESAD em modo somente leitura."
-                tone="info"
               />
               <ReadOnlyOpinionShell isDemo />
             </>
