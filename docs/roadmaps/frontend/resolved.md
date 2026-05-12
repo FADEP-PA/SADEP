@@ -4,6 +4,18 @@ Este arquivo resume itens frontend ja concluidos ou resolvidos. O antigo roadmap
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## FE-UI-01 - Consistencia visual autenticada
+
+- **Status documental:** concluida no recorte frontend.
+- Recorte executado: padronizacao visual compartilhada de cards, badges, secoes e pequenos blocos informativos nas areas autenticadas principais.
+- Telas afetadas: `/processos`, `/servidor-estagiario`, `/chefia-imediata`, `/cesad-comissao` e `/homologacao-autoridade`.
+- Decisoes de UI: reaproveitar classes existentes, alinhar bordas/raios/sombras/fundos de cards equivalentes e padronizar badges/pills mantendo tons semanticos.
+- Dados demonstrativos, fakes seguros, placeholders e fallbacks visuais foram preservados sem mudanca de origem.
+- Nao houve alteracao de backend, Prisma, contracts, services/backend, autenticacao backend, endpoints, regras de negocio, lockfile ou dados sensiveis.
+- Limitacao conhecida: o recorte nao substitui validacao visual em navegador/dispositivos reais nem redesenha a arquitetura visual completa.
+- Dependencias futuras: `FE-PROCESS-LIST-01`, `FE-CHEFIA-02` e `FE-CESAD-01` continuam dependendo de backend/contracts seguros.
+- Proxima task recomendada: `FE-QUAL-02` para reforcar verificacoes frontend de qualidade visual/textual.
+
 ## FE-RESP-01 - Responsividade das telas autenticadas principais
 
 - **Status documental:** concluida no recorte frontend.

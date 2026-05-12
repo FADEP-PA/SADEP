@@ -21,6 +21,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | `FE-A11Y-01` | [`frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md`](./frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md) |
 | `FE-COPY-01` | [`frontend/tasks/FE-COPY-01-authenticated-institutional-microcopy.md`](./frontend/tasks/FE-COPY-01-authenticated-institutional-microcopy.md) |
 | `FE-RESP-01` | [`frontend/tasks/FE-RESP-01-authenticated-responsive-layouts.md`](./frontend/tasks/FE-RESP-01-authenticated-responsive-layouts.md) |
+| `FE-UI-01` | [`frontend/tasks/FE-UI-01-authenticated-visual-consistency.md`](./frontend/tasks/FE-UI-01-authenticated-visual-consistency.md) |
 | `FE-UX-01A` | [`frontend/tasks/FE-UX-01A-authenticated-institutional-states.md`](./frontend/tasks/FE-UX-01A-authenticated-institutional-states.md) |
 | `FE-UX-01B` | [`frontend/tasks/FE-UX-01B-authenticated-internal-states.md`](./frontend/tasks/FE-UX-01B-authenticated-internal-states.md) |
 | `FE-ENV-01` | [`frontend/tasks/FE-ENV-01-frontend-env-documentation.md`](./frontend/tasks/FE-ENV-01-frontend-env-documentation.md) |
@@ -95,6 +96,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FE-A11Y-01` - acessibilidade basica do shell autenticado com skip link, landmark principal e nomes acessiveis estaveis.
 - `FE-COPY-01` - microcopy institucional revisada nas areas autenticadas principais sem backend novo.
 - `FE-RESP-01` - responsividade das telas autenticadas principais reforcada sem alterar dados ou integracoes.
+- `FE-UI-01` - cards, badges e secoes autenticadas padronizados no recorte visual compartilhado.
 - `FE-UX-01A` - estados institucionais compartilhados aplicados em areas autenticadas sem backend novo.
 - `FE-UX-01B` - estados internos de listas, tabelas e modal autenticado padronizados no recorte processos/chefia.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
