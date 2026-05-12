@@ -6,7 +6,7 @@ type OperationalStateFrameProps = {
   badge: string;
   title: string;
   description: string;
-  tone: 'info' | 'warning' | 'error';
+  tone: 'info' | 'warning' | 'error' | 'success';
   children?: ReactNode;
 };
 
@@ -112,6 +112,18 @@ export function EmptyState({
 }: OperationalStateProps) {
   return (
     <OperationalStateFrame badge="Sem dados" title={title} description={description} tone="info">
+      {children}
+    </OperationalStateFrame>
+  );
+}
+
+export function ClearState({
+  title = 'Nenhuma pendencia identificada',
+  description = 'Os dados disponiveis nao indicam bloqueios para esta leitura operacional.',
+  children,
+}: OperationalStateProps) {
+  return (
+    <OperationalStateFrame badge="Regular" title={title} description={description} tone="success">
       {children}
     </OperationalStateFrame>
   );

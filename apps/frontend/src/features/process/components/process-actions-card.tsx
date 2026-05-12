@@ -1,5 +1,5 @@
 import { InfoCard } from '@/shared/ui/info-card';
-import { ContentState } from '@/shared/ui/content-state';
+import { TemporaryUnavailableState } from '@/shared/ui/operational-states';
 
 import { formatProcessAction, formatProcessStatus } from './process-formatters';
 
@@ -22,10 +22,9 @@ export function ProcessActionsCard({ actions, status }: ProcessActionsCardProps)
           ))}
         </ul>
       ) : (
-        <ContentState
+        <TemporaryUnavailableState
           title="Nenhuma ação liberada no momento"
           description={`O workflow não retornou ações para o perfil autenticado enquanto o processo está em ${formatProcessStatus(status)}.`}
-          tone="warning"
         />
       )}
     </InfoCard>

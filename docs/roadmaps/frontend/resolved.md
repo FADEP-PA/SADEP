@@ -4,6 +4,21 @@ Este arquivo resume itens frontend ja concluidos ou resolvidos. O antigo roadmap
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## FE-UX-01B - Estados internos autenticados
+
+- **Status documental:** concluida no recorte frontend.
+- Recorte executado: listas internas e modal de processos/chefia imediata, sem refatoracao ampla.
+- Criado `ClearState` em `apps/frontend/src/shared/ui/operational-states.tsx` para estados positivos de ausencia de pendencias.
+- Telas afetadas: `/processos` e `/chefia-imediata`.
+- `ProcessListCard`, `ProcessActionsCard` e `ProcessBlockersCard` passaram a usar estados operacionais compartilhados.
+- A tabela da chefia passou a exibir estado vazio institucional quando filtros nao retornam linhas.
+- O modal de avaliacoes anteriores e o bloco de observacoes mensais passaram a ter estados vazios institucionais.
+- Dados demonstrativos, fakes seguros, placeholders e fallbacks visuais foram preservados sem mudanca de origem.
+- Nao houve alteracao de backend, Prisma, contracts, services/backend, autenticacao backend, endpoints, regras de negocio, lockfile ou dados sensiveis.
+- Limitacao conhecida: o recorte nao cobre todas as listas, tabelas e modais do sistema; CESAD/homologacao podem receber recortes proprios se necessario.
+- Dependencias futuras: `FE-PROCESS-LIST-01`, `FE-CHEFIA-02` e `FE-CESAD-01` continuam dependendo de backend/contracts seguros.
+- Proxima task recomendada: `FE-COPY-01` para microcopy institucional ou novo recorte UX em modais ainda nao cobertos.
+
 ## FE-UX-01A - Estados institucionais compartilhados para areas autenticadas
 
 - **Status documental:** concluida no recorte frontend.

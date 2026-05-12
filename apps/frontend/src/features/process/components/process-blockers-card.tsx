@@ -1,5 +1,5 @@
 import { InfoCard } from '@/shared/ui/info-card';
-import { ContentState } from '@/shared/ui/content-state';
+import { ClearState } from '@/shared/ui/operational-states';
 
 type ProcessBlockersCardProps = {
   blockers: string[];
@@ -19,10 +19,9 @@ export function ProcessBlockersCard({ blockers }: ProcessBlockersCardProps) {
           ))}
         </ul>
       ) : (
-        <ContentState
+        <ClearState
           title="Nenhum bloqueio visual identificado"
           description="O processo consultado retornou ações, histórico ou dados suficientes para a leitura inicial desta etapa."
-          tone="success"
         />
       )}
     </InfoCard>

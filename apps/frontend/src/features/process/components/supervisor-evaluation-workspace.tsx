@@ -20,7 +20,7 @@ import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
-import { DemonstrationModeState } from '@/shared/ui/operational-states';
+import { DemonstrationModeState, EmptyState } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
 
 const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
@@ -523,6 +523,9 @@ export function SupervisorEvaluationWorkspace() {
     () => dashboardRows.filter((row) => selectedFilters.includes(row.status)),
     [dashboardRows, selectedFilters],
   );
+  const previousEvaluationHistory = previousReviewRow
+    ? PREVIOUS_EVALUATION_HISTORY[previousReviewRow.id] ?? []
+    : [];
 
   async function loadSupervisorWorkspace(processId: string) {
     if (!session) {
@@ -1090,9 +1093,10 @@ export function SupervisorEvaluationWorkspace() {
                   ))}
                 </div>
               ) : (
-                <div className="evaluation-detail__empty-observation">
-                  Nenhuma observação mensal inserida.
-                </div>
+                <EmptyState
+                  title="Nenhuma observacao mensal registrada"
+                  description="Inclua uma observacao para documentar fatos relevantes deste periodo."
+                />
               )}
             </section>
 
@@ -1319,15 +1323,16 @@ export function SupervisorEvaluationWorkspace() {
               </div>
 
               <div className="supervisor-dashboard__rows">
-                {filteredRows.map((row) => (
-                  <article
-                    key={row.id}
-                    className={
-                      row.source === 'real'
-                        ? 'supervisor-dashboard__row supervisor-dashboard__row--real'
-                        : 'supervisor-dashboard__row'
-                    }
-                  >
+                {filteredRows.length > 0 ? (
+                  filteredRows.map((row) => (
+                    <article
+                      key={row.id}
+                      className={
+                        row.source === 'real'
+                          ? 'supervisor-dashboard__row supervisor-dashboard__row--real'
+                          : 'supervisor-dashboard__row'
+                      }
+                    >
                     <div className="supervisor-dashboard__server" data-label="Servidor">
                       <strong>{row.serverName}</strong>
                       {row.source === 'real' ? <span>processo real carregado</span> : null}
@@ -1372,8 +1377,14 @@ export function SupervisorEvaluationWorkspace() {
                         {row.actionLabel}
                       </button>
                     </div>
-                  </article>
-                ))}
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState
+                    title="Nenhum servidor encontrado nos filtros"
+                    description="Ajuste os filtros de status para voltar a exibir os registros disponiveis."
+                  />
+                )}
               </div>
             </section>
 
@@ -1394,18 +1405,25 @@ export function SupervisorEvaluationWorkspace() {
                       <span>Data de conclusão</span>
                       <span>Ação</span>
                     </div>
-                    {(PREVIOUS_EVALUATION_HISTORY[previousReviewRow.id] ?? []).map((historyItem) => (
-                      <div key={historyItem.stageLabel} className="previous-evaluations-modal__row">
-                        <div>
-                          <strong>{historyItem.stageLabel}</strong>
-                          <span>{historyItem.statusLabel.toLowerCase()}</span>
+                    {previousEvaluationHistory.length > 0 ? (
+                      previousEvaluationHistory.map((historyItem) => (
+                        <div key={historyItem.stageLabel} className="previous-evaluations-modal__row">
+                          <div>
+                            <strong>{historyItem.stageLabel}</strong>
+                            <span>{historyItem.statusLabel.toLowerCase()}</span>
+                          </div>
+                          <span>{historyItem.conclusionDate}</span>
+                          <button type="button" className="supervisor-dashboard__primary-action">
+                            {historyItem.actionLabel}
+                          </button>
                         </div>
-                        <span>{historyItem.conclusionDate}</span>
-                        <button type="button" className="supervisor-dashboard__primary-action">
-                          {historyItem.actionLabel}
-                        </button>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <EmptyState
+                        title="Nenhuma avaliacao anterior localizada"
+                        description="Este registro nao possui historico anterior para exibicao no momento."
+                      />
+                    )}
                   </div>
 
                   <div className="previous-evaluations-modal__footer">

@@ -1544,6 +1544,11 @@ textarea {
   color: var(--accent-strong);
 }
 
+.operational-state__badge--success {
+  background: rgba(32, 116, 71, 0.12);
+  color: #207447;
+}
+
 .operational-state__badge--warning {
   background: rgba(187, 128, 17, 0.12);
   color: #8a5d0a;

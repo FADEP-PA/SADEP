@@ -20,6 +20,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | `FE-CESAD-01` | [`frontend/tasks/FE-CESAD-01-real-cesad-screens.md`](./frontend/tasks/FE-CESAD-01-real-cesad-screens.md) |
 | `FE-A11Y-01` | [`frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md`](./frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md) |
 | `FE-UX-01A` | [`frontend/tasks/FE-UX-01A-authenticated-institutional-states.md`](./frontend/tasks/FE-UX-01A-authenticated-institutional-states.md) |
+| `FE-UX-01B` | [`frontend/tasks/FE-UX-01B-authenticated-internal-states.md`](./frontend/tasks/FE-UX-01B-authenticated-internal-states.md) |
 | `FE-ENV-01` | [`frontend/tasks/FE-ENV-01-frontend-env-documentation.md`](./frontend/tasks/FE-ENV-01-frontend-env-documentation.md) |
 | `FE-SERVIDOR-01` | [`../archive/frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md`](../archive/frontend/tasks/FE-SERVIDOR-01-intern-demo-journey-refinement.md) |
 | `FE-MOBILE-01` | [`../archive/frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md`](../archive/frontend/tasks/FE-MOBILE-01-intern-supervisor-mobile-polish.md) |
@@ -91,6 +92,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FE-ROADMAP-01` - painel ativo frontend reconciliado para separar pendencias reais de itens resolvidos.
 - `FE-A11Y-01` - acessibilidade basica do shell autenticado com skip link, landmark principal e nomes acessiveis estaveis.
 - `FE-UX-01A` - estados institucionais compartilhados aplicados em areas autenticadas sem backend novo.
+- `FE-UX-01B` - estados internos de listas, tabelas e modal autenticado padronizados no recorte processos/chefia.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
 - `FT-01` a `FT-15` — histórico frontend concluído conforme roadmap legado anterior.
 - `FT-25` — triagem de vulnerabilidades e dependências concluída, com alerta residual separado.

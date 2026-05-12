@@ -1,5 +1,5 @@
-import { ContentState } from '@/shared/ui/content-state';
 import { InfoCard } from '@/shared/ui/info-card';
+import { EmptyState } from '@/shared/ui/operational-states';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
 import type { ProcessDashboardListItem } from '@/features/dashboard/types/process-dashboard-types';
@@ -54,10 +54,9 @@ export function ProcessListCard({ items, activeProcessId }: ProcessListCardProps
           ))}
         </div>
       ) : (
-        <ContentState
+        <EmptyState
           title="Nenhum processo carregado"
           description="Informe um identificador válido para iniciar a lista de processos consultados nesta sessão."
-          tone="info"
         />
       )}
     </InfoCard>
