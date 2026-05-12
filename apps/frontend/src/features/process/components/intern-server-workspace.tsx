@@ -539,12 +539,12 @@ export function InternServerWorkspace() {
   const isRealProcessLoaded = Boolean(snapshot);
   const journeyMode = isRealProcessLoaded
     ? {
-        label: 'Processo real carregado',
-        detail: `Leitura autenticada do processo ${snapshot?.workflow.id}.`,
+        label: 'Processo informado carregado',
+        detail: `Leitura disponivel para o processo ${snapshot?.workflow.id}.`,
       }
     : {
-        label: 'Modo demonstrativo preservado',
-        detail: 'Dados fakes continuam disponíveis para apresentação visual da jornada do servidor.',
+        label: 'Visualizacao demonstrativa',
+        detail: 'Dados ficticios e seguros permanecem disponiveis para apresentacao visual da jornada do servidor.',
       };
 
   async function loadProcessSnapshot(activeProcessId: string, success?: OperationFeedback) {
@@ -571,7 +571,7 @@ export function InternServerWorkspace() {
         workspaceSnapshot.capabilities.canViewSelfEvaluation ||
         workspaceSnapshot.capabilities.canEditSelfEvaluation
           ? null
-          : 'A autoavaliação será liberada conforme as regras calculadas pelo backend.',
+        : 'A autoavaliacao sera liberada conforme as regras do fluxo processual.',
     };
 
     setSnapshot(nextSnapshot);
@@ -604,7 +604,7 @@ export function InternServerWorkspace() {
     try {
       await loadProcessSnapshot(normalizedProcessId, {
         title: 'Processo carregado',
-        description: 'A jornada do servidor foi atualizada com os dados reais liberados pelo backend.',
+        description: 'A jornada do servidor foi atualizada com as informacoes disponiveis para este perfil.',
       });
     } catch (error) {
       const payload =
@@ -772,15 +772,15 @@ export function InternServerWorkspace() {
 
         {!snapshot && !isSelfEvaluationExpanded ? (
           <DemonstrationModeState
-            title="Processo real não selecionado"
-            description="A tela permanece em modo demonstrativo até um processo real ser informado para validação local."
+            title="Processo nao selecionado"
+            description="A tela permanece demonstrativa ate que um processo seja informado para consulta autenticada."
           />
         ) : null}
 
         {isLoadingSnapshot ? (
           <InlineLoadingState
-            title="Carregando jornada real do servidor"
-            description="Consultando o backend para substituir dados locais quando o processo estiver disponível para o servidor autenticado."
+            title="Carregando jornada do servidor"
+            description="Consultando as informacoes disponiveis para o servidor autenticado."
           />
         ) : null}
 
@@ -870,8 +870,8 @@ export function InternServerWorkspace() {
 
                 {!snapshot ? (
                   <DemonstrationModeState
-                    title="Modo demonstrativo"
-                    description="Esta tela usa dados falsos para visualização. O salvamento fica habilitado quando um processo real estiver carregado."
+                    title="Visualizacao demonstrativa"
+                    description="Esta tela usa dados ficticios e seguros. O salvamento fica habilitado apenas quando um processo consultavel estiver carregado."
                   />
                 ) : null}
 

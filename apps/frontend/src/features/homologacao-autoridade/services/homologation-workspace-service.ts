@@ -48,24 +48,24 @@ export async function getHomologationWorkspaceSnapshot(): Promise<HomologationWo
     updatedAt: new Date().toISOString(),
     queue: [],
     integrationSummary: {
-      title: 'Jornada homologatória estruturada em modo seguro',
+      title: 'Homologacao final em leitura controlada',
       description:
-        'A tela já organiza fila, parecer conclusivo final, documentos e decisão sem simular ato homologatório fora do workflow real.',
+        'A tela organiza fila, parecer conclusivo final, documentos e restricoes sem simular ato homologatorio.',
       blockers: [
-        'Ainda não existe endpoint dedicado para listar a fila de processos aptos à homologação.',
-        'O frontend ainda não recebe um snapshot próprio com parecer conclusivo final, documentos finais e bloqueios homologatórios.',
-        'O workflow público atual não expõe transições de homologação para a autoridade homologadora.',
+        'A fila de processos aptos ainda nao esta disponivel para leitura autenticada.',
+        'O parecer conclusivo final, os documentos finais e as restricoes da homologacao ainda dependem de contrato dedicado.',
+        'As transicoes de homologacao da autoridade permanecem indisponiveis nesta tela.',
       ],
     },
     finalOpinion: {
       statusLabel: 'Leitura aguardando integração dedicada',
       detail:
-        'O parecer conclusivo final é a base formal da homologação, mas o frontend ainda não recebe esse documento por contrato próprio.',
+        'O parecer conclusivo final e a base formal da homologacao, mas ainda nao esta disponivel por contrato proprio nesta tela.',
       requirements: [
         'quatro etapas realizadas',
         'quatro etapas documentalmente completas',
-        'pareceres de etapa emitidos conforme a política vigente',
-        'parecer conclusivo final assinado e apto à leitura',
+        'pareceres de etapa disponiveis conforme politica vigente',
+        'parecer conclusivo final disponivel para leitura autenticada',
       ],
     },
     documents: [
@@ -73,29 +73,29 @@ export async function getHomologationWorkspaceSnapshot(): Promise<HomologationWo
         title: 'Parecer CESAD conclusivo final',
         statusLabel: 'Indisponível neste snapshot',
         tone: 'warning',
-        detail: 'Sem esse documento a autoridade não pode homologar nem assinar o ato final.',
+        detail: 'Sem esse documento a autoridade nao deve homologar nem assinar ato final.',
       },
       {
         title: 'Registro de homologação',
         statusLabel: 'Ato ainda bloqueado',
         tone: 'neutral',
-        detail: 'O documento do ato homologatório deve nascer da decisão formal e não de texto livre no cliente.',
+        detail: 'O documento do ato homologatorio deve ser gerado por fluxo formal, nao por texto livre no frontend.',
       },
       {
         title: 'Notificação final',
         statusLabel: 'Aguardando homologação válida',
         tone: 'neutral',
-        detail: 'A notificação final depende de processo homologado e deve permanecer vinculada ao resultado final.',
+        detail: 'A notificacao final depende de processo homologado e deve permanecer vinculada ao resultado final.',
       },
     ],
     decision: {
       statusLabel: 'Bloqueada até a integração homologatória',
       detail:
-        'A interface já separa a decisão de homologar e devolver, mas nenhuma ação é liberada sem fila apta, parecer final e contrato próprio do backend.',
+        'A interface separa homologacao e devolucao, mas nenhuma acao e liberada sem fila apta, parecer final e contrato proprio.',
       blockers: [
-        'não há processo apto carregado nesta tela',
-        'não há parecer conclusivo final disponível para leitura autenticada',
-        'não há endpoint para registrar homologação ou devolução com auditoria obrigatória',
+        'nao ha processo apto carregado nesta tela',
+        'nao ha parecer conclusivo final disponivel para leitura autenticada',
+        'nao ha contrato para registrar homologacao ou devolucao com auditoria obrigatoria',
       ],
       canHomologate: false,
       canReturnForRegularization: false,
@@ -106,7 +106,7 @@ export async function getHomologationWorkspaceSnapshot(): Promise<HomologationWo
       notificationStatusLabel: 'Não iniciada',
       appealStatusLabel: 'Não aplicável sem notificação',
       detail:
-        'Notificação final, ciência e recurso final precisam aparecer aqui como desdobramento do resultado homologado, sem mistura com recurso de etapa.',
+        'Notificacao final, ciencia e recurso final devem aparecer como desdobramentos do resultado homologado, sem mistura com recurso de etapa.',
     },
   };
 }

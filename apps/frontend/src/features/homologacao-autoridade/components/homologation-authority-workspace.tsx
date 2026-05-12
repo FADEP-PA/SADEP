@@ -57,17 +57,17 @@ export function HomologationAuthorityWorkspace() {
       <section className="portal-dashboard">
         <PageSection
           eyebrow="Homologação"
-          title="Jornada de homologação final"
-          description="Fila homologatória, leitura do parecer conclusivo final, documentos obrigatórios e decisão controlada da autoridade."
+          title="Leitura institucional da homologacao final"
+          description="Organizacao visual da fila, do parecer conclusivo final, dos documentos obrigatorios e das restricoes atuais da autoridade."
         >
           <div className="workspace-overview workspace-overview--lilac">
             <div className="workspace-overview__copy">
               <span className="section-chip">Autoridade homologadora</span>
-              <h3>Homologação preparada para o rito jurídico real</h3>
+              <h3>Homologacao organizada para consulta segura</h3>
               <p>
-                A área foi reorganizada para refletir a trilha correta da homologação:
-                fila apta, parecer conclusivo final, documentos formais, decisão controlada,
-                notificação final e preparo para recurso final.
+                A area separa fila apta, parecer conclusivo final, documentos formais,
+                restricoes da decisao, notificacao final e preparo para recurso final,
+                sem registrar ato homologatorio no frontend.
               </p>
             </div>
 
@@ -103,8 +103,8 @@ export function HomologationAuthorityWorkspace() {
 
           {isLoading ? (
             <InlineLoadingState
-              title="Abrindo jornada homologatória"
-              description="A tela está carregando a estrutura segura da homologação final e seus bloqueios atuais."
+              title="Carregando leitura de homologacao"
+              description="A tela esta reunindo a estrutura da homologacao final e suas restricoes atuais."
             />
           ) : null}
 
@@ -136,7 +136,7 @@ export function HomologationAuthorityWorkspace() {
                 <article className="workspace-service-card">
                   <span>Decisao controlada</span>
                   <strong>{snapshot.decision.statusLabel}</strong>
-                  <p>Homologar, devolver e assinar so aparecem quando o processo estiver apto.</p>
+                  <p>Acoes formais permanecem indisponiveis ate que o processo esteja apto.</p>
                 </article>
               </div>
 
@@ -165,7 +165,7 @@ export function HomologationAuthorityWorkspace() {
                   ) : (
                     <TemporaryUnavailableState
                       title="Fila homologatoria ainda indisponivel"
-                      description="A fila homologatória ainda não está conectada ao backend dedicado. A estrutura da tela já separa o que deve aparecer aqui quando a integração estiver pronta."
+                      description="A fila homologatoria ainda nao esta disponivel para leitura autenticada. A tela mantem o espaco reservado sem simular processos aptos."
                     />
                   )}
                 </InfoCard>
@@ -212,7 +212,7 @@ export function HomologationAuthorityWorkspace() {
                 <InfoCard
                   eyebrow="Decisao"
                   title="Decisão homologatória controlada"
-                  description="O cliente não deve homologar nem devolver fora do snapshot jurídico correto."
+                  description="A homologacao e a devolucao permanecem bloqueadas enquanto nao houver processo apto e contrato dedicado."
                 >
                   <div className="cesad-stage-read__stack">
                     <StatusBadge label={snapshot.decision.statusLabel} tone="warning" />
@@ -224,14 +224,16 @@ export function HomologationAuthorityWorkspace() {
                     </ul>
                     <div className="supervisor-evaluation-actions">
                       <button type="button" disabled={!snapshot.decision.canHomologate}>
-                        Homologar resultado
+                        {snapshot.decision.canHomologate ? 'Homologar resultado' : 'Homologacao indisponivel'}
                       </button>
                       <button
                         type="button"
                         className="warning-button"
                         disabled={!snapshot.decision.canReturnForRegularization}
                       >
-                        Devolver para regularizacao
+                        {snapshot.decision.canReturnForRegularization
+                          ? 'Devolver para regularizacao'
+                          : 'Devolucao indisponivel'}
                       </button>
                     </div>
                   </div>

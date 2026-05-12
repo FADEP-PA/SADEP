@@ -773,7 +773,7 @@ export function SupervisorEvaluationWorkspace() {
       }
 
       if (!workspaceSnapshot.canEditDraft) {
-        throw new Error('O backend não liberou salvamento de rascunho para o estado atual do processo.');
+        throw new Error('O salvamento de rascunho nao esta liberado para o estado atual do processo.');
       }
 
       await saveSupervisorEvaluationDraft(
@@ -781,7 +781,7 @@ export function SupervisorEvaluationWorkspace() {
         buildSupervisorEvaluationPayload(activeEvaluation, 'draft'),
       );
       await loadSupervisorWorkspace(workspaceSnapshot.process.id);
-      setFeedbackMessage('Rascunho salvo no processo real pelo backend.');
+      setFeedbackMessage('Rascunho salvo no processo informado.');
     } catch (error) {
       setActionErrorMessage(getRequestErrorMessage(error, 'Não foi possível salvar o rascunho da avaliação.'));
     } finally {
@@ -815,14 +815,14 @@ export function SupervisorEvaluationWorkspace() {
 
       if (workspaceSnapshot.canRectify) {
         await rectifySupervisorEvaluation(workspaceSnapshot.process.id, payload);
-        setFeedbackMessage('Avaliação retificada no processo real pelo backend.');
+        setFeedbackMessage('Avaliacao retificada no processo informado.');
       } else {
         if (!workspaceSnapshot.canSubmit) {
-          throw new Error('O backend não liberou envio da avaliação para o estado atual do processo.');
+          throw new Error('O envio da avaliacao nao esta liberado para o estado atual do processo.');
         }
 
         await submitSupervisorEvaluation(workspaceSnapshot.process.id, payload);
-        setFeedbackMessage('Avaliação enviada para formalização documental pelo backend.');
+        setFeedbackMessage('Avaliacao enviada para formalizacao documental.');
       }
 
       await loadSupervisorWorkspace(workspaceSnapshot.process.id);
@@ -844,12 +844,12 @@ export function SupervisorEvaluationWorkspace() {
   const isRealProcessLoaded = Boolean(workspaceSnapshot);
   const workspaceMode = isRealProcessLoaded
     ? {
-        label: 'Processo real carregado',
-        detail: `Linha real do processo ${workspaceSnapshot?.process.id} exibida junto ao fallback demonstrativo.`,
+        label: 'Processo informado carregado',
+        detail: `Registro do processo ${workspaceSnapshot?.process.id} exibido junto aos dados demonstrativos preservados.`,
       }
     : {
-        label: 'Modo demonstrativo preservado',
-        detail: 'Dados fakes continuam disponíveis para apresentação visual da jornada da chefia.',
+        label: 'Visualizacao demonstrativa',
+        detail: 'Dados ficticios e seguros permanecem disponiveis para apresentacao visual da jornada da chefia.',
       };
 
   return (
@@ -896,8 +896,8 @@ export function SupervisorEvaluationWorkspace() {
 
             {!workspaceSnapshot ? (
               <DemonstrationModeState
-                title="Processo real não selecionado"
-                description="A tela permanece em modo demonstrativo até um processo real ser informado para validação local."
+                title="Processo nao selecionado"
+                description="A tela permanece demonstrativa ate que um processo seja informado para consulta autenticada."
               />
             ) : null}
           </>
@@ -905,8 +905,8 @@ export function SupervisorEvaluationWorkspace() {
 
         {isLoadingWorkspace ? (
           <InlineLoadingState
-            title="Carregando workspace real da chefia"
-            description="Consultando o backend para substituir dados locais quando o processo estiver disponível para a chefia autenticada."
+            title="Carregando painel da chefia"
+            description="Consultando as informacoes disponiveis para a chefia autenticada."
           />
         ) : null}
 
@@ -1335,7 +1335,7 @@ export function SupervisorEvaluationWorkspace() {
                     >
                     <div className="supervisor-dashboard__server" data-label="Servidor">
                       <strong>{row.serverName}</strong>
-                      {row.source === 'real' ? <span>processo real carregado</span> : null}
+                      {row.source === 'real' ? <span>processo informado carregado</span> : null}
                     </div>
 
                     <div className="supervisor-dashboard__cell supervisor-dashboard__registration" data-label="Matrícula">

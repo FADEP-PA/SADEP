@@ -4,6 +4,19 @@ Este arquivo resume itens frontend ja concluidos ou resolvidos. O antigo roadmap
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## FE-COPY-01 - Microcopy institucional autenticada
+
+- **Status documental:** concluida no recorte frontend.
+- Recorte executado: estados institucionais, mensagens de loading, modo demonstrativo, alertas de integracao pendente e acoes bloqueadas nas areas autenticadas principais.
+- Telas afetadas: `/processos`, `/servidor-estagiario`, `/chefia-imediata` e `/homologacao-autoridade`.
+- Decisoes de microcopy: remover termos tecnicos ou de prototipo expostos ao usuario, substituir `processo real` por `processo informado`/consulta autenticada e reforcar indisponibilidade sem prometer integracao real.
+- Acoes homologatorias bloqueadas passaram a exibir rotulos de indisponibilidade quando a capacidade nao esta liberada.
+- Dados demonstrativos, fakes seguros, placeholders e fallbacks visuais foram preservados sem mudanca de origem.
+- Nao houve alteracao de backend, Prisma, contracts, services/backend, autenticacao backend, endpoints, regras de negocio, lockfile ou dados sensiveis.
+- Limitacao conhecida: o recorte nao revisa toda a aplicacao nem substitui auditoria textual completa por tela.
+- Dependencias futuras: `FE-PROCESS-LIST-01`, `FE-CHEFIA-02` e `FE-CESAD-01` continuam dependendo de backend/contracts seguros.
+- Proxima task recomendada: `FE-RESP-01` para responsividade das telas autenticadas principais.
+
 ## FE-UX-01B - Estados internos autenticados
 
 - **Status documental:** concluida no recorte frontend.

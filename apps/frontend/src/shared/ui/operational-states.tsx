@@ -35,7 +35,7 @@ function OperationalStateFrame({
 
 export function ProcessNotFoundState({
   title = 'Processo não encontrado',
-  description = 'O identificador informado não retornou um processo acessível para este perfil. Confira o código e tente novamente.',
+  description = 'O identificador informado nao retornou processo disponivel para este perfil. Confira o codigo e tente novamente.',
   children,
 }: OperationalStateProps) {
   return (
@@ -47,7 +47,7 @@ export function ProcessNotFoundState({
 
 export function AccessBlockedState({
   title = 'Acesso bloqueado',
-  description = 'O perfil autenticado não possui permissão para acessar este conteúdo no momento.',
+  description = 'O perfil autenticado nao possui permissao para acessar este conteudo no momento.',
   children,
 }: OperationalStateProps) {
   return (
@@ -59,7 +59,7 @@ export function AccessBlockedState({
 
 export function StageUnavailableState({
   title = 'Etapa indisponível',
-  description = 'A etapa solicitada ainda não está disponível para leitura neste contexto operacional.',
+  description = 'A etapa solicitada ainda nao esta disponivel para leitura neste contexto operacional.',
   children,
 }: OperationalStateProps) {
   return (
@@ -71,7 +71,7 @@ export function StageUnavailableState({
 
 export function MissingDocumentState({
   title = 'Documento ausente',
-  description = 'O documento esperado ainda não foi localizado ou formalizado para esta etapa.',
+  description = 'O documento esperado ainda nao foi localizado ou formalizado para esta etapa.',
   children,
 }: OperationalStateProps) {
   return (
@@ -83,7 +83,7 @@ export function MissingDocumentState({
 
 export function ReadNotReleasedState({
   title = 'Leitura ainda não liberada',
-  description = 'O backend ainda não liberou a leitura completa deste conteúdo para o momento processual atual.',
+  description = 'A leitura completa deste conteudo ainda nao esta disponivel para o momento processual atual.',
   children,
 }: OperationalStateProps) {
   return (
@@ -95,7 +95,7 @@ export function ReadNotReleasedState({
 
 export function InsufficientHistoryState({
   title = 'Histórico insuficiente',
-  description = 'Ainda não há eventos auditáveis suficientes para compor a leitura operacional desta área.',
+  description = 'Ainda nao ha eventos auditaveis suficientes para compor a leitura operacional desta area.',
   children,
 }: OperationalStateProps) {
   return (
@@ -107,7 +107,7 @@ export function InsufficientHistoryState({
 
 export function EmptyState({
   title = 'Nenhum registro disponivel',
-  description = 'Ainda nao ha informacoes para exibir neste painel.',
+  description = 'Ainda nao ha informacoes disponiveis para esta consulta.',
   children,
 }: OperationalStateProps) {
   return (
@@ -131,7 +131,7 @@ export function ClearState({
 
 export function TemporaryUnavailableState({
   title = 'Conteudo temporariamente indisponivel',
-  description = 'Este conteudo ainda depende de uma integracao ou liberacao operacional para aparecer aqui.',
+  description = 'Esta informacao ainda nao esta disponivel para exibicao neste perfil.',
   children,
 }: OperationalStateProps) {
   return (
@@ -142,8 +142,8 @@ export function TemporaryUnavailableState({
 }
 
 export function DemonstrationModeState({
-  title = 'Modo demonstrativo preservado',
-  description = 'Esta visualizacao usa dados ficticios para manter a validacao visual enquanto a integracao real nao esta disponivel.',
+  title = 'Visualizacao demonstrativa',
+  description = 'Esta area usa dados ficticios e seguros para apresentacao visual enquanto a consulta autenticada nao estiver carregada.',
   children,
 }: OperationalStateProps) {
   return (

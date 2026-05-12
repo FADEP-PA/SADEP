@@ -15,7 +15,7 @@ export function ProcessStatusCard({ snapshot }: ProcessStatusCardProps) {
     <InfoCard
       eyebrow="Status do processo"
       title="Situação atual"
-      description="Leitura do estado atual do workflow com base no backend autenticado."
+      description="Leitura do estado atual do processo para o perfil autenticado."
     >
       <KeyValueList
         items={[

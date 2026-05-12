@@ -19,6 +19,7 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | `FE-PROCESS-LIST-01` | [`frontend/tasks/FE-PROCESS-LIST-01-authenticated-process-list.md`](./frontend/tasks/FE-PROCESS-LIST-01-authenticated-process-list.md) |
 | `FE-CESAD-01` | [`frontend/tasks/FE-CESAD-01-real-cesad-screens.md`](./frontend/tasks/FE-CESAD-01-real-cesad-screens.md) |
 | `FE-A11Y-01` | [`frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md`](./frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md) |
+| `FE-COPY-01` | [`frontend/tasks/FE-COPY-01-authenticated-institutional-microcopy.md`](./frontend/tasks/FE-COPY-01-authenticated-institutional-microcopy.md) |
 | `FE-UX-01A` | [`frontend/tasks/FE-UX-01A-authenticated-institutional-states.md`](./frontend/tasks/FE-UX-01A-authenticated-institutional-states.md) |
 | `FE-UX-01B` | [`frontend/tasks/FE-UX-01B-authenticated-internal-states.md`](./frontend/tasks/FE-UX-01B-authenticated-internal-states.md) |
 | `FE-ENV-01` | [`frontend/tasks/FE-ENV-01-frontend-env-documentation.md`](./frontend/tasks/FE-ENV-01-frontend-env-documentation.md) |
@@ -91,6 +92,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FE-QUAL-01` — quality gate frontend de texto e scaffolds legados integrado ao `frontend:check`.
 - `FE-ROADMAP-01` - painel ativo frontend reconciliado para separar pendencias reais de itens resolvidos.
 - `FE-A11Y-01` - acessibilidade basica do shell autenticado com skip link, landmark principal e nomes acessiveis estaveis.
+- `FE-COPY-01` - microcopy institucional revisada nas areas autenticadas principais sem backend novo.
 - `FE-UX-01A` - estados institucionais compartilhados aplicados em areas autenticadas sem backend novo.
 - `FE-UX-01B` - estados internos de listas, tabelas e modal autenticado padronizados no recorte processos/chefia.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.

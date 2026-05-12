@@ -22,4 +22,4 @@ Este painel resume apenas itens frontend ativos ou pendentes. Itens concluidos, 
 
 ## Resolvido operacionalmente
 
-Consultar [`resolved.md`](./resolved.md) para os itens frontend concluidos, incluindo `FE-UX-01B`, `FE-UX-01A`, `FE-A11Y-01`, `FE-ROADMAP-01`, `FE-QUAL-01`, `FT-26`, `FT-24`, `FE-CHEFIA-01`, `FE-SERVIDOR-01`, `FE-MOBILE-01`, `FE-DEMO-UX-01`, `FT-16`, `FT-17`, `FT-18`, `FT-19`, `FT-20`, `FT-21`, `FT-22`, `FT-23`, `FT-27/DX-01` e os recortes frontend de sessao/auth ja aprovados.
+Consultar [`resolved.md`](./resolved.md) para os itens frontend concluidos, incluindo `FE-COPY-01`, `FE-UX-01B`, `FE-UX-01A`, `FE-A11Y-01`, `FE-ROADMAP-01`, `FE-QUAL-01`, `FT-26`, `FT-24`, `FE-CHEFIA-01`, `FE-SERVIDOR-01`, `FE-MOBILE-01`, `FE-DEMO-UX-01`, `FT-16`, `FT-17`, `FT-18`, `FT-19`, `FT-20`, `FT-21`, `FT-22`, `FT-23`, `FT-27/DX-01` e os recortes frontend de sessao/auth ja aprovados.

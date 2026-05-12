@@ -206,7 +206,7 @@ export function ProcessWorkspace() {
           {isLoading ? (
             <InlineLoadingState
               title="Consultando processo"
-              description="O painel está sincronizando workflow, histórico e informações complementares liberadas para o seu perfil."
+              description="O painel esta reunindo as informacoes disponiveis para o seu perfil."
             />
           ) : null}
 
@@ -263,8 +263,8 @@ export function ProcessWorkspace() {
               >
                 <ul className="content-list">
                   <li>Use o identificador do processo para atualizar o quadro principal.</li>
-                  <li>Confira status macro, ações disponíveis e última movimentação no mesmo contexto.</li>
-                  <li>Revise bloqueios e leitura parcial antes de seguir para a próxima etapa.</li>
+                  <li>Confira status, acoes disponiveis e ultima movimentacao no mesmo contexto.</li>
+                  <li>Revise bloqueios e informacoes parciais antes de tomar nova providencia.</li>
                 </ul>
               </InfoCard>
             </div>
@@ -290,12 +290,12 @@ export function ProcessWorkspace() {
                   <strong>
                     {lastHistoryEntry ? formatDateTime(lastHistoryEntry.occurredAt) : 'Sem eventos'}
                   </strong>
-                  <p>Referência mais recente da trilha auditável retornada pelo backend.</p>
+                  <p>Referencia mais recente da trilha auditavel disponivel para consulta.</p>
                 </article>
                 <article className="workspace-service-card">
                   <span>Ações liberadas</span>
                   <strong>{snapshot.workflow.availableActions.length}</strong>
-                  <p>Quantidade de operacoes que o backend permitiu para este momento processual.</p>
+                  <p>Quantidade de operacoes disponiveis para este momento processual.</p>
                 </article>
                 <article className="workspace-service-card">
                   <span>Bloqueios visuais</span>
