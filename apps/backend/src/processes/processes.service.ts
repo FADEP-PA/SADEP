@@ -56,6 +56,11 @@ const CESAD_CONTEXTUAL_TRANSITION_ACTIONS = new Set<ProcessAction>([
   ProcessAction.REQUEST_ADJUSTMENT,
 ]);
 
+const CESAD_STAGE_ASSIGNMENT_SUPERSEDER_ROLES = new Set<UserRole>([
+  UserRole.ADMIN,
+  UserRole.HOMOLOGATION_AUTHORITY,
+]);
+
 type ProcessAccessContext = {
   id: string;
   status: ProcessStatus;
@@ -73,6 +78,27 @@ type CesadStageAssignmentTransitionContext = {
   commissionId: string;
   status: PrismaCesadStageAssignmentStatus;
   created: boolean;
+};
+
+type SupersedeCesadStageAssignmentPayload = {
+  newCommissionId: string;
+  reason: string;
+  referenceDate?: Date;
+  formalActReference?: string;
+};
+
+type SupersedeCesadStageAssignmentResponse = {
+  processId: string;
+  processStageId: string;
+  stageSequence: number;
+  previousAssignmentId: string;
+  newAssignmentId: string;
+  previousCommissionId: string;
+  newCommissionId: string;
+  supersededAt: string;
+  referenceDate: string;
+  reason: string;
+  formalActReference: string | null;
 };
 
 export type PrismaTransactionClient = Omit<
@@ -149,6 +175,217 @@ export class ProcessesService {
         id: processId,
         status,
         availableActions: this.getAllowedActions(status, user.role),
+      };
+    });
+  }
+
+  async supersedeCesadStageAssignment(
+    processId: string,
+    stageSequence: number,
+    user: AuthenticatedUser,
+    payload: SupersedeCesadStageAssignmentPayload,
+  ): Promise<SupersedeCesadStageAssignmentResponse> {
+    this.ensureCanSupersedeCesadStageAssignment(user);
+    const normalizedReason = this.normalizeRequiredText(payload.reason, 'CESAD stage assignment supersession reason');
+    const newCommissionId = this.normalizeRequiredText(payload.newCommissionId, 'New CESAD commission id');
+    const referenceDate = payload.referenceDate ?? new Date();
+    const formalActReference = this.normalizeOptionalText(payload.formalActReference);
+
+    return this.prismaService.$transaction(async (transaction) => {
+      const process = await this.findProcessOrThrow(transaction, processId);
+      const processStatus = this.toContractProcessStatus(process.status);
+
+      if (processStatus !== ProcessStatus.EM_ANALISE_CESAD) {
+        throw new BadRequestException(
+          `CESAD stage assignment can only be superseded while process is in ${ProcessStatus.EM_ANALISE_CESAD} status`,
+        );
+      }
+
+      const stage = await this.findStageBySequenceOrThrow(transaction, processId, stageSequence);
+      const activeAssignments = await transaction.cesadStageAssignment.findMany({
+        where: {
+          processId,
+          processStageId: stage.id,
+          status: PrismaCesadStageAssignmentStatus.ACTIVE,
+        },
+        select: {
+          id: true,
+          commissionId: true,
+          status: true,
+        },
+        orderBy: { assignedAt: 'desc' },
+      });
+
+      if (activeAssignments.length === 0) {
+        throw new BadRequestException(
+          'Cannot supersede CESAD stage assignment because no active assignment was found for the stage',
+        );
+      }
+
+      if (activeAssignments.length > 1) {
+        throw new ConflictException(
+          'Cannot supersede CESAD stage assignment because the stage has more than one active assignment',
+        );
+      }
+
+      const previousAssignment = activeAssignments[0]!;
+      if (previousAssignment.commissionId === newCommissionId) {
+        throw new BadRequestException(
+          'Cannot supersede CESAD stage assignment with the same CESAD commission',
+        );
+      }
+
+      const newCommission = await transaction.cesadCommission.findUnique({
+        where: { id: newCommissionId },
+        select: {
+          id: true,
+          status: true,
+          effectiveStartDate: true,
+          effectiveEndDate: true,
+        },
+      });
+
+      if (!newCommission) {
+        throw new NotFoundException('New CESAD commission was not found');
+      }
+
+      if (newCommission.status !== PrismaCesadCommissionStatus.ACTIVE) {
+        throw new BadRequestException(
+          'Cannot supersede CESAD stage assignment with a CESAD commission that is not ACTIVE',
+        );
+      }
+
+      if (
+        newCommission.effectiveStartDate > referenceDate ||
+        (newCommission.effectiveEndDate !== null && newCommission.effectiveEndDate < referenceDate)
+      ) {
+        throw new BadRequestException(
+          'Cannot supersede CESAD stage assignment with a CESAD commission outside the reference date validity window',
+        );
+      }
+
+      const expectedSignerCount = await transaction.cesadStageOpinionExpectedSigner.count({
+        where: {
+          cesadStageOpinion: {
+            processStageId: stage.id,
+          },
+        },
+      });
+
+      if (expectedSignerCount > 0) {
+        throw new BadRequestException(
+          'Cannot supersede CESAD stage assignment after CESAD stage opinion expected signers have been frozen',
+        );
+      }
+
+      const existingOpinion = await transaction.cesadStageOpinion.findUnique({
+        where: { processStageId: stage.id },
+        select: { id: true },
+      });
+
+      if (existingOpinion) {
+        throw new BadRequestException(
+          'Cannot supersede CESAD stage assignment after a CESAD stage opinion exists for the stage',
+        );
+      }
+
+      const existingCesadOpinionDocument = await transaction.processDocument.findFirst({
+        where: {
+          evaluationProcessId: processId,
+          processStageId: stage.id,
+          documentType: PrismaDocumentType.CESAD_OPINION,
+        },
+        select: { id: true },
+      });
+
+      if (existingCesadOpinionDocument) {
+        throw new BadRequestException(
+          'Cannot supersede CESAD stage assignment after a CESAD opinion document exists for the stage',
+        );
+      }
+
+      const occurredAt = new Date();
+      const newAssignment = await transaction.cesadStageAssignment.create({
+        data: {
+          processId,
+          processStageId: stage.id,
+          commissionId: newCommission.id,
+          status: PrismaCesadStageAssignmentStatus.ACTIVE,
+          assignedAt: occurredAt,
+          assignedByUserId: user.sub,
+          assignmentReason: normalizedReason,
+          referenceDate,
+        },
+        select: {
+          id: true,
+          commissionId: true,
+          status: true,
+        },
+      });
+
+      await transaction.cesadStageAssignment.update({
+        where: { id: previousAssignment.id },
+        data: {
+          status: PrismaCesadStageAssignmentStatus.SUPERSEDED,
+          supersededAt: occurredAt,
+          supersededReason: normalizedReason,
+          supersededByAssignmentId: newAssignment.id,
+        },
+      });
+
+      await transaction.auditEvent.create({
+        data: {
+          evaluationProcessId: processId,
+          actorUserId: user.sub,
+          actorRole: this.toDatabaseRole(user.role),
+          eventType: this.toDatabaseAuditEventType(AuditEventType.CESAD_STAGE_ASSIGNMENT_SUPERSEDED),
+          beforeState: {
+            cesadStageAssignmentId: previousAssignment.id,
+            cesadStageAssignmentStatus: previousAssignment.status,
+            cesadCommissionId: previousAssignment.commissionId,
+          },
+          afterState: {
+            previousAssignmentId: previousAssignment.id,
+            previousAssignmentStatus: PrismaCesadStageAssignmentStatus.SUPERSEDED,
+            newAssignmentId: newAssignment.id,
+            newAssignmentStatus: newAssignment.status,
+            newCommissionId: newAssignment.commissionId,
+          },
+          occurredAt,
+          metadata: {
+            eventType: AuditEventType.CESAD_STAGE_ASSIGNMENT_SUPERSEDED,
+            action: ProcessAction.SUPERSEDE_CESAD_STAGE_ASSIGNMENT,
+            processId,
+            processStageId: stage.id,
+            stageSequence: stage.sequence,
+            stageCode: stage.stageCode,
+            processStatus,
+            previousAssignmentId: previousAssignment.id,
+            newAssignmentId: newAssignment.id,
+            previousCommissionId: previousAssignment.commissionId,
+            newCommissionId: newAssignment.commissionId,
+            performedByUserId: user.sub,
+            performedByRole: user.role,
+            reason: normalizedReason,
+            referenceDate: referenceDate.toISOString(),
+            occurredAt: occurredAt.toISOString(),
+            ...(formalActReference ? { formalActReference } : {}),
+          },
+        },
+      });
+
+      return {
+        processId,
+        processStageId: stage.id,
+        stageSequence: stage.sequence,
+        previousAssignmentId: previousAssignment.id,
+        newAssignmentId: newAssignment.id,
+        previousCommissionId: previousAssignment.commissionId,
+        newCommissionId: newAssignment.commissionId,
+        supersededAt: occurredAt.toISOString(),
+        referenceDate: referenceDate.toISOString(),
+        reason: normalizedReason,
+        formalActReference: formalActReference ?? null,
       };
     });
   }
@@ -762,6 +999,36 @@ export class ProcessesService {
 
     const normalizedComment = comment.trim();
     return normalizedComment.length > 0 ? normalizedComment : null;
+  }
+
+  private normalizeRequiredText(value: string, fieldLabel: string): string {
+    if (typeof value !== 'string') {
+      throw new BadRequestException(`${fieldLabel} must be a string`);
+    }
+
+    const normalizedValue = value.trim();
+    if (normalizedValue.length === 0) {
+      throw new BadRequestException(`${fieldLabel} is required`);
+    }
+
+    return normalizedValue;
+  }
+
+  private normalizeOptionalText(value?: string): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalizedValue = value.trim();
+    return normalizedValue.length > 0 ? normalizedValue : null;
+  }
+
+  private ensureCanSupersedeCesadStageAssignment(user: AuthenticatedUser): void {
+    if (!CESAD_STAGE_ASSIGNMENT_SUPERSEDER_ROLES.has(user.role)) {
+      throw new ForbiddenException(
+        `Role ${user.role} cannot supersede CESAD stage assignment`,
+      );
+    }
   }
 
   private readComment(metadata: unknown): string | null {

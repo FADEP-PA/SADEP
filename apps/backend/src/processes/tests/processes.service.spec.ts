@@ -51,6 +51,11 @@ export async function runProcessesServiceTests() {
     );
     const intern = await createUser(context.prisma, UserRole.INTERN_SERVER, 'intern@test.local');
     const admin = await createUser(context.prisma, UserRole.ADMIN, 'workflow-admin@test.local');
+    const homologationAuthority = await createUser(
+      context.prisma,
+      UserRole.HOMOLOGATION_AUTHORITY,
+      'workflow-authority@test.local',
+    );
     const commission = await createActiveCesadCommission(context.prisma, [
       { userId: cesad.id, roleType: 'SUPLENTE' },
       { userId: assistant.id, roleType: 'SUPLENTE' },
@@ -588,6 +593,496 @@ export async function runProcessesServiceTests() {
       ProcessAction.ISSUE_CESAD_OPINION,
       ProcessAction.REQUEST_ADJUSTMENT,
     ]);
+
+    const reassignmentNewCesad = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'reassignment-new-cesad@test.local',
+    );
+    const reassignmentOldCommission = await createActiveCesadCommission(context.prisma, [
+      { userId: cesad.id, roleType: 'TITULAR' },
+    ], {
+      name: 'Comissão CESAD antiga para reatribuição',
+    });
+    const reassignmentNewCommission = await createActiveCesadCommission(context.prisma, [
+      { userId: reassignmentNewCesad.id, roleType: 'TITULAR' },
+    ], {
+      name: 'Comissão CESAD nova para reatribuição',
+    });
+    const reassignmentProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    const reassignmentPreviousAssignment = await createCesadStageAssignment(
+      context.prisma,
+      reassignmentProcess.id,
+      reassignmentProcess.defaultStageId,
+      reassignmentOldCommission.id,
+      supervisor.id,
+    );
+
+    const supersession = await context.service.supersedeCesadStageAssignment(
+      reassignmentProcess.id,
+      1,
+      authenticatedUser(admin.id, admin.role),
+      {
+        newCommissionId: reassignmentNewCommission.id,
+        reason: 'Portaria formal substituiu a comissão responsável pela etapa.',
+        referenceDate: new Date('2026-02-01T12:00:00.000Z'),
+        formalActReference: 'Portaria 123/2026',
+      },
+    );
+
+    assert.equal(supersession.processId, reassignmentProcess.id);
+    assert.equal(supersession.processStageId, reassignmentProcess.defaultStageId);
+    assert.equal(supersession.previousAssignmentId, reassignmentPreviousAssignment.id);
+    assert.equal(supersession.previousCommissionId, reassignmentOldCommission.id);
+    assert.equal(supersession.newCommissionId, reassignmentNewCommission.id);
+    assert.equal(supersession.reason, 'Portaria formal substituiu a comissão responsável pela etapa.');
+    assert.equal(supersession.referenceDate, '2026-02-01T12:00:00.000Z');
+    assert.equal(supersession.formalActReference, 'Portaria 123/2026');
+
+    const supersededPreviousAssignment = await context.prisma.cesadStageAssignment.findUniqueOrThrow({
+      where: { id: reassignmentPreviousAssignment.id },
+    });
+    assert.equal(supersededPreviousAssignment.status, 'SUPERSEDED');
+    assert.equal(supersededPreviousAssignment.supersededByAssignmentId, supersession.newAssignmentId);
+    assert.equal(
+      supersededPreviousAssignment.supersededReason,
+      'Portaria formal substituiu a comissão responsável pela etapa.',
+    );
+    assert.notEqual(supersededPreviousAssignment.supersededAt, null);
+
+    const activeReassignmentAssignments = await context.prisma.cesadStageAssignment.findMany({
+      where: {
+        processStageId: reassignmentProcess.defaultStageId,
+        status: 'ACTIVE',
+      },
+    });
+    assert.equal(activeReassignmentAssignments.length, 1);
+    assert.equal(activeReassignmentAssignments[0]?.id, supersession.newAssignmentId);
+    assert.equal(activeReassignmentAssignments[0]?.assignedByUserId, admin.id);
+    assert.equal(activeReassignmentAssignments[0]?.assignmentReason, supersession.reason);
+
+    const supersessionAudit = await context.prisma.auditEvent.findFirstOrThrow({
+      where: {
+        evaluationProcessId: reassignmentProcess.id,
+        eventType: AuditEventType.CESAD_STAGE_ASSIGNMENT_SUPERSEDED,
+      },
+    });
+    const supersessionMetadata = supersessionAudit.metadata as {
+      action?: string;
+      previousAssignmentId?: string;
+      newAssignmentId?: string;
+      previousCommissionId?: string;
+      newCommissionId?: string;
+      performedByUserId?: string;
+      performedByRole?: string;
+      reason?: string;
+      referenceDate?: string;
+      formalActReference?: string;
+    };
+    assert.equal(supersessionMetadata.action, ProcessAction.SUPERSEDE_CESAD_STAGE_ASSIGNMENT);
+    assert.equal(supersessionMetadata.previousAssignmentId, reassignmentPreviousAssignment.id);
+    assert.equal(supersessionMetadata.newAssignmentId, supersession.newAssignmentId);
+    assert.equal(supersessionMetadata.previousCommissionId, reassignmentOldCommission.id);
+    assert.equal(supersessionMetadata.newCommissionId, reassignmentNewCommission.id);
+    assert.equal(supersessionMetadata.performedByUserId, admin.id);
+    assert.equal(supersessionMetadata.performedByRole, UserRole.ADMIN);
+    assert.equal(supersessionMetadata.reason, supersession.reason);
+    assert.equal(supersessionMetadata.referenceDate, '2026-02-01T12:00:00.000Z');
+    assert.equal(supersessionMetadata.formalActReference, 'Portaria 123/2026');
+
+    await assert.rejects(
+      () =>
+        context.cesadStageReadService.getStageReadSnapshot(
+          reassignmentProcess.id,
+          1,
+          authenticatedUser(cesad.id, cesad.role),
+        ),
+      /CESAD contextual authorization denied/,
+    );
+    const reassignedSnapshot = await context.cesadStageReadService.getStageReadSnapshot(
+      reassignmentProcess.id,
+      1,
+      authenticatedUser(reassignmentNewCesad.id, reassignmentNewCesad.role),
+    );
+    assert.equal(reassignedSnapshot.process.id, reassignmentProcess.id);
+
+    const authorityOldCommission = await createActiveCesadCommission(context.prisma);
+    const authorityNewCommission = await createActiveCesadCommission(context.prisma);
+    const authorityReassignmentProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    const authorityPreviousAssignment = await createCesadStageAssignment(
+      context.prisma,
+      authorityReassignmentProcess.id,
+      authorityReassignmentProcess.defaultStageId,
+      authorityOldCommission.id,
+      supervisor.id,
+    );
+    const authoritySupersession = await context.service.supersedeCesadStageAssignment(
+      authorityReassignmentProcess.id,
+      1,
+      authenticatedUser(homologationAuthority.id, homologationAuthority.role),
+      {
+        newCommissionId: authorityNewCommission.id,
+        reason: 'Autoridade homologadora formalizou a reatribuição.',
+      },
+    );
+    assert.equal(authoritySupersession.previousAssignmentId, authorityPreviousAssignment.id);
+    assert.equal(authoritySupersession.newCommissionId, authorityNewCommission.id);
+
+    const forbiddenSupersessionProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    const forbiddenOldCommission = await createActiveCesadCommission(context.prisma);
+    const forbiddenNewCommission = await createActiveCesadCommission(context.prisma);
+    await createCesadStageAssignment(
+      context.prisma,
+      forbiddenSupersessionProcess.id,
+      forbiddenSupersessionProcess.defaultStageId,
+      forbiddenOldCommission.id,
+      supervisor.id,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          forbiddenSupersessionProcess.id,
+          1,
+          authenticatedUser(cesad.id, cesad.role),
+          { newCommissionId: forbiddenNewCommission.id, reason: 'Tentativa indevida.' },
+        ),
+      /Role CESAD_MEMBER cannot supersede CESAD stage assignment/,
+    );
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          forbiddenSupersessionProcess.id,
+          1,
+          authenticatedUser(assistant.id, assistant.role),
+          { newCommissionId: forbiddenNewCommission.id, reason: 'Tentativa indevida.' },
+        ),
+      /Role COMMISSION_ASSISTANT cannot supersede CESAD stage assignment/,
+    );
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          forbiddenSupersessionProcess.id,
+          1,
+          authenticatedUser(supervisor.id, supervisor.role),
+          { newCommissionId: forbiddenNewCommission.id, reason: 'Tentativa indevida.' },
+        ),
+      /Role IMMEDIATE_SUPERVISOR cannot supersede CESAD stage assignment/,
+    );
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          forbiddenSupersessionProcess.id,
+          1,
+          authenticatedUser(evaluatedUser.id, evaluatedUser.role),
+          { newCommissionId: forbiddenNewCommission.id, reason: 'Tentativa indevida.' },
+        ),
+      /Role INTERN_SERVER cannot supersede CESAD stage assignment/,
+    );
+
+    const statusBlockedProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_AVALIACAO,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      statusBlockedProcess.id,
+      statusBlockedProcess.defaultStageId,
+      forbiddenOldCommission.id,
+      supervisor.id,
+    );
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          statusBlockedProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          { newCommissionId: forbiddenNewCommission.id, reason: 'Processo fora da análise CESAD.' },
+        ),
+      /only be superseded while process is in EM_ANALISE_CESAD status/,
+    );
+
+    const unassignedSupersessionProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          unassignedSupersessionProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          { newCommissionId: forbiddenNewCommission.id, reason: 'Sem assignment ativa.' },
+        ),
+      /no active assignment/,
+    );
+
+    const multipleAssignmentsProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      multipleAssignmentsProcess.id,
+      multipleAssignmentsProcess.defaultStageId,
+      forbiddenOldCommission.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      multipleAssignmentsProcess.id,
+      multipleAssignmentsProcess.defaultStageId,
+      forbiddenNewCommission.id,
+      supervisor.id,
+    );
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          multipleAssignmentsProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          { newCommissionId: reassignmentNewCommission.id, reason: 'Múltiplas assignments.' },
+        ),
+      /more than one active assignment/,
+    );
+
+    const missingCommissionProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      missingCommissionProcess.id,
+      missingCommissionProcess.defaultStageId,
+      forbiddenOldCommission.id,
+      supervisor.id,
+    );
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          missingCommissionProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          { newCommissionId: 'missing-commission-id', reason: 'Comissão inexistente.' },
+        ),
+      /New CESAD commission was not found/,
+    );
+
+    const inactiveTargetCommission = await createActiveCesadCommission(context.prisma, [], {
+      status: 'INACTIVE',
+    });
+    const supersededTargetCommission = await createActiveCesadCommission(context.prisma, [], {
+      status: 'SUPERSEDED',
+    });
+    const inactiveTargetProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      inactiveTargetProcess.id,
+      inactiveTargetProcess.defaultStageId,
+      forbiddenOldCommission.id,
+      supervisor.id,
+    );
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          inactiveTargetProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          { newCommissionId: inactiveTargetCommission.id, reason: 'Comissão inativa.' },
+        ),
+      /commission that is not ACTIVE/,
+    );
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          inactiveTargetProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          { newCommissionId: supersededTargetCommission.id, reason: 'Comissão superada.' },
+        ),
+      /commission that is not ACTIVE/,
+    );
+
+    const outOfWindowCommission = await createActiveCesadCommission(context.prisma, [], {
+      effectiveStartDate: new Date('2027-01-01T00:00:00.000Z'),
+    });
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          inactiveTargetProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          {
+            newCommissionId: outOfWindowCommission.id,
+            reason: 'Comissão fora da vigência.',
+            referenceDate: new Date('2026-01-01T00:00:00.000Z'),
+          },
+        ),
+      /outside the reference date validity window/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          inactiveTargetProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          { newCommissionId: forbiddenOldCommission.id, reason: 'Mesma comissão.' },
+        ),
+      /same CESAD commission/,
+    );
+
+    const opinionBlockedProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      opinionBlockedProcess.id,
+      opinionBlockedProcess.defaultStageId,
+      forbiddenOldCommission.id,
+      supervisor.id,
+    );
+    await context.prisma.cesadStageOpinion.create({
+      data: {
+        processId: opinionBlockedProcess.id,
+        processStageId: opinionBlockedProcess.defaultStageId,
+        authorUserId: cesad.id,
+        status: 'DRAFT',
+        reportText: 'Rascunho já existente.',
+        conclusion: '',
+      },
+    });
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          opinionBlockedProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          { newCommissionId: forbiddenNewCommission.id, reason: 'Parecer já existe.' },
+        ),
+      /CESAD stage opinion exists/,
+    );
+
+    const signerBlockedProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    const signerMember = await context.prisma.cesadCommissionMember.create({
+      data: {
+        commissionId: forbiddenOldCommission.id,
+        userId: cesad.id,
+        roleType: 'TITULAR',
+        startDate: new Date('2020-01-01T00:00:00.000Z'),
+      },
+    });
+    await createCesadStageAssignment(
+      context.prisma,
+      signerBlockedProcess.id,
+      signerBlockedProcess.defaultStageId,
+      forbiddenOldCommission.id,
+      supervisor.id,
+    );
+    const signerBlockedOpinion = await context.prisma.cesadStageOpinion.create({
+      data: {
+        processId: signerBlockedProcess.id,
+        processStageId: signerBlockedProcess.defaultStageId,
+        authorUserId: cesad.id,
+        status: 'COMPLETED',
+        reportText: 'Parecer com signatários congelados.',
+        conclusion: 'Conclusão.',
+        completedAt: new Date('2026-01-01T00:00:00.000Z'),
+      },
+    });
+    await context.prisma.cesadStageOpinionExpectedSigner.create({
+      data: {
+        cesadStageOpinionId: signerBlockedOpinion.id,
+        commissionId: forbiddenOldCommission.id,
+        actingCommissionMemberId: signerMember.id,
+        actingUserId: cesad.id,
+        derivationType: 'ACTIVE_TITULAR',
+        signingCapacity: 'EFFECTIVE_MEMBER',
+        nameSnapshot: cesad.name,
+        emailSnapshot: cesad.email,
+        roleTypeSnapshot: 'TITULAR',
+        sortOrder: 1,
+        frozenAt: new Date('2026-01-01T00:00:00.000Z'),
+      },
+    });
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          signerBlockedProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          { newCommissionId: forbiddenNewCommission.id, reason: 'Signatários congelados.' },
+        ),
+      /expected signers have been frozen/,
+    );
+
+    const documentBlockedProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      documentBlockedProcess.id,
+      documentBlockedProcess.defaultStageId,
+      forbiddenOldCommission.id,
+      supervisor.id,
+    );
+    await context.prisma.processDocument.create({
+      data: {
+        evaluationProcessId: documentBlockedProcess.id,
+        processStageId: documentBlockedProcess.defaultStageId,
+        documentType: 'CESAD_OPINION',
+        documentStatus: 'DRAFT',
+      },
+    });
+    await assert.rejects(
+      () =>
+        context.service.supersedeCesadStageAssignment(
+          documentBlockedProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+          { newCommissionId: forbiddenNewCommission.id, reason: 'Documento já existe.' },
+        ),
+      /CESAD opinion document exists/,
+    );
 
     const titularOne = await createUser(
       context.prisma,

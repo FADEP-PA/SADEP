@@ -280,6 +280,94 @@ export async function runProcessesEndpointTests() {
     assert.equal(adminLoginResponse.status, 200);
     const adminLoginPayload = (await adminLoginResponse.json()) as { accessToken: string };
 
+    const endpointOldCommission = await createActiveCesadCommission(context.prisma);
+    const endpointNewCommission = await createActiveCesadCommission(context.prisma);
+    const endpointReassignmentProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisorUser.id,
+    );
+    const endpointPreviousAssignment = await createCesadStageAssignment(
+      context.prisma,
+      endpointReassignmentProcess.id,
+      endpointReassignmentProcess.defaultStageId,
+      endpointOldCommission.id,
+      supervisorUser.id,
+    );
+
+    const invalidSupersessionResponse = await fetch(
+      `${baseUrl}/processes/${endpointReassignmentProcess.id}/stages/1/cesad-stage-assignment/supersede`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${adminLoginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          newCommissionId: endpointNewCommission.id,
+          reason: '   ',
+        }),
+      },
+    );
+    assert.equal(invalidSupersessionResponse.status, 400);
+    const invalidSupersessionPayload = (await invalidSupersessionResponse.json()) as {
+      message: string;
+      details?: Record<string, string>;
+    };
+    assert.equal(
+      invalidSupersessionPayload.message,
+      'CESAD stage assignment supersession payload is invalid',
+    );
+    assert.match(
+      invalidSupersessionPayload.details?.reason ?? '',
+      /Motivo da reatribuição/,
+    );
+
+    const supersessionResponse = await fetch(
+      `${baseUrl}/processes/${endpointReassignmentProcess.id}/stages/1/cesad-stage-assignment/supersede`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${adminLoginPayload.accessToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          newCommissionId: endpointNewCommission.id,
+          reason: 'Ato formal de reatribuição registrado pelo endpoint.',
+          referenceDate: '2026-02-01T12:00:00.000Z',
+          formalActReference: 'Portaria endpoint 45/2026',
+        }),
+      },
+    );
+    assert.equal(supersessionResponse.status, 201);
+    const supersessionPayload = (await supersessionResponse.json()) as {
+      processId: string;
+      processStageId: string;
+      previousAssignmentId: string;
+      newAssignmentId: string;
+      previousCommissionId: string;
+      newCommissionId: string;
+      reason: string;
+      referenceDate: string;
+      formalActReference: string | null;
+    };
+    assert.equal(supersessionPayload.processId, endpointReassignmentProcess.id);
+    assert.equal(supersessionPayload.processStageId, endpointReassignmentProcess.defaultStageId);
+    assert.equal(supersessionPayload.previousAssignmentId, endpointPreviousAssignment.id);
+    assert.equal(supersessionPayload.previousCommissionId, endpointOldCommission.id);
+    assert.equal(supersessionPayload.newCommissionId, endpointNewCommission.id);
+    assert.equal(supersessionPayload.reason, 'Ato formal de reatribuição registrado pelo endpoint.');
+    assert.equal(supersessionPayload.referenceDate, '2026-02-01T12:00:00.000Z');
+    assert.equal(supersessionPayload.formalActReference, 'Portaria endpoint 45/2026');
+
+    const endpointSupersededAssignment =
+      await context.prisma.cesadStageAssignment.findUniqueOrThrow({
+        where: { id: endpointPreviousAssignment.id },
+      });
+    assert.equal(endpointSupersededAssignment.status, 'SUPERSEDED');
+    assert.equal(endpointSupersededAssignment.supersededByAssignmentId, supersessionPayload.newAssignmentId);
+
     const supervisorWorkspaceResponse = await fetch(
       `${baseUrl}/processes/${supervisorWorkspaceProcess.id}/supervisor-evaluation/workspace`,
       {
