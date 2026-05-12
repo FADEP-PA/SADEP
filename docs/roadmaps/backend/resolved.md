@@ -4,6 +4,29 @@ Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker 
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## BE-CESAD-AUTH-02 — Implementar CesadStageAssignment
+
+- **Status documental:** concluida / auditada / aprovada com ressalvas.
+- **Commit funcional aprovado:** `8ffd804 feat(backend): persist CESAD stage assignments`.
+- **ADR relacionada:** [`ADR-003 — Vinculo persistido entre comissao CESAD, processo e etapa`](../../architecture/adr/adr-003-cesad-stage-assignment.md).
+- Criou o enum/status `CesadStageAssignmentStatus` com `ACTIVE`, `SUPERSEDED` e `CANCELED`.
+- Criou o modelo Prisma `CesadStageAssignment`.
+- Criou a migration propria `20260511120000_add_cesad_stage_assignment`.
+- Modelou relacoes com processo, etapa, comissao CESAD, usuario responsavel pela atribuicao e autorrelacao para supersessao futura.
+- Criou ou reutilizou assignment ativa da etapa durante `SEND_TO_CESAD`, dentro do recorte transacional da transicao.
+- Bloqueou `SEND_TO_CESAD` quando nao ha comissao ativa inequivoca.
+- Bloqueou `SEND_TO_CESAD` quando ha multiplas comissoes ativas.
+- Impediu que comissoes `INACTIVE` ou `SUPERSEDED` sejam usadas para nova assignment ordinaria.
+- Alterou a autorizacao contextual CESAD para usar assignment ativa da etapa.
+- Bloqueou membro de outra comissao e fluxo sem assignment ativa.
+- Manteve `COMMISSION_ASSISTANT` restrito a leitura/apoio, sem escrita de parecer nem transicao CESAD.
+- Alterou `CesadStageOpinionExpectedSigner` para derivar a comissao da assignment da etapa.
+- Ampliou testes backend para criacao de assignment, falhas de comissao, autorizacao por assignment, transicoes CESAD e expected signers.
+- Validacoes aprovadas: `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria e `git diff --check`.
+- Nao alterou frontend, contracts, roadmaps/status durante o patch funcional, assinatura colegiada completa, quatro etapas, parecer conclusivo final, homologacao, notificacao, ciencia, recursos, cookie `aep_pa_refresh` ou migracao ampla AEP -> SADEP.
+- Ressalvas remanescentes: unicidade de assignment `ACTIVE` por etapa garantida em service/transacao; bases locais/dev com processos ja em `EM_ANALISE_CESAD` ou `PARECER_EMITIDO` podem exigir fixture/backfill controlado; metadata de `SENT_TO_CESAD` pode explicitar `assignedAt`/`referenceDate`; teste futuro pode afirmar status inalterado quando a criacao da assignment falha; substituicao/supersessao formal deve virar task propria.
+- `BE-SEC-03` permanece aberta como guarda-chuva estrutural para supersessao, assinatura colegiada, workflow completo, parecer final e homologacao/notificacao/ciencia futuras.
+
 ## BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis
 
 - **Status documental:** concluida / auditada / aprovada com ressalvas.

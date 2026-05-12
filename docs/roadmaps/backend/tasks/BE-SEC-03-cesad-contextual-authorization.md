@@ -24,13 +24,17 @@ O problema esta registrado como frente separada da familia `BE-ARCH-01`. A prime
 
 Com esse recorte, os endpoints sensiveis atuais deixaram de depender apenas de role global/status e passaram a usar `CesadContextAuthorizationService` para workflow, historico, transicoes CESAD sensiveis, leitura consolidada e parecer CESAD de etapa.
 
-`BE-SEC-03` permanece pendente como guarda-chuva estrutural porque a politica ainda usa comissao/membresia vigente como referencia transitoria. A evolucao completa deve considerar vinculo persistido entre comissao, processo, etapa e/ou parecer, alem da integracao com assinatura colegiada e fluxos futuros.
+A segunda fatia executiva, `BE-CESAD-AUTH-02`, foi concluida, auditada e aprovada com ressalvas no commit `8ffd804 feat(backend): persist CESAD stage assignments`.
+
+Com esse recorte, o backend passou a persistir o vinculo formal entre comissao CESAD, processo e etapa por meio de `CesadStageAssignment`, conforme a [`ADR-003`](../../../architecture/adr/adr-003-cesad-stage-assignment.md). A assignment ativa da etapa e criada ou reutilizada em `SEND_TO_CESAD`, a autorizacao contextual CESAD passou a consultar esse vinculo persistido, e `CesadStageOpinionExpectedSigner` passou a derivar a comissao da assignment da etapa.
+
+`BE-SEC-03` permanece pendente como guarda-chuva estrutural, mas nao mais pela ausencia do vinculo persistido basico comissao-processo-etapa. As pendencias remanescentes sao refinamentos futuros: reatribuicao/supersessao formal de assignment, integracao com assinatura colegiada, integracao com workflow completo de quatro etapas e regras futuras de parecer final quando aplicavel.
 
 ## Escopo previsto
 
 - preservar a protecao ja aplicada por `BE-CESAD-AUTH-01`;
-- modelar ou integrar vinculo persistido comissao-processo/etapa quando a estrutura processual exigir;
-- refinar a politica para comissao vinculada ao processo, e nao apenas comissao vigente;
+- preservar o vinculo persistido comissao-processo-etapa entregue por `BE-CESAD-AUTH-02`;
+- refinar a politica para reatribuicao/supersessao formal de assignment, sem troca automatica invisivel;
 - integrar a autorizacao contextual com assinatura colegiada do parecer CESAD;
 - integrar a autorizacao contextual com pareceres futuros e workflow completo;
 - manter testes positivos e negativos de autorizacao a cada novo ponto sensivel.
@@ -50,7 +54,9 @@ Com esse recorte, os endpoints sensiveis atuais deixaram de depender apenas de r
 - O indice backend e o painel ativo registram `BE-SEC-03` como pendente critico.
 - O painel transversal registra o achado CESAD separadamente da estrategia de sessao.
 - `BE-CESAD-AUTH-01` concluiu a aplicacao executiva da autorizacao contextual aos endpoints sensiveis atuais, sem substituir nem encerrar este guarda-chuva.
-- Ressalvas de `BE-CESAD-AUTH-01`: ausencia de vinculo persistido comissao-processo/etapa; uso transitorio de comissao/membresia vigente; testes futuros para `COMMISSION_ASSISTANT` em `REQUEST_ADJUSTMENT`, comissao `SUPERSEDED` e cobertura HTTP adicional para `REQUEST_ADJUSTMENT`.
+- `BE-CESAD-AUTH-02` concluiu a modelagem persistida do vinculo comissao-processo-etapa por `CesadStageAssignment`, sem substituir nem encerrar este guarda-chuva.
+- Ressalvas remanescentes de `BE-CESAD-AUTH-02`: unicidade de assignment `ACTIVE` por etapa garantida em service/transacao; bases locais/dev com processos ja em `EM_ANALISE_CESAD` ou `PARECER_EMITIDO` podem exigir fixture/backfill controlado; metadata de `SENT_TO_CESAD` pode explicitar `assignedAt`/`referenceDate`; teste futuro pode afirmar status inalterado quando a criacao da assignment falha; substituicao/supersessao formal deve virar task propria.
+- Assinatura colegiada permanece em `BE-DOC-CESAD-SIGN-01`, workflow completo de quatro etapas permanece em `BE-FLOW-4STAGE-01`, parecer conclusivo final permanece em `BE-CESAD-FINAL-01`, e homologacao/notificacao/ciencia permanecem em `BE-HOMOLOG-01`.
 
 ## Validacoes esperadas
 
@@ -61,4 +67,4 @@ Com esse recorte, os endpoints sensiveis atuais deixaram de depender apenas de r
 
 ## Proxima acao
 
-Planejar a proxima fatia estrutural de autorizacao contextual, priorizando o vinculo persistido comissao-processo/etapa e a compatibilidade com assinatura colegiada, workflow completo de quatro etapas e pareceres futuros.
+Planejar a proxima fatia estrutural de autorizacao contextual, priorizando `BE-CESAD-ASSIGN-REPLACE-01` para reatribuicao/supersessao formal de comissao CESAD por etapa e mantendo a compatibilidade com assinatura colegiada, workflow completo de quatro etapas e pareceres futuros.
