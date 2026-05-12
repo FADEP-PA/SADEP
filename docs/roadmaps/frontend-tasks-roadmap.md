@@ -37,6 +37,13 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 - `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado, sem reabrir `FT-24`.
 - `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, documentos e autorizacao contextual.
 
+### Decisao operacional de 2026-05-12
+
+- `frontend/active.md` foi reconciliado para listar apenas pendencias reais do frontend.
+- `FE-CHEFIA-01` permanece resolvida parcialmente no recorte de integracao inicial; a continuidade correta e `FE-CHEFIA-02`, sem reabrir `FT-24`.
+- As tasks `FE-PROCESS-LIST-01`, `FE-CHEFIA-02` e `FE-CESAD-01` dependem de backend/contracts e nao devem ser implementadas como frontend isolado.
+- Enquanto esses contratos nao existirem, o trabalho seguro no frontend deve ficar restrito a documentacao, UX, responsividade, acessibilidade, dados demonstrativos, estados vazios/loading/erro e qualidade, sem inventar integracao real.
+
 ## Relação com BE-ARCH-01D
 
 [`BE-ARCH-01D — Alinhar frontend de sessão`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md) impacta diretamente o frontend, mas a coordenação principal está no arquivo próprio da frente backend/frontend de sessão.
@@ -79,6 +86,7 @@ Itens principais já registrados como resolvidos, concluídos ou preparados:
 - `FT-16` — layout base do futuro parecer CESAD de etapa preparado em `/cesad-comissao`, com dados demonstrativos seguros e sem emissao, assinatura, homologacao ou persistencia real.
 - `FT-26` — scaffolds e placeholders legados do frontend limpos sem remover dados demonstrativos uteis.
 - `FE-QUAL-01` — quality gate frontend de texto e scaffolds legados integrado ao `frontend:check`.
+- `FE-ROADMAP-01` - painel ativo frontend reconciliado para separar pendencias reais de itens resolvidos.
 - `FT-17` — área de homologação preparada como painel/workspace para expansão, sem equivaler a fluxo backend completo.
 - `FT-01` a `FT-15` — histórico frontend concluído conforme roadmap legado anterior.
 - `FT-25` — triagem de vulnerabilidades e dependências concluída, com alerta residual separado.

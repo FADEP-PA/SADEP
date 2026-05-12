@@ -4,6 +4,18 @@ Este arquivo resume itens frontend ja concluidos ou resolvidos. O antigo roadmap
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## FE-ROADMAP-01 - Reconciliar painel ativo frontend
+
+- **Status documental:** concluida no recorte frontend.
+- `docs/roadmaps/frontend/active.md` passou a listar apenas pendencias reais do frontend, separando backlog dependente de backend/contracts dos itens ja resolvidos.
+- `FE-CHEFIA-01` deixou de aparecer como item ativo; a continuidade correta permanece em `FE-CHEFIA-02`, sem reabrir `FT-24`.
+- `BE-ARCH-01D`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram mantidas como referencias resolvidas, nao como backlog ativo frontend.
+- Decisao tomada: `FE-PROCESS-LIST-01`, `FE-CHEFIA-02` e `FE-CESAD-01` continuam pendentes, mas nao devem ser implementadas como frontend isolado enquanto faltarem os contratos backend correspondentes.
+- Dados demonstrativos, fakes seguros, placeholders de input e fallback visual nao foram alterados nem removidos.
+- Nao houve alteracao de backend, Prisma, contracts, services/backend, autenticacao backend, endpoints, codigo frontend ou lockfile.
+- Limitacao conhecida: a conclusao desta task e documental; listagem real por perfil, remocao de fallback operacional da chefia e integracao real CESAD seguem dependentes de backend/contracts.
+- Proxima task recomendada: aguardar contrato backend seguro para `FE-PROCESS-LIST-01` ou executar novo recorte frontend estritamente visual/documental se os contratos ainda nao estiverem disponiveis.
+
 ## FT-27 / DX-01 — Reconciliar dependencias locais do frontend
 
 - **Status documental:** resolvida operacionalmente.
