@@ -205,7 +205,7 @@ export async function runSupervisorEvaluationsServiceTests() {
         context.prisma.signatureRecord.create({
           data: {
             processDocumentId: persistedDocument.id,
-            signatoryUserId: otherSupervisor.id,
+            signatoryUserId: supervisor.id,
             signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
             provider: 'INTERNAL',
             status: 'PENDING',

@@ -596,6 +596,7 @@ export class ProcessesService {
         process,
         new Date(occurredAt),
       );
+      await this.ensureSignedCesadOpinionDocumentForIssue(transaction, process);
     }
 
     await transaction.evaluationProcess.update({
@@ -682,6 +683,108 @@ export class ProcessesService {
       this.isDocumentComplete(supervisorEvaluationDocument, DocumentType.SUPERVISOR_EVALUATION) &&
       this.isDocumentComplete(selfEvaluationDocument, DocumentType.SELF_EVALUATION)
     );
+  }
+
+  async ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    processStageId: string,
+    frozenAt: Date,
+  ): Promise<void> {
+    const opinion = await transaction.cesadStageOpinion.findUnique({
+      where: { processStageId },
+      select: {
+        id: true,
+        status: true,
+        _count: {
+          select: { expectedSigners: true },
+        },
+      },
+    });
+
+    if (!opinion || opinion.status !== PrismaCesadStageOpinionStatus.COMPLETED) {
+      throw new BadRequestException(
+        'Process can only issue CESAD opinion after a completed CESAD stage opinion exists for the current stage',
+      );
+    }
+
+    if (opinion._count.expectedSigners > 0) {
+      return;
+    }
+
+    const assignment = await transaction.cesadStageAssignment.findFirst({
+      where: {
+        processId,
+        processStageId,
+        status: PrismaCesadStageAssignmentStatus.ACTIVE,
+      },
+      select: {
+        id: true,
+        commissionId: true,
+      },
+      orderBy: { assignedAt: 'desc' },
+    });
+
+    if (!assignment) {
+      throw new BadRequestException(
+        'Cannot derive CESAD opinion expected signers because no active CESAD stage assignment was found for the current stage',
+      );
+    }
+
+    const commission = await transaction.cesadCommission.findUnique({
+      where: { id: assignment.commissionId },
+      select: {
+        id: true,
+        members: {
+          where: {
+            roleType: PrismaCesadCommissionMemberRoleType.TITULAR,
+            startDate: { lte: frozenAt },
+            OR: [{ endDate: null }, { endDate: { gte: frozenAt } }],
+            user: {
+              role: { not: PrismaUserRole.COMMISSION_ASSISTANT },
+              isActive: true,
+            },
+          },
+          select: {
+            id: true,
+            userId: true,
+            roleType: true,
+            startDate: true,
+            createdAt: true,
+            user: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: [{ startDate: 'asc' }, { createdAt: 'asc' }],
+        },
+      },
+    });
+
+    if (!commission || commission.members.length === 0) {
+      throw new BadRequestException(
+        'Cannot derive CESAD opinion expected signers because the assigned CESAD commission has no active titular member for the freeze date',
+      );
+    }
+
+    await transaction.cesadStageOpinionExpectedSigner.createMany({
+      data: commission.members.map((member, index) => ({
+        cesadStageOpinionId: opinion.id,
+        commissionId: commission.id,
+        actingCommissionMemberId: member.id,
+        actingUserId: member.userId,
+        derivationType: PrismaCesadStageOpinionExpectedSignerDerivationType.ACTIVE_TITULAR,
+        signingCapacity: PrismaCesadStageOpinionSigningCapacity.EFFECTIVE_MEMBER,
+        substitutedCommissionMemberId: null,
+        nameSnapshot: member.user.name,
+        emailSnapshot: member.user.email,
+        roleTypeSnapshot: member.roleType,
+        sortOrder: index + 1,
+        frozenAt,
+      })),
+    });
   }
 
   private async ensureActiveCesadStageAssignment(
@@ -772,99 +875,77 @@ export class ProcessesService {
     process: ProcessAccessContext,
     frozenAt: Date,
   ): Promise<void> {
+    await this.ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage(
+      transaction,
+      process.id,
+      process.currentStage.id,
+      frozenAt,
+    );
+  }
+
+  private async ensureSignedCesadOpinionDocumentForIssue(
+    transaction: PrismaTransactionClient,
+    process: ProcessAccessContext,
+  ): Promise<void> {
     const opinion = await transaction.cesadStageOpinion.findUnique({
       where: { processStageId: process.currentStage.id },
       select: {
         id: true,
-        status: true,
-        _count: {
-          select: { expectedSigners: true },
-        },
-      },
-    });
-
-    if (!opinion || opinion.status !== PrismaCesadStageOpinionStatus.COMPLETED) {
-      throw new BadRequestException(
-        'Process can only issue CESAD opinion after a completed CESAD stage opinion exists for the current stage',
-      );
-    }
-
-    if (opinion._count.expectedSigners > 0) {
-      return;
-    }
-
-    const assignment = await transaction.cesadStageAssignment.findFirst({
-      where: {
-        processStageId: process.currentStage.id,
-        status: PrismaCesadStageAssignmentStatus.ACTIVE,
-      },
-      select: {
-        id: true,
-        commissionId: true,
-      },
-      orderBy: { assignedAt: 'desc' },
-    });
-
-    if (!assignment) {
-      throw new BadRequestException(
-        'Cannot derive CESAD opinion expected signers because no active CESAD stage assignment was found for the current stage',
-      );
-    }
-
-    const commission = await transaction.cesadCommission.findUnique({
-      where: { id: assignment.commissionId },
-      select: {
-        id: true,
-        members: {
-          where: {
-            roleType: PrismaCesadCommissionMemberRoleType.TITULAR,
-            startDate: { lte: frozenAt },
-            OR: [{ endDate: null }, { endDate: { gte: frozenAt } }],
-            user: {
-              role: { not: PrismaUserRole.COMMISSION_ASSISTANT },
-              isActive: true,
-            },
-          },
+        expectedSigners: {
           select: {
             id: true,
-            userId: true,
-            roleType: true,
-            startDate: true,
-            createdAt: true,
-            user: {
-              select: {
-                email: true,
-                name: true,
-              },
-            },
+            actingUserId: true,
           },
-          orderBy: [{ startDate: 'asc' }, { createdAt: 'asc' }],
         },
       },
     });
 
-    if (!commission || commission.members.length === 0) {
+    if (!opinion || opinion.expectedSigners.length === 0) {
       throw new BadRequestException(
-        'Cannot derive CESAD opinion expected signers because the assigned CESAD commission has no active titular member for the freeze date',
+        'Process can only issue CESAD opinion after expected signers have been frozen',
       );
     }
 
-    await transaction.cesadStageOpinionExpectedSigner.createMany({
-      data: commission.members.map((member, index) => ({
-        cesadStageOpinionId: opinion.id,
-        commissionId: commission.id,
-        actingCommissionMemberId: member.id,
-        actingUserId: member.userId,
-        derivationType: PrismaCesadStageOpinionExpectedSignerDerivationType.ACTIVE_TITULAR,
-        signingCapacity: PrismaCesadStageOpinionSigningCapacity.EFFECTIVE_MEMBER,
-        substitutedCommissionMemberId: null,
-        nameSnapshot: member.user.name,
-        emailSnapshot: member.user.email,
-        roleTypeSnapshot: member.roleType,
-        sortOrder: index + 1,
-        frozenAt,
-      })),
+    const document = await transaction.processDocument.findFirst({
+      where: {
+        evaluationProcessId: process.id,
+        processStageId: process.currentStage.id,
+        documentType: PrismaDocumentType.CESAD_OPINION,
+      },
+      include: {
+        signatureRecords: true,
+      },
     });
+
+    if (!document) {
+      throw new BadRequestException(
+        'Process can only issue CESAD opinion after a signed CESAD opinion document exists for the current stage',
+      );
+    }
+
+    if (document.documentStatus !== PrismaDocumentStatus.SIGNED) {
+      throw new BadRequestException(
+        'Process can only issue CESAD opinion after the CESAD opinion document is fully signed',
+      );
+    }
+
+    const allExpectedSignersCompleted = opinion.expectedSigners.every((expectedSigner) =>
+      document.signatureRecords.some(
+        (signature) =>
+          signature.status === PrismaSignatureStatus.COMPLETED &&
+          signature.signatoryRole === PrismaUserRole.CESAD_MEMBER &&
+          (
+            signature.cesadStageOpinionExpectedSignerId === expectedSigner.id ||
+            signature.signatoryUserId === expectedSigner.actingUserId
+          ),
+      ),
+    );
+
+    if (!allExpectedSignersCompleted) {
+      throw new BadRequestException(
+        'Process can only issue CESAD opinion after all expected CESAD signers have signed the document',
+      );
+    }
   }
 
   async ensureUserHasProcessAccess(

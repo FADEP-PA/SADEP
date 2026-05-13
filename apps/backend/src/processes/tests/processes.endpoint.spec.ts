@@ -850,6 +850,80 @@ export async function runProcessesEndpointTests() {
     assert.equal(opinionCompletePayload.stageResult, 'Etapa favorável');
     assert.notEqual(opinionCompletePayload.completedAt, null);
 
+    const forbiddenAssistantPrepareResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion/signatures/prepare`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${assistantLoginPayload.accessToken}`,
+        },
+      },
+    );
+    assert.equal(forbiddenAssistantPrepareResponse.status, 403);
+
+    const prepareSignaturesResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion/signatures/prepare`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${loginPayload.accessToken}`,
+        },
+      },
+    );
+    assert.equal(prepareSignaturesResponse.status, 201);
+    const prepareSignaturesPayload = (await prepareSignaturesResponse.json()) as {
+      document: { documentType: string; documentStatus: string; documentId: string };
+      expectedSigners: Array<{ actingUserId: string; signatureStatus: string }>;
+      allExpectedSignersSigned: boolean;
+    };
+    assert.equal(prepareSignaturesPayload.document.documentType, 'CESAD_OPINION');
+    assert.equal(prepareSignaturesPayload.document.documentStatus, 'READY_FOR_SIGNATURE');
+    assert.equal(prepareSignaturesPayload.expectedSigners.length, 1);
+    assert.equal(prepareSignaturesPayload.expectedSigners[0]?.actingUserId, cesadUser.id);
+    assert.equal(prepareSignaturesPayload.expectedSigners[0]?.signatureStatus, 'PENDING');
+    assert.equal(prepareSignaturesPayload.allExpectedSignersSigned, false);
+
+    const assistantSignatureStatusResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion/signatures`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Bearer ${assistantLoginPayload.accessToken}`,
+        },
+      },
+    );
+    assert.equal(assistantSignatureStatusResponse.status, 200);
+
+    const forbiddenAssistantSignResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion/sign`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${assistantLoginPayload.accessToken}`,
+        },
+      },
+    );
+    assert.equal(forbiddenAssistantSignResponse.status, 403);
+
+    const signOpinionResponse = await fetch(
+      `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion/sign`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${loginPayload.accessToken}`,
+        },
+      },
+    );
+    assert.equal(signOpinionResponse.status, 201);
+    const signOpinionPayload = (await signOpinionResponse.json()) as {
+      document: { documentStatus: string };
+      expectedSigners: Array<{ actingUserId: string; signatureStatus: string }>;
+      allExpectedSignersSigned: boolean;
+    };
+    assert.equal(signOpinionPayload.document.documentStatus, 'SIGNED');
+    assert.equal(signOpinionPayload.expectedSigners[0]?.signatureStatus, 'COMPLETED');
+    assert.equal(signOpinionPayload.allExpectedSignersSigned, true);
+
     const opinionReadCompletedResponse = await fetch(
       `${baseUrl}/processes/${processInCesadWindow.id}/stages/1/cesad-stage-opinion`,
       {

@@ -24,6 +24,10 @@ describe('ProcessDocumentsService', () => {
   let service: ProcessDocumentsService;
   let prismaService: jest.Mocked<PrismaService>;
   let processesService: jest.Mocked<ProcessesService>;
+  let cesadContextAuthorizationService: {
+    ensureCanReadCesadStage: jest.Mock;
+    ensureCanWriteCesadStageOpinion: jest.Mock;
+  };
 
   const stageId = 'stage-123';
   const stageMetadata = {
@@ -52,9 +56,20 @@ describe('ProcessDocumentsService', () => {
     processesService = {
       findProcessOrThrow: jest.fn(),
       resolveCurrentStageOrThrow: jest.fn(),
+      findStageBySequenceOrThrow: jest.fn(),
+      ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage: jest.fn(),
     } as unknown as jest.Mocked<ProcessesService>;
 
-    service = new ProcessDocumentsService(prismaService, processesService);
+    cesadContextAuthorizationService = {
+      ensureCanReadCesadStage: jest.fn(),
+      ensureCanWriteCesadStageOpinion: jest.fn(),
+    };
+
+    service = new ProcessDocumentsService(
+      prismaService,
+      processesService,
+      cesadContextAuthorizationService as any,
+    );
   });
 
   describe('ensureSupervisorEvaluationDocument', () => {
@@ -296,20 +311,30 @@ describe('ProcessDocumentsService', () => {
       expect(transaction.signatureRecord.create).toHaveBeenCalledTimes(2);
       expect(transaction.signatureRecord.findFirst).toHaveBeenNthCalledWith(1, {
         where: {
-          processDocumentId: 'doc-123',
-          signatoryRole: 'IMMEDIATE_SUPERVISOR',
+          OR: [
+            {
+              processDocumentId: 'doc-123',
+              signatoryUserId: supervisorUser.sub,
+              signatoryRole: 'IMMEDIATE_SUPERVISOR',
+            },
+          ],
         },
       });
       expect(transaction.signatureRecord.findFirst).toHaveBeenNthCalledWith(2, {
         where: {
-          processDocumentId: 'doc-123',
-          signatoryRole: 'INTERN_SERVER',
+          OR: [
+            {
+              processDocumentId: 'doc-123',
+              signatoryUserId: internUser.sub,
+              signatoryRole: 'INTERN_SERVER',
+            },
+          ],
         },
       });
       expect(transaction.auditEvent.create).not.toHaveBeenCalled();
     });
 
-    it('fails fast when the existing signature for the same document and role belongs to a different user', async () => {
+    it('propagates a unique collision when no matching signature record can be found', async () => {
       const transaction = {
         processStage: {
           findUnique: jest.fn().mockResolvedValue(stageMetadata),
@@ -321,10 +346,7 @@ describe('ProcessDocumentsService', () => {
               clientVersion: '6.19.2',
             }),
           ),
-          findFirst: jest.fn().mockResolvedValue({
-            signatoryRole: PrismaUserRole.IMMEDIATE_SUPERVISOR,
-            signatoryUserId: 'other-supervisor',
-          }),
+          findFirst: jest.fn().mockResolvedValue(null),
         },
         auditEvent: {
           create: jest.fn(),
@@ -341,7 +363,7 @@ describe('ProcessDocumentsService', () => {
           internUser.sub,
           supervisorUser,
         ),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
 
       expect(transaction.auditEvent.create).not.toHaveBeenCalled();
     });

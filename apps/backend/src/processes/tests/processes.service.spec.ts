@@ -1150,6 +1150,118 @@ export async function runProcessesServiceTests() {
       },
     });
 
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          cesadProcess.id,
+          authenticatedUser(cesad.id, cesad.role),
+          { action: workflowActions.issueOpinion },
+        ),
+      /signed CESAD opinion document/,
+    );
+
+    const preparedCesadSignatures =
+      await context.processDocumentsService.prepareCesadOpinionSignatures(
+        cesadProcess.id,
+        1,
+        authenticatedUser(cesad.id, cesad.role),
+      );
+    assert.equal(preparedCesadSignatures.document?.documentStatus, 'READY_FOR_SIGNATURE');
+    assert.equal(preparedCesadSignatures.expectedSigners.length, 2);
+    assert(
+      preparedCesadSignatures.expectedSigners.every(
+        (signer) => signer.signatureStatus === 'PENDING',
+      ),
+    );
+    await context.processDocumentsService.prepareCesadOpinionSignatures(
+      cesadProcess.id,
+      1,
+      authenticatedUser(cesad.id, cesad.role),
+    );
+    const preparedCesadDocument = await context.prisma.processDocument.findFirstOrThrow({
+      where: {
+        evaluationProcessId: cesadProcess.id,
+        processStageId: cesadProcess.defaultStageId,
+        documentType: 'CESAD_OPINION',
+      },
+      include: {
+        signatureRecords: true,
+      },
+    });
+    assert.equal(preparedCesadDocument.processStageId, cesadProcess.defaultStageId);
+    assert.equal(preparedCesadDocument.documentStatus, 'READY_FOR_SIGNATURE');
+    assert.equal(preparedCesadDocument.signatureRecords.length, 2);
+    assert(
+      preparedCesadDocument.signatureRecords.every(
+        (signature) => signature.signatoryRole === 'CESAD_MEMBER',
+      ),
+    );
+
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.signCesadOpinionDocument(
+          cesadProcess.id,
+          1,
+          authenticatedUser(cesad.id, cesad.role),
+        ),
+      /not an expected signer/,
+    );
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.signCesadOpinionDocument(
+          cesadProcess.id,
+          1,
+          authenticatedUser(assistant.id, assistant.role),
+        ),
+      /Only an expected CESAD_MEMBER/,
+    );
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.signCesadOpinionDocument(
+          cesadProcess.id,
+          1,
+          authenticatedUser(admin.id, admin.role),
+        ),
+      /Only an expected CESAD_MEMBER/,
+    );
+
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          cesadProcess.id,
+          authenticatedUser(cesad.id, cesad.role),
+          { action: workflowActions.issueOpinion },
+        ),
+      /document is fully signed/,
+    );
+
+    const partiallySignedCesadOpinion =
+      await context.processDocumentsService.signCesadOpinionDocument(
+        cesadProcess.id,
+        1,
+        authenticatedUser(titularOne.id, titularOne.role),
+      );
+    assert.equal(partiallySignedCesadOpinion.document?.documentStatus, 'READY_FOR_SIGNATURE');
+    assert.equal(partiallySignedCesadOpinion.allExpectedSignersSigned, false);
+
+    const fullySignedCesadOpinion =
+      await context.processDocumentsService.signCesadOpinionDocument(
+        cesadProcess.id,
+        1,
+        authenticatedUser(titularTwo.id, titularTwo.role),
+      );
+    assert.equal(fullySignedCesadOpinion.document?.documentStatus, 'SIGNED');
+    assert.equal(fullySignedCesadOpinion.allExpectedSignersSigned, true);
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.signCesadOpinionDocument(
+          cesadProcess.id,
+          1,
+          authenticatedUser(titularOne.id, titularOne.role),
+        ),
+      /not ready for signature|already been completed/,
+    );
+
     const issuedWorkflow = await context.service.transitionWorkflow(
       cesadProcess.id,
       authenticatedUser(cesad.id, cesad.role),
@@ -1310,6 +1422,16 @@ export async function runProcessesServiceTests() {
         completedAt: new Date('2026-04-24T12:30:00.000Z'),
       },
     });
+    await context.processDocumentsService.prepareCesadOpinionSignatures(
+      conflictingProcess.id,
+      1,
+      authenticatedUser(cesad.id, cesad.role),
+    );
+    await context.processDocumentsService.signCesadOpinionDocument(
+      conflictingProcess.id,
+      1,
+      authenticatedUser(titularTwo.id, titularTwo.role),
+    );
     const conflictingIssuedWorkflow = await context.service.transitionWorkflow(
       conflictingProcess.id,
       authenticatedUser(cesad.id, cesad.role),

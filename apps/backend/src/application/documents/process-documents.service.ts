@@ -27,14 +27,50 @@ import {
 } from '@sadep/contracts';
 
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
+import { CesadContextAuthorizationService } from '../../cesad/authorization/cesad-context-authorization.service';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { ProcessesService } from '../../processes/processes.service';
+
+const CESAD_OPINION_SIGNATURE_READ_STATUSES = new Set<ProcessStatus>([
+  ProcessStatus.EM_ANALISE_CESAD,
+  ProcessStatus.PARECER_EMITIDO,
+]);
+
+type CesadOpinionSignatureStatus = {
+  processId: string;
+  processStageId: string;
+  stageSequence: number;
+  stageCode: string;
+  document: {
+    documentId: string;
+    documentType: DocumentType;
+    documentStatus: DocumentStatus;
+    hasArtifact: boolean;
+    artifactPath: string | null;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
+  expectedSigners: Array<{
+    expectedSignerId: string;
+    actingUserId: string;
+    actingCommissionMemberId: string;
+    nameSnapshot: string;
+    emailSnapshot: string;
+    sortOrder: number;
+    frozenAt: string;
+    signatureId: string | null;
+    signatureStatus: SignatureStatus | null;
+    signedAt: string | null;
+  }>;
+  allExpectedSignersSigned: boolean;
+};
 
 @Injectable()
 export class ProcessDocumentsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly processesService: ProcessesService,
+    private readonly cesadContextAuthorizationService: CesadContextAuthorizationService,
   ) {}
 
   async ensureSupervisorEvaluationDocument(
@@ -538,6 +574,201 @@ export class ProcessDocumentsService {
     });
   }
 
+  async prepareCesadOpinionSignatures(
+    processId: string,
+    stageSequence: number,
+    user: AuthenticatedUser,
+  ): Promise<CesadOpinionSignatureStatus> {
+    return this.prismaService.$transaction(async (transaction) => {
+      const { process, stage } = await this.getCesadOpinionSignatureContextOrThrow(
+        transaction,
+        processId,
+        stageSequence,
+        new Set([ProcessStatus.EM_ANALISE_CESAD]),
+        `CESAD opinion signatures can only be prepared while process is in ${ProcessStatus.EM_ANALISE_CESAD} status`,
+      );
+
+      await this.ensureCanPrepareCesadOpinionSignatures(user, stage.id, transaction);
+
+      const occurredAt = new Date();
+      await this.processesService.ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage(
+        transaction,
+        processId,
+        stage.id,
+        occurredAt,
+      );
+
+      const opinion = await this.getCompletedCesadStageOpinionWithExpectedSignersOrThrow(
+        transaction,
+        stage.id,
+      );
+      const document = await this.ensureCesadOpinionDocument(
+        transaction,
+        processId,
+        stage.id,
+        user,
+        this.toContractProcessStatus(process.status),
+      );
+
+      await this.createCesadOpinionSignatureRecords(
+        transaction,
+        processId,
+        stage.id,
+        document.documentId,
+        opinion.id,
+        opinion.expectedSigners,
+        user,
+        this.toContractProcessStatus(process.status),
+      );
+
+      return this.buildCesadOpinionSignatureStatus(transaction, processId, stage.id);
+    });
+  }
+
+  async getCesadOpinionSignatureStatus(
+    processId: string,
+    stageSequence: number,
+    user: AuthenticatedUser,
+  ): Promise<CesadOpinionSignatureStatus> {
+    return this.prismaService.$transaction(async (transaction) => {
+      const { stage } = await this.getCesadOpinionSignatureContextOrThrow(
+        transaction,
+        processId,
+        stageSequence,
+        CESAD_OPINION_SIGNATURE_READ_STATUSES,
+        `CESAD opinion signature status is only available while process is in ${ProcessStatus.EM_ANALISE_CESAD} or ${ProcessStatus.PARECER_EMITIDO} status`,
+      );
+
+      await this.ensureCanReadCesadOpinionSignatures(user, stage.id, transaction);
+
+      return this.buildCesadOpinionSignatureStatus(transaction, processId, stage.id);
+    });
+  }
+
+  async signCesadOpinionDocument(
+    processId: string,
+    stageSequence: number,
+    user: AuthenticatedUser,
+  ): Promise<CesadOpinionSignatureStatus> {
+    return this.prismaService.$transaction(async (transaction) => {
+      const { process, stage } = await this.getCesadOpinionSignatureContextOrThrow(
+        transaction,
+        processId,
+        stageSequence,
+        new Set([ProcessStatus.EM_ANALISE_CESAD]),
+        `CESAD opinion can only be signed while process is in ${ProcessStatus.EM_ANALISE_CESAD} status`,
+      );
+
+      if (user.role !== UserRole.CESAD_MEMBER) {
+        throw new ForbiddenException('Only an expected CESAD_MEMBER can sign CESAD opinion document');
+      }
+
+      await this.cesadContextAuthorizationService.ensureCanWriteCesadStageOpinion({
+        user,
+        processStageId: stage.id,
+        transaction,
+      });
+
+      const opinion = await this.getCompletedCesadStageOpinionWithExpectedSignersOrThrow(
+        transaction,
+        stage.id,
+      );
+      const expectedSigner = opinion.expectedSigners.find((signer) => signer.actingUserId === user.sub);
+
+      if (!expectedSigner) {
+        throw new ForbiddenException('Authenticated CESAD member is not an expected signer for this opinion');
+      }
+
+      const document = await transaction.processDocument.findFirst({
+        where: {
+          evaluationProcessId: processId,
+          processStageId: stage.id,
+          documentType: PrismaDocumentType.CESAD_OPINION,
+        },
+        include: {
+          signatureRecords: true,
+        },
+      });
+
+      if (!document) {
+        throw new NotFoundException('CESAD opinion document not found');
+      }
+
+      if (document.documentStatus !== PrismaDocumentStatus.READY_FOR_SIGNATURE) {
+        throw new BadRequestException('CESAD opinion document is not ready for signature');
+      }
+
+      const pendingSignature = document.signatureRecords.find(
+        (signature) =>
+          signature.cesadStageOpinionExpectedSignerId === expectedSigner.id &&
+          signature.signatoryUserId === user.sub &&
+          signature.signatoryRole === PrismaUserRole.CESAD_MEMBER,
+      ) ?? document.signatureRecords.find(
+        (signature) =>
+          signature.signatoryUserId === user.sub &&
+          signature.signatoryRole === PrismaUserRole.CESAD_MEMBER,
+      );
+
+      if (!pendingSignature) {
+        throw new BadRequestException('No pending CESAD opinion signature found for this user');
+      }
+
+      if (pendingSignature.status !== PrismaSignatureStatus.PENDING) {
+        throw new BadRequestException('CESAD opinion signature has already been completed or canceled');
+      }
+
+      const now = new Date();
+      await transaction.signatureRecord.update({
+        where: { id: pendingSignature.id },
+        data: {
+          status: PrismaSignatureStatus.COMPLETED,
+          signedAt: now,
+          cesadStageOpinionExpectedSignerId: expectedSigner.id,
+        },
+      });
+
+      const allCompleted = await this.areAllCesadOpinionExpectedSignaturesCompleted(
+        transaction,
+        document.id,
+        opinion.expectedSigners.map((signer) => signer.id),
+      );
+
+      if (allCompleted) {
+        await transaction.processDocument.update({
+          where: { id: document.id },
+          data: { documentStatus: PrismaDocumentStatus.SIGNED },
+        });
+      }
+
+      await transaction.auditEvent.create({
+        data: this.buildAuditEvent({
+          processId,
+          user,
+          eventType: AuditEventType.CESAD_OPINION_SIGNED,
+          action: ProcessAction.SIGN_CESAD_OPINION,
+          processStatus: this.toContractProcessStatus(process.status),
+          occurredAt: now.toISOString(),
+          stageMetadata: {
+            processStageId: stage.id,
+            stageSequence: stage.sequence,
+            stageCode: stage.stageCode,
+          },
+          metadata: {
+            documentId: document.id,
+            documentType: DocumentType.CESAD_OPINION,
+            documentStatus: allCompleted ? DocumentStatus.SIGNED : DocumentStatus.READY_FOR_SIGNATURE,
+            cesadStageOpinionId: opinion.id,
+            expectedSignerId: expectedSigner.id,
+            signatoryRole: UserRole.CESAD_MEMBER,
+            signatoryUserId: user.sub,
+          },
+        }),
+      });
+
+      return this.buildCesadOpinionSignatureStatus(transaction, processId, stage.id);
+    });
+  }
+
   async getSupervisorEvaluationDocumentContext(
     transaction: Prisma.TransactionClient,
     processId: string,
@@ -773,6 +1004,346 @@ export class ProcessDocumentsService {
     });
   }
 
+  private async ensureCesadOpinionDocument(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+    processStageId: string,
+    user: AuthenticatedUser,
+    processStatus: ProcessStatus,
+  ): Promise<{ documentId: string }> {
+    const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
+    const existingDocument = await transaction.processDocument.findFirst({
+      where: {
+        evaluationProcessId: processId,
+        processStageId,
+        documentType: PrismaDocumentType.CESAD_OPINION,
+      },
+    });
+
+    if (existingDocument) {
+      if (existingDocument.documentStatus === PrismaDocumentStatus.INVALIDATED_OR_SUPERSEDED) {
+        throw new BadRequestException('Cannot prepare signatures for an invalidated CESAD opinion document');
+      }
+
+      if (
+        existingDocument.documentStatus === PrismaDocumentStatus.DRAFT ||
+        existingDocument.documentStatus === PrismaDocumentStatus.CONSOLIDATED
+      ) {
+        await transaction.processDocument.update({
+          where: { id: existingDocument.id },
+          data: { documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE },
+        });
+      }
+
+      return { documentId: existingDocument.id };
+    }
+
+    let document;
+    try {
+      document = await transaction.processDocument.create({
+        data: {
+          evaluationProcessId: processId,
+          processStageId,
+          documentType: PrismaDocumentType.CESAD_OPINION,
+          documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
+          artifactPath: null,
+        },
+      });
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const existingAfterConflict = await transaction.processDocument.findFirst({
+          where: {
+            evaluationProcessId: processId,
+            processStageId,
+            documentType: PrismaDocumentType.CESAD_OPINION,
+          },
+        });
+
+        if (existingAfterConflict) {
+          return { documentId: existingAfterConflict.id };
+        }
+      }
+
+      throw error;
+    }
+
+    await transaction.auditEvent.create({
+      data: this.buildAuditEvent({
+        processId,
+        user,
+        eventType: AuditEventType.DOCUMENT_GENERATED,
+        action: ProcessAction.PREPARE_CESAD_OPINION_SIGNATURES,
+        processStatus,
+        occurredAt: new Date().toISOString(),
+        stageMetadata,
+        metadata: {
+          documentId: document.id,
+          documentType: DocumentType.CESAD_OPINION,
+        },
+      }),
+    });
+
+    return { documentId: document.id };
+  }
+
+  private async createCesadOpinionSignatureRecords(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+    processStageId: string,
+    documentId: string,
+    cesadStageOpinionId: string,
+    expectedSigners: Array<{
+      id: string;
+      actingUserId: string;
+      actingCommissionMemberId: string;
+    }>,
+    user: AuthenticatedUser,
+    processStatus: ProcessStatus,
+  ): Promise<void> {
+    if (expectedSigners.length === 0) {
+      throw new BadRequestException('Cannot prepare CESAD opinion signatures without expected signers');
+    }
+
+    const now = new Date();
+    const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
+
+    for (const expectedSigner of expectedSigners) {
+      const signature = await this.createSignatureRecordIfMissing(transaction, {
+        processDocumentId: documentId,
+        signatoryUserId: expectedSigner.actingUserId,
+        signatoryRole: PrismaUserRole.CESAD_MEMBER,
+        provider: PrismaSignatureProvider.INTERNAL,
+        status: PrismaSignatureStatus.PENDING,
+        cesadStageOpinionExpectedSignerId: expectedSigner.id,
+      });
+
+      if (signature.created) {
+        await transaction.auditEvent.create({
+          data: this.buildAuditEvent({
+            processId,
+            user,
+            eventType: AuditEventType.SIGNATURE_REQUESTED,
+            action: ProcessAction.PREPARE_CESAD_OPINION_SIGNATURES,
+            processStatus,
+            occurredAt: now.toISOString(),
+            stageMetadata,
+            metadata: {
+              documentId,
+              documentType: DocumentType.CESAD_OPINION,
+              cesadStageOpinionId,
+              expectedSignerId: expectedSigner.id,
+              actingCommissionMemberId: expectedSigner.actingCommissionMemberId,
+              signatoryRole: UserRole.CESAD_MEMBER,
+              signatoryUserId: expectedSigner.actingUserId,
+            },
+          }),
+        });
+      }
+    }
+  }
+
+  private async buildCesadOpinionSignatureStatus(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+    processStageId: string,
+  ): Promise<CesadOpinionSignatureStatus> {
+    const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
+    const opinion = await transaction.cesadStageOpinion.findUnique({
+      where: { processStageId },
+      include: {
+        expectedSigners: {
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+    });
+    const document = await transaction.processDocument.findFirst({
+      where: {
+        evaluationProcessId: processId,
+        processStageId,
+        documentType: PrismaDocumentType.CESAD_OPINION,
+      },
+      include: {
+        signatureRecords: true,
+      },
+    });
+
+    const expectedSigners = (opinion?.expectedSigners ?? []).map((expectedSigner) => {
+      const signature = document?.signatureRecords.find(
+        (record) => record.cesadStageOpinionExpectedSignerId === expectedSigner.id,
+      ) ?? document?.signatureRecords.find(
+        (record) =>
+          record.signatoryUserId === expectedSigner.actingUserId &&
+          record.signatoryRole === PrismaUserRole.CESAD_MEMBER,
+      );
+
+      return {
+        expectedSignerId: expectedSigner.id,
+        actingUserId: expectedSigner.actingUserId,
+        actingCommissionMemberId: expectedSigner.actingCommissionMemberId,
+        nameSnapshot: expectedSigner.nameSnapshot,
+        emailSnapshot: expectedSigner.emailSnapshot,
+        sortOrder: expectedSigner.sortOrder,
+        frozenAt: expectedSigner.frozenAt.toISOString(),
+        signatureId: signature?.id ?? null,
+        signatureStatus: signature ? this.toContractSignatureStatus(signature.status) : null,
+        signedAt: signature?.signedAt?.toISOString() ?? null,
+      };
+    });
+
+    const allExpectedSignersSigned =
+      expectedSigners.length > 0 &&
+      expectedSigners.every((signer) => signer.signatureStatus === SignatureStatus.COMPLETED);
+
+    return {
+      processId,
+      processStageId,
+      stageSequence: stageMetadata.stageSequence,
+      stageCode: stageMetadata.stageCode,
+      document: document
+        ? {
+            documentId: document.id,
+            documentType: this.toContractDocumentType(document.documentType),
+            documentStatus: this.toContractDocumentStatus(document.documentStatus),
+            hasArtifact: this.normalizeArtifactPath(document.artifactPath) !== null,
+            artifactPath: this.normalizeArtifactPath(document.artifactPath),
+            createdAt: document.createdAt.toISOString(),
+            updatedAt: document.updatedAt.toISOString(),
+          }
+        : null,
+      expectedSigners,
+      allExpectedSignersSigned,
+    };
+  }
+
+  private async areAllCesadOpinionExpectedSignaturesCompleted(
+    transaction: Prisma.TransactionClient,
+    documentId: string,
+    expectedSignerIds: string[],
+  ): Promise<boolean> {
+    if (expectedSignerIds.length === 0) {
+      return false;
+    }
+
+    const signatures = await transaction.signatureRecord.findMany({
+      where: {
+        processDocumentId: documentId,
+        cesadStageOpinionExpectedSignerId: {
+          in: expectedSignerIds,
+        },
+      },
+    });
+
+    return (
+      signatures.length === expectedSignerIds.length &&
+      signatures.every((signature) => signature.status === PrismaSignatureStatus.COMPLETED)
+    );
+  }
+
+  private async getCompletedCesadStageOpinionWithExpectedSignersOrThrow(
+    transaction: Prisma.TransactionClient,
+    processStageId: string,
+  ): Promise<{
+    id: string;
+    expectedSigners: Array<{
+      id: string;
+      actingUserId: string;
+      actingCommissionMemberId: string;
+    }>;
+  }> {
+    const opinion = await transaction.cesadStageOpinion.findUnique({
+      where: { processStageId },
+      select: {
+        id: true,
+        status: true,
+        expectedSigners: {
+          orderBy: { sortOrder: 'asc' },
+          select: {
+            id: true,
+            actingUserId: true,
+            actingCommissionMemberId: true,
+          },
+        },
+      },
+    });
+
+    if (!opinion || opinion.status !== 'COMPLETED') {
+      throw new BadRequestException(
+        'CESAD opinion signatures require a completed CESAD stage opinion',
+      );
+    }
+
+    if (opinion.expectedSigners.length === 0) {
+      throw new BadRequestException('CESAD opinion has no expected signers to sign the document');
+    }
+
+    return opinion;
+  }
+
+  private async getCesadOpinionSignatureContextOrThrow(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+    stageSequence: number,
+    allowedStatuses: Set<ProcessStatus>,
+    invalidStatusMessage: string,
+  ): Promise<{
+    process: Awaited<ReturnType<ProcessesService['findProcessOrThrow']>>;
+    stage: Awaited<ReturnType<ProcessesService['findStageBySequenceOrThrow']>>;
+  }> {
+    const process = await this.processesService.findProcessOrThrow(transaction, processId);
+    const processStatus = this.toContractProcessStatus(process.status);
+
+    if (!allowedStatuses.has(processStatus)) {
+      throw new BadRequestException(invalidStatusMessage);
+    }
+
+    const stage = await this.processesService.findStageBySequenceOrThrow(
+      transaction,
+      processId,
+      stageSequence,
+    );
+
+    return { process, stage };
+  }
+
+  private async ensureCanPrepareCesadOpinionSignatures(
+    user: AuthenticatedUser,
+    processStageId: string,
+    transaction: Prisma.TransactionClient,
+  ): Promise<void> {
+    if (user.role === UserRole.ADMIN) {
+      return;
+    }
+
+    if (user.role !== UserRole.CESAD_MEMBER) {
+      throw new ForbiddenException('Only CESAD_MEMBER can prepare CESAD opinion signatures');
+    }
+
+    await this.cesadContextAuthorizationService.ensureCanWriteCesadStageOpinion({
+      user,
+      processStageId,
+      transaction,
+    });
+  }
+
+  private async ensureCanReadCesadOpinionSignatures(
+    user: AuthenticatedUser,
+    processStageId: string,
+    transaction: Prisma.TransactionClient,
+  ): Promise<void> {
+    if (user.role === UserRole.ADMIN) {
+      return;
+    }
+
+    await this.cesadContextAuthorizationService.ensureCanReadCesadStage({
+      user,
+      processStageId,
+      transaction,
+    });
+  }
+
   private async createSignatureRecordIfMissing(
     transaction: Prisma.TransactionClient,
     params: {
@@ -782,6 +1353,7 @@ export class ProcessDocumentsService {
       provider: PrismaSignatureProvider;
       status: PrismaSignatureStatus;
       signedAt?: Date;
+      cesadStageOpinionExpectedSignerId?: string;
     },
   ): Promise<{ created: boolean }> {
     try {
@@ -793,6 +1365,9 @@ export class ProcessDocumentsService {
           provider: params.provider,
           status: params.status,
           ...(params.signedAt ? { signedAt: params.signedAt } : {}),
+          ...(params.cesadStageOpinionExpectedSignerId
+            ? { cesadStageOpinionExpectedSignerId: params.cesadStageOpinionExpectedSignerId }
+            : {}),
         },
       });
 
@@ -804,8 +1379,16 @@ export class ProcessDocumentsService {
       ) {
         const existingSignature = await transaction.signatureRecord.findFirst({
           where: {
-            processDocumentId: params.processDocumentId,
-            signatoryRole: params.signatoryRole,
+            OR: [
+              {
+                processDocumentId: params.processDocumentId,
+                signatoryUserId: params.signatoryUserId,
+                signatoryRole: params.signatoryRole,
+              },
+              ...(params.cesadStageOpinionExpectedSignerId
+                ? [{ cesadStageOpinionExpectedSignerId: params.cesadStageOpinionExpectedSignerId }]
+                : []),
+            ],
           },
         });
 
@@ -816,6 +1399,16 @@ export class ProcessDocumentsService {
         if (existingSignature.signatoryUserId !== params.signatoryUserId) {
           throw new BadRequestException(
             `Signature record for document ${params.processDocumentId} and role ${params.signatoryRole} already exists with a different signatory`,
+          );
+        }
+
+        if (
+          params.cesadStageOpinionExpectedSignerId &&
+          existingSignature.cesadStageOpinionExpectedSignerId &&
+          existingSignature.cesadStageOpinionExpectedSignerId !== params.cesadStageOpinionExpectedSignerId
+        ) {
+          throw new BadRequestException(
+            `Signature record for document ${params.processDocumentId} already exists with a different expected signer`,
           );
         }
 

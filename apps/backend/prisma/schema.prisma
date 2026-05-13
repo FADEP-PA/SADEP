@@ -413,6 +413,7 @@ model CesadStageOpinionExpectedSigner {
   actingCommissionMember        CesadCommissionMember                              @relation("CesadStageOpinionExpectedSignerActingMember", fields: [actingCommissionMemberId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   substitutedCommissionMember   CesadCommissionMember?                             @relation("CesadStageOpinionExpectedSignerSubstitutedMember", fields: [substitutedCommissionMemberId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   actingUser                    User                                               @relation("CesadStageOpinionExpectedSignerActingUser", fields: [actingUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  signatureRecords              SignatureRecord[]                                  @relation("CesadStageOpinionExpectedSignerSignatureRecords")
 
   @@unique([cesadStageOpinionId, actingCommissionMemberId])
   @@unique([cesadStageOpinionId, sortOrder])
@@ -456,21 +457,25 @@ model CesadStageAssignment {
 }
 
 model SignatureRecord {
-  id                String            @id @default(cuid())
-  processDocumentId String
-  signatoryUserId   String
-  signatoryRole     UserRole
-  provider          SignatureProvider
-  status            SignatureStatus   @default(PENDING)
-  externalReference String?
-  signedAt          DateTime?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  processDocument   ProcessDocument   @relation(fields: [processDocumentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  signatoryUser     User              @relation("SignatureRecordSignatory", fields: [signatoryUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id                                String                           @id @default(cuid())
+  processDocumentId                 String
+  signatoryUserId                   String
+  signatoryRole                     UserRole
+  provider                          SignatureProvider
+  status                            SignatureStatus                  @default(PENDING)
+  externalReference                 String?
+  signedAt                          DateTime?
+  cesadStageOpinionExpectedSignerId String?
+  createdAt                         DateTime                         @default(now())
+  updatedAt                         DateTime                         @updatedAt
+  processDocument                   ProcessDocument                  @relation(fields: [processDocumentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  signatoryUser                     User                             @relation("SignatureRecordSignatory", fields: [signatoryUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cesadStageOpinionExpectedSigner   CesadStageOpinionExpectedSigner? @relation("CesadStageOpinionExpectedSignerSignatureRecords", fields: [cesadStageOpinionExpectedSignerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  @@unique([processDocumentId, signatoryRole])
+  @@unique([processDocumentId, signatoryUserId, signatoryRole])
+  @@unique([cesadStageOpinionExpectedSignerId])
   @@index([processDocumentId])
   @@index([signatoryUserId])
+  @@index([cesadStageOpinionExpectedSignerId])
   @@index([status])
 }

@@ -82,7 +82,11 @@ export async function createTestContext(databaseName: string): Promise<TestConte
 
   const cesadContextAuthorizationService = new CesadContextAuthorizationService(prisma as never);
   const processesService = new ProcessesService(prisma as never, cesadContextAuthorizationService);
-  const processDocumentsService = new ProcessDocumentsService(prisma as never, processesService);
+  const processDocumentsService = new ProcessDocumentsService(
+    prisma as never,
+    processesService,
+    cesadContextAuthorizationService,
+  );
   const cesadStageOpinionsService = new CesadStageOpinionsService(
     prisma as never,
     processesService,
