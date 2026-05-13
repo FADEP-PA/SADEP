@@ -46,7 +46,7 @@ O recorte foi depois fortalecido por `BE-CESAD-AUTH-02`, que introduziu `CesadSt
 ## Fora do escopo
 
 - concluir integralmente `BE-SEC-03` se ainda houver dependencia de schema ou workflow;
-- modelar assinatura colegiada do parecer CESAD;
+- modelar assinatura colegiada do parecer CESAD, posteriormente entregue por `BE-DOC-CESAD-SIGN-01`;
 - alterar o fluxo de quatro etapas;
 - implementar parecer conclusivo final;
 - implementar homologacao, notificacao, ciencia, recurso ou portaria;
@@ -70,9 +70,9 @@ O recorte foi depois fortalecido por `BE-CESAD-AUTH-02`, que introduziu `CesadSt
 
 ## Ressalvas remanescentes
 
-- A politica ainda usa comissao/membresia vigente como referencia transitoria.
-- Ainda nao ha vinculo persistido comissao-processo/etapa.
-- Assinatura colegiada CESAD permanece em `BE-DOC-CESAD-SIGN-01`.
+- A politica foi posteriormente fortalecida por `BE-CESAD-AUTH-02`, que substituiu a referencia transitoria por assignment persistida no recorte de etapa.
+- O vinculo persistido comissao-processo/etapa foi posteriormente entregue por `BE-CESAD-AUTH-02`.
+- Assinatura colegiada CESAD de etapa foi posteriormente entregue por `BE-DOC-CESAD-SIGN-01`.
 - Workflow completo de quatro etapas permanece em `BE-FLOW-4STAGE-01`.
 - Parecer conclusivo final permanece em `BE-CESAD-FINAL-01`.
 - Homologacao, notificacao e ciencia permanecem em `BE-HOMOLOG-01`.
@@ -94,4 +94,4 @@ O recorte foi depois fortalecido por `BE-CESAD-AUTH-02`, que introduziu `CesadSt
 
 ## Proxima acao
 
-Manter `BE-SEC-03` aberta para os refinamentos estruturais de vinculo persistido comissao-processo/etapa e integracoes futuras com assinatura colegiada, workflow completo e pareceres posteriores.
+Manter `BE-SEC-03` aberta apenas como guarda-chuva residual para workflow completo, pareceres posteriores, homologacao/notificacao/ciencia e demais integracoes futuras.

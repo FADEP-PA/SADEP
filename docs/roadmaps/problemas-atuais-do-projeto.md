@@ -30,7 +30,7 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 
 ### Segurança
 
-- [`BE-SEC-03 — Guarda-chuva residual / integracao futura de autorizacao contextual CESAD`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece aberto como guarda-chuva residual; o risco critico imediato foi reduzido por `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02` e `BE-CESAD-ASSIGN-REPLACE-01`. Ver também [`cross-cutting/active-problems.md`](./cross-cutting/active-problems.md).
+- [`BE-SEC-03 — Guarda-chuva residual / integracao futura de autorizacao contextual CESAD`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece aberto como guarda-chuva residual; o risco critico imediato foi reduzido por `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01` e `BE-DOC-CESAD-SIGN-01`. Ver também [`cross-cutting/active-problems.md`](./cross-cutting/active-problems.md).
 - [`SEC-HARD-01 — Hardening adicional de seguranca HTTP, rate limit e CSRF`](./cross-cutting/tasks/SEC-HARD-01-http-rate-limit-csrf.md): melhoria futura separada de `BE-ARCH-01E5`.
 - [`SEC-LOG-PII-01 — Reduzir PII e ruido em logs`](./cross-cutting/tasks/SEC-LOG-PII-01-auth-logs-pii-noise.md): subtarefa de hardening para logs de auth e filtro global.
 - [`BE-AUDIT-AUTH-01 — Auditoria persistida de eventos de autenticacao`](./backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura separada de `BE-ARCH-01F`.
@@ -68,6 +68,7 @@ O resumo operacional dos problemas resolvidos fica em [`cross-cutting/resolved-p
 - `BE-ARCH-01E4C`: remocao de consumidores de `session.accessToken` concluida no recorte frontend.
 - `BE-ARCH-01E5`: hardening operacional de cookies/CORS/env concluido no recorte backend.
 - `BE-ARCH-01F`: eventos estruturados de auth e testes unitarios concluidos no recorte backend.
+- `BE-DOC-CESAD-SIGN-01`: assinatura colegiada do parecer CESAD de etapa concluida no recorte backend/documental, com documento `CESAD_OPINION` stage-bound, assinaturas derivadas de expected signers e bloqueio de `ISSUE_CESAD_OPINION` ate completude.
 - `FT-24`: dependencia frontend de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` removida no recorte identificado.
 - `FE-CHEFIA-01`: integracao inicial da chefia imediata entregue no recorte frontend seguro, mas permanece parcial como fluxo final; listagem segura por perfil segue por `FE-CHEFIA-02` e/ou `FE-PROCESS-LIST-01`.
 - `DOC-AUTH-STATE-01`: inconsistencia documental de `BE-ARCH-01E4B/E4C` reconciliada.
@@ -89,7 +90,7 @@ O arquivamento real ocorrerá em fase posterior. Este índice não move document
 - `FT-24` resolvida no recorte frontend não equivale a listagem segura de processos por perfil.
 - `DX-POSTCSS-01` não deve ser confundido com `DX-01`, que foi resolvido operacionalmente quanto ao ambiente local.
 - `BE-ARCH-01D`, `BE-ARCH-01E2`, `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` estão concluídas/mitigadas no recorte planejado de sessão/auth.
-- `BE-SEC-03` permanece aberto como guarda-chuva residual / integracao futura, nao como lacuna imediata de autorizacao contextual basica.
+- `BE-SEC-03` permanece aberto como guarda-chuva residual / integracao futura, nao como lacuna imediata de autorizacao contextual basica, assignment, supersessao ou assinatura colegiada do parecer CESAD de etapa.
 
 ## Fora do escopo deste índice
 

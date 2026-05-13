@@ -71,7 +71,7 @@ Backend, Prisma, workflow processual, CESAD, autorizacao contextual e testes.
 - A metadata de `SENT_TO_CESAD` pode ser melhorada futuramente com `assignedAt` ou `referenceDate` explicitos.
 - Teste futuro pode afirmar que o status do processo permanece inalterado quando a criacao da assignment falha.
 - Substituicao/supersessao formal de comissao em etapa ja atribuida deve virar task propria.
-- Assinatura colegiada permanece em `BE-DOC-CESAD-SIGN-01`.
+- Assinatura colegiada do parecer CESAD de etapa foi posteriormente entregue por `BE-DOC-CESAD-SIGN-01`.
 - Workflow completo de quatro etapas permanece em `BE-FLOW-4STAGE-01`.
 - Parecer conclusivo final permanece em `BE-CESAD-FINAL-01`.
 - Homologacao, notificacao e ciencia permanecem em `BE-HOMOLOG-01`.
@@ -87,7 +87,7 @@ Esta task conclui a fatia estrutural de vinculo persistido comissao-processo-eta
 `BE-SEC-03` permanece aberto para:
 
 - reatribuicao e supersessao formal de assignments;
-- integracao com assinatura colegiada;
+- integracoes documentais posteriores a assinatura colegiada de etapa;
 - integracao com workflow completo de quatro etapas;
 - regras futuras de parecer conclusivo final, se aplicavel;
 - integracoes futuras com homologacao, notificacao e ciencia.

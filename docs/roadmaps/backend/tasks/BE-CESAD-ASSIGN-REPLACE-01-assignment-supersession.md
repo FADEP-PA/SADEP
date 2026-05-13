@@ -57,7 +57,7 @@ Esta task implementou a primeira versao controlada dessa reatribuicao, limitada 
 - Testes HTTP adicionais podem cobrir `referenceDate` invalida, `newCommissionId` vazio/nao string e `formalActReference` nao string.
 - Reatribuicao apos parecer, expected signers ou documento CESAD permanece bloqueada.
 - Reatribuicao em cenarios posteriores exigira versionamento, invalidacao ou supersessao documental formal.
-- Assinatura colegiada permanece em `BE-DOC-CESAD-SIGN-01`.
+- Assinatura colegiada do parecer CESAD de etapa foi posteriormente entregue por `BE-DOC-CESAD-SIGN-01`.
 - Quatro etapas permanecem em `BE-FLOW-4STAGE-01`.
 - Parecer conclusivo final permanece em `BE-CESAD-FINAL-01`.
 - Homologacao, notificacao e ciencia permanecem em `BE-HOMOLOG-01`.
@@ -71,7 +71,7 @@ Esta task implementou a primeira versao controlada dessa reatribuicao, limitada 
 - Invalidacao de parecer.
 - Versionamento de parecer.
 - Invalidacao ou supersessao documental.
-- Assinatura colegiada.
+- Assinatura colegiada, no recorte desta task de reatribuicao.
 - Progressao formal das quatro etapas.
 - Parecer conclusivo final.
 - Homologacao.
@@ -85,8 +85,8 @@ Esta task implementou a primeira versao controlada dessa reatribuicao, limitada 
 
 Esta task conclui a fatia de reatribuicao/supersessao formal segura dentro de `BE-SEC-03`, somando-se a `BE-CESAD-AUTH-01` e `BE-CESAD-AUTH-02`.
 
-`BE-SEC-03` permanece aberta apenas como guarda-chuva estrutural para integracoes futuras com assinatura colegiada, documentos, workflow completo de quatro etapas, parecer conclusivo final e homologacao/notificacao/ciencia.
+`BE-SEC-03` permanece aberta apenas como guarda-chuva estrutural para integracoes futuras com documentos posteriores, workflow completo de quatro etapas, parecer conclusivo final e homologacao/notificacao/ciencia.
 
 ## Proxima acao
 
-Tratar `BE-DOC-CESAD-SIGN-01` quando a prioridade for assinatura colegiada do parecer CESAD. Qualquer reatribuicao posterior a parecer, signatarios esperados ou documento CESAD deve nascer em task propria de versionamento, invalidacao ou supersessao documental formal.
+Qualquer reatribuicao posterior a parecer, signatarios esperados ou documento CESAD deve nascer em task propria de versionamento, invalidacao ou supersessao documental formal.

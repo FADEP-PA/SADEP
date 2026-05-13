@@ -4,6 +4,33 @@ Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker 
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD
+
+- **Status documental:** concluida / auditada / aprovada com ressalvas.
+- Implementou o ciclo documental minimo do parecer CESAD de etapa com `ProcessDocument.CESAD_OPINION`.
+- O documento CESAD de etapa e stage-bound, vinculado a `evaluationProcessId`, `processStageId` e `documentType = CESAD_OPINION`.
+- Criou/reutilizou de forma idempotente o documento CESAD em `READY_FOR_SIGNATURE`, com `artifactPath = null`.
+- Alterou `SignatureRecord` para permitir multiplos signatarios CESAD no mesmo documento.
+- Substituiu a unique antiga por `processDocumentId + signatoryUserId + signatoryRole`.
+- Adicionou vinculo nullable de `SignatureRecord` com `CesadStageOpinionExpectedSigner`.
+- Criou a migration `20260513120000_add_cesad_opinion_collegiate_signatures`.
+- Gera assinaturas pendentes a partir de `CesadStageOpinionExpectedSigner`.
+- Cria uma assinatura `PENDING` por expected signer, com `signatoryUserId = actingUserId`, `signatoryRole = CESAD_MEMBER` e `provider = INTERNAL`.
+- Nao assina automaticamente o autor do parecer.
+- Bloqueia assinatura por membro nao esperado.
+- Bloqueia assinatura por `COMMISSION_ASSISTANT`.
+- Nao permite que `ADMIN` assine por membro.
+- Mantem o documento CESAD em `READY_FOR_SIGNATURE` enquanto houver pendencias.
+- Marca o documento CESAD como `SIGNED` somente quando todos os expected signers assinarem.
+- Bloqueia `ISSUE_CESAD_OPINION` ate que o documento CESAD stage-bound esteja `SIGNED` e todas as assinaturas esperadas estejam `COMPLETED`.
+- Adicionou a action contratual `PREPARE_CESAD_OPINION_SIGNATURES`.
+- Implementou os endpoints `POST /processes/:id/stages/:sequence/cesad-stage-opinion/signatures/prepare`, `GET /processes/:id/stages/:sequence/cesad-stage-opinion/signatures` e `POST /processes/:id/stages/:sequence/cesad-stage-opinion/sign`.
+- Ampliou testes backend para preparacao idempotente, documento stage-bound, multiplos membros CESAD, bloqueios de autorizacao, assinatura parcial/completa, workflow e regressoes de chefia/autoavaliacao.
+- Validacoes aprovadas: build de `@sadep/contracts`, `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria e `git diff --check`.
+- Ressalvas remanescentes: metadata de `SIGNATURE_REQUESTED` pode ser enriquecida futuramente com `signatureId` e `signatureStatus = PENDING`; a nova unique permite multiplos usuarios com a mesma role no mesmo documento, entao documentos nao colegiados seguem protegidos pela camada de service; versionamento documental, invalidacao/supersessao documental, substituicao formal de signatario apos assinatura aberta e assinatura externa GOVBR real permanecem fora do recorte.
+- Nao alterou frontend, quatro etapas, parecer conclusivo final, homologacao, notificacao, ciencia, recursos, portaria ou versionamento documental.
+- `BE-FLOW-4STAGE-01`, `BE-CESAD-FINAL-01` e `BE-HOMOLOG-01` permanecem pendentes.
+
 ## BE-CESAD-ASSIGN-REPLACE-01 — Modelar reatribuicao e supersessao formal de comissao CESAD por etapa
 
 - **Status documental:** concluida / auditada / aprovada com ressalvas.
@@ -25,7 +52,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Validacoes aprovadas: build de `@sadep/contracts`, `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria, typecheck frontend adicional e `git diff --check`.
 - Nao alterou frontend, assinatura colegiada, quatro etapas, parecer conclusivo final, homologacao, notificacao, ciencia, `SignatureRecord` ou versionamento documental.
 - Ressalvas remanescentes: `referenceDate` ainda usa parsing por `new Date(...)`; testes HTTP adicionais podem cobrir `referenceDate` invalida, `newCommissionId` vazio/nao string e `formalActReference` nao string; reatribuicao apos parecer, expected signers ou documento CESAD permanece bloqueada e depende de versionamento, invalidacao ou supersessao documental formal.
-- `BE-SEC-03` permanece aberta como guarda-chuva para assinatura colegiada, documentos, workflow completo de quatro etapas, parecer conclusivo final e homologacao/notificacao/ciencia futuras.
+- `BE-SEC-03` permanece aberta como guarda-chuva para workflow completo de quatro etapas, parecer conclusivo final, homologacao/notificacao/ciencia e documentos posteriores.
 
 ## BE-CESAD-AUTH-02 — Implementar CesadStageAssignment
 
@@ -48,7 +75,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Validacoes aprovadas: `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria e `git diff --check`.
 - Nao alterou frontend, contracts, roadmaps/status durante o patch funcional, assinatura colegiada completa, quatro etapas, parecer conclusivo final, homologacao, notificacao, ciencia, recursos, cookie `aep_pa_refresh` ou migracao ampla AEP -> SADEP.
 - Ressalvas remanescentes: unicidade de assignment `ACTIVE` por etapa garantida em service/transacao; bases locais/dev com processos ja em `EM_ANALISE_CESAD` ou `PARECER_EMITIDO` podem exigir fixture/backfill controlado; metadata de `SENT_TO_CESAD` pode explicitar `assignedAt`/`referenceDate`; teste futuro pode afirmar status inalterado quando a criacao da assignment falha.
-- `BE-SEC-03` permanece aberta como guarda-chuva estrutural para assinatura colegiada, documentos, workflow completo, parecer final e homologacao/notificacao/ciencia futuras.
+- `BE-SEC-03` permanece aberta como guarda-chuva estrutural para workflow completo, parecer final, homologacao/notificacao/ciencia e documentos posteriores.
 
 ## BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis
 

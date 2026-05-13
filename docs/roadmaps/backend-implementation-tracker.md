@@ -64,9 +64,8 @@ Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao fr
 
 ## Frentes backend pendentes e relacionadas
 
-- [`BE-SEC-03 — Guarda-chuva residual / integracao futura de autorizacao contextual CESAD`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece aberto como guarda-chuva residual; o risco critico imediato foi reduzido por `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02` e `BE-CESAD-ASSIGN-REPLACE-01`.
+- [`BE-SEC-03 — Guarda-chuva residual / integracao futura de autorizacao contextual CESAD`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece aberto como guarda-chuva residual; o risco critico imediato foi reduzido por `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01` e `BE-DOC-CESAD-SIGN-01`.
 - [`BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis`](./backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md): concluida/auditada/aprovada com ressalvas, sem encerrar o guarda-chuva residual.
-- [`BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD`](./backend/tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md): pendente alta de documentos/assinaturas.
 - [`BE-FLOW-4STAGE-01 — Estruturar progressao formal das quatro etapas avaliativas`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): pendente alta de workflow Caso 2.
 - [`BE-CESAD-FINAL-01 — Modelar parecer conclusivo final da CESAD`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao de homologacao.
 - [`BE-HOMOLOG-01 — Modelar fluxo de homologacao, notificacao e ciencia`](./backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente futura dependente de parecer final.
@@ -90,6 +89,7 @@ O resumo operacional dos itens backend resolvidos fica em [`backend/resolved.md`
 Itens principais já registrados como resolvidos ou concluídos:
 
 - `BE-TECH-01`;
+- `BE-DOC-CESAD-SIGN-01`;
 - `BE-ARCH-01A`;
 - `BE-ARCH-01B`;
 - `BE-ARCH-01C`;
@@ -107,7 +107,7 @@ Este índice não repete o histórico completo desses itens.
 
 Relações principais:
 
-- `BE-SEC-03` permanece ativo como guarda-chuva residual / integracao futura, nao como lacuna imediata de autorizacao contextual basica.
+- `BE-SEC-03` permanece ativo como guarda-chuva residual / integracao futura, nao como lacuna imediata de autorizacao contextual basica, assignment, supersessao ou assinatura colegiada do parecer CESAD de etapa.
 - `BE-ARCH-01D` foi concluida/mitigada no recorte minimo de sessao frontend.
 - `BE-ARCH-01E2` foi concluida/mitigada no recorte de modelagem persistente de sessao/refresh.
 - `BE-ARCH-01E3` foi concluida/mitigada no recorte backend de refresh, rotacao e logout server-side.
