@@ -58,6 +58,7 @@ describe('ProcessDocumentsService', () => {
       resolveCurrentStageOrThrow: jest.fn(),
       findStageBySequenceOrThrow: jest.fn(),
       ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage: jest.fn(),
+      assertStageIsActiveForArtifactCreation: jest.fn(),
     } as unknown as jest.Mocked<ProcessesService>;
 
     cesadContextAuthorizationService = {

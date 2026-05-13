@@ -19,6 +19,10 @@ import { ProcessDocumentsService } from '../../application/documents/process-doc
 import { CesadContextAuthorizationService } from '../../cesad/authorization/cesad-context-authorization.service';
 import { CesadStageOpinionsService } from '../cesad-stage-opinions/cesad-stage-opinions.service';
 import { CesadStageReadService } from '../cesad-stage-read.service';
+import {
+  CASE_2_PROCESS_STAGE_SEQUENCES,
+  getCase2ProcessStageCode,
+} from '../process-stages.constants';
 import { ProcessesService } from '../processes.service';
 import { SelfEvaluationsService } from '../self-evaluations/self-evaluations.service';
 import { SupervisorEvaluationsService } from '../supervisor-evaluations/supervisor-evaluations.service';
@@ -325,13 +329,23 @@ export async function createProcess(
     },
   });
 
-  const defaultStage = await prisma.processStage.create({
-    data: {
+  await prisma.processStage.createMany({
+    data: CASE_2_PROCESS_STAGE_SEQUENCES.map((sequence) => ({
       evaluationProcessId: process.id,
-      ...(responsibleSupervisorUserId ? { responsibleSupervisorUserId } : {}),
-      sequence: 1,
-      stageCode: 'ETAPA_1',
-      startedAt: new Date(),
+      responsibleSupervisorUserId: responsibleSupervisorUserId ?? null,
+      sequence,
+      stageCode: getCase2ProcessStageCode(sequence),
+      startedAt: sequence === 1 ? new Date() : null,
+      endedAt: null,
+    })),
+  });
+
+  const defaultStage = await prisma.processStage.findUniqueOrThrow({
+    where: {
+      evaluationProcessId_sequence: {
+        evaluationProcessId: process.id,
+        sequence: 1,
+      },
     },
   });
 
@@ -347,14 +361,38 @@ export async function createProcessStage(
   sequence: number,
   stageCode = `ETAPA_${sequence}`,
   responsibleSupervisorUserId?: string,
+  options: Partial<{
+    startedAt: Date | null;
+    endedAt: Date | null;
+  }> = {},
 ) {
+  const existingStage = await prisma.processStage.findUnique({
+    where: {
+      evaluationProcessId_sequence: {
+        evaluationProcessId: processId,
+        sequence,
+      },
+    },
+  });
+  const data = {
+    ...(responsibleSupervisorUserId ? { responsibleSupervisorUserId } : {}),
+    stageCode,
+    startedAt: options.startedAt !== undefined ? options.startedAt : new Date(),
+    endedAt: options.endedAt !== undefined ? options.endedAt : null,
+  };
+
+  if (existingStage) {
+    return prisma.processStage.update({
+      where: { id: existingStage.id },
+      data,
+    });
+  }
+
   return prisma.processStage.create({
     data: {
       evaluationProcessId: processId,
-      ...(responsibleSupervisorUserId ? { responsibleSupervisorUserId } : {}),
       sequence,
-      stageCode,
-      startedAt: new Date(),
+      ...data,
     },
   });
 }

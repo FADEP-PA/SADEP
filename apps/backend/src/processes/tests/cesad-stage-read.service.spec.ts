@@ -421,7 +421,7 @@ export async function runCesadStageReadServiceTests() {
     assert.equal(snapshot.server.registrationNumber, 'Matrícula não informada no cadastro');
     assert.equal(snapshot.stage.stageId, stageTwo.id);
     assert.equal(snapshot.stage.sequence, 2);
-    assert.equal(snapshot.stage.totalStages, 2);
+    assert.equal(snapshot.stage.totalStages, 4);
     assert.equal(snapshot.supervisorEvaluation?.processStageId, stageTwo.id);
     assert.equal(snapshot.supervisorEvaluation?.summary, 'Síntese consolidada da avaliação da chefia da etapa 2.');
     assert.equal(snapshot.selfEvaluation?.processStageId, stageTwo.id);

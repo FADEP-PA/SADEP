@@ -40,6 +40,12 @@ import type {
   WorkflowTransitionRequestDto,
 } from './dto/workflow-transition.dto';
 import {
+  CASE_2_PROCESS_STAGE_SEQUENCES,
+  getCase2ProcessStageCode,
+  isActiveProcessStage,
+  isFutureProcessStage,
+} from './process-stages.constants';
+import {
   getAvailableWorkflowTransitions,
   getWorkflowTransition,
   isWorkflowAction,
@@ -202,6 +208,7 @@ export class ProcessesService {
       }
 
       const stage = await this.findStageBySequenceOrThrow(transaction, processId, stageSequence);
+      this.assertStageIsActiveForArtifactCreation(stage);
       const activeAssignments = await transaction.cesadStageAssignment.findMany({
         where: {
           processId,
@@ -429,15 +436,157 @@ export class ProcessesService {
       throw new NotFoundException(`No process stage was found for evaluation process ${processId}`);
     }
 
-    const openStages = stages.filter((stage) => stage.endedAt === null);
-    return (openStages.at(-1) ?? stages.at(-1)) as {
-      id: string;
-      sequence: number;
-      stageCode: string;
-      responsibleSupervisorUserId: string | null;
-      startedAt: Date | null;
-      endedAt: Date | null;
-    };
+    return this.resolveActiveStageFromListOrThrow(stages, processId);
+  }
+
+  async resolveLatestStartedStageForReadOrThrow(
+    transaction: PrismaTransactionClient,
+    processId: string,
+  ): Promise<{
+    id: string;
+    sequence: number;
+    stageCode: string;
+    responsibleSupervisorUserId: string | null;
+    startedAt: Date | null;
+    endedAt: Date | null;
+  }> {
+    const stages = await transaction.processStage.findMany({
+      where: { evaluationProcessId: processId },
+      select: {
+        id: true,
+        sequence: true,
+        stageCode: true,
+        responsibleSupervisorUserId: true,
+        startedAt: true,
+        endedAt: true,
+      },
+      orderBy: { sequence: 'asc' },
+    });
+
+    if (stages.length === 0) {
+      throw new NotFoundException(`No process stage was found for evaluation process ${processId}`);
+    }
+
+    const activeStage = this.resolveActiveStageFromList(stages, processId);
+
+    if (activeStage) {
+      return activeStage;
+    }
+
+    const startedStages = stages.filter((stage) => stage.startedAt !== null);
+    const latestStartedStage = startedStages.at(-1);
+
+    if (!latestStartedStage) {
+      throw new ConflictException(
+        `No active or completed process stage was found for evaluation process ${processId}`,
+      );
+    }
+
+    return latestStartedStage;
+  }
+
+  async ensureFourProcessStages(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    options: { referenceDate?: Date } = {},
+  ): Promise<Array<{
+    id: string;
+    sequence: number;
+    stageCode: string;
+    responsibleSupervisorUserId: string | null;
+    startedAt: Date | null;
+    endedAt: Date | null;
+  }>> {
+    const process = await transaction.evaluationProcess.findUnique({
+      where: { id: processId },
+      select: { id: true },
+    });
+
+    if (!process) {
+      throw new NotFoundException(`Evaluation process ${processId} was not found`);
+    }
+
+    const existingStages = await transaction.processStage.findMany({
+      where: { evaluationProcessId: processId },
+      select: {
+        id: true,
+        sequence: true,
+        stageCode: true,
+        responsibleSupervisorUserId: true,
+        startedAt: true,
+        endedAt: true,
+      },
+      orderBy: { sequence: 'asc' },
+    });
+
+    const activeStages = existingStages.filter(isActiveProcessStage);
+
+    if (activeStages.length > 1) {
+      throw new ConflictException(
+        `Evaluation process ${processId} has more than one active process stage`,
+      );
+    }
+
+    const supervisorUserId =
+      activeStages[0]?.responsibleSupervisorUserId ??
+      existingStages.find((stage) => stage.sequence === 1)?.responsibleSupervisorUserId ??
+      existingStages.find((stage) => stage.responsibleSupervisorUserId)?.responsibleSupervisorUserId ??
+      null;
+    const referenceDate = options.referenceDate ?? new Date();
+    const hasAnyStage = existingStages.length > 0;
+    const hasActiveStage = activeStages.length === 1;
+    const hasStartedStage = existingStages.some((stage) => stage.startedAt !== null);
+    const existingStageOne = existingStages.find((stage) => stage.sequence === 1);
+
+    if (
+      existingStageOne &&
+      existingStageOne.startedAt === null &&
+      existingStageOne.endedAt === null &&
+      !hasActiveStage &&
+      !hasStartedStage
+    ) {
+      await transaction.processStage.update({
+        where: { id: existingStageOne.id },
+        data: { startedAt: referenceDate },
+      });
+    }
+
+    for (const sequence of CASE_2_PROCESS_STAGE_SEQUENCES) {
+      const stageCode = getCase2ProcessStageCode(sequence);
+      const stageAlreadyExists = existingStages.some(
+        (stage) => stage.sequence === sequence || stage.stageCode === stageCode,
+      );
+
+      if (stageAlreadyExists) {
+        continue;
+      }
+
+      const shouldCreateActiveStageOne = sequence === 1 && !hasAnyStage && !hasActiveStage;
+
+      await transaction.processStage.create({
+        data: {
+          evaluationProcessId: processId,
+          sequence,
+          stageCode,
+          responsibleSupervisorUserId: supervisorUserId,
+          startedAt: shouldCreateActiveStageOne ? referenceDate : null,
+          endedAt: null,
+        },
+      });
+    }
+
+    return transaction.processStage.findMany({
+      where: { evaluationProcessId: processId },
+      select: {
+        id: true,
+        sequence: true,
+        stageCode: true,
+        responsibleSupervisorUserId: true,
+        startedAt: true,
+        endedAt: true,
+      },
+      orderBy: { sequence: 'asc' },
+    });
   }
 
   async findStageBySequenceOrThrow(
@@ -474,6 +623,27 @@ export class ProcessesService {
     }
 
     return stage;
+  }
+
+  assertStageIsActiveForArtifactCreation(stage: {
+    sequence: number;
+    stageCode: string;
+    startedAt: Date | null;
+    endedAt: Date | null;
+  }): void {
+    if (isActiveProcessStage(stage)) {
+      return;
+    }
+
+    if (isFutureProcessStage(stage)) {
+      throw new BadRequestException(
+        `Process stage ${stage.sequence} (${stage.stageCode}) is future and cannot receive stage artifacts yet`,
+      );
+    }
+
+    throw new BadRequestException(
+      `Process stage ${stage.sequence} (${stage.stageCode}) is not active and cannot receive new stage artifacts`,
+    );
   }
 
   async transitionWorkflowInTransaction(
@@ -1005,6 +1175,7 @@ export class ProcessesService {
             sequence: true,
             stageCode: true,
             responsibleSupervisorUserId: true,
+            startedAt: true,
             endedAt: true,
           },
           orderBy: { sequence: 'asc' },
@@ -1020,12 +1191,7 @@ export class ProcessesService {
       throw new NotFoundException(`No process stage was found for evaluation process ${processId}`);
     }
 
-    const openStages = process.stages.filter((stage) => stage.endedAt === null);
-    const currentStage = openStages.at(-1) ?? process.stages.at(-1);
-
-    if (!currentStage) {
-      throw new NotFoundException(`No process stage was found for evaluation process ${processId}`);
-    }
+    const currentStage = this.resolveActiveStageFromListOrThrow(process.stages, processId);
 
     return {
       id: process.id,
@@ -1038,6 +1204,36 @@ export class ProcessesService {
         responsibleSupervisorUserId: currentStage.responsibleSupervisorUserId,
       },
     };
+  }
+
+  private resolveActiveStageFromListOrThrow<T extends {
+    startedAt: Date | null;
+    endedAt: Date | null;
+  }>(stages: T[], processId: string): T {
+    const activeStage = this.resolveActiveStageFromList(stages, processId);
+
+    if (!activeStage) {
+      throw new ConflictException(
+        `No active process stage was found for evaluation process ${processId}`,
+      );
+    }
+
+    return activeStage;
+  }
+
+  private resolveActiveStageFromList<T extends {
+    startedAt: Date | null;
+    endedAt: Date | null;
+  }>(stages: T[], processId: string): T | null {
+    const activeStages = stages.filter(isActiveProcessStage);
+
+    if (activeStages.length > 1) {
+      throw new ConflictException(
+        `Evaluation process ${processId} has more than one active process stage`,
+      );
+    }
+
+    return activeStages[0] ?? null;
   }
 
   private isPublicWorkflowHistoryEvent(eventType: AuditEventType, metadata: unknown): boolean {

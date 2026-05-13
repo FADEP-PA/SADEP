@@ -87,6 +87,8 @@ describe('InternWorkspaceService', () => {
         stages: [
           buildStage({ id: 'stage-1', sequence: 1, endedAt: now }),
           buildStage({ id: 'stage-2', sequence: 2, supervisorEvaluation }),
+          buildStage({ id: 'stage-3', sequence: 3, startedAt: null }),
+          buildStage({ id: 'stage-4', sequence: 4, startedAt: null }),
         ],
       }),
     );
@@ -120,7 +122,7 @@ describe('InternWorkspaceService', () => {
       stageCode: 'ETAPA_2',
       startedAt: now.toISOString(),
       endedAt: null,
-      totalStages: 2,
+      totalStages: 4,
     });
     expect(snapshot.capabilities).toMatchObject({
       canViewSupervisorEvaluation: true,
@@ -266,6 +268,7 @@ describe('InternWorkspaceService', () => {
   function buildStage(params: {
     id?: string;
     sequence?: number;
+    startedAt?: Date | null;
     endedAt?: Date | null;
     supervisorEvaluation?: typeof supervisorEvaluation | null;
     cesadStageOpinion?: ReturnType<typeof buildCesadOpinion> | null;
@@ -276,7 +279,7 @@ describe('InternWorkspaceService', () => {
       id: params.id ?? 'stage-1',
       sequence,
       stageCode: `ETAPA_${sequence}`,
-      startedAt: now,
+      startedAt: params.startedAt !== undefined ? params.startedAt : now,
       endedAt: params.endedAt ?? null,
       responsibleSupervisorUserId: 'supervisor-123',
       supervisorEvaluation: params.supervisorEvaluation ?? null,

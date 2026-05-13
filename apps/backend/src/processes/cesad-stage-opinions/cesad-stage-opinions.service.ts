@@ -98,6 +98,7 @@ export class CesadStageOpinionsService {
         processId,
         stageSequence,
       );
+      this.processesService.assertStageIsActiveForArtifactCreation(stage);
       await this.cesadContextAuthorizationService.ensureCanWriteCesadStageOpinion({
         user,
         processStageId: stage.id,
@@ -204,6 +205,7 @@ export class CesadStageOpinionsService {
         processId,
         stageSequence,
       );
+      this.processesService.assertStageIsActiveForArtifactCreation(stage);
       await this.cesadContextAuthorizationService.ensureCanWriteCesadStageOpinion({
         user,
         processStageId: stage.id,

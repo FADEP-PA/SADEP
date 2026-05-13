@@ -75,6 +75,19 @@ export async function runCesadStageOpinionsServiceTests() {
     const stageOne = await context.prisma.processStage.findUniqueOrThrow({
       where: { id: process.defaultStageId },
     });
+    await assert.rejects(
+      () =>
+        context.cesadStageOpinionsService.saveDraft(
+          process.id,
+          2,
+          authenticatedUser(cesad.id, cesad.role),
+          {
+            reportText: 'Tentativa indevida de parecer em etapa futura.',
+            conclusion: '',
+          },
+        ),
+      /future and cannot receive stage artifacts yet/,
+    );
     await createProcessStage(context.prisma, process.id, 2, 'ETAPA_2');
     await createCesadStageAssignment(
       context.prisma,

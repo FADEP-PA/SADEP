@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -236,12 +237,22 @@ export class InternWorkspaceService {
     };
   }
 
-  private resolveCurrentStage<T extends { endedAt: Date | null }>(stages: T[]): T {
-    const openStages = stages.filter((stage) => stage.endedAt === null);
-    const currentStage = openStages.at(-1) ?? stages.at(-1);
+  private resolveCurrentStage<T extends { startedAt: Date | null; endedAt: Date | null }>(
+    stages: T[],
+  ): T {
+    const activeStages = stages.filter(
+      (stage) => stage.startedAt !== null && stage.endedAt === null,
+    );
+
+    if (activeStages.length > 1) {
+      throw new ConflictException('Evaluation process has more than one active process stage');
+    }
+
+    const startedStages = stages.filter((stage) => stage.startedAt !== null);
+    const currentStage = activeStages[0] ?? startedStages.at(-1);
 
     if (!currentStage) {
-      throw new NotFoundException('No process stage was found');
+      throw new NotFoundException('No active or completed process stage was found');
     }
 
     return currentStage;

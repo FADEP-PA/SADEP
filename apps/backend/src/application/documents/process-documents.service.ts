@@ -80,6 +80,7 @@ export class ProcessDocumentsService {
     user: AuthenticatedUser,
   ): Promise<{ documentId: string }> {
     const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
+    await this.assertStageCanReceiveArtifact(transaction, processStageId);
 
     // Check if document already exists
     const existingDocument = await transaction.processDocument.findFirst({
@@ -261,6 +262,7 @@ export class ProcessDocumentsService {
     user: AuthenticatedUser,
   ): Promise<{ documentId: string }> {
     const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
+    await this.assertStageCanReceiveArtifact(transaction, processStageId);
 
     const existingDocument = await transaction.processDocument.findFirst({
       where: {
@@ -401,6 +403,7 @@ export class ProcessDocumentsService {
     user: AuthenticatedUser,
   ): Promise<{ documentId: string }> {
     const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
+    await this.assertStageCanReceiveArtifact(transaction, processStageId);
     const document = await transaction.processDocument.findFirst({
       where: {
         evaluationProcessId: processId,
@@ -1012,6 +1015,7 @@ export class ProcessDocumentsService {
     processStatus: ProcessStatus,
   ): Promise<{ documentId: string }> {
     const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
+    await this.assertStageCanReceiveArtifact(transaction, processStageId);
     const existingDocument = await transaction.processDocument.findFirst({
       where: {
         evaluationProcessId: processId,
@@ -1304,6 +1308,7 @@ export class ProcessDocumentsService {
       processId,
       stageSequence,
     );
+    this.processesService.assertStageIsActiveForArtifactCreation(stage);
 
     return { process, stage };
   }
@@ -1481,6 +1486,27 @@ export class ProcessDocumentsService {
       stageSequence: stage.sequence,
       stageCode: stage.stageCode,
     };
+  }
+
+  private async assertStageCanReceiveArtifact(
+    transaction: Prisma.TransactionClient,
+    processStageId: string,
+  ): Promise<void> {
+    const stage = await transaction.processStage.findUnique({
+      where: { id: processStageId },
+      select: {
+        sequence: true,
+        stageCode: true,
+        startedAt: true,
+        endedAt: true,
+      },
+    });
+
+    if (!stage) {
+      throw new NotFoundException(`Process stage ${processStageId} was not found`);
+    }
+
+    this.processesService.assertStageIsActiveForArtifactCreation(stage);
   }
 
   private toContractProcessStatus(status: PrismaProcessStatus): ProcessStatus {

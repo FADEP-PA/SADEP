@@ -67,6 +67,148 @@ export async function runProcessesServiceTests() {
       evaluatedUser.id,
       supervisor.id,
     );
+    const processStages = await context.prisma.processStage.findMany({
+      where: { evaluationProcessId: process.id },
+      orderBy: { sequence: 'asc' },
+    });
+    assert.equal(processStages.length, 4);
+    assert.deepEqual(
+      processStages.map((stage) => stage.stageCode),
+      ['ETAPA_1', 'ETAPA_2', 'ETAPA_3', 'ETAPA_4'],
+    );
+    assert.notEqual(processStages[0]?.startedAt, null);
+    assert.equal(processStages[0]?.endedAt, null);
+    for (const futureStage of processStages.slice(1)) {
+      assert.equal(futureStage.startedAt, null);
+      assert.equal(futureStage.endedAt, null);
+      assert.equal(futureStage.responsibleSupervisorUserId, supervisor.id);
+    }
+
+    const ensuredStages = await context.service.ensureFourProcessStages(context.prisma, process.id);
+    assert.equal(ensuredStages.length, 4);
+    assert.equal(await context.prisma.processStage.count({ where: { evaluationProcessId: process.id } }), 4);
+
+    const currentStage = await context.service.resolveCurrentStageOrThrow(context.prisma, process.id);
+    assert.equal(currentStage.sequence, 1);
+    assert.equal(currentStage.id, process.defaultStageId);
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.ensureSupervisorEvaluationDocument(
+          context.prisma,
+          process.id,
+          processStages[1]!.id,
+          authenticatedUser(supervisor.id, supervisor.role),
+        ),
+      /future and cannot receive stage artifacts yet/,
+    );
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.ensureSelfEvaluationDocument(
+          context.prisma,
+          process.id,
+          processStages[1]!.id,
+          authenticatedUser(evaluatedUser.id, evaluatedUser.role),
+        ),
+      /future and cannot receive stage artifacts yet/,
+    );
+
+    const legacyWithoutStages = await context.prisma.evaluationProcess.create({
+      data: {
+        evaluatedUserId: evaluatedUser.id,
+        status: 'EM_AVALIACAO',
+      },
+    });
+    const materializedLegacyWithoutStages = await context.service.ensureFourProcessStages(
+      context.prisma,
+      legacyWithoutStages.id,
+      { referenceDate: new Date('2026-05-01T09:00:00.000Z') },
+    );
+    assert.equal(materializedLegacyWithoutStages.length, 4);
+    assert.equal(materializedLegacyWithoutStages[0]?.sequence, 1);
+    assert.notEqual(materializedLegacyWithoutStages[0]?.startedAt, null);
+    assert.equal(materializedLegacyWithoutStages[1]?.startedAt, null);
+    assert.equal(materializedLegacyWithoutStages[2]?.startedAt, null);
+    assert.equal(materializedLegacyWithoutStages[3]?.startedAt, null);
+
+    const legacyWithFutureStageOne = await context.prisma.evaluationProcess.create({
+      data: {
+        evaluatedUserId: evaluatedUser.id,
+        status: 'EM_AVALIACAO',
+      },
+    });
+    const futureStageOne = await context.prisma.processStage.create({
+      data: {
+        evaluationProcessId: legacyWithFutureStageOne.id,
+        sequence: 1,
+        stageCode: 'ETAPA_1',
+        startedAt: null,
+        endedAt: null,
+        responsibleSupervisorUserId: supervisor.id,
+      },
+    });
+    const materializedLegacyWithFutureStageOne = await context.service.ensureFourProcessStages(
+      context.prisma,
+      legacyWithFutureStageOne.id,
+      { referenceDate: new Date('2026-05-01T10:00:00.000Z') },
+    );
+    assert.equal(materializedLegacyWithFutureStageOne.length, 4);
+    assert.equal(materializedLegacyWithFutureStageOne[0]?.id, futureStageOne.id);
+    assert.notEqual(materializedLegacyWithFutureStageOne[0]?.startedAt, null);
+    assert.equal(materializedLegacyWithFutureStageOne.filter((stage) => stage.startedAt !== null && stage.endedAt === null).length, 1);
+
+    const legacyWithOneStage = await context.prisma.evaluationProcess.create({
+      data: {
+        evaluatedUserId: evaluatedUser.id,
+        status: 'EM_ANALISE_CESAD',
+      },
+    });
+    const legacyStage = await context.prisma.processStage.create({
+      data: {
+        evaluationProcessId: legacyWithOneStage.id,
+        sequence: 1,
+        stageCode: 'ETAPA_1',
+        startedAt: new Date('2026-04-01T09:00:00.000Z'),
+        responsibleSupervisorUserId: supervisor.id,
+      },
+    });
+    const materializedLegacyWithOneStage = await context.service.ensureFourProcessStages(
+      context.prisma,
+      legacyWithOneStage.id,
+    );
+    assert.equal(materializedLegacyWithOneStage.length, 4);
+    assert.equal(materializedLegacyWithOneStage[0]?.id, legacyStage.id);
+    assert.equal(materializedLegacyWithOneStage[0]?.responsibleSupervisorUserId, supervisor.id);
+    assert.equal(materializedLegacyWithOneStage.filter((stage) => stage.startedAt !== null && stage.endedAt === null).length, 1);
+    assert.equal(materializedLegacyWithOneStage[1]?.startedAt, null);
+    assert.equal(materializedLegacyWithOneStage[2]?.startedAt, null);
+    assert.equal(materializedLegacyWithOneStage[3]?.startedAt, null);
+
+    await context.prisma.processStage.update({
+      where: { id: materializedLegacyWithOneStage[1]!.id },
+      data: { startedAt: new Date('2026-05-01T09:00:00.000Z') },
+    });
+    await assert.rejects(
+      () => context.service.resolveCurrentStageOrThrow(context.prisma, legacyWithOneStage.id),
+      /more than one active process stage/,
+    );
+    await context.prisma.processStage.update({
+      where: { id: materializedLegacyWithOneStage[1]!.id },
+      data: { startedAt: null },
+    });
+
+    await context.prisma.processStage.update({
+      where: { id: legacyStage.id },
+      data: { endedAt: new Date('2026-05-02T09:00:00.000Z') },
+    });
+    await assert.rejects(
+      () => context.service.resolveCurrentStageOrThrow(context.prisma, legacyWithOneStage.id),
+      /No active process stage/,
+    );
+    const latestForRead = await context.service.resolveLatestStartedStageForReadOrThrow(
+      context.prisma,
+      legacyWithOneStage.id,
+    );
+    assert.equal(latestForRead.id, legacyStage.id);
 
     await assert.rejects(
       () =>
