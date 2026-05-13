@@ -1,9 +1,8 @@
-import { AccessBlockedState, ProcessNotFoundState } from './operational-states';
-import { FeedbackAlert } from './feedback-alert';
+import { AccessBlockedState, ProcessNotFoundState, TemporaryUnavailableState } from './operational-states';
 
 type ProcessRequestFeedbackProps = {
   status?: number | null;
-  message: string;
+  message?: string | null;
   details?: string[];
   genericTitle: string;
   notFoundTitle?: string;
@@ -32,6 +31,10 @@ export function ProcessRequestFeedback({
   notFoundTitle = 'Processo não encontrado',
   blockedTitle = 'Acesso bloqueado',
 }: ProcessRequestFeedbackProps) {
+  if (!message) {
+    return null;
+  }
+
   if (status === 404) {
     return (
       <ProcessNotFoundState title={notFoundTitle} description={message}>
@@ -48,5 +51,9 @@ export function ProcessRequestFeedback({
     );
   }
 
-  return <FeedbackAlert title={genericTitle} tone="error" description={message} details={details} />;
+  return (
+    <TemporaryUnavailableState title={genericTitle} description={message}>
+      <DetailsList details={details} />
+    </TemporaryUnavailableState>
+  );
 }
