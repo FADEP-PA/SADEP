@@ -1,8 +1,8 @@
-# BE-SEC-03 — Fortalecer autorizacao contextual CESAD por processo
+# BE-SEC-03 — Guarda-chuva residual / integracao futura de autorizacao contextual CESAD
 
 ## Status
 
-Aberta como guarda-chuva estrutural.
+Aberta como guarda-chuva residual / integracao futura.
 
 ## Area
 
@@ -32,7 +32,7 @@ A terceira fatia executiva, `BE-CESAD-ASSIGN-REPLACE-01`, foi concluida, auditad
 
 Com esse recorte, o backend passou a permitir supersessao formal da assignment CESAD ativa da etapa antes de qualquer parecer, expected signer ou documento CESAD. A operacao cria nova assignment `ACTIVE`, preserva a antiga como `SUPERSEDED`, registra `supersededByAssignmentId`, bloqueia troca para mesma comissao ou comissao invalida e audita o ato por `AuditEventType.CESAD_STAGE_ASSIGNMENT_SUPERSEDED` / `SUPERSEDE_CESAD_STAGE_ASSIGNMENT`.
 
-`BE-SEC-03` permanece aberta como guarda-chuva estrutural, mas o risco critico imediato de autorizacao contextual CESAD foi reduzido substancialmente. A frente nao permanece aberta por ausencia de autorizacao contextual basica, vinculo persistido ou reatribuicao segura. As pendencias remanescentes sao integracoes futuras com assinatura colegiada, documentos, workflow completo de quatro etapas, parecer conclusivo final e homologacao/notificacao/ciencia.
+`BE-SEC-03` permanece aberta como guarda-chuva residual / integracao futura, mas o risco critico imediato de autorizacao contextual CESAD foi reduzido substancialmente. A frente nao permanece aberta por ausencia de autorizacao contextual basica, vinculo persistido ou reatribuicao segura. As pendencias remanescentes sao integracoes futuras com assinatura colegiada, documentos, workflow completo de quatro etapas, parecer conclusivo final, homologacao/notificacao/ciencia e possiveis integracoes futuras ainda nao formalizadas.
 
 ## Escopo previsto
 
@@ -55,7 +55,7 @@ Com esse recorte, o backend passou a permitir supersessao formal da assignment C
 
 ## Evidencias / referencias
 
-- O indice backend e o painel ativo preservam `BE-SEC-03` como guarda-chuva estrutural aberto, nao como lacuna imediata de autorizacao contextual basica.
+- O indice backend e o painel ativo preservam `BE-SEC-03` como guarda-chuva residual / integracao futura aberto, nao como lacuna imediata de autorizacao contextual basica.
 - O painel transversal registra o achado CESAD separadamente da estrategia de sessao.
 - `BE-CESAD-AUTH-01` concluiu a aplicacao executiva da autorizacao contextual aos endpoints sensiveis atuais, sem substituir nem encerrar este guarda-chuva.
 - `BE-CESAD-AUTH-02` concluiu a modelagem persistida do vinculo comissao-processo-etapa por `CesadStageAssignment`, sem substituir nem encerrar este guarda-chuva.

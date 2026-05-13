@@ -4,6 +4,8 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Concluido recente
 
+Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Permanecem aqui apenas como resumo de transicao pos-varredura; nao compoem o backlog ativo.
+
 ### BE-CESAD-ASSIGN-REPLACE-01 — Modelar reatribuicao e supersessao formal de comissao CESAD por etapa
 
 - **Status operacional:** concluida / auditada / aprovada com ressalvas.
@@ -65,12 +67,13 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 ## Pendentes relevantes
 
-- [`BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo](./tasks/BE-SEC-03-cesad-contextual-authorization.md): guarda-chuva estrutural ainda ativo; `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02` e `BE-CESAD-ASSIGN-REPLACE-01` reduziram substancialmente o risco imediato ao proteger endpoints sensiveis, persistir assignment por etapa e permitir supersessao formal em recorte seguro. Permanecem integracoes futuras com assinatura colegiada, documentos, workflow completo de quatro etapas, parecer conclusivo final e homologacao/notificacao/ciencia.
+- [`BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD](./tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece ativo apenas como guarda-chuva estrutural; `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02` e `BE-CESAD-ASSIGN-REPLACE-01` reduziram substancialmente o risco imediato ao proteger endpoints sensiveis, persistir assignment por etapa e permitir supersessao formal em recorte seguro. Permanecem integracoes futuras com assinatura colegiada, documentos, workflow completo de quatro etapas, parecer conclusivo final e homologacao/notificacao/ciencia.
 - [`BE-DOC-CESAD-SIGN-01` — modelar e validar assinatura colegiada do parecer CESAD](./tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md): pendente alta para pareceres com multiplos signatarios obrigatorios.
 - [`BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas](./tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): pendente alta para nao confundir o fluxo reduzido atual com o Caso 2 completo.
 - [`BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD](./tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao para homologacao final valida.
 - [`BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia](./tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente futura dependente de parecer conclusivo final.
 - [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`, que foi concluida no recorte de logs/testes.
+- [`BE-CONTRACT-CESAD-ASSIGN-01` — expor status de assignment CESAD em contracts, se necessario](./tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md): condicional/futura; so deve ser executada se API publica ou frontend passarem a consumir diretamente o status de `CesadStageAssignment`.
 
 ## Resolvidos por varredura global
 

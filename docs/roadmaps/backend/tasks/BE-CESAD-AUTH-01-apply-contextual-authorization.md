@@ -10,9 +10,15 @@ Backend, seguranca, CESAD e autorizacao contextual.
 
 ## Contexto
 
-`BE-SEC-03` permanece como guarda-chuva de seguranca contextual CESAD. A varredura global confirmou que ha estruturas auxiliares e testes parciais de autorizacao contextual, mas a politica ainda precisa ser aplicada aos endpoints e fluxos sensiveis.
+`BE-SEC-03` permanece como guarda-chuva residual / integracao futura de seguranca contextual CESAD. A varredura global pos-ciclo confirmou que esta primeira fatia executiva foi aplicada aos endpoints e fluxos sensiveis atuais.
 
 Esta task detalha a primeira fatia executiva de `BE-SEC-03`: deixar de aceitar acesso CESAD sensivel apenas por role global e status do processo.
+
+## Status pos-varredura
+
+Concluida / auditada / aprovada com ressalvas.
+
+O recorte foi depois fortalecido por `BE-CESAD-AUTH-02`, que introduziu `CesadStageAssignment` como vinculo persistido comissao-processo-etapa, e por `BE-CESAD-ASSIGN-REPLACE-01`, que implementou supersessao formal segura da assignment por etapa.
 
 ## Resultado entregue
 

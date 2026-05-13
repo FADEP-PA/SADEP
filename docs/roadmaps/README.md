@@ -37,6 +37,7 @@ Os documentos abaixo continuam existindo como indices de compatibilidade durante
 - `DOC-R4` — reduzir arquivos legados e atualizar links.
 - `DOC-R5` — validar documentacao final.
 - `DOC-R6` — reconciliacao documental controlada pos-varredura global: consolidar auth/session resolvido no recorte, manter pendencias criticas ativas e criar task files estruturais.
+- `DOC-R7` — atualizacao documental pos-ciclo CESAD/frontend: consolidar `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02` e `BE-CESAD-ASSIGN-REPLACE-01` como resolvidas com ressalvas, reclassificar `BE-SEC-03` como guarda-chuva residual, atualizar auth frontend e registrar novas tasks de DX, logs, CI e testes frontend.
 
 ## Criterios de ciclo de vida
 

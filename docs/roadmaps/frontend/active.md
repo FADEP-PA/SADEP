@@ -11,6 +11,7 @@ Este painel resume apenas itens frontend ativos ou pendentes. Itens concluidos, 
 | [`FE-PROCESS-LIST-01`](./tasks/FE-PROCESS-LIST-01-authenticated-process-list.md) | Alta futura | Pendente | Endpoints backend seguros de listagem por perfil e autorizacao contextual | Mapear contrato disponivel antes de alterar telas ou remover IDs manuais. |
 | [`FE-CHEFIA-02`](./tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md) | Alta futura | Pendente | Listagem real dos processos da chefia autenticada e autorizacao backend | Aguardar contrato de listagem por chefia antes de remover fallback demonstrativo. |
 | [`FE-CESAD-01`](./tasks/FE-CESAD-01-real-cesad-screens.md) | Alta futura | Pendente | Contratos backend de parecer CESAD, documentos, assinaturas e capabilities | Aguardar/mapear contratos reais antes de conectar acoes ou remover fallback visual. |
+| [`FE-TEST-01`](./tasks/FE-TEST-01-frontend-test-strategy.md) | Media futura | Pendente | Estabilizacao dos contratos frontend/backend e decisao de ferramenta | Definir estrategia minima de testes frontend sem bloquear as frentes processuais criticas. |
 
 ## Decisao operacional atual
 
@@ -19,6 +20,7 @@ Este painel resume apenas itens frontend ativos ou pendentes. Itens concluidos, 
 - O recorte `FE-QUAL-02` reforcou o quality gate textual do frontend, mas nao substitui validacao visual em navegador ou testes de interacao.
 - Dados demonstrativos e fallbacks visuais permanecem intencionais quando ajudam a validar telas sem backend completo.
 - `FE-CHEFIA-01` permanece resolvida parcialmente no recorte de integracao inicial; a continuidade operacional e `FE-CHEFIA-02`, sem reabrir `FT-24`.
+- `FE-DOC-AUTH-README-01` foi concluida nesta atualizacao documental; a documentacao frontend agora descreve access token em memoria, bootstrap por refresh e cookie `HttpOnly`.
 - `BE-ARCH-01D`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B` e `BE-ARCH-01E4C` estao registrados em [`resolved.md`](./resolved.md) e nao compoem o backlog ativo frontend.
 
 ## Resolvido operacionalmente

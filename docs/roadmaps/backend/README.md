@@ -12,17 +12,20 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 
 ## Itens ativos ou retomaveis
 
-- `BE-SEC-03` — fortalecer autorizacao contextual CESAD por processo.
-- `BE-CESAD-AUTH-01` — aplicar autorizacao contextual CESAD aos endpoints sensiveis, como subtask executiva de `BE-SEC-03`.
+- `BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD por processo.
 - `BE-DOC-CESAD-SIGN-01` — modelar e validar assinatura colegiada do parecer CESAD.
 - `BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas.
 - `BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD.
 - `BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia.
 - `BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao.
+- `BE-CONTRACT-CESAD-ASSIGN-01` — task condicional/futura para expor status de assignment CESAD em `@sadep/contracts` se API publica/frontend passarem a consumir esse status diretamente.
 - `BE-FLOW-*` — backlog processual documentado no tracker legado e agora gradualmente detalhado em task files modulares.
 
 ## Concluido recente
 
+- `BE-CESAD-AUTH-01` — autorizacao contextual CESAD aplicada aos endpoints sensiveis atuais, com ressalvas estruturais preservadas em `BE-SEC-03`.
+- `BE-CESAD-AUTH-02` — `CesadStageAssignment` implementada como vinculo persistido comissao-processo-etapa.
+- `BE-CESAD-ASSIGN-REPLACE-01` — reatribuicao/supersessao formal de assignment CESAD por etapa implementada em recorte seguro.
 - `BE-ARCH-01D` — alinhamento minimo de sessao frontend concluido/aprovado; commit funcional aprovado `fix(frontend): align session invalidation`.
 - `BE-ARCH-01E3` — refresh, rotacao e logout server-side concluidos/aprovados; commit funcional aprovado `feat(auth): add refresh token sessions`.
 - `BE-ARCH-01E4A` — access token em memoria e bootstrap via refresh concluidos/aprovados; commit funcional aprovado `feat(frontend): keep access token in memory`.

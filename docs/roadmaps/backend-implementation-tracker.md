@@ -17,6 +17,9 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | `BE-ARCH-01D` | [`backend/tasks/BE-ARCH-01D-frontend-session-alignment.md`](./backend/tasks/BE-ARCH-01D-frontend-session-alignment.md) |
 | `BE-SEC-03` | [`backend/tasks/BE-SEC-03-cesad-contextual-authorization.md`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md) |
 | `BE-CESAD-AUTH-01` | [`backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md`](./backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md) |
+| `BE-CESAD-AUTH-02` | [`backend/tasks/BE-CESAD-AUTH-02-cesad-stage-assignment.md`](./backend/tasks/BE-CESAD-AUTH-02-cesad-stage-assignment.md) |
+| `BE-CESAD-ASSIGN-REPLACE-01` | [`backend/tasks/BE-CESAD-ASSIGN-REPLACE-01-assignment-supersession.md`](./backend/tasks/BE-CESAD-ASSIGN-REPLACE-01-assignment-supersession.md) |
+| `BE-CONTRACT-CESAD-ASSIGN-01` | [`backend/tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md`](./backend/tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md) |
 | `BE-DOC-CESAD-SIGN-01` | [`backend/tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md`](./backend/tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md) |
 | `BE-FLOW-4STAGE-01` | [`backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md) |
 | `BE-CESAD-FINAL-01` | [`backend/tasks/BE-CESAD-FINAL-01-final-opinion.md`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md) |
@@ -61,8 +64,8 @@ Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao fr
 
 ## Frentes backend pendentes e relacionadas
 
-- [`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): pendente crítico; não é problema de sessão, mas de autorização contextual por processo, comissão e etapa.
-- [`BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis`](./backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md): subtask executiva de `BE-SEC-03`, sem encerrar o guarda-chuva.
+- [`BE-SEC-03 — Guarda-chuva residual / integracao futura de autorizacao contextual CESAD`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece aberto como guarda-chuva residual; o risco critico imediato foi reduzido por `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02` e `BE-CESAD-ASSIGN-REPLACE-01`.
+- [`BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis`](./backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md): concluida/auditada/aprovada com ressalvas, sem encerrar o guarda-chuva residual.
 - [`BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD`](./backend/tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md): pendente alta de documentos/assinaturas.
 - [`BE-FLOW-4STAGE-01 — Estruturar progressao formal das quatro etapas avaliativas`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): pendente alta de workflow Caso 2.
 - [`BE-CESAD-FINAL-01 — Modelar parecer conclusivo final da CESAD`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao de homologacao.
@@ -104,7 +107,7 @@ Este índice não repete o histórico completo desses itens.
 
 Relações principais:
 
-- `BE-SEC-03` permanece problema ativo crítico.
+- `BE-SEC-03` permanece ativo como guarda-chuva residual / integracao futura, nao como lacuna imediata de autorizacao contextual basica.
 - `BE-ARCH-01D` foi concluida/mitigada no recorte minimo de sessao frontend.
 - `BE-ARCH-01E2` foi concluida/mitigada no recorte de modelagem persistente de sessao/refresh.
 - `BE-ARCH-01E3` foi concluida/mitigada no recorte backend de refresh, rotacao e logout server-side.
@@ -119,7 +122,7 @@ Relações principais:
 - Consultar primeiro [`backend/active.md`](./backend/active.md) para o estado operacional backend.
 - Consultar [`backend/resolved.md`](./backend/resolved.md) para itens concluídos ou resolvidos.
 - Consultar [`backend/tasks/`](./backend/tasks/) para frentes ativas específicas.
-- Não tratar `BE-SEC-03` como concluída.
+- Não tratar `BE-SEC-03` como concluída; tambem nao reabrir `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02` ou `BE-CESAD-ASSIGN-REPLACE-01`.
 - Não confundir `BE-ARCH-02` concluida no recorte estrutural com novos contratos funcionais de endpoint, schemas de validacao ou eventos de dominio.
 - `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` estao concluidas no recorte planejado de sessao/auth.
 - O histórico detalhado anterior foi substituído por links de transição e resumos modulares.

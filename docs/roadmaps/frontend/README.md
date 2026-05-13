@@ -18,6 +18,7 @@ O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md
 - `FT-24` foi resolvida no recorte frontend: a varredura global nao encontrou consumo de `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` no codigo frontend.
 - `BE-ARCH-01D` impactou o frontend e foi concluida/aprovada como alinhamento minimo de sessao; commit funcional aprovado `fix(frontend): align session invalidation`.
 - `BE-ARCH-01E4B` e `BE-ARCH-01E4C` foram reclassificadas como concluidas no recorte identificado pela varredura global.
+- `FE-DOC-AUTH-README-01` atualizou a documentacao frontend para refletir access token em memoria, bootstrap por refresh e cookie `HttpOnly`, sem persistir sessao completa em `localStorage`/`sessionStorage`.
 - `FT-27/DX-01` foi resolvida operacionalmente quanto ao Next local; a pendencia `postcss`/audit permanece separada.
 - Validacao visual/manual continua importante para concluir tarefas frontend.
 

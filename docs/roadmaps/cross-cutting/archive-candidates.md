@@ -30,6 +30,6 @@ Os itens abaixo podem ser avaliados futuramente para arquivamento, desde que os 
 ## Cuidados para DOC-R4
 
 - Nao arquivar `BE-ARCH-01D` nesta fase; ela foi concluida recentemente, mas o arquivamento real fica fora desta atualizacao documental.
-- Nao arquivar `BE-SEC-03`, pois continua critica e pendente.
+- Nao arquivar `BE-SEC-03`, pois continua aberta como guarda-chuva residual / integracao futura, ainda que o risco critico imediato tenha sido reduzido pelas tasks CESAD recentes.
 - Nao tratar `/chefia-imediata` como integracao backend plena com listagem segura por perfil; o recorte `FE-CHEFIA-01` arquivado e apenas integracao inicial/parcial, com continuidade em `FE-CHEFIA-02`.
 - Nao misturar `DX-01` resolvida com `DX-POSTCSS-01`, que permanece alerta pendente.

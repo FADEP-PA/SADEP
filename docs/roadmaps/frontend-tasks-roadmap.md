@@ -18,6 +18,8 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | `FE-CHEFIA-02` | [`frontend/tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md`](./frontend/tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md) |
 | `FE-PROCESS-LIST-01` | [`frontend/tasks/FE-PROCESS-LIST-01-authenticated-process-list.md`](./frontend/tasks/FE-PROCESS-LIST-01-authenticated-process-list.md) |
 | `FE-CESAD-01` | [`frontend/tasks/FE-CESAD-01-real-cesad-screens.md`](./frontend/tasks/FE-CESAD-01-real-cesad-screens.md) |
+| `FE-DOC-AUTH-README-01` | [`frontend/tasks/FE-DOC-AUTH-README-01-frontend-auth-docs.md`](./frontend/tasks/FE-DOC-AUTH-README-01-frontend-auth-docs.md) |
+| `FE-TEST-01` | [`frontend/tasks/FE-TEST-01-frontend-test-strategy.md`](./frontend/tasks/FE-TEST-01-frontend-test-strategy.md) |
 | `FE-A11Y-01` | [`frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md`](./frontend/tasks/FE-A11Y-01-authenticated-shell-basic-accessibility.md) |
 | `FE-COPY-01` | [`frontend/tasks/FE-COPY-01-authenticated-institutional-microcopy.md`](./frontend/tasks/FE-COPY-01-authenticated-institutional-microcopy.md) |
 | `FE-RESP-01` | [`frontend/tasks/FE-RESP-01-authenticated-responsive-layouts.md`](./frontend/tasks/FE-RESP-01-authenticated-responsive-layouts.md) |

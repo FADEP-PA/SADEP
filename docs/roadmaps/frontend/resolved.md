@@ -4,6 +4,15 @@ Este arquivo resume itens frontend ja concluidos ou resolvidos. O antigo roadmap
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## FE-DOC-AUTH-README-01 - Atualizar documentacao de autenticacao frontend
+
+- **Status documental:** concluida nesta atualizacao documental controlada.
+- Atualizou `apps/frontend/README.md` para remover a orientacao antiga de persistir sessao completa em `localStorage` ou `sessionStorage`.
+- Registrou que o access token fica apenas em memoria, que o bootstrap usa `POST /auth/refresh` e que o refresh token e transportado pelo backend em cookie `HttpOnly`.
+- Registrou retry silencioso de `401` com single-flight no `http-client`, redirecionamento para `/sessao-expirada` quando refresh falha e preservacao de `403` como falta de permissao.
+- Atualizou `docs/frontend/README.md` com a mesma regra operacional para evitar conflito com os roadmaps.
+- Nao alterou codigo, package files, configs, backend, schema, migrations ou contracts.
+
 ## FE-QUAL-02 - Reforco do quality gate visual/textual frontend
 
 - **Status documental:** concluida no recorte frontend.

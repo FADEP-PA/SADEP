@@ -18,6 +18,7 @@ Cross-cutting, seguranca, backend, deploy e operacao.
 - avaliar throttling/rate limit para endpoints sensiveis, especialmente auth;
 - definir politica CSRF/cookie adequada ao deployment real;
 - revisar logs com potencial de PII;
+- tratar `SEC-LOG-PII-01` como subtarefa especifica para PII e ruido em logs de auth/filtro global;
 - revisar politica de producao para HTTPS, cookies, CORS e dominios;
 - documentar validacoes e trade-offs.
 

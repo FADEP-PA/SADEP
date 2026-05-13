@@ -20,6 +20,14 @@ Esse documento governa o backlog vivo do frontend e deve prevalecer sobre orient
 - elegibilidade, bloqueios, ações disponíveis, prazos e estados devem vir do backend;
 - referências visuais e documentos de apoio não substituem domínio, workflow ou roadmap operacional vivo.
 
+## Autenticacao frontend atual
+
+O frontend autenticado usa access token em memoria, bootstrap por `POST /auth/refresh` e refresh token em cookie `HttpOnly` emitido pelo backend.
+
+`rememberMe` nao deve ser documentado como persistencia de sessao completa em `localStorage` ou `sessionStorage`; no recorte atual ele preserva apenas preferencia local de experiencia. Caminhos legados de storage sao limpos pelo frontend.
+
+O retry silencioso de `401` fica centralizado no `http-client`, com single-flight para evitar refresh concorrente. Falha de refresh leva a `/sessao-expirada`; `403` permanece como falta de permissao.
+
 ## Referências arquivadas
 
 Documentos temporais antigos foram arquivados em:

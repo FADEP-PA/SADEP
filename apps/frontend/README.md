@@ -69,8 +69,8 @@ A camada HTTP foi organizada em dois níveis:
    - converte falhas em `HttpError`
 
 2. `src/shared/api/services/*`
-   - `auth-service.ts`: `/auth/login` e `/auth/me`
-   - `processes-service.ts`: `/processes/:id/workflow`, `/processes/:id/history`, `/processes/:id/supervisor-evaluation`
+   - `auth-service.ts`: `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me` e `/auth/admin-check`
+   - `processes-service.ts`: endpoints processuais autenticados de workflow, historico, workspace do servidor, workspace da chefia, avaliacoes e leitura consolidada CESAD por etapa
 
 Regra: páginas e contextos não devem chamar `fetch` bruto diretamente quando o endpoint fizer parte do contrato da aplicação.
 
@@ -247,9 +247,14 @@ Mantidas nesta etapa como telas reais, paineis de leitura ou areas demonstrativa
 
 Essas paginas nao devem ser tratadas como scaffolds vazios. Quando ainda dependem de backend futuro, devem explicitar a limitacao de forma institucional e preservar dados demonstrativos seguros para validacao visual.
 
-## Estratégia de token no frontend
+## Estrategia de token no frontend
 
-- `rememberMe = true` → persistir sessão em `localStorage`
-- `rememberMe = false` → persistir sessão em `sessionStorage`
-- no bootstrap, o frontend chama `/auth/me` com `Bearer <token>`
-- se o backend responder `401`, a sessão local é descartada e o usuário é redirecionado para `/sessao-expirada`
+- O access token fica apenas em memoria, no `access-token-store`.
+- O refresh token nao e exposto ao JavaScript; ele e transportado pelo backend em cookie `HttpOnly`.
+- No bootstrap autenticado, o frontend chama `POST /auth/refresh` com `credentials: include`; em caso de sucesso, recebe novo access token e usuario.
+- `rememberMe` preserva apenas a preferencia de experiencia de entrada, nao uma sessao completa em `localStorage` ou `sessionStorage`.
+- Caminhos legados de sessao em storage sao limpos pelo frontend quando encontrados.
+- Chamadas autenticadas usam o bearer token em memoria.
+- O `http-client` faz retry silencioso de `401` com refresh single-flight, evitando multiplos refresh concorrentes e loop em rotas de auth.
+- Se o refresh falhar ou a sessao expirar, a sessao em memoria e descartada e o usuario e redirecionado para `/sessao-expirada`.
+- `403` permanece como falta de permissao e nao deve limpar a sessao por si so.

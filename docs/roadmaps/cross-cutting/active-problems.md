@@ -6,6 +6,7 @@ Este painel resume problemas ativos ou alertas transversais. O antigo painel tra
 
 - `BE-SEC-03` — autorizacao contextual CESAD por processo; o risco critico imediato foi reduzido substancialmente. `BE-CESAD-AUTH-01` aplicou politica contextual aos endpoints sensiveis atuais, `BE-CESAD-AUTH-02` criou `CesadStageAssignment` como vinculo persistido comissao-processo-etapa, e `BE-CESAD-ASSIGN-REPLACE-01` implementou reatribuicao/supersessao formal em recorte seguro. O guarda-chuva permanece ativo apenas por lacunas futuras de assinatura colegiada, documentos, workflow completo, pareceres futuros e demais integracoes estruturais.
 - [`SEC-HARD-01` — hardening adicional de seguranca HTTP, rate limit e CSRF](./tasks/SEC-HARD-01-http-rate-limit-csrf.md): melhoria futura separada de `BE-ARCH-01E5`.
+- [`SEC-LOG-PII-01` — reduzir PII e ruido em logs](./tasks/SEC-LOG-PII-01-auth-logs-pii-noise.md): subtarefa de hardening para revisar e-mails em logs de auth e stacks/mensagens de erros esperados no filtro global.
 - `BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao; task backend futura, separada de `BE-ARCH-01F`.
 
 ## Frontend / integracao
@@ -14,6 +15,7 @@ Este painel resume problemas ativos ou alertas transversais. O antigo painel tra
 - `FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo.
 - `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado; melhoria futura propria e nao reabre `FT-24`, que foi resolvida no recorte frontend.
 - `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, autorizacao contextual e documentos.
+- `FE-TEST-01` — estrategia minima futura de testes frontend; melhoria de qualidade que nao substitui validacao visual/manual.
 
 ## Sessao / auth
 
@@ -29,8 +31,10 @@ Sem pendencia estrutural ativa nesta categoria apos o recorte `BE-ARCH-02`. Novo
 
 - [`DX-POSTCSS-01` — alerta de audit `postcss`/`next`](./tasks/DX-POSTCSS-01-audit-postcss-next.md) permanece como pendencia separada.
 - [`DX-DB-SEED-01` — seed minimo local e checagem de banco](./tasks/DX-DB-SEED-01-local-seed-bootstrap.md): alerta operacional; `db:check` pode falhar quando o banco local existe, mas nao recebeu o seed minimo; usar `npm run backend:bootstrap` para preparar o ambiente local quando necessario.
+- [`DX-FE-ENV-EXAMPLE-01` — criar `.env.example` do frontend](./tasks/DX-FE-ENV-EXAMPLE-01-frontend-env-example.md): task documental/configuracional futura para explicitar `NEXT_PUBLIC_API_BASE_URL` no setup/deploy frontend.
 - [`NOM-AEP-COOKIE-01` — nomenclatura residual do cookie de refresh](./tasks/NOM-AEP-COOKIE-01-refresh-cookie-name.md): o cookie default ainda usa `aep_pa_refresh`; tratar futuramente em task pequena propria, sem migracao ampla AEP -> SADEP.
 - `FE-ENV-01` — documentacao de variaveis frontend e riscos de fallback inseguro de API.
+- [`CI-GATES-01` — definir pipeline oficial de validacao](./tasks/CI-GATES-01-validation-pipeline.md): gates locais existem e passam, mas falta pipeline oficial evidente.
 - `DX-01` foi resolvido operacionalmente e fica resumido em [`resolved-problems.md`](./resolved-problems.md#dx-01--desalinhamento-local-do-next); nao confundir com o alerta ativo `DX-POSTCSS-01`.
 
 ## Documentacao

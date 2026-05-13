@@ -18,7 +18,10 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 | Roadmap backend modular | [`backend/active.md`](./backend/active.md) |
 | Roadmap frontend modular | [`frontend/active.md`](./frontend/active.md) |
 | `SEC-HARD-01` | [`cross-cutting/tasks/SEC-HARD-01-http-rate-limit-csrf.md`](./cross-cutting/tasks/SEC-HARD-01-http-rate-limit-csrf.md) |
+| `SEC-LOG-PII-01` | [`cross-cutting/tasks/SEC-LOG-PII-01-auth-logs-pii-noise.md`](./cross-cutting/tasks/SEC-LOG-PII-01-auth-logs-pii-noise.md) |
 | `DX-DB-SEED-01` | [`cross-cutting/tasks/DX-DB-SEED-01-local-seed-bootstrap.md`](./cross-cutting/tasks/DX-DB-SEED-01-local-seed-bootstrap.md) |
+| `DX-FE-ENV-EXAMPLE-01` | [`cross-cutting/tasks/DX-FE-ENV-EXAMPLE-01-frontend-env-example.md`](./cross-cutting/tasks/DX-FE-ENV-EXAMPLE-01-frontend-env-example.md) |
+| `CI-GATES-01` | [`cross-cutting/tasks/CI-GATES-01-validation-pipeline.md`](./cross-cutting/tasks/CI-GATES-01-validation-pipeline.md) |
 | `NOM-AEP-COOKIE-01` | [`cross-cutting/tasks/NOM-AEP-COOKIE-01-refresh-cookie-name.md`](./cross-cutting/tasks/NOM-AEP-COOKIE-01-refresh-cookie-name.md) |
 | Tracker backend legado | [`backend-implementation-tracker.md`](./backend-implementation-tracker.md) |
 | Roadmap frontend legado | [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md) |
@@ -27,8 +30,9 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 
 ### Segurança
 
-- [`BE-SEC-03 — Fortalecer autorização contextual CESAD por processo`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): crítico e pendente; ver também [`cross-cutting/active-problems.md`](./cross-cutting/active-problems.md).
+- [`BE-SEC-03 — Guarda-chuva residual / integracao futura de autorizacao contextual CESAD`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece aberto como guarda-chuva residual; o risco critico imediato foi reduzido por `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02` e `BE-CESAD-ASSIGN-REPLACE-01`. Ver também [`cross-cutting/active-problems.md`](./cross-cutting/active-problems.md).
 - [`SEC-HARD-01 — Hardening adicional de seguranca HTTP, rate limit e CSRF`](./cross-cutting/tasks/SEC-HARD-01-http-rate-limit-csrf.md): melhoria futura separada de `BE-ARCH-01E5`.
+- [`SEC-LOG-PII-01 — Reduzir PII e ruido em logs`](./cross-cutting/tasks/SEC-LOG-PII-01-auth-logs-pii-noise.md): subtarefa de hardening para logs de auth e filtro global.
 - [`BE-AUDIT-AUTH-01 — Auditoria persistida de eventos de autenticacao`](./backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura separada de `BE-ARCH-01F`.
 
 ### Sessão/auth
@@ -44,6 +48,8 @@ Este índice preserva rastreabilidade para os documentos novos e legados, mas n�
 
 - [`DX-POSTCSS-01 — Audit postcss/next`](./cross-cutting/tasks/DX-POSTCSS-01-audit-postcss-next.md): alerta pendente separado do `DX-01`.
 - [`DX-DB-SEED-01`](./cross-cutting/tasks/DX-DB-SEED-01-local-seed-bootstrap.md): alerta operacional; `db:check` pode falhar quando o banco local existe sem seed minimo, devendo ser preparado por `npm run backend:bootstrap`.
+- [`DX-FE-ENV-EXAMPLE-01`](./cross-cutting/tasks/DX-FE-ENV-EXAMPLE-01-frontend-env-example.md): criar `.env.example` do frontend e alinhar setup/deploy para `NEXT_PUBLIC_API_BASE_URL`.
+- [`CI-GATES-01`](./cross-cutting/tasks/CI-GATES-01-validation-pipeline.md): formalizar pipeline oficial para gates que ja passam localmente.
 - [`NOM-AEP-COOKIE-01`](./cross-cutting/tasks/NOM-AEP-COOKIE-01-refresh-cookie-name.md): alerta de nomenclatura tecnica residual; cookie default ainda usa `aep_pa_refresh` e deve ser tratado futuramente em task pequena propria, sem migracao ampla AEP -> SADEP.
 
 ## Problemas resolvidos ou mitigados
@@ -83,7 +89,7 @@ O arquivamento real ocorrerá em fase posterior. Este índice não move document
 - `FT-24` resolvida no recorte frontend não equivale a listagem segura de processos por perfil.
 - `DX-POSTCSS-01` não deve ser confundido com `DX-01`, que foi resolvido operacionalmente quanto ao ambiente local.
 - `BE-ARCH-01D`, `BE-ARCH-01E2`, `BE-ARCH-01E3`, `BE-ARCH-01E4A`, `BE-ARCH-01E4B`, `BE-ARCH-01E4C`, `BE-ARCH-01E5` e `BE-ARCH-01F` estão concluídas/mitigadas no recorte planejado de sessão/auth.
-- `BE-SEC-03` permanece crítica e pendente.
+- `BE-SEC-03` permanece aberto como guarda-chuva residual / integracao futura, nao como lacuna imediata de autorizacao contextual basica.
 
 ## Fora do escopo deste índice
 
