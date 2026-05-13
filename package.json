@@ -16,6 +16,8 @@
     "frontend:check": "npm run check --workspace @sadep/frontend",
     "frontend:clean": "npm run clean --workspace @sadep/frontend",
     "frontend:copy-check": "npm run copy-check --workspace @sadep/frontend",
+    "frontend:test": "npm run test --workspace @sadep/frontend --",
+    "frontend:test:run": "npm run test:run --workspace @sadep/frontend",
     "frontend:typecheck": "npm run typecheck --workspace @sadep/frontend",
     "frontend:start": "npm run start --workspace @sadep/frontend",
     "frontend:start:dev": "npm run dev --workspace @sadep/frontend",

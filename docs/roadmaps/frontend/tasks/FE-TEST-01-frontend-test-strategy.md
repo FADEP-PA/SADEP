@@ -14,6 +14,23 @@ A varredura global confirmou que os gates de frontend passam por typecheck, buil
 
 Esta task nao deve competir com as pendencias processuais criticas. Ela registra a melhoria para quando os contratos backend/frontend estiverem mais estaveis.
 
+## Recorte FE-TEST-01A
+
+Status: iniciado em recorte minimo.
+
+Escopo executado:
+
+- configuracao minima de Vitest com ambiente `jsdom` no frontend;
+- setup de Testing Library para matchers institucionais de DOM;
+- script `frontend:test` no monorepo;
+- testes focados em `ProcessRequestFeedback`, cobrindo ausencia de erro, 404, 403, erro generico e preservacao de mensagem/detalhes.
+
+Este recorte nao estabelece cobertura completa da aplicacao, nao cria integracao falsa e nao altera backend, contracts, Prisma, banco, autenticacao real, endpoints ou regras processuais.
+
+Comando focado:
+
+`npm run frontend:test -- --run process-request-feedback`
+
 ## Escopo previsto
 
 - escolher recorte minimo de testes frontend;
