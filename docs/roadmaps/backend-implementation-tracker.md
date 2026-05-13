@@ -22,6 +22,8 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | `BE-CONTRACT-CESAD-ASSIGN-01` | [`backend/tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md`](./backend/tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md) |
 | `BE-DOC-CESAD-SIGN-01` | [`backend/tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md`](./backend/tasks/BE-DOC-CESAD-SIGN-01-collegiate-opinion-signatures.md) |
 | `BE-FLOW-4STAGE-01` | [`backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md) |
+| `BE-FLOW-4STAGE-01A` | [`backend/tasks/BE-FLOW-4STAGE-01A-materialize-four-stages.md`](./backend/tasks/BE-FLOW-4STAGE-01A-materialize-four-stages.md) |
+| `BE-FLOW-4STAGE-01B` | [`backend/tasks/BE-FLOW-4STAGE-01B-complete-current-stage.md`](./backend/tasks/BE-FLOW-4STAGE-01B-complete-current-stage.md) |
 | `BE-CESAD-FINAL-01` | [`backend/tasks/BE-CESAD-FINAL-01-final-opinion.md`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md) |
 | `BE-HOMOLOG-01` | [`backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md`](./backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md) |
 | `BE-AUDIT-AUTH-01` | [`backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md`](./backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md) |
@@ -66,7 +68,7 @@ Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao fr
 
 - [`BE-SEC-03 — Guarda-chuva residual / integracao futura de autorizacao contextual CESAD`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece aberto como guarda-chuva residual; o risco critico imediato foi reduzido por `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01` e `BE-DOC-CESAD-SIGN-01`.
 - [`BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis`](./backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md): concluida/auditada/aprovada com ressalvas, sem encerrar o guarda-chuva residual.
-- [`BE-FLOW-4STAGE-01 — Estruturar progressao formal das quatro etapas avaliativas`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): pendente alta de workflow Caso 2.
+- [`BE-FLOW-4STAGE-01 — Estruturar progressao formal das quatro etapas avaliativas`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): permanece ativa como guarda-chuva. `BE-FLOW-4STAGE-01A` foi concluida/auditada/aprovada com ressalvas e materializou as quatro etapas; `BE-FLOW-4STAGE-01B` permanece pendente para `COMPLETE_CURRENT_STAGE`.
 - [`BE-CESAD-FINAL-01 — Modelar parecer conclusivo final da CESAD`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao de homologacao.
 - [`BE-HOMOLOG-01 — Modelar fluxo de homologacao, notificacao e ciencia`](./backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente futura dependente de parecer final.
 - [`BE-AUDIT-AUTH-01 — Auditoria persistida de eventos de autenticacao`](./backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura separada de `BE-ARCH-01F`.
@@ -89,6 +91,7 @@ O resumo operacional dos itens backend resolvidos fica em [`backend/resolved.md`
 Itens principais já registrados como resolvidos ou concluídos:
 
 - `BE-TECH-01`;
+- `BE-FLOW-4STAGE-01A`;
 - `BE-DOC-CESAD-SIGN-01`;
 - `BE-ARCH-01A`;
 - `BE-ARCH-01B`;

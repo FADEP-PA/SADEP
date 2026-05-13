@@ -6,6 +6,19 @@ Este painel resume os itens backend ativos, retomaveis ou pendentes. O antigo tr
 
 Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Permanecem aqui apenas como resumo de transicao pos-varredura; nao compoem o backlog ativo.
 
+### BE-FLOW-4STAGE-01A — Materializar quatro etapas e corrigir resolucao de etapa atual
+
+- **Status operacional:** concluida / auditada / aprovada com ressalvas.
+- **Commit funcional aprovado:** `84a3419 feat(backend): materialize four process stages`.
+- **ADR relacionada:** [`ADR-004 — Progressao formal das quatro etapas avaliativas`](../../architecture/adr/adr-004-four-stage-progression.md).
+- **Escopo entregue:** base estrutural de quatro `ProcessStage` para o Caso 2, com `ETAPA_1` a `ETAPA_4`, total de etapas igual a `4`, rotina `ensureFourProcessStages`, migration/backfill `20260513143000_materialize_four_process_stages` e test helpers ajustados para quatro etapas.
+- **Lifecycle de etapa:** etapa futura usa `startedAt = null` e `endedAt = null`; etapa ativa usa `startedAt != null` e `endedAt = null`; etapa concluida usa `startedAt != null` e `endedAt != null`.
+- **Resolucao de etapa atual:** `resolveCurrentStageOrThrow` passou a resolver somente etapa ativa e ignorar etapas futuras; leitura historica/consolidacao ficou separada em metodo proprio.
+- **Protecoes:** etapas futuras nao recebem documentos, parecer CESAD, assinatura/documento CESAD, assignment/supersessao ou transicoes operacionais.
+- **Validacoes/auditoria:** testes backend ampliados; `prisma:generate`, typecheck, typecheck de specs, suite backend, Prisma validate com `DATABASE_URL` temporaria e `git diff --check` aprovados.
+- **Ressalvas:** helper explicito de etapa concluida pode ser adicionado futuramente; antes ou junto da 01B, avaliar separacao mais clara entre leitura e escrita no status de assinatura CESAD; `createProcessStage` em testes pode ativar outra etapa se a anterior nao for encerrada; a migration usa IDs por `randomblob(16)` no SQLite; legados incoerentes com multiplas etapas ativas agora falham explicitamente.
+- **Continuidade:** `BE-FLOW-4STAGE-01` permanece ativa como guarda-chuva; a proxima fatia e `BE-FLOW-4STAGE-01B — Implementar COMPLETE_CURRENT_STAGE`.
+
 ### BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD
 
 - **Status operacional:** concluida / auditada / aprovada com ressalvas.
@@ -81,7 +94,7 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Perma
 ## Pendentes relevantes
 
 - [`BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD](./tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece ativo apenas como guarda-chuva estrutural; `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01` e `BE-DOC-CESAD-SIGN-01` reduziram substancialmente o risco imediato ao proteger endpoints sensiveis, persistir assignment por etapa, permitir supersessao formal em recorte seguro e integrar assinatura colegiada do parecer CESAD de etapa. Permanecem integracoes futuras com workflow completo de quatro etapas, parecer conclusivo final, homologacao/notificacao/ciencia e documentos posteriores.
-- [`BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas](./tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): pendente alta para nao confundir o fluxo reduzido atual com o Caso 2 completo.
+- [`BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas](./tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): permanece ativa como guarda-chuva. A fatia `BE-FLOW-4STAGE-01A` materializou quatro etapas e corrigiu a resolucao da etapa atual; falta `BE-FLOW-4STAGE-01B — Implementar COMPLETE_CURRENT_STAGE` para encerramento formal da etapa ativa, abertura sequencial da proxima etapa e tratamento da quarta etapa.
 - [`BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD](./tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao para homologacao final valida.
 - [`BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia](./tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente futura dependente de parecer conclusivo final.
 - [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`, que foi concluida no recorte de logs/testes.

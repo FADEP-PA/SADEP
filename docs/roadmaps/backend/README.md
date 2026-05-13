@@ -13,7 +13,8 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 ## Itens ativos ou retomaveis
 
 - `BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD por processo.
-- `BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas.
+- `BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas; parcialmente entregue pela fatia `BE-FLOW-4STAGE-01A`, mas ainda aberta para `BE-FLOW-4STAGE-01B`.
+- `BE-FLOW-4STAGE-01B` — implementar `COMPLETE_CURRENT_STAGE`.
 - `BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD.
 - `BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia.
 - `BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao.
@@ -22,6 +23,7 @@ O documento legado [`../backend-implementation-tracker.md`](../backend-implement
 
 ## Concluido recente
 
+- `BE-FLOW-4STAGE-01A` — materializacao das quatro etapas do Caso 2, lifecycle por `startedAt`/`endedAt`, resolucao de etapa atual ignorando etapas futuras e protecoes contra artefatos em etapa futura; concluida/auditada/aprovada com ressalvas.
 - `BE-CESAD-AUTH-01` — autorizacao contextual CESAD aplicada aos endpoints sensiveis atuais, com ressalvas estruturais preservadas em `BE-SEC-03`.
 - `BE-CESAD-AUTH-02` — `CesadStageAssignment` implementada como vinculo persistido comissao-processo-etapa.
 - `BE-CESAD-ASSIGN-REPLACE-01` — reatribuicao/supersessao formal de assignment CESAD por etapa implementada em recorte seguro.

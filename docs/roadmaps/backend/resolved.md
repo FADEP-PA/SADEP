@@ -4,6 +4,34 @@ Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker 
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## BE-FLOW-4STAGE-01A — Materializar quatro etapas e corrigir resolucao de etapa atual
+
+- **Status documental:** concluida / auditada / aprovada com ressalvas.
+- **Commit funcional aprovado:** `84a3419 feat(backend): materialize four process stages`.
+- **ADR relacionada:** [`ADR-004 — Progressao formal das quatro etapas avaliativas`](../../architecture/adr/adr-004-four-stage-progression.md).
+- Implementou constantes/helpers para as quatro etapas do Caso 2.
+- Definiu total de etapas igual a `4`.
+- Materializou `stageCode` previsiveis: `ETAPA_1`, `ETAPA_2`, `ETAPA_3` e `ETAPA_4`.
+- Implementou a rotina `ensureFourProcessStages`.
+- Garantiu materializacao idempotente das quatro etapas por processo.
+- Criou etapa 1 ativa por padrao.
+- Criou etapas 2 a 4 como futuras.
+- Passou a usar `startedAt` e `endedAt` como lifecycle de etapa:
+  - futura: `startedAt = null`, `endedAt = null`;
+  - ativa: `startedAt != null`, `endedAt = null`;
+  - concluida: `startedAt != null`, `endedAt != null`.
+- Corrigiu `resolveCurrentStageOrThrow` para escolher somente etapa ativa e ignorar etapas futuras.
+- Separou leitura historica/consolidacao por metodo proprio.
+- Criou a migration/backfill `20260513143000_materialize_four_process_stages`.
+- Preservou documentos, avaliacoes, autoavaliacoes, pareceres, assignments e assinaturas ja stage-bound.
+- Bloqueou documentos, parecer CESAD, assinatura/documento CESAD, assignment/supersessao e transicoes operacionais em etapa futura.
+- Atualizou test helpers para quatro etapas.
+- Ampliou testes backend para materializacao, legados, resolucao de etapa atual, protecao de etapa futura e regressao do ciclo ativo.
+- Validacoes aprovadas: `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria e `git diff --check`.
+- Ressalvas remanescentes: helper explicito de etapa concluida pode ser adicionado futuramente; antes ou junto de `BE-FLOW-4STAGE-01B`, avaliar separacao mais clara entre contexto de leitura e escrita em status de assinatura CESAD; `createProcessStage` em testes pode ativar outra etapa se o teste nao encerrar a anterior explicitamente; a migration usa IDs por `randomblob(16)` em SQLite no backfill, diferente de `cuid()`, com risco pratico desprezivel; processos legados incoerentes com multiplas etapas ativas passam a falhar explicitamente em vez de escolher uma etapa silenciosamente.
+- Nao implementou `COMPLETE_CURRENT_STAGE`, `ADVANCE_TO_NEXT_STAGE`, parecer conclusivo final, homologacao, notificacao, ciencia, recursos, avaliacao substitutiva ou frontend.
+- `BE-FLOW-4STAGE-01` permanece ativa como guarda-chuva; `BE-FLOW-4STAGE-01B — Implementar COMPLETE_CURRENT_STAGE` e a proxima fatia.
+
 ## BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD
 
 - **Status documental:** concluida / auditada / aprovada com ressalvas.
