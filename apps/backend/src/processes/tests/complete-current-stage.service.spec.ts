@@ -341,6 +341,32 @@ export async function runCompleteCurrentStageServiceTests() {
     });
     assert.equal(stage1HistoricalDocuments.length, 3);
 
+    const adminReady = await buildReadyToCompleteStage(context, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+      activeStageSequence: 1,
+    });
+    const adminResult = await context.service.transitionWorkflow(
+      adminReady.processId,
+      authenticatedUser(admin.id, admin.role),
+      { action: ProcessAction.COMPLETE_CURRENT_STAGE },
+    );
+    assert.equal(adminResult.status, ProcessStatus.EM_AVALIACAO);
+    const adminAuditEvent = await context.prisma.auditEvent.findFirstOrThrow({
+      where: {
+        evaluationProcessId: adminReady.processId,
+        eventType: AuditEventType.STAGE_COMPLETED,
+      },
+    });
+    const adminMetadata = adminAuditEvent.metadata as Record<string, unknown>;
+    assert.equal(adminMetadata.action, ProcessAction.COMPLETE_CURRENT_STAGE);
+    assert.equal(adminMetadata.completedProcessStageId, adminReady.activeStageId);
+    assert.equal(adminMetadata.performedByUserId, admin.id);
+    assert.equal(adminMetadata.performedByRole, UserRole.ADMIN);
+
     const stage3Ready = await buildReadyToCompleteStage(context, {
       supervisorUserId: supervisor.id,
       evaluatedUserId: evaluatedUser.id,
@@ -506,6 +532,41 @@ export async function runCompleteCurrentStageServiceTests() {
           { action: ProcessAction.COMPLETE_CURRENT_STAGE },
         ),
       /CESAD contextual authorization denied/,
+    );
+
+    const adminIncompleteReady = await createProcess(
+      context.prisma,
+      ProcessStatus.PARECER_EMITIDO,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          adminIncompleteReady.id,
+          authenticatedUser(admin.id, admin.role),
+          { action: ProcessAction.COMPLETE_CURRENT_STAGE },
+        ),
+      /supervisor evaluation and self evaluation documents are fully signed/,
+    );
+
+    const adminOtherActionReady = await buildReadyToCompleteStage(context, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+      activeStageSequence: 1,
+      initialStatus: ProcessStatus.EM_ANALISE_CESAD,
+    });
+    await assert.rejects(
+      () =>
+        context.service.transitionWorkflow(
+          adminOtherActionReady.processId,
+          authenticatedUser(admin.id, admin.role),
+          { action: ProcessAction.ISSUE_CESAD_OPINION },
+        ),
+      /legitimate link to this process/,
     );
 
     const missingSupervisorEvaluationReady = await createProcess(

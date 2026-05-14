@@ -660,7 +660,12 @@ export class ProcessesService {
     }
 
     const normalizedComment = this.normalizeComment(payload.comment);
-    const process = await this.ensureUserHasProcessAccess(transaction, processId, user);
+    const process = await this.ensureUserHasProcessAccessForWorkflowAction(
+      transaction,
+      processId,
+      user,
+      payload.action,
+    );
 
     return this.executeWorkflowTransition(transaction, process, user, payload, normalizedComment);
   }
@@ -1442,6 +1447,19 @@ export class ProcessesService {
       default:
         throw new ForbiddenException('Authenticated user does not have a legitimate link to this process');
     }
+  }
+
+  private async ensureUserHasProcessAccessForWorkflowAction(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    user: AuthenticatedUser,
+    action: ProcessAction,
+  ): Promise<ProcessAccessContext> {
+    if (user.role === UserRole.ADMIN && action === ProcessAction.COMPLETE_CURRENT_STAGE) {
+      return this.getProcessAccessContextOrThrow(transaction, processId);
+    }
+
+    return this.ensureUserHasProcessAccess(transaction, processId, user);
   }
 
   private getAllowedActions(status: ProcessStatus, role: UserRole): ProcessAction[] {
