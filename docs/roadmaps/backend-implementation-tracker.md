@@ -25,6 +25,9 @@ O histórico detalhado anterior foi resumido na nova estrutura modular. Este ín
 | `BE-FLOW-4STAGE-01A` | [`backend/tasks/BE-FLOW-4STAGE-01A-materialize-four-stages.md`](./backend/tasks/BE-FLOW-4STAGE-01A-materialize-four-stages.md) |
 | `BE-FLOW-4STAGE-01B` | [`backend/tasks/BE-FLOW-4STAGE-01B-complete-current-stage.md`](./backend/tasks/BE-FLOW-4STAGE-01B-complete-current-stage.md) |
 | `BE-CESAD-FINAL-01` | [`backend/tasks/BE-CESAD-FINAL-01-final-opinion.md`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md) |
+| `BE-CESAD-FINAL-01A` | [`backend/tasks/BE-CESAD-FINAL-01A-functional-model-eligibility.md`](./backend/tasks/BE-CESAD-FINAL-01A-functional-model-eligibility.md) |
+| `BE-CESAD-FINAL-01B` | [`backend/tasks/BE-CESAD-FINAL-01B-document-signatures.md`](./backend/tasks/BE-CESAD-FINAL-01B-document-signatures.md) |
+| `BE-CESAD-FINAL-01C` | [`backend/tasks/BE-CESAD-FINAL-01C-send-to-homologation.md`](./backend/tasks/BE-CESAD-FINAL-01C-send-to-homologation.md) |
 | `BE-HOMOLOG-01` | [`backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md`](./backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md) |
 | `BE-AUDIT-AUTH-01` | [`backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md`](./backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md) |
 | `BE-ARCH-02` | [`backend/tasks/BE-ARCH-02-shared-packages.md`](./backend/tasks/BE-ARCH-02-shared-packages.md) |
@@ -69,7 +72,9 @@ Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao fr
 - [`BE-SEC-03 — Guarda-chuva residual / integracao futura de autorizacao contextual CESAD`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece aberto como guarda-chuva residual; o risco critico imediato foi reduzido por `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01` e `BE-DOC-CESAD-SIGN-01`.
 - [`BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis`](./backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md): concluida/auditada/aprovada com ressalvas, sem encerrar o guarda-chuva residual.
 - [`BE-FLOW-4STAGE-01 — Estruturar progressao formal das quatro etapas avaliativas`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): concluida no recorte de progressao formal / auditada / aprovada com ressalvas. `BE-FLOW-4STAGE-01A` materializou as quatro etapas e corrigiu a resolucao da etapa atual; `BE-FLOW-4STAGE-01B` implementou `COMPLETE_CURRENT_STAGE`, encerrando etapas 1 a 3 com abertura sequencial da proxima etapa e encerrando a etapa 4 sem parecer final nem homologacao.
-- [`BE-CESAD-FINAL-01 — Modelar parecer conclusivo final da CESAD`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao de homologacao.
+- [`BE-CESAD-FINAL-01 — Modelar parecer conclusivo final da CESAD`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md): ativa como guarda-chuva/fase principal; `BE-CESAD-FINAL-01A` foi concluida/auditada/corrigida/aprovada, mas documento final, assinatura colegiada final e envio formal permanecem pendentes em 01B/01C.
+- [`BE-CESAD-FINAL-01B — Documento e assinaturas colegiadas do parecer final`](./backend/tasks/BE-CESAD-FINAL-01B-document-signatures.md): pendente alta.
+- [`BE-CESAD-FINAL-01C — Envio formal a homologacao`](./backend/tasks/BE-CESAD-FINAL-01C-send-to-homologation.md): pendente futura dependente de 01B.
 - [`BE-HOMOLOG-01 — Modelar fluxo de homologacao, notificacao e ciencia`](./backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente futura dependente de parecer final.
 - [`BE-AUDIT-AUTH-01 — Auditoria persistida de eventos de autenticacao`](./backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura separada de `BE-ARCH-01F`.
 - [`BE-ARCH-02 — Fortalecer pacotes compartilhados do monorepo`](./backend/tasks/BE-ARCH-02-shared-packages.md): concluida no recorte estrutural de `@sadep/contracts`; `dist/` passou a ser entrypoint de consumo e os consumidores constroem contracts antes dos gates.
@@ -94,6 +99,7 @@ Itens principais já registrados como resolvidos ou concluídos:
 - `BE-FLOW-4STAGE-01`;
 - `BE-FLOW-4STAGE-01A`;
 - `BE-FLOW-4STAGE-01B`;
+- `BE-CESAD-FINAL-01A`;
 - `BE-DOC-CESAD-SIGN-01`;
 - `BE-ARCH-01A`;
 - `BE-ARCH-01B`;

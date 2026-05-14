@@ -39,6 +39,17 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Perma
 - **Escopo consolidado:** quatro etapas obrigatorias materializadas, etapa atual resolvida somente por lifecycle ativo, artefatos bloqueados em etapa futura, encerramento formal da etapa ativa, abertura sequencial das etapas 2 a 4 e fechamento da quarta etapa sem antecipar atos finais.
 - **Fora do recorte preservado:** parecer conclusivo final permanece em `BE-CESAD-FINAL-01`; homologacao/notificacao/ciencia permanecem em `BE-HOMOLOG-01`; recursos, frontend, portaria e versionamento documental seguem fora deste fechamento.
 
+### BE-CESAD-FINAL-01A — Modelo funcional, elegibilidade e consolidacao historica
+
+- **Status operacional:** concluida / auditada / corrigida / aprovada.
+- **Commit funcional aprovado:** `a3fa203 feat(backend): add final CESAD opinion model`.
+- **ADR relacionada:** [`ADR-005 — Modelagem do parecer conclusivo final da CESAD`](../../architecture/adr/adr-005-final-cesad-opinion-modeling.md).
+- **Escopo entregue:** entidade funcional `CesadFinalOpinion`, enum/status `CesadFinalOpinionStatus`, relacoes com `EvaluationProcess` e autor `User`, unicidade funcional por processo, `consolidatedSnapshot`, contracts/refs minimos, actions e audit events do parecer final.
+- **Elegibilidade/consolidacao:** validacao objetiva das quatro etapas formalmente concluidas, documentos e assinaturas de etapa completos, e consolidacao historica process-wide sem depender de etapa ativa.
+- **Fluxo funcional:** `start`, `saveDraft` e `complete`; a correcao pos-auditoria garante que `complete` exige parecer existente em `DRAFT`, nao cria `COMPLETED` diretamente e nao emite start sintetico.
+- **Autorizacao/auditoria:** autorizacao process-wide para CESAD relacionado e `ADMIN`; `COMMISSION_ASSISTANT` le mas nao escreve; chefia, servidor e autoridade homologadora permanecem bloqueados; auditoria coerente de `STARTED`, `DRAFT_SAVED` e `COMPLETED`.
+- **Fora do recorte preservado:** documento processual do parecer final, `opinionKind`, expected signers finais, assinatura colegiada final, `SEND_TO_HOMOLOGATION`, homologacao, notificacao, ciencia, recursos, frontend, GOVBR e versionamento documental.
+
 ### BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD
 
 - **Status operacional:** concluida / auditada / aprovada com ressalvas.
@@ -114,7 +125,9 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Perma
 ## Pendentes relevantes
 
 - [`BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD](./tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece ativo apenas como guarda-chuva estrutural; `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01`, `BE-DOC-CESAD-SIGN-01` e `BE-FLOW-4STAGE-01` reduziram substancialmente o risco imediato ao proteger endpoints sensiveis, persistir assignment por etapa, permitir supersessao formal em recorte seguro, integrar assinatura colegiada do parecer CESAD de etapa e concluir a progressao formal das quatro etapas. Permanecem integracoes futuras com parecer conclusivo final, homologacao/notificacao/ciencia e documentos posteriores.
-- [`BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD](./tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao para homologacao final valida.
+- [`BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD](./tasks/BE-CESAD-FINAL-01-final-opinion.md): ativa como guarda-chuva/fase principal; a fatia `BE-CESAD-FINAL-01A` foi concluida, mas ainda faltam documento processual, assinatura colegiada final e envio formal a homologacao.
+- [`BE-CESAD-FINAL-01B` — documento e assinaturas colegiadas do parecer final](./tasks/BE-CESAD-FINAL-01B-document-signatures.md): pendente alta; deve implementar `opinionKind`, documento final, expected signers finais e assinatura colegiada final.
+- [`BE-CESAD-FINAL-01C` — envio formal a homologacao](./tasks/BE-CESAD-FINAL-01C-send-to-homologation.md): pendente futura dependente de 01B; deve implementar ponte formal sem homologar, notificar ou registrar ciencia.
 - [`BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia](./tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente futura dependente de parecer conclusivo final.
 - [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`, que foi concluida no recorte de logs/testes.
 - [`BE-CONTRACT-CESAD-ASSIGN-01` — expor status de assignment CESAD em contracts, se necessario](./tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md): condicional/futura; so deve ser executada se API publica ou frontend passarem a consumir diretamente o status de `CesadStageAssignment`.

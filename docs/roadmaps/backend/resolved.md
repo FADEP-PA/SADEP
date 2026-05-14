@@ -64,6 +64,30 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - O recorte de progressao formal agora cobre quatro etapas materializadas, lifecycle por `startedAt`/`endedAt`, protecao de etapas futuras, completude documental forte para fechamento, auditoria e autorizacao contextual/administrativa controlada.
 - Ressalvas: parecer conclusivo final permanece em `BE-CESAD-FINAL-01`; homologacao/notificacao/ciencia permanecem em `BE-HOMOLOG-01`; recursos e frontend permanecem fora deste recorte; apos a etapa 4, `BE-CESAD-FINAL-01` deve usar leitura/consolidacao historica, nao resolver etapa ativa.
 
+## BE-CESAD-FINAL-01A — Modelo funcional, elegibilidade e consolidacao historica
+
+- **Status documental:** concluida / auditada / corrigida / aprovada.
+- **Commit funcional aprovado:** `a3fa203 feat(backend): add final CESAD opinion model`.
+- **Task file:** [`BE-CESAD-FINAL-01A-functional-model-eligibility.md`](./tasks/BE-CESAD-FINAL-01A-functional-model-eligibility.md).
+- **ADR relacionada:** [`ADR-005 — Modelagem do parecer conclusivo final da CESAD`](../../architecture/adr/adr-005-final-cesad-opinion-modeling.md).
+- Criou a entidade funcional `CesadFinalOpinion`, propria do parecer conclusivo final e vinculada ao processo.
+- Preservou `CesadStageOpinion` como parecer CESAD de etapa, sem refatoracao estrutural.
+- Criou `CesadFinalOpinionStatus` com `DRAFT` e `COMPLETED`.
+- Modelou relacao process-wide com `EvaluationProcess`, relacao com autor `User`, unicidade funcional por processo e `consolidatedSnapshot`.
+- Adicionou actions `START_CESAD_FINAL_OPINION`, `SAVE_CESAD_FINAL_OPINION_DRAFT` e `COMPLETE_CESAD_FINAL_OPINION`.
+- Adicionou audit events `CESAD_FINAL_OPINION_STARTED`, `CESAD_FINAL_OPINION_DRAFT_SAVED` e `CESAD_FINAL_OPINION_COMPLETED`.
+- Criou contracts/refs minimos do parecer final.
+- Implementou elegibilidade objetiva apos quatro etapas formalmente concluidas, com documentos, pareceres de etapa, expected signers e assinaturas colegiadas de etapa completos.
+- Implementou consolidacao historica process-wide das quatro etapas, ordenada por `sequence` e sem depender de etapa ativa.
+- Implementou fluxo funcional `start`, `saveDraft` e `complete`.
+- A correcao pos-auditoria fez `complete` exigir parecer existente em `DRAFT`, sem criacao direta de `COMPLETED` e sem evento sintetico de start.
+- Manteve o macrostatus do processo em `PARECER_EMITIDO`.
+- Implementou autorizacao process-wide para CESAD relacionado e `ADMIN`; `COMMISSION_ASSISTANT` le mas nao escreve; chefia, servidor e autoridade homologadora permanecem bloqueados.
+- Ampliou testes backend para elegibilidade, consolidacao, fluxo funcional, autorizacao, auditoria, ausencia de `ProcessDocument` e regressao de `complete`.
+- Validacoes aprovadas: build de `@sadep/contracts`, `prisma:generate`, typecheck backend, typecheck de specs, suite backend, Prisma validate com `DATABASE_URL` temporaria quando necessario e `git diff --check`.
+- Fora do escopo preservado: `ProcessDocument` do parecer final, `opinionKind`, `CesadFinalOpinionExpectedSigner`, assinatura colegiada final, `PREPARE_CESAD_FINAL_OPINION_SIGNATURES`, `SIGN_CESAD_FINAL_OPINION`, `SEND_TO_HOMOLOGATION`, homologacao, notificacao, ciencia, recursos, frontend, GOVBR e versionamento/invalidacao documental.
+- `BE-CESAD-FINAL-01` permanece ativa como guarda-chuva/fase principal; proximas fatias: `BE-CESAD-FINAL-01B` e `BE-CESAD-FINAL-01C`.
+
 ## BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD
 
 - **Status documental:** concluida / auditada / aprovada com ressalvas.
