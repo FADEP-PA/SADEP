@@ -13,6 +13,11 @@ const scanRoots = [
 
 const scannedExtensions = new Set(['.css', '.ts', '.tsx', '.md']);
 const ignoredDirectories = new Set(['.next', 'node_modules']);
+const testFilePattern = /\.test\.(?:ts|tsx|js|jsx)$/i;
+
+function isTestFile(name) {
+  return testFilePattern.test(name);
+}
 
 const globalForbiddenPatterns = [
   {
@@ -82,7 +87,7 @@ async function collectFiles(target) {
       continue;
     }
 
-    if (entry.isFile() && scannedExtensions.has(extname(entry.name))) {
+    if (entry.isFile() && scannedExtensions.has(extname(entry.name)) && !isTestFile(entry.name)) {
       files.push(join(target, entry.name));
     }
   }

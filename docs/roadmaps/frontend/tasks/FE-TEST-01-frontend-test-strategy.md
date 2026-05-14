@@ -91,11 +91,34 @@ Comando focado:
 - **Estilo dos testes:** mantido o padrao do `FE-TEST-01B` — asserts por texto institucional visivel (`screen.getByText`), sem snapshots, sem dependencia de classes CSS internas, sem chamada real para endpoint, sem dados sensiveis.
 - **Limitacoes conhecidas deste recorte:** continua restrito a `operational-states.tsx`; nao cobre `AuthGuard`, telas autenticadas, hooks de sessao, services HTTP, jornadas processuais, fluxos da chefia, CESAD ou homologacao; nao integra com CI; nao substitui validacao visual em navegador.
 
+## Recorte FE-TEST-01D - AuthGuard com sessao mockada via `vi.mock`
+
+- **Status documental:** recorte executado em 2026-05-14, sem prometer cobertura completa de testes frontend.
+- **Decisao operacional adotada para simulacao de sessao:** mockar o hook `useAuth` via `vi.mock('./auth-context', ...)` no arquivo de teste, alimentando os ramos de `status` (`loading`, `anonymous`, `authenticated`) e a presenca/ausencia de `session` diretamente, sem subir o `AuthProvider` real. `next/navigation` e mockado da mesma forma (`usePathname`) e `next/link` recebe uma implementacao mininstitucional `<a>` para preservar o role `link`. Essa estrategia mantem o teste do guarda restrito a logica de apresentacao por estado, sem acoplar a `fetch`, `router.replace`, `window.location.assign` ou ao service `/auth/refresh`.
+- **Escopo do recorte:** cobertura de `apps/frontend/src/shared/auth/auth-guard.tsx` nos cinco ramos institucionais do componente, sem alterar o codigo de producao do guarda, do provider, do http-client ou do service de auth.
+- **Ramos cobertos:**
+  - `status: 'loading'` renderiza `InitialLoading` com a copy `Validando sua sessão e permissões...` e oculta os filhos;
+  - `status: 'anonymous'` renderiza `InitialLoading` com a copy `Redirecionando para o login...` e oculta os filhos;
+  - `status: 'authenticated'` com `session: null` (borda defensiva) tambem cai no estado de redirecionamento;
+  - `status: 'authenticated'` sem `allowedRoles` renderiza os filhos;
+  - `status: 'authenticated'` com `allowedRoles` incluindo o papel atual renderiza os filhos;
+  - `status: 'authenticated'` com papel fora de `allowedRoles` renderiza `AccessBlockedState`, expoe o papel autenticado e o pathname atual na copy, mantem o link `Ir para a página 403` apontando para `/403` e propaga `bootstrapError` quando presente.
+- **Arquivos criados:**
+  - `apps/frontend/src/shared/auth/auth-guard.test.tsx` cobrindo os ramos acima.
+- **Arquivos atualizados:**
+  - `scripts/check-frontend-copy.mjs` passou a ignorar arquivos com sufixo `.test.ts(x)`/`.test.js(x)` no scanner de copy institucional. A regra textual permanece ativa para o restante do `src/`; testes nao sao texto de interface e nao devem regredir o gate por usar APIs idiomaticas do vitest (`vi.mock`, `mockReturnValue`, etc.). Essa exencao desbloqueia todos os recortes futuros de FE-TEST-01 que dependam de mocking.
+- **Comando para executar este recorte:**
+  - `npm run frontend:test:run -- auth-guard` cobre apenas este arquivo (7 testes apos este recorte);
+  - `npm run frontend:test:run` executa toda a suite frontend (26 testes apos este recorte, distribuidos em 3 arquivos).
+- **Estilo dos testes:** mantido o padrao dos recortes anteriores — asserts por texto institucional visivel (`screen.getByText`) ou por `getByRole('link', { name })` para a saida do `/403`, sem snapshots, sem dependencia de classes CSS internas, sem chamada real para endpoint e sem dados sensiveis. Helpers `setAuthContext` e `buildAuthenticatedUser` mantem os testes legiveis e tipados em `AuthenticatedUser` do contrato.
+- **Limitacoes conhecidas deste recorte:** cobre apenas a logica de apresentacao do `AuthGuard`; nao cobre o ciclo real do `AuthProvider`, o bootstrap por `refreshAuthSession`, o `http-client`, retry com refresh, redirecionamentos `router.replace`/`window.location.assign`, hooks de sessao ou services HTTP; nao integra com CI; nao substitui validacao visual em navegador. A escolha de mockar `next/navigation` no nivel do teste deixa o teste imune a mudancas na arvore real de Next, mas implica que regressoes na integracao com o roteador devem ser cobertas em recorte proprio quando houver janela.
+
 ## Proxima acao
 
-Manter como melhoria futura. Apos este recorte FE-TEST-01C, priorizar:
+Manter como melhoria futura. Apos este recorte FE-TEST-01D, priorizar:
 
-- testar `AuthGuard` apenas quando houver decisao operacional clara sobre como simular sessao sem reabrir contratos backend;
-- avaliar cobertura para hooks de sessao e services HTTP institucionais quando houver janela de qualidade dedicada;
+- cobrir `http-client.httpRequest` com `vi.stubGlobal('fetch', ...)` para mapeamento de erro (HttpError 4xx/5xx), retry com `/auth/refresh` em 401, propagacao do header `Authorization` e cache `no-store`, ainda sem subir backend real;
+- cobrir os services autenticados (`auth-service` e `processes-service`) no nivel de contrato consumido (URL, body e mapping), mantendo o padrao de mock de `fetch`;
+- quando o `AuthProvider` ganhar uma janela dedicada, decidir como simular o ciclo `bootstrapSession` + `refreshSession` + `router.replace` sem reabrir contratos backend, antes de testar telas autenticadas completas;
 - avaliar gate de testes no pipeline somente quando `CI-GATES-01` existir;
 - nao acoplar estes testes a `FE-CHEFIA-02`, `FE-PROCESS-LIST-01` ou `FE-CESAD-01`, que continuam pendentes de backend.
