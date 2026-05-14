@@ -28,9 +28,41 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Atualizou test helpers para quatro etapas.
 - Ampliou testes backend para materializacao, legados, resolucao de etapa atual, protecao de etapa futura e regressao do ciclo ativo.
 - Validacoes aprovadas: `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria e `git diff --check`.
-- Ressalvas remanescentes: helper explicito de etapa concluida pode ser adicionado futuramente; antes ou junto de `BE-FLOW-4STAGE-01B`, avaliar separacao mais clara entre contexto de leitura e escrita em status de assinatura CESAD; `createProcessStage` em testes pode ativar outra etapa se o teste nao encerrar a anterior explicitamente; a migration usa IDs por `randomblob(16)` em SQLite no backfill, diferente de `cuid()`, com risco pratico desprezivel; processos legados incoerentes com multiplas etapas ativas passam a falhar explicitamente em vez de escolher uma etapa silenciosamente.
-- Nao implementou `COMPLETE_CURRENT_STAGE`, `ADVANCE_TO_NEXT_STAGE`, parecer conclusivo final, homologacao, notificacao, ciencia, recursos, avaliacao substitutiva ou frontend.
-- `BE-FLOW-4STAGE-01` permanece ativa como guarda-chuva; `BE-FLOW-4STAGE-01B — Implementar COMPLETE_CURRENT_STAGE` e a proxima fatia.
+- Ressalvas remanescentes: `createProcessStage` em testes pode ativar outra etapa se o teste nao encerrar a anterior explicitamente; a migration usa IDs por `randomblob(16)` em SQLite no backfill, diferente de `cuid()`, com risco pratico desprezivel; processos legados incoerentes com multiplas etapas ativas passam a falhar explicitamente em vez de escolher uma etapa silenciosamente.
+- Nao implementou `COMPLETE_CURRENT_STAGE`, parecer conclusivo final, homologacao, notificacao, ciencia, recursos, avaliacao substitutiva ou frontend; a conclusao formal de etapa foi entregue posteriormente por `BE-FLOW-4STAGE-01B`.
+
+## BE-FLOW-4STAGE-01B — Implementar COMPLETE_CURRENT_STAGE
+
+- **Status documental:** concluida / auditada / aprovada.
+- **Commit funcional aprovado:** `9f6f122 feat(backend): complete current process stage`.
+- **ADR relacionada:** [`ADR-004 — Progressao formal das quatro etapas avaliativas`](../../architecture/adr/adr-004-four-stage-progression.md).
+- Adicionou `ProcessAction.COMPLETE_CURRENT_STAGE`.
+- Adicionou `AuditEventType.STAGE_COMPLETED`.
+- Criou a migration `20260514120000_add_stage_completed_audit_event` para registrar a inclusao do novo evento no datamodel Prisma.
+- Catalogou a transicao de workflow com origem `PARECER_EMITIDO`, `requiresComment = false` e roles `ADMIN` e `CESAD_MEMBER`.
+- Implementou destino dinamico: etapas 1 a 3 encerram a etapa atual, ativam a proxima etapa e retornam o processo para `EM_AVALIACAO`; etapa 4 encerra a etapa e preserva `PARECER_EMITIDO`.
+- Validou completude documental forte da etapa ativa antes do fechamento: avaliacao da chefia `SIGNED`, autoavaliacao `SIGNED`, parecer CESAD funcional `COMPLETED`, expected signers existentes, documento `CESAD_OPINION` stage-bound `SIGNED` e assinaturas CESAD colegiadas completas.
+- Reconfirmou em transacao a existencia de exatamente uma etapa ativa e que ela corresponde ao contexto resolvido.
+- Exigiu que a proxima etapa esteja futura antes de ativa-la, impedindo pulo de sequencia ou ativacao duplicada.
+- Preservou/herdou `responsibleSupervisorUserId` ao abrir a proxima etapa, quando necessario.
+- Na quarta etapa, nao criou etapa 5, nao criou parecer conclusivo final, nao homologou, nao notificou e nao registrou ciencia.
+- Registrou auditoria `STAGE_COMPLETED` com action, ator, papel, processo, etapa concluida, proxima etapa quando houver, `previousProcessStatus`, `nextProcessStatus`, `isFinalStage`, comentario opcional e resumo da completude documental verificada.
+- Manteve `CESAD_MEMBER` sujeito a assignment contextual e permitiu `ADMIN` com execucao administrativa controlada, sem assignment CESAD.
+- Bloqueou `COMMISSION_ASSISTANT`, chefia imediata, servidor avaliado e autoridade homologadora.
+- Ampliou testes backend para sucesso nas etapas 1 -> 2, 3 -> 4, etapa 4 sem etapa 5, bloqueios por status/role/assignment, lacunas documentais, expected signers, documento CESAD, assinatura CESAD pendente, ausencia/multiplicidade de etapa ativa e regressao de `ISSUE_CESAD_OPINION`.
+- A correcao posterior do gate de `ADMIN` foi auditada em follow-up e aprovada.
+- Validacoes aprovadas: `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend` e `git diff --check`; validacoes Prisma/schema da implementacao original tambem foram aprovadas no ciclo de auditoria.
+- Ressalvas remanescentes: apos a etapa 4, nao ha etapa ativa; `BE-CESAD-FINAL-01` deve usar resolver historico/consolidado adequado. `availableActions` pode listar actions por status/role, mas as guardas reais permanecem no service.
+- Fora do escopo preservado: parecer conclusivo final, homologacao, notificacao, ciencia, recursos, avaliacao substitutiva, portaria, frontend e versionamento documental.
+
+## BE-FLOW-4STAGE-01 — Estruturar progressao formal das quatro etapas avaliativas
+
+- **Status documental:** concluida no recorte de progressao formal / auditada / aprovada com ressalvas.
+- **Fatias concluidas:** `BE-FLOW-4STAGE-01A` e `BE-FLOW-4STAGE-01B`.
+- A 01A materializou as quatro etapas obrigatorias do Caso 2 e corrigiu a resolucao da etapa atual para usar somente a etapa ativa.
+- A 01B implementou `COMPLETE_CURRENT_STAGE`, encerrando formalmente a etapa ativa, abrindo sequencialmente a proxima etapa nas etapas 1 a 3 e encerrando a quarta etapa sem antecipar atos finais.
+- O recorte de progressao formal agora cobre quatro etapas materializadas, lifecycle por `startedAt`/`endedAt`, protecao de etapas futuras, completude documental forte para fechamento, auditoria e autorizacao contextual/administrativa controlada.
+- Ressalvas: parecer conclusivo final permanece em `BE-CESAD-FINAL-01`; homologacao/notificacao/ciencia permanecem em `BE-HOMOLOG-01`; recursos e frontend permanecem fora deste recorte; apos a etapa 4, `BE-CESAD-FINAL-01` deve usar leitura/consolidacao historica, nao resolver etapa ativa.
 
 ## BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD
 
@@ -57,7 +89,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Validacoes aprovadas: build de `@sadep/contracts`, `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria e `git diff --check`.
 - Ressalvas remanescentes: metadata de `SIGNATURE_REQUESTED` pode ser enriquecida futuramente com `signatureId` e `signatureStatus = PENDING`; a nova unique permite multiplos usuarios com a mesma role no mesmo documento, entao documentos nao colegiados seguem protegidos pela camada de service; versionamento documental, invalidacao/supersessao documental, substituicao formal de signatario apos assinatura aberta e assinatura externa GOVBR real permanecem fora do recorte.
 - Nao alterou frontend, quatro etapas, parecer conclusivo final, homologacao, notificacao, ciencia, recursos, portaria ou versionamento documental.
-- `BE-FLOW-4STAGE-01`, `BE-CESAD-FINAL-01` e `BE-HOMOLOG-01` permanecem pendentes.
+- `BE-FLOW-4STAGE-01` foi concluida posteriormente no recorte de progressao formal; `BE-CESAD-FINAL-01` e `BE-HOMOLOG-01` permanecem pendentes.
 
 ## BE-CESAD-ASSIGN-REPLACE-01 — Modelar reatribuicao e supersessao formal de comissao CESAD por etapa
 
@@ -80,7 +112,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Validacoes aprovadas: build de `@sadep/contracts`, `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria, typecheck frontend adicional e `git diff --check`.
 - Nao alterou frontend, assinatura colegiada, quatro etapas, parecer conclusivo final, homologacao, notificacao, ciencia, `SignatureRecord` ou versionamento documental.
 - Ressalvas remanescentes: `referenceDate` ainda usa parsing por `new Date(...)`; testes HTTP adicionais podem cobrir `referenceDate` invalida, `newCommissionId` vazio/nao string e `formalActReference` nao string; reatribuicao apos parecer, expected signers ou documento CESAD permanece bloqueada e depende de versionamento, invalidacao ou supersessao documental formal.
-- `BE-SEC-03` permanece aberta como guarda-chuva para workflow completo de quatro etapas, parecer conclusivo final, homologacao/notificacao/ciencia e documentos posteriores.
+- `BE-SEC-03` permanece aberta como guarda-chuva para parecer conclusivo final, homologacao/notificacao/ciencia, documentos posteriores e demais integracoes futuras.
 
 ## BE-CESAD-AUTH-02 — Implementar CesadStageAssignment
 
@@ -103,7 +135,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Validacoes aprovadas: `npm run prisma:generate --workspace @sadep/backend`, `npm run typecheck --workspace @sadep/backend`, `npm run typecheck:spec --workspace @sadep/backend`, `npm run test --workspace @sadep/backend`, `npx prisma validate --schema apps/backend/prisma/schema.prisma` com `DATABASE_URL` temporaria e `git diff --check`.
 - Nao alterou frontend, contracts, roadmaps/status durante o patch funcional, assinatura colegiada completa, quatro etapas, parecer conclusivo final, homologacao, notificacao, ciencia, recursos, cookie `aep_pa_refresh` ou migracao ampla AEP -> SADEP.
 - Ressalvas remanescentes: unicidade de assignment `ACTIVE` por etapa garantida em service/transacao; bases locais/dev com processos ja em `EM_ANALISE_CESAD` ou `PARECER_EMITIDO` podem exigir fixture/backfill controlado; metadata de `SENT_TO_CESAD` pode explicitar `assignedAt`/`referenceDate`; teste futuro pode afirmar status inalterado quando a criacao da assignment falha.
-- `BE-SEC-03` permanece aberta como guarda-chuva estrutural para workflow completo, parecer final, homologacao/notificacao/ciencia e documentos posteriores.
+- `BE-SEC-03` permanece aberta como guarda-chuva estrutural para parecer final, homologacao/notificacao/ciencia, documentos posteriores e demais integracoes futuras.
 
 ## BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis
 

@@ -14,6 +14,8 @@ No Caso 2, o parecer conclusivo final da CESAD so pode ocorrer apos a conclusao 
 
 Sem este parecer final, homologacao, notificacao e publicacao nao devem ser habilitadas.
 
+Desde `BE-FLOW-4STAGE-01A` e `BE-FLOW-4STAGE-01B`, o backend ja materializa quatro etapas e permite concluir formalmente a etapa ativa por `COMPLETE_CURRENT_STAGE`. Apos a quarta etapa concluida, o processo permanece em `PARECER_EMITIDO`, sem etapa ativa e sem parecer conclusivo final criado automaticamente.
+
 ## Escopo previsto
 
 - diferenciar parecer CESAD por etapa de parecer conclusivo final;
@@ -34,6 +36,8 @@ Sem este parecer final, homologacao, notificacao e publicacao nao devem ser habi
 ## Criterios de aceite
 
 - parecer final nao pode ser iniciado antes das quatro etapas estarem formalmente concluidas;
+- parecer final deve considerar o estado pos-`COMPLETE_CURRENT_STAGE` da etapa 4;
+- parecer final deve usar leitura/consolidacao historica adequada, sem depender de resolver operacional de etapa ativa;
 - parecer final nao substitui nem apaga pareceres de etapa;
 - workflow impede homologacao sem parecer conclusivo final;
 - documentos e assinaturas seguem a modelagem documental oficial;
@@ -49,11 +53,11 @@ Sem este parecer final, homologacao, notificacao e publicacao nao devem ser habi
 
 ## Dependencias
 
-- `BE-FLOW-4STAGE-01`;
+- `BE-FLOW-4STAGE-01` concluida no recorte de progressao formal, incluindo quatro etapas existentes e conclusao formal das quatro etapas;
 - `BE-DOC-CESAD-SIGN-01`, se assinatura colegiada for exigida para o parecer final;
 - `docs/workflow/four-stage-flow-and-appeals.md`;
 - `docs/domain/document-modeling-catalog.md`.
 
 ## Proxima acao
 
-Definir a entidade ou extensao de dominio do parecer conclusivo final e suas pre-condicoes sem antecipar homologacao.
+Definir a entidade ou extensao de dominio do parecer conclusivo final e suas pre-condicoes, usando as quatro etapas concluidas e leitura/consolidacao historica adequada, sem antecipar homologacao.

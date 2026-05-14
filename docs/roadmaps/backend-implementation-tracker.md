@@ -68,7 +68,7 @@ Esta frente foi implementada, auditada e aprovada no recorte minimo de sessao fr
 
 - [`BE-SEC-03 — Guarda-chuva residual / integracao futura de autorizacao contextual CESAD`](./backend/tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece aberto como guarda-chuva residual; o risco critico imediato foi reduzido por `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01` e `BE-DOC-CESAD-SIGN-01`.
 - [`BE-CESAD-AUTH-01 — Aplicar autorizacao contextual CESAD aos endpoints sensiveis`](./backend/tasks/BE-CESAD-AUTH-01-apply-contextual-authorization.md): concluida/auditada/aprovada com ressalvas, sem encerrar o guarda-chuva residual.
-- [`BE-FLOW-4STAGE-01 — Estruturar progressao formal das quatro etapas avaliativas`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): permanece ativa como guarda-chuva. `BE-FLOW-4STAGE-01A` foi concluida/auditada/aprovada com ressalvas e materializou as quatro etapas; `BE-FLOW-4STAGE-01B` permanece pendente para `COMPLETE_CURRENT_STAGE`.
+- [`BE-FLOW-4STAGE-01 — Estruturar progressao formal das quatro etapas avaliativas`](./backend/tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): concluida no recorte de progressao formal / auditada / aprovada com ressalvas. `BE-FLOW-4STAGE-01A` materializou as quatro etapas e corrigiu a resolucao da etapa atual; `BE-FLOW-4STAGE-01B` implementou `COMPLETE_CURRENT_STAGE`, encerrando etapas 1 a 3 com abertura sequencial da proxima etapa e encerrando a etapa 4 sem parecer final nem homologacao.
 - [`BE-CESAD-FINAL-01 — Modelar parecer conclusivo final da CESAD`](./backend/tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao de homologacao.
 - [`BE-HOMOLOG-01 — Modelar fluxo de homologacao, notificacao e ciencia`](./backend/tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente futura dependente de parecer final.
 - [`BE-AUDIT-AUTH-01 — Auditoria persistida de eventos de autenticacao`](./backend/tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura separada de `BE-ARCH-01F`.
@@ -91,7 +91,9 @@ O resumo operacional dos itens backend resolvidos fica em [`backend/resolved.md`
 Itens principais já registrados como resolvidos ou concluídos:
 
 - `BE-TECH-01`;
+- `BE-FLOW-4STAGE-01`;
 - `BE-FLOW-4STAGE-01A`;
+- `BE-FLOW-4STAGE-01B`;
 - `BE-DOC-CESAD-SIGN-01`;
 - `BE-ARCH-01A`;
 - `BE-ARCH-01B`;

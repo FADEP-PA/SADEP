@@ -14,6 +14,8 @@ Homologacao final so pode ocorrer apos parecer conclusivo final da CESAD. A varr
 
 Esta task registra a frente futura sem antecipar implementacao indevida.
 
+`BE-FLOW-4STAGE-01B` concluiu a progressao formal das quatro etapas por `COMPLETE_CURRENT_STAGE`, mas a conclusao da etapa 4 nao libera homologacao. A homologacao continua dependente de parecer conclusivo final emitido em `BE-CESAD-FINAL-01`.
+
 ## Escopo previsto
 
 - modelar decisao de homologacao apos parecer conclusivo final;
@@ -51,8 +53,8 @@ Esta task registra a frente futura sem antecipar implementacao indevida.
 
 ## Dependencias
 
-- `BE-CESAD-FINAL-01`;
-- `BE-FLOW-4STAGE-01`;
+- `BE-CESAD-FINAL-01`, que permanece pre-condicao direta para homologacao;
+- `BE-FLOW-4STAGE-01`, concluida no recorte de progressao formal das quatro etapas;
 - `docs/workflow/four-stage-flow-and-appeals.md`;
 - regras futuras de recurso final.
 

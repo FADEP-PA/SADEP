@@ -16,8 +16,28 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Perma
 - **Resolucao de etapa atual:** `resolveCurrentStageOrThrow` passou a resolver somente etapa ativa e ignorar etapas futuras; leitura historica/consolidacao ficou separada em metodo proprio.
 - **Protecoes:** etapas futuras nao recebem documentos, parecer CESAD, assinatura/documento CESAD, assignment/supersessao ou transicoes operacionais.
 - **Validacoes/auditoria:** testes backend ampliados; `prisma:generate`, typecheck, typecheck de specs, suite backend, Prisma validate com `DATABASE_URL` temporaria e `git diff --check` aprovados.
-- **Ressalvas:** helper explicito de etapa concluida pode ser adicionado futuramente; antes ou junto da 01B, avaliar separacao mais clara entre leitura e escrita no status de assinatura CESAD; `createProcessStage` em testes pode ativar outra etapa se a anterior nao for encerrada; a migration usa IDs por `randomblob(16)` no SQLite; legados incoerentes com multiplas etapas ativas agora falham explicitamente.
-- **Continuidade:** `BE-FLOW-4STAGE-01` permanece ativa como guarda-chuva; a proxima fatia e `BE-FLOW-4STAGE-01B — Implementar COMPLETE_CURRENT_STAGE`.
+- **Ressalvas:** helper explicito de etapa concluida foi adicionado posteriormente na 01B; `createProcessStage` em testes pode ativar outra etapa se a anterior nao for encerrada; a migration usa IDs por `randomblob(16)` no SQLite; legados incoerentes com multiplas etapas ativas agora falham explicitamente.
+- **Continuidade:** a progressao formal foi concluida posteriormente pela `BE-FLOW-4STAGE-01B — Implementar COMPLETE_CURRENT_STAGE`; parecer conclusivo final, homologacao/notificacao/ciencia e recursos permanecem em frentes proprias.
+
+### BE-FLOW-4STAGE-01B — Implementar COMPLETE_CURRENT_STAGE
+
+- **Status operacional:** concluida / auditada / aprovada.
+- **Commit funcional aprovado:** `9f6f122 feat(backend): complete current process stage`.
+- **ADR relacionada:** [`ADR-004 — Progressao formal das quatro etapas avaliativas`](../../architecture/adr/adr-004-four-stage-progression.md).
+- **Escopo entregue:** `ProcessAction.COMPLETE_CURRENT_STAGE`, `AuditEventType.STAGE_COMPLETED`, migration `20260514120000_add_stage_completed_audit_event`, transicao de workflow a partir de `PARECER_EMITIDO` e conclusao formal da etapa ativa.
+- **Destino dinamico:** nas etapas 1 a 3, encerra a etapa atual, ativa sequencialmente a proxima etapa e retorna o processo para `EM_AVALIACAO`; na etapa 4, encerra a etapa sem criar etapa 5 e preserva `PARECER_EMITIDO`.
+- **Guarda documental:** exige avaliacao da chefia assinada, autoavaliacao assinada, parecer CESAD funcional `COMPLETED`, expected signers existentes, documento `CESAD_OPINION` stage-bound `SIGNED` e assinaturas CESAD colegiadas completas.
+- **Autorizacao:** `CESAD_MEMBER` continua dependente de assignment contextual; `ADMIN` executa de forma administrativa controlada; `COMMISSION_ASSISTANT`, chefia, servidor e autoridade homologadora permanecem bloqueados.
+- **Auditoria:** registra `STAGE_COMPLETED` com etapa concluida, proxima etapa quando houver, status anterior/novo, ator, papel, comentario opcional e resumo da completude documental verificada.
+- **Validacoes/auditoria:** testes backend ampliados, incluindo a correcao do gate de `ADMIN`; typecheck, typecheck de specs, suite backend e `git diff --check` aprovados.
+- **Ressalvas:** apos a etapa 4 nao ha etapa ativa; `BE-CESAD-FINAL-01` deve usar leitura/consolidacao historica adequada. A action nao cria parecer conclusivo final, nao homologa, nao notifica, nao registra ciencia e nao abre recursos.
+
+### BE-FLOW-4STAGE-01 — Estruturar progressao formal das quatro etapas avaliativas
+
+- **Status operacional:** concluida no recorte de progressao formal / auditada / aprovada com ressalvas.
+- **Fatias concluidas:** `BE-FLOW-4STAGE-01A` materializou as quatro etapas e corrigiu a resolucao da etapa atual; `BE-FLOW-4STAGE-01B` implementou `COMPLETE_CURRENT_STAGE`.
+- **Escopo consolidado:** quatro etapas obrigatorias materializadas, etapa atual resolvida somente por lifecycle ativo, artefatos bloqueados em etapa futura, encerramento formal da etapa ativa, abertura sequencial das etapas 2 a 4 e fechamento da quarta etapa sem antecipar atos finais.
+- **Fora do recorte preservado:** parecer conclusivo final permanece em `BE-CESAD-FINAL-01`; homologacao/notificacao/ciencia permanecem em `BE-HOMOLOG-01`; recursos, frontend, portaria e versionamento documental seguem fora deste fechamento.
 
 ### BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD
 
@@ -93,8 +113,7 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Perma
 
 ## Pendentes relevantes
 
-- [`BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD](./tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece ativo apenas como guarda-chuva estrutural; `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01` e `BE-DOC-CESAD-SIGN-01` reduziram substancialmente o risco imediato ao proteger endpoints sensiveis, persistir assignment por etapa, permitir supersessao formal em recorte seguro e integrar assinatura colegiada do parecer CESAD de etapa. Permanecem integracoes futuras com workflow completo de quatro etapas, parecer conclusivo final, homologacao/notificacao/ciencia e documentos posteriores.
-- [`BE-FLOW-4STAGE-01` — estruturar progressao formal das quatro etapas avaliativas](./tasks/BE-FLOW-4STAGE-01-four-stage-progression.md): permanece ativa como guarda-chuva. A fatia `BE-FLOW-4STAGE-01A` materializou quatro etapas e corrigiu a resolucao da etapa atual; falta `BE-FLOW-4STAGE-01B — Implementar COMPLETE_CURRENT_STAGE` para encerramento formal da etapa ativa, abertura sequencial da proxima etapa e tratamento da quarta etapa.
+- [`BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD](./tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece ativo apenas como guarda-chuva estrutural; `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01`, `BE-DOC-CESAD-SIGN-01` e `BE-FLOW-4STAGE-01` reduziram substancialmente o risco imediato ao proteger endpoints sensiveis, persistir assignment por etapa, permitir supersessao formal em recorte seguro, integrar assinatura colegiada do parecer CESAD de etapa e concluir a progressao formal das quatro etapas. Permanecem integracoes futuras com parecer conclusivo final, homologacao/notificacao/ciencia e documentos posteriores.
 - [`BE-CESAD-FINAL-01` — modelar parecer conclusivo final da CESAD](./tasks/BE-CESAD-FINAL-01-final-opinion.md): pendente alta e pre-condicao para homologacao final valida.
 - [`BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia](./tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente futura dependente de parecer conclusivo final.
 - [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`, que foi concluida no recorte de logs/testes.
