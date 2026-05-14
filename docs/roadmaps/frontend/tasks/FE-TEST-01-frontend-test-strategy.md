@@ -78,11 +78,24 @@ Comando focado:
 - **Estilo dos testes:** asserts por texto institucional visivel (`screen.getByText`), sem snapshots grandes, sem dependencia de classes CSS internas, sem chamada real para endpoint e sem dados sensiveis.
 - **Limitacoes conhecidas deste recorte:** o recorte cobre apenas `operational-states.tsx`; nao cobre `AuthGuard`, telas autenticadas, hooks de sessao, services HTTP, jornadas processuais, fluxos da chefia, CESAD ou homologacao; nao integra com CI; nao substitui validacao visual em navegador.
 
+## Recorte FE-TEST-01C - Demais estados operacionais institucionais
+
+- **Status documental:** recorte executado em 2026-05-14, sem prometer cobertura completa de testes frontend.
+- **Escopo do recorte:** ampliar a cobertura iniciada em `FE-TEST-01B` para os estados operacionais institucionais ainda nao testados em `apps/frontend/src/shared/ui/operational-states.tsx`.
+- **Componentes cobertos neste recorte:** `ProcessNotFoundState`, `StageUnavailableState`, `MissingDocumentState`, `ReadNotReleasedState`, `InsufficientHistoryState` e `ClearState`. Cada componente recebeu, no minimo, um caso de copy default (titulo, descricao e badge institucionais). `ProcessNotFoundState`, `MissingDocumentState` e `ClearState` receberam, alem disso, casos com customizacao de copy ou uso do slot `children`, mantendo o padrao validado em `FE-TEST-01B`.
+- **Arquivos atualizados:**
+  - `apps/frontend/src/shared/ui/operational-states.test.tsx` recebeu novos blocos `describe` para os componentes acima.
+- **Comando para executar este recorte:**
+  - `npm run frontend:test:run -- operational-states` cobre o arquivo completo (15 testes apos este recorte);
+  - `npm run frontend:test:run` executa toda a suite frontend.
+- **Estilo dos testes:** mantido o padrao do `FE-TEST-01B` — asserts por texto institucional visivel (`screen.getByText`), sem snapshots, sem dependencia de classes CSS internas, sem chamada real para endpoint, sem dados sensiveis.
+- **Limitacoes conhecidas deste recorte:** continua restrito a `operational-states.tsx`; nao cobre `AuthGuard`, telas autenticadas, hooks de sessao, services HTTP, jornadas processuais, fluxos da chefia, CESAD ou homologacao; nao integra com CI; nao substitui validacao visual em navegador.
+
 ## Proxima acao
 
-Manter como melhoria futura. Apos este recorte FE-TEST-01B, priorizar:
+Manter como melhoria futura. Apos este recorte FE-TEST-01C, priorizar:
 
-- ampliar cobertura para os demais estados operacionais (`ProcessNotFoundState`, `StageUnavailableState`, `MissingDocumentState`, `ReadNotReleasedState`, `InsufficientHistoryState`, `ClearState`) caso a frente de qualidade frontend ganhe nova janela;
 - testar `AuthGuard` apenas quando houver decisao operacional clara sobre como simular sessao sem reabrir contratos backend;
+- avaliar cobertura para hooks de sessao e services HTTP institucionais quando houver janela de qualidade dedicada;
 - avaliar gate de testes no pipeline somente quando `CI-GATES-01` existir;
 - nao acoplar estes testes a `FE-CHEFIA-02`, `FE-PROCESS-LIST-01` ou `FE-CESAD-01`, que continuam pendentes de backend.

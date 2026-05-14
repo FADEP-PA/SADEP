@@ -3,8 +3,14 @@ import { render, screen } from '@testing-library/react';
 
 import {
   AccessBlockedState,
+  ClearState,
   DemonstrationModeState,
   EmptyState,
+  InsufficientHistoryState,
+  MissingDocumentState,
+  ProcessNotFoundState,
+  ReadNotReleasedState,
+  StageUnavailableState,
   TemporaryUnavailableState,
 } from './operational-states';
 
@@ -93,6 +99,136 @@ describe('operational-states', () => {
         screen.getByText('Informe um identificador de processo para carregar os dados reais.'),
       ).toBeTruthy();
       expect(screen.getByText('Demonstracao')).toBeTruthy();
+    });
+  });
+
+  describe('ProcessNotFoundState', () => {
+    it('renders the default process-not-found title, description and badge', () => {
+      render(<ProcessNotFoundState />);
+
+      expect(screen.getByText('Processo não encontrado')).toBeTruthy();
+      expect(
+        screen.getByText(
+          'O identificador informado nao retornou processo disponivel para este perfil. Confira o codigo e tente novamente.',
+        ),
+      ).toBeTruthy();
+      expect(screen.getByText('Processo')).toBeTruthy();
+    });
+
+    it('accepts custom institutional title and description without altering the badge', () => {
+      render(
+        <ProcessNotFoundState
+          title="Processo nao localizado nesta consulta"
+          description="Confira o identificador informado e tente novamente."
+        />,
+      );
+
+      expect(screen.getByText('Processo nao localizado nesta consulta')).toBeTruthy();
+      expect(
+        screen.getByText('Confira o identificador informado e tente novamente.'),
+      ).toBeTruthy();
+      expect(screen.getByText('Processo')).toBeTruthy();
+    });
+  });
+
+  describe('StageUnavailableState', () => {
+    it('renders the default stage-unavailable institutional copy', () => {
+      render(<StageUnavailableState />);
+
+      expect(screen.getByText('Etapa indisponível')).toBeTruthy();
+      expect(
+        screen.getByText(
+          'A etapa solicitada ainda nao esta disponivel para leitura neste contexto operacional.',
+        ),
+      ).toBeTruthy();
+      expect(screen.getByText('Etapa')).toBeTruthy();
+    });
+  });
+
+  describe('MissingDocumentState', () => {
+    it('renders the default missing-document institutional copy', () => {
+      render(<MissingDocumentState />);
+
+      expect(screen.getByText('Documento ausente')).toBeTruthy();
+      expect(
+        screen.getByText(
+          'O documento esperado ainda nao foi localizado ou formalizado para esta etapa.',
+        ),
+      ).toBeTruthy();
+      expect(screen.getByText('Documento')).toBeTruthy();
+    });
+
+    it('renders extra institutional details passed via the children slot', () => {
+      render(
+        <MissingDocumentState>
+          <p>Solicite o reenvio do documento institucional para prosseguir.</p>
+        </MissingDocumentState>,
+      );
+
+      expect(screen.getByText('Documento ausente')).toBeTruthy();
+      expect(
+        screen.getByText('Solicite o reenvio do documento institucional para prosseguir.'),
+      ).toBeTruthy();
+      expect(screen.getByText('Documento')).toBeTruthy();
+    });
+  });
+
+  describe('ReadNotReleasedState', () => {
+    it('renders the default read-not-released institutional copy', () => {
+      render(<ReadNotReleasedState />);
+
+      expect(screen.getByText('Leitura ainda não liberada')).toBeTruthy();
+      expect(
+        screen.getByText(
+          'A leitura completa deste conteudo ainda nao esta disponivel para o momento processual atual.',
+        ),
+      ).toBeTruthy();
+      expect(screen.getByText('Leitura')).toBeTruthy();
+    });
+  });
+
+  describe('InsufficientHistoryState', () => {
+    it('renders the default insufficient-history institutional copy', () => {
+      render(<InsufficientHistoryState />);
+
+      expect(screen.getByText('Histórico insuficiente')).toBeTruthy();
+      expect(
+        screen.getByText(
+          'Ainda nao ha eventos auditaveis suficientes para compor a leitura operacional desta area.',
+        ),
+      ).toBeTruthy();
+      expect(screen.getByText('Histórico')).toBeTruthy();
+    });
+  });
+
+  describe('ClearState', () => {
+    it('renders the default clear-state institutional copy', () => {
+      render(<ClearState />);
+
+      expect(screen.getByText('Nenhuma pendencia identificada')).toBeTruthy();
+      expect(
+        screen.getByText(
+          'Os dados disponiveis nao indicam bloqueios para esta leitura operacional.',
+        ),
+      ).toBeTruthy();
+      expect(screen.getByText('Regular')).toBeTruthy();
+    });
+
+    it('accepts custom institutional title and description without altering the badge', () => {
+      render(
+        <ClearState
+          title="Sem pendencias na leitura desta etapa"
+          description="A leitura operacional nao indica bloqueios para o perfil autenticado."
+        />,
+      );
+
+      expect(screen.getByText('Sem pendencias na leitura desta etapa')).toBeTruthy();
+      expect(
+        screen.getByText(
+          'A leitura operacional nao indica bloqueios para o perfil autenticado.',
+        ),
+      ).toBeTruthy();
+      expect(screen.getByText('Regular')).toBeTruthy();
     });
   });
 });
