@@ -8,6 +8,7 @@ export * from './cesad-current-commission';
 export * from './cesad-stage-opinion-expected-signer';
 export * from './cesad-stage-read';
 export * from './cesad-stage-opinion';
+export * from './cesad-final-opinion';
 export * from './document-ref';
 export * from './intern-server-workspace';
 export * from './process-ref';

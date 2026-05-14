@@ -5,6 +5,10 @@ import { ProcessDocumentsService } from '../application/documents/process-docume
 import { AuthModule } from '../auth/auth.module';
 import { CesadModule } from '../cesad/cesad.module';
 import { PrismaService } from '../infrastructure/database/prisma.service';
+import { CesadFinalOpinionConsolidationService } from './cesad-final-opinions/cesad-final-opinion-consolidation.service';
+import { CesadFinalOpinionEligibilityService } from './cesad-final-opinions/cesad-final-opinion-eligibility.service';
+import { CesadFinalOpinionsController } from './cesad-final-opinions/cesad-final-opinions.controller';
+import { CesadFinalOpinionsService } from './cesad-final-opinions/cesad-final-opinions.service';
 import { CesadStageOpinionsController } from './cesad-stage-opinions/cesad-stage-opinions.controller';
 import { CesadStageOpinionsService } from './cesad-stage-opinions/cesad-stage-opinions.service';
 import { CesadStageReadController } from './cesad-stage-read.controller';
@@ -23,6 +27,7 @@ import { SupervisorEvaluationsService } from './supervisor-evaluations/superviso
     ProcessesController,
     CesadStageOpinionsController,
     CesadStageReadController,
+    CesadFinalOpinionsController,
     SupervisorEvaluationsController,
     SelfEvaluationsController,
   ],
@@ -30,6 +35,9 @@ import { SupervisorEvaluationsService } from './supervisor-evaluations/superviso
     ProcessesService,
     CesadStageOpinionsService,
     CesadStageReadService,
+    CesadFinalOpinionsService,
+    CesadFinalOpinionEligibilityService,
+    CesadFinalOpinionConsolidationService,
     InternWorkspaceService,
     SupervisorEvaluationsService,
     SelfEvaluationsService,

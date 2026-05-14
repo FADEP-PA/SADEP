@@ -39,6 +39,9 @@ enum AuditEventType {
   CESAD_STAGE_OPINION_DRAFT_SAVED
   CESAD_STAGE_OPINION_COMPLETED
   CESAD_STAGE_ASSIGNMENT_SUPERSEDED
+  CESAD_FINAL_OPINION_STARTED
+  CESAD_FINAL_OPINION_DRAFT_SAVED
+  CESAD_FINAL_OPINION_COMPLETED
   SIGNATURE_REQUESTED
   DOCUMENT_SIGNED
   SELF_EVALUATION_SUBMITTED
@@ -102,6 +105,11 @@ enum CesadStageOpinionStatus {
   COMPLETED
 }
 
+enum CesadFinalOpinionStatus {
+  DRAFT
+  COMPLETED
+}
+
 enum CesadCommissionStatus {
   ACTIVE
   INACTIVE
@@ -151,6 +159,7 @@ model User {
   responsibleProcessStages ProcessStage[]         @relation("ProcessStageResponsibleSupervisor")
   selfEvaluations          SelfEvaluation[]       @relation("SelfEvaluationAuthor")
   cesadStageOpinions       CesadStageOpinion[]    @relation("CesadStageOpinionAuthor")
+  cesadFinalOpinions       CesadFinalOpinion[]    @relation("CesadFinalOpinionAuthor")
   cesadCommissionMembers   CesadCommissionMember[]
   cesadStageOpinionExpectedSigners CesadStageOpinionExpectedSigner[] @relation("CesadStageOpinionExpectedSignerActingUser")
   cesadStageAssignmentsCreated CesadStageAssignment[] @relation("CesadStageAssignmentAssignedByUser")
@@ -194,6 +203,7 @@ model EvaluationProcess {
   supervisorEvaluations SupervisorEvaluation[]
   selfEvaluations       SelfEvaluation[]
   cesadStageOpinions    CesadStageOpinion[]
+  cesadFinalOpinions    CesadFinalOpinion[]
   cesadStageAssignments CesadStageAssignment[]
 
   @@index([evaluatedUserId])
@@ -326,6 +336,28 @@ model CesadStageOpinion {
   expectedSigners   CesadStageOpinionExpectedSigner[]
 
   @@index([processId])
+  @@index([authorUserId])
+  @@index([status])
+}
+
+model CesadFinalOpinion {
+  id                   String                  @id @default(cuid())
+  processId            String                  @unique
+  authorUserId         String
+  status               CesadFinalOpinionStatus @default(DRAFT)
+  reportText           String
+  legalBasis           String?
+  finalConclusion      String
+  finalResult          String?
+  finalConcept         String?
+  recommendation       String?
+  consolidatedSnapshot Json?
+  completedAt          DateTime?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  evaluationProcess    EvaluationProcess       @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  authorUser           User                    @relation("CesadFinalOpinionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
   @@index([authorUserId])
   @@index([status])
 }
