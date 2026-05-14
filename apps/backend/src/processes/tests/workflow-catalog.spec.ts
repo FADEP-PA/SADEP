@@ -1,13 +1,17 @@
 import assert from 'node:assert/strict';
 
 import {
+  AuditEventType,
   ProcessAction,
   ProcessStatus,
+  UserRole,
 } from '@sadep/contracts';
 
 import {
   getAvailableWorkflowTransitions,
   getWorkflowTransition,
+  isWorkflowAction,
+  isWorkflowAuditEventType,
 } from '../workflow-catalog';
 
 export function runWorkflowCatalogTests() {
@@ -49,4 +53,30 @@ export function runWorkflowCatalogTests() {
     waitingSignatureTransitions.map((transition) => transition.action),
     [ProcessAction.SEND_TO_CESAD],
   );
+
+  const completeCurrentStage = getWorkflowTransition(
+    ProcessStatus.PARECER_EMITIDO,
+    ProcessAction.COMPLETE_CURRENT_STAGE,
+  );
+  assert.ok(completeCurrentStage, 'expected COMPLETE_CURRENT_STAGE transition to exist');
+  assert.equal(completeCurrentStage.from, ProcessStatus.PARECER_EMITIDO);
+  assert.equal(completeCurrentStage.eventType, AuditEventType.STAGE_COMPLETED);
+  assert.equal(completeCurrentStage.requiresComment, false);
+  assert.deepEqual(
+    [...completeCurrentStage.allowedRoles].sort(),
+    [UserRole.ADMIN, UserRole.CESAD_MEMBER].sort(),
+  );
+  assert(!completeCurrentStage.allowedRoles.includes(UserRole.COMMISSION_ASSISTANT));
+  assert(!completeCurrentStage.allowedRoles.includes(UserRole.IMMEDIATE_SUPERVISOR));
+  assert(!completeCurrentStage.allowedRoles.includes(UserRole.INTERN_SERVER));
+  assert(!completeCurrentStage.allowedRoles.includes(UserRole.HOMOLOGATION_AUTHORITY));
+
+  const opinionEmittedTransitions = getAvailableWorkflowTransitions(ProcessStatus.PARECER_EMITIDO);
+  assert.deepEqual(
+    opinionEmittedTransitions.map((transition) => transition.action),
+    [ProcessAction.COMPLETE_CURRENT_STAGE],
+  );
+
+  assert.equal(isWorkflowAction(ProcessAction.COMPLETE_CURRENT_STAGE), true);
+  assert.equal(isWorkflowAuditEventType(AuditEventType.STAGE_COMPLETED), true);
 }

@@ -40,9 +40,11 @@ import type {
   WorkflowTransitionRequestDto,
 } from './dto/workflow-transition.dto';
 import {
+  CASE_2_FINAL_PROCESS_STAGE_SEQUENCE,
   CASE_2_PROCESS_STAGE_SEQUENCES,
   getCase2ProcessStageCode,
   isActiveProcessStage,
+  isCompletedProcessStage,
   isFutureProcessStage,
 } from './process-stages.constants';
 import {
@@ -60,6 +62,7 @@ const CESAD_PROCESS_ACCESS_ALLOWED_STATUSES = new Set<ProcessStatus>([
 const CESAD_CONTEXTUAL_TRANSITION_ACTIONS = new Set<ProcessAction>([
   ProcessAction.ISSUE_CESAD_OPINION,
   ProcessAction.REQUEST_ADJUSTMENT,
+  ProcessAction.COMPLETE_CURRENT_STAGE,
 ]);
 
 const CESAD_STAGE_ASSIGNMENT_SUPERSEDER_ROLES = new Set<UserRole>([
@@ -769,6 +772,18 @@ export class ProcessesService {
       await this.ensureSignedCesadOpinionDocumentForIssue(transaction, process);
     }
 
+    if (payload.action === ProcessAction.COMPLETE_CURRENT_STAGE) {
+      return this.executeCompleteCurrentStageTransition(
+        transaction,
+        process,
+        user,
+        transition.eventType,
+        transition.action,
+        normalizedComment,
+        new Date(occurredAt),
+      );
+    }
+
     await transaction.evaluationProcess.update({
       where: { id: process.id },
       data: { status: this.toDatabaseProcessStatus(transition.to) },
@@ -809,6 +824,178 @@ export class ProcessesService {
     });
 
     return transition.to;
+  }
+
+  private async executeCompleteCurrentStageTransition(
+    transaction: PrismaTransactionClient,
+    process: ProcessAccessContext,
+    user: AuthenticatedUser,
+    eventType: AuditEventType,
+    action: ProcessAction,
+    normalizedComment: string | null,
+    occurredAt: Date,
+  ): Promise<ProcessStatus> {
+    const completenessSummary = await this.ensureCurrentStageIsCompleteForStageClosure(
+      transaction,
+      process,
+    );
+
+    const stages = await transaction.processStage.findMany({
+      where: { evaluationProcessId: process.id },
+      select: {
+        id: true,
+        sequence: true,
+        stageCode: true,
+        responsibleSupervisorUserId: true,
+        startedAt: true,
+        endedAt: true,
+      },
+      orderBy: { sequence: 'asc' },
+    });
+
+    const activeStages = stages.filter(isActiveProcessStage);
+
+    if (activeStages.length === 0) {
+      throw new BadRequestException(
+        'Current stage cannot be completed because no active process stage was found',
+      );
+    }
+
+    if (activeStages.length > 1) {
+      throw new ConflictException(
+        'Current stage cannot be completed because more than one active process stage was found',
+      );
+    }
+
+    const currentStage = activeStages[0]!;
+
+    if (currentStage.id !== process.currentStage.id) {
+      throw new ConflictException(
+        'Current stage cannot be completed because the resolved active stage diverged during the transaction',
+      );
+    }
+
+    const isFinalStage = currentStage.sequence === CASE_2_FINAL_PROCESS_STAGE_SEQUENCE;
+
+    let nextStage: typeof stages[number] | null = null;
+
+    if (!isFinalStage) {
+      const candidateNextStage = stages.find((stage) => stage.sequence === currentStage.sequence + 1);
+
+      if (!candidateNextStage) {
+        throw new BadRequestException(
+          `Current stage cannot be completed because the next stage (sequence ${currentStage.sequence + 1}) is missing`,
+        );
+      }
+
+      if (!isFutureProcessStage(candidateNextStage)) {
+        if (isActiveProcessStage(candidateNextStage)) {
+          throw new ConflictException(
+            `Current stage cannot be completed because the next stage (sequence ${candidateNextStage.sequence}) is already active`,
+          );
+        }
+
+        if (isCompletedProcessStage(candidateNextStage)) {
+          throw new ConflictException(
+            `Current stage cannot be completed because the next stage (sequence ${candidateNextStage.sequence}) is already completed`,
+          );
+        }
+
+        throw new ConflictException(
+          `Current stage cannot be completed because the next stage (sequence ${candidateNextStage.sequence}) is not in a future state`,
+        );
+      }
+
+      nextStage = candidateNextStage;
+    }
+
+    const previousProcessStatus = process.status;
+    const nextProcessStatus = isFinalStage ? ProcessStatus.PARECER_EMITIDO : ProcessStatus.EM_AVALIACAO;
+
+    await transaction.processStage.update({
+      where: { id: currentStage.id },
+      data: { endedAt: occurredAt },
+    });
+
+    if (nextStage) {
+      const inheritedSupervisorUserId =
+        nextStage.responsibleSupervisorUserId ?? currentStage.responsibleSupervisorUserId ?? null;
+
+      await transaction.processStage.update({
+        where: { id: nextStage.id },
+        data: {
+          startedAt: occurredAt,
+          ...(nextStage.responsibleSupervisorUserId === null && inheritedSupervisorUserId !== null
+            ? { responsibleSupervisorUserId: inheritedSupervisorUserId }
+            : {}),
+        },
+      });
+    }
+
+    if (nextProcessStatus !== previousProcessStatus) {
+      await transaction.evaluationProcess.update({
+        where: { id: process.id },
+        data: { status: this.toDatabaseProcessStatus(nextProcessStatus) },
+      });
+    }
+
+    const occurredAtIso = occurredAt.toISOString();
+    const metadata: Prisma.InputJsonValue = {
+      eventType,
+      action,
+      performedByUserId: user.sub,
+      performedByRole: user.role,
+      occurredAt: occurredAtIso,
+      processId: process.id,
+      previousProcessStatus,
+      nextProcessStatus,
+      processStatus: nextProcessStatus,
+      completedProcessStageId: currentStage.id,
+      completedStageSequence: currentStage.sequence,
+      completedStageCode: currentStage.stageCode,
+      processStageId: currentStage.id,
+      stageSequence: currentStage.sequence,
+      stageCode: currentStage.stageCode,
+      isFinalStage,
+      stageCompletenessSummary: completenessSummary,
+      ...(nextStage
+        ? {
+            nextProcessStageId: nextStage.id,
+            nextStageSequence: nextStage.sequence,
+            nextStageCode: nextStage.stageCode,
+          }
+        : {}),
+      ...(normalizedComment ? { comment: normalizedComment } : {}),
+    };
+
+    await transaction.auditEvent.create({
+      data: {
+        evaluationProcessId: process.id,
+        actorUserId: user.sub,
+        actorRole: this.toDatabaseRole(user.role),
+        eventType: this.toDatabaseAuditEventType(eventType),
+        beforeState: {
+          status: previousProcessStatus,
+          completedProcessStageId: currentStage.id,
+          completedStageSequence: currentStage.sequence,
+        },
+        afterState: {
+          status: nextProcessStatus,
+          completedProcessStageId: currentStage.id,
+          completedStageSequence: currentStage.sequence,
+          ...(nextStage
+            ? {
+                nextProcessStageId: nextStage.id,
+                nextStageSequence: nextStage.sequence,
+              }
+            : { isFinalStage: true }),
+        },
+        metadata,
+        occurredAt,
+      },
+    });
+
+    return nextProcessStatus;
   }
 
   async findProcessOrThrow(transaction: PrismaTransactionClient, processId: string) {
@@ -853,6 +1040,110 @@ export class ProcessesService {
       this.isDocumentComplete(supervisorEvaluationDocument, DocumentType.SUPERVISOR_EVALUATION) &&
       this.isDocumentComplete(selfEvaluationDocument, DocumentType.SELF_EVALUATION)
     );
+  }
+
+  async ensureCurrentStageIsCompleteForStageClosure(
+    transaction: PrismaTransactionClient,
+    process: ProcessAccessContext,
+  ): Promise<{
+    supervisorEvaluationDocumentSigned: boolean;
+    selfEvaluationDocumentSigned: boolean;
+    cesadStageOpinionCompleted: boolean;
+    cesadOpinionDocumentSigned: boolean;
+    cesadExpectedSignersCount: number;
+  }> {
+    if (process.status !== ProcessStatus.PARECER_EMITIDO) {
+      throw new BadRequestException(
+        `Current stage can only be completed while process is in ${ProcessStatus.PARECER_EMITIDO} status`,
+      );
+    }
+
+    const documentsComplete = await this.areRequiredStageDocumentsComplete(
+      transaction,
+      process.id,
+      process.currentStage.id,
+    );
+
+    if (!documentsComplete) {
+      throw new BadRequestException(
+        'Current stage cannot be completed before the supervisor evaluation and self evaluation documents are fully signed',
+      );
+    }
+
+    const opinion = await transaction.cesadStageOpinion.findUnique({
+      where: { processStageId: process.currentStage.id },
+      select: {
+        id: true,
+        status: true,
+        expectedSigners: {
+          select: {
+            id: true,
+            actingUserId: true,
+          },
+        },
+      },
+    });
+
+    if (!opinion || opinion.status !== PrismaCesadStageOpinionStatus.COMPLETED) {
+      throw new BadRequestException(
+        'Current stage cannot be completed before the CESAD stage opinion is COMPLETED',
+      );
+    }
+
+    if (opinion.expectedSigners.length === 0) {
+      throw new BadRequestException(
+        'Current stage cannot be completed before CESAD opinion expected signers have been frozen',
+      );
+    }
+
+    const cesadOpinionDocument = await transaction.processDocument.findFirst({
+      where: {
+        evaluationProcessId: process.id,
+        processStageId: process.currentStage.id,
+        documentType: PrismaDocumentType.CESAD_OPINION,
+      },
+      include: {
+        signatureRecords: true,
+      },
+    });
+
+    if (!cesadOpinionDocument) {
+      throw new BadRequestException(
+        'Current stage cannot be completed before a CESAD opinion document exists for the stage',
+      );
+    }
+
+    if (cesadOpinionDocument.documentStatus !== PrismaDocumentStatus.SIGNED) {
+      throw new BadRequestException(
+        'Current stage cannot be completed before the CESAD opinion document is fully signed',
+      );
+    }
+
+    const allCesadSignersCompleted = opinion.expectedSigners.every((expectedSigner) =>
+      cesadOpinionDocument.signatureRecords.some(
+        (signature) =>
+          signature.status === PrismaSignatureStatus.COMPLETED &&
+          signature.signatoryRole === PrismaUserRole.CESAD_MEMBER &&
+          (
+            signature.cesadStageOpinionExpectedSignerId === expectedSigner.id ||
+            signature.signatoryUserId === expectedSigner.actingUserId
+          ),
+      ),
+    );
+
+    if (!allCesadSignersCompleted) {
+      throw new BadRequestException(
+        'Current stage cannot be completed before all expected CESAD signers have signed the document',
+      );
+    }
+
+    return {
+      supervisorEvaluationDocumentSigned: true,
+      selfEvaluationDocumentSigned: true,
+      cesadStageOpinionCompleted: true,
+      cesadOpinionDocumentSigned: true,
+      cesadExpectedSignersCount: opinion.expectedSigners.length,
+    };
   }
 
   async ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage(
@@ -1347,6 +1638,8 @@ export class ProcessesService {
         return ProcessAction.ISSUE_CESAD_OPINION;
       case AuditEventType.ADJUSTMENT_REQUESTED:
         return ProcessAction.REQUEST_ADJUSTMENT;
+      case AuditEventType.STAGE_COMPLETED:
+        return ProcessAction.COMPLETE_CURRENT_STAGE;
       default:
         throw new BadRequestException(`Workflow history contains unsupported event type ${eventType}`);
     }
