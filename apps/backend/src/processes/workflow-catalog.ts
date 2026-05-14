@@ -47,6 +47,14 @@ const WORKFLOW_TRANSITIONS: readonly WorkflowTransitionDefinition[] = [
     allowedRoles: [UserRole.ADMIN, UserRole.CESAD_MEMBER],
     requiresComment: true,
   },
+  {
+    action: ProcessAction.COMPLETE_CURRENT_STAGE,
+    from: ProcessStatus.PARECER_EMITIDO,
+    to: ProcessStatus.EM_AVALIACAO,
+    eventType: AuditEventType.STAGE_COMPLETED,
+    allowedRoles: [UserRole.ADMIN, UserRole.CESAD_MEMBER],
+    requiresComment: false,
+  },
 ] as const;
 
 export function getWorkflowTransitions(): readonly WorkflowTransitionDefinition[] {

@@ -27,3 +27,12 @@ export function isFutureProcessStage(stage: {
 }): boolean {
   return stage.startedAt === null && stage.endedAt === null;
 }
+
+export function isCompletedProcessStage(stage: {
+  startedAt: Date | null;
+  endedAt: Date | null;
+}): boolean {
+  return stage.startedAt !== null && stage.endedAt !== null;
+}
+
+export const CASE_2_FINAL_PROCESS_STAGE_SEQUENCE: Case2ProcessStageSequence = 4;
