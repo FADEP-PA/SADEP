@@ -1,8 +1,8 @@
 # SADEP — Catálogo Oficial de Modelagem Documental
 
 **Status:** Aprovado para referência de projeto  
-**Versão:** 1.1.0  
-**Data:** 2026-03-27  
+**Versão:** 1.2.0
+**Data:** 2026-05-15
 **Escopo:** Diretriz oficial de modelagem documental do SADEP  
 **Aplicação:** Backend, frontend, workflow, geração documental, assinatura e auditoria
 
@@ -353,6 +353,7 @@ Conteúdo redigido e consolidado pela CESAD no sistema.
 #### Campos mínimos adicionais de escopo
 - `opinionKind = STAGE`
 - `stageNumber = 1 | 2 | 3 | 4`
+- `processStageId` preenchido
 
 #### Signatários
 - membros obrigatórios da CESAD
@@ -398,7 +399,7 @@ O parecer de etapa deve suportar, no mínimo:
 - visão consolidada no processo.
 
 #### Status no roadmap
-Próximo documento prioritário do ciclo da CESAD.
+Consolidado no backend no recorte de parecer CESAD de etapa, com documento stage-bound e assinatura colegiada propria.
 
 ---
 
@@ -411,7 +412,7 @@ Documento originado de artefato funcional estruturado da comissão, consolidando
 Conteúdo redigido e consolidado pela CESAD no sistema, após a conclusão das quatro etapas.
 
 #### Artefato funcional sugerido
-`CesadOpinion`
+`CesadFinalOpinion`
 
 #### Documento processual
 `ProcessDocument` com `documentType = CESAD_OPINION`
@@ -419,9 +420,10 @@ Conteúdo redigido e consolidado pela CESAD no sistema, após a conclusão das q
 #### Campos mínimos adicionais de escopo
 - `opinionKind = FINAL_CONCLUSIVE`
 - `stageNumber = null`
+- `processStageId = null`
 
 #### Signatários
-- membros obrigatórios da CESAD
+- membros obrigatórios da CESAD, congelados em `CesadFinalOpinionExpectedSigner`
 
 #### Estrutura mínima esperada
 O parecer conclusivo final deve suportar, no mínimo:
@@ -448,16 +450,20 @@ O parecer conclusivo final deve suportar, no mínimo:
 3. CESAD salva e revisa;
 4. sistema consolida o parecer final;
 5. sistema gera o documento oficial;
-6. sistema cria as pendências de assinatura;
+6. sistema cria as pendências de assinatura a partir dos expected signers finais;
 7. assinaturas são coletadas;
-8. processo se torna apto à homologação.
+8. documento final se torna `SIGNED` após completude colegiada;
+9. processo fica preparado para a ponte formal de homologação, sem homologar automaticamente.
 
 #### Regras principais
 - só pode ser iniciado quando as 4 etapas estiverem aptas;
 - consolida os resultados das quatro etapas;
 - não substitui os pareceres de etapa, mas os complementa;
 - é a base formal para a homologação final;
-- não deve ser considerado emitido antes das assinaturas obrigatórias.
+- não deve ser considerado assinado antes das assinaturas obrigatórias;
+- `ADMIN` pode preparar/ler administrativamente, mas não assina por membro;
+- `COMMISSION_ASSISTANT` pode ler quando vinculado, mas não prepara nem assina;
+- a assinatura é restrita a `CESAD_MEMBER` expected signer.
 
 #### Saídas esperadas
 - PDF oficial do parecer conclusivo final;
@@ -465,7 +471,7 @@ O parecer conclusivo final deve suportar, no mínimo:
 - habilitação do processo para homologação.
 
 #### Status no roadmap
-Posterior aos pareceres de etapa e anterior à homologação.
+Consolidado no backend em `BE-CESAD-FINAL-01B` no recorte documental e de assinatura colegiada final. O envio formal à homologação permanece pendente em `BE-CESAD-FINAL-01C`.
 
 ---
 
@@ -873,8 +879,8 @@ Registro funcional do recurso no sistema, dentro do prazo recursal final.
 |---|---|---|---|---|---|
 | Avaliação da chefia | Formulário | `SupervisorEvaluation` | `SUPERVISOR_EVALUATION` | chefia + servidor | já consolidado |
 | Autoavaliação | Formulário | `SelfEvaluation` | `SELF_EVALUATION` | servidor + chefia | já consolidado |
-| Parecer CESAD de etapa | Conteúdo estruturado | `CesadOpinion` | `CESAD_OPINION` | membros da CESAD | próximo ciclo |
-| Parecer CESAD conclusivo final | Conteúdo estruturado | `CesadOpinion` | `CESAD_OPINION` | membros da CESAD | posterior ao ciclo das etapas |
+| Parecer CESAD de etapa | Conteúdo estruturado | `CesadOpinion` | `CESAD_OPINION` com `opinionKind = STAGE` | membros da CESAD | consolidado no backend |
+| Parecer CESAD conclusivo final | Conteúdo estruturado | `CesadFinalOpinion` | `CESAD_OPINION` com `opinionKind = FINAL_CONCLUSIVE` | membros da CESAD via `CesadFinalOpinionExpectedSigner` | documento e assinatura consolidados; envio à homologação pendente |
 | Homologação | Ato decisório | `HomologationDecision` | `HOMOLOGATION_RECORD` | autoridade homologadora | posterior |
 | Notificação | Template | `ResultNotification` | `RESULT_NOTIFICATION` | autoridade homologadora | posterior |
 | Ciência | Ato formal | `Acknowledgement` | `ACKNOWLEDGEMENT_RECORD` | servidor | posterior |
@@ -967,6 +973,8 @@ Cada `ProcessDocument` deve, idealmente, manter ou permitir derivar:
 - parecer conclusivo final
 - assinaturas do parecer final
 
+Status: concluida no recorte funcional, documental e de assinatura colegiada final por `BE-CESAD-FINAL-01A` e `BE-CESAD-FINAL-01B`; envio formal a homologacao permanece em `BE-CESAD-FINAL-01C`.
+
 ### Prioridade 4 — formalização decisória
 - homologação
 
@@ -1012,6 +1020,7 @@ Ficam considerados consolidados, para fins de continuidade do projeto:
 |---|---|---|
 | 1.0.0 | 2026-03-27 | Criação inicial do catálogo oficial de modelagem documental, consolidando avaliação da chefia, autoavaliação, parecer CESAD, homologação, notificação, ciência e portaria. Inclusão do modelo real de notificação pessoal e das regras futuras da portaria. |
 | 1.1.0 | 2026-03-27 | Atualização para diferenciar parecer CESAD de etapa e parecer conclusivo final, registrar a trava de homologação após 4 etapas, incluir artefatos documentais mínimos de recursos e atualizar a ordem recomendada de implementação. |
+| 1.2.0 | 2026-05-15 | Atualizacao pós-`BE-CESAD-FINAL-01B`: registra `ProcessDocument.opinionKind`, parecer de etapa como `STAGE`, parecer final como `FINAL_CONCLUSIVE`, documento final process-wide, expected signers finais próprios e assinatura colegiada final antes do envio formal à homologação. |
 
 ---
 

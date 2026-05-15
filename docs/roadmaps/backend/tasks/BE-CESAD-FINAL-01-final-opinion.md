@@ -18,7 +18,11 @@ A [`ADR-005 — Modelagem do parecer conclusivo final da CESAD`](../../../archit
 
 `BE-CESAD-FINAL-01` nao esta concluida integralmente.
 
-A primeira fatia, [`BE-CESAD-FINAL-01A — Modelo funcional, elegibilidade e consolidacao historica`](./BE-CESAD-FINAL-01A-functional-model-eligibility.md), foi concluida, auditada, corrigida e aprovada. A frente principal permanece ativa porque ainda faltam documento processual, assinaturas colegiadas finais e envio formal a homologacao.
+A primeira fatia, [`BE-CESAD-FINAL-01A — Modelo funcional, elegibilidade e consolidacao historica`](./BE-CESAD-FINAL-01A-functional-model-eligibility.md), foi concluida, auditada, corrigida e aprovada.
+
+A segunda fatia, [`BE-CESAD-FINAL-01B — Documento e assinaturas colegiadas do parecer final`](./BE-CESAD-FINAL-01B-document-signatures.md), tambem foi concluida, auditada, corrigida e aprovada.
+
+A frente principal permanece ativa como guarda-chuva porque ainda falta `BE-CESAD-FINAL-01C — Envio formal a homologacao`. A conclusao da 01B nao implementa `SEND_TO_HOMOLOGATION`, homologacao, notificacao, ciencia, recursos ou frontend.
 
 ## Fatias
 
@@ -31,13 +35,14 @@ A primeira fatia, [`BE-CESAD-FINAL-01A — Modelo funcional, elegibilidade e con
 
 ### BE-CESAD-FINAL-01B — Documento e assinaturas colegiadas do parecer final
 
-- **Status:** pendente alta.
+- **Status:** concluida / auditada / corrigida / aprovada.
 - **Arquivo:** [`BE-CESAD-FINAL-01B-document-signatures.md`](./BE-CESAD-FINAL-01B-document-signatures.md).
-- **Escopo:** `opinionKind`, documento processual do parecer final, `CesadFinalOpinionExpectedSigner`, preparacao de assinaturas e assinatura colegiada final.
+- **Commit funcional/correcao pos-auditoria auditada:** `55279d3 fix(backend): handle final CESAD opinion P2002 collision`.
+- **Entrega:** `opinionKind`, documento processual do parecer final, `CesadFinalOpinionExpectedSigner`, preparacao de assinaturas, consulta de status e assinatura colegiada final.
 
 ### BE-CESAD-FINAL-01C — Envio formal a homologacao
 
-- **Status:** pendente futura, dependente de 01B.
+- **Status:** pendente; dependente do parecer final funcional `COMPLETED` e do documento final `SIGNED`.
 - **Arquivo:** [`BE-CESAD-FINAL-01C-send-to-homologation.md`](./BE-CESAD-FINAL-01C-send-to-homologation.md).
 - **Escopo:** ponte `SEND_TO_HOMOLOGATION`, sem homologar, notificar, registrar ciencia ou publicar portaria.
 
@@ -68,15 +73,38 @@ A primeira fatia, [`BE-CESAD-FINAL-01A — Modelo funcional, elegibilidade e con
 - Macrostatus preservado em `PARECER_EMITIDO`.
 - Testes backend ampliados e validacoes tecnicas aprovadas.
 
+## Ja entregue em 01B
+
+- Enum `CesadOpinionKind` com `STAGE` e `FINAL_CONCLUSIVE`.
+- Campo `ProcessDocument.opinionKind`.
+- Backfill de documentos `CESAD_OPINION` stage-bound para `opinionKind = STAGE`.
+- Parecer CESAD de etapa preservado como `opinionKind = STAGE`.
+- Parecer CESAD final formalizado como `opinionKind = FINAL_CONCLUSIVE`.
+- Documento processual final com `documentType = CESAD_OPINION`, `processStageId = null`, `documentStatus = READY_FOR_SIGNATURE` e `artifactPath = null`.
+- Indice unico parcial SQLite para um unico documento final `CESAD_OPINION / FINAL_CONCLUSIVE` por processo.
+- Tratamento de colisao `P2002` no service e idempotencia da preparacao do documento final.
+- `CesadFinalOpinionExpectedSigner` como entidade propria de expected signers finais.
+- Vinculo opcional de `SignatureRecord` com expected signer final.
+- Actions:
+  - `PREPARE_CESAD_FINAL_OPINION_SIGNATURES`;
+  - `SIGN_CESAD_FINAL_OPINION`.
+- Audit event:
+  - `CESAD_FINAL_OPINION_SIGNED`.
+- Endpoints:
+  - `POST /processes/:id/cesad-final-opinion/signatures/prepare`;
+  - `GET /processes/:id/cesad-final-opinion/signatures`;
+  - `POST /processes/:id/cesad-final-opinion/sign`.
+- Derivacao de signatarios finais a partir da comissao de referencia da etapa 4.
+- Assinatura restrita a `CESAD_MEMBER` expected signer.
+- `ADMIN` autorizado a preparar/ler, mas bloqueado como assinante.
+- `COMMISSION_ASSISTANT` autorizado a ler quando vinculado, mas bloqueado para preparar e assinar.
+- Documento final permanece `READY_FOR_SIGNATURE` enquanto houver pendencias e vira `SIGNED` apenas apos completude colegiada.
+- Processo preservado em `PARECER_EMITIDO`.
+- Auditoria de preparacao/solicitacao de assinatura e assinatura final.
+- Testes backend ampliados e validacoes tecnicas aprovadas.
+
 ## Ainda falta
 
-- `ProcessDocument` do parecer final.
-- `opinionKind` em `ProcessDocument`.
-- Diferenciacao documental `STAGE` e `FINAL_CONCLUSIVE`.
-- `CesadFinalOpinionExpectedSigner`.
-- Assinatura colegiada do parecer final.
-- `PREPARE_CESAD_FINAL_OPINION_SIGNATURES`.
-- `SIGN_CESAD_FINAL_OPINION`.
 - `SEND_TO_HOMOLOGATION`.
 - Integracao posterior com `BE-HOMOLOG-01`.
 
@@ -103,10 +131,10 @@ A primeira fatia, [`BE-CESAD-FINAL-01A — Modelo funcional, elegibilidade e con
 ## Criterios de aceite restantes
 
 - Parecer final funcional ja existe e so pode ser concluido a partir de `DRAFT`.
-- Parecer final documental deve seguir a modelagem oficial com `DocumentType.CESAD_OPINION` e `opinionKind = FINAL_CONCLUSIVE`.
-- Assinaturas colegiadas finais devem ser completas antes de considerar o documento final assinado.
+- Parecer final documental ja segue a modelagem oficial com `DocumentType.CESAD_OPINION` e `opinionKind = FINAL_CONCLUSIVE`.
+- Assinaturas colegiadas finais ja sao completas antes de considerar o documento final assinado.
 - Workflow futuro deve impedir homologacao sem parecer conclusivo final formal/documentalmente concluido.
-- Auditoria deve registrar preparacao documental, assinatura e envio formal.
+- Auditoria ja registra preparacao documental e assinatura; ainda falta registrar envio formal em 01C.
 
 ## Dependencias
 
@@ -118,4 +146,4 @@ A primeira fatia, [`BE-CESAD-FINAL-01A — Modelo funcional, elegibilidade e con
 
 ## Proxima acao
 
-Executar `BE-CESAD-FINAL-01B — Documento e assinaturas colegiadas do parecer final`, sem antecipar homologacao, notificacao, ciencia, recursos, frontend ou GOVBR.
+Executar `BE-CESAD-FINAL-01C — Envio formal a homologacao`, decidindo a ponte `SEND_TO_HOMOLOGATION` sem antecipar homologacao, notificacao, ciencia, recursos, frontend ou GOVBR.

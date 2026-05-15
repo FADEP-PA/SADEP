@@ -1,6 +1,6 @@
 # Backend — Itens Resolvidos
 
-Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker backend foi arquivado em [`docs/archive/roadmaps-legados/backend-implementation-tracker.md`](../../../archive/roadmaps-legados/backend-implementation-tracker.md). Os arquivos de task detalhados resolvidos foram movidos para [`docs/archive/backend/tasks/`](../../../archive/backend/tasks/).
+Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker backend foi arquivado em [`docs/archive/roadmaps-legados/backend-implementation-tracker.md`](../../../archive/roadmaps-legados/backend-implementation-tracker.md). Quando aplicavel, arquivos de task detalhados resolvidos foram movidos para [`docs/archive/backend/tasks/`](../../../archive/backend/tasks/); task files ainda usados como referencia de guarda-chuva ou dependencia podem permanecer em [`tasks/`](./tasks/).
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
@@ -85,8 +85,41 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Implementou autorizacao process-wide para CESAD relacionado e `ADMIN`; `COMMISSION_ASSISTANT` le mas nao escreve; chefia, servidor e autoridade homologadora permanecem bloqueados.
 - Ampliou testes backend para elegibilidade, consolidacao, fluxo funcional, autorizacao, auditoria, ausencia de `ProcessDocument` e regressao de `complete`.
 - Validacoes aprovadas: build de `@sadep/contracts`, `prisma:generate`, typecheck backend, typecheck de specs, suite backend, Prisma validate com `DATABASE_URL` temporaria quando necessario e `git diff --check`.
-- Fora do escopo preservado: `ProcessDocument` do parecer final, `opinionKind`, `CesadFinalOpinionExpectedSigner`, assinatura colegiada final, `PREPARE_CESAD_FINAL_OPINION_SIGNATURES`, `SIGN_CESAD_FINAL_OPINION`, `SEND_TO_HOMOLOGATION`, homologacao, notificacao, ciencia, recursos, frontend, GOVBR e versionamento/invalidacao documental.
-- `BE-CESAD-FINAL-01` permanece ativa como guarda-chuva/fase principal; proximas fatias: `BE-CESAD-FINAL-01B` e `BE-CESAD-FINAL-01C`.
+- Continuidade posterior: `BE-CESAD-FINAL-01B` concluiu a camada documental e de assinatura colegiada final.
+- Fora do recorte preservado: `SEND_TO_HOMOLOGATION`, homologacao, notificacao, ciencia, recursos, frontend, GOVBR e versionamento/invalidacao documental.
+- `BE-CESAD-FINAL-01` permanece ativa como guarda-chuva/fase principal ate `BE-CESAD-FINAL-01C`.
+
+## BE-CESAD-FINAL-01B — Documento e assinaturas colegiadas do parecer final
+
+- **Status documental:** concluida / auditada / corrigida / aprovada.
+- **Commit funcional/correcao pos-auditoria auditada:** `55279d3 fix(backend): handle final CESAD opinion P2002 collision`.
+- **Task file:** [`BE-CESAD-FINAL-01B-document-signatures.md`](./tasks/BE-CESAD-FINAL-01B-document-signatures.md).
+- **ADR relacionada:** [`ADR-005 — Modelagem do parecer conclusivo final da CESAD`](../../architecture/adr/adr-005-final-cesad-opinion-modeling.md).
+- Adicionou `CesadOpinionKind` com `STAGE` e `FINAL_CONCLUSIVE`.
+- Adicionou `ProcessDocument.opinionKind` para diferenciar parecer CESAD de etapa e parecer CESAD conclusivo final.
+- Fez backfill dos documentos `CESAD_OPINION` stage-bound existentes para `opinionKind = STAGE`, mantendo documentos nao-CESAD com `opinionKind = null`.
+- Formalizou o documento final como `ProcessDocument` com `documentType = CESAD_OPINION`, `processStageId = null`, `opinionKind = FINAL_CONCLUSIVE`, `documentStatus = READY_FOR_SIGNATURE` e `artifactPath = null`.
+- Criou indice unico parcial SQLite para garantir um unico documento final `CESAD_OPINION / FINAL_CONCLUSIVE` por processo.
+- Tratou colisao `P2002` no service, preservando a idempotencia da preparacao documental.
+- Criou `CesadFinalOpinionExpectedSigner` como entidade propria de expected signers finais, sem reutilizar `CesadStageOpinionExpectedSigner`.
+- Adicionou vinculo opcional de `SignatureRecord` com expected signer final.
+- Adicionou actions `PREPARE_CESAD_FINAL_OPINION_SIGNATURES` e `SIGN_CESAD_FINAL_OPINION`.
+- Adicionou o evento `CESAD_FINAL_OPINION_SIGNED`.
+- Implementou `POST /processes/:id/cesad-final-opinion/signatures/prepare`.
+- Implementou `GET /processes/:id/cesad-final-opinion/signatures`.
+- Implementou `POST /processes/:id/cesad-final-opinion/sign`.
+- Derivou signatarios finais a partir da comissao de referencia da etapa 4, excluindo `COMMISSION_ASSISTANT` e `ADMIN`.
+- Manteve `ADMIN` autorizado a preparar/ler administrativamente, mas impedido de assinar por membro.
+- Manteve `COMMISSION_ASSISTANT` autorizado a leitura vinculada, mas impedido de preparar ou assinar.
+- Permitiu assinatura apenas por `CESAD_MEMBER` expected signer.
+- Manteve o documento final em `READY_FOR_SIGNATURE` enquanto houver pendencias e passou para `SIGNED` somente apos todas as assinaturas obrigatorias.
+- Preservou o processo em `PARECER_EMITIDO`, sem envio a homologacao.
+- Ampliou testes backend para `opinionKind`, documento final, expected signers finais, idempotencia, unicidade, autorizacao, bloqueios de assinatura, completude colegiada, auditoria e regressoes de documento de etapa.
+- Validacoes tecnicas aprovadas no ciclo de implementacao/auditoria: build de `@sadep/contracts`, `prisma:generate`, typecheck backend, typecheck de specs, suite backend, Prisma validate e `git diff --check`.
+- Correcao pos-auditoria de unicidade: indice unico parcial manual na migration porque o Prisma schema nao expressa indice parcial SQLite.
+- Correcao pos-auditoria de colisao: o tratamento `P2002` foi movido para o caminho de criacao do documento final; o catch de `SELF_EVALUATION` voltou ao comportamento simples anterior; documento final `INVALIDATED_OR_SUPERSEDED` e bloqueado; `DRAFT` ou `CONSOLIDATED` pode ser normalizado para `READY_FOR_SIGNATURE`; `READY_FOR_SIGNATURE` ou `SIGNED` retorna idempotentemente conforme regra do service.
+- Fora do escopo preservado: `SEND_TO_HOMOLOGATION`, homologacao, notificacao, ciencia, recursos, frontend, GOVBR real, portaria/publicacao, geracao PDF real, versionamento documental amplo e invalidacao/supersessao documental ampla.
+- `BE-CESAD-FINAL-01` permanece ativa como guarda-chuva/fase principal ate `BE-CESAD-FINAL-01C`.
 
 ## BE-DOC-CESAD-SIGN-01 — Modelar e validar assinatura colegiada do parecer CESAD
 

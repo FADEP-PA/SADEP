@@ -16,7 +16,9 @@ Esta task registra a frente futura sem antecipar implementacao indevida.
 
 `BE-FLOW-4STAGE-01B` concluiu a progressao formal das quatro etapas por `COMPLETE_CURRENT_STAGE`, mas a conclusao da etapa 4 nao libera homologacao.
 
-`BE-CESAD-FINAL-01A` concluiu a base funcional do parecer conclusivo final (`CesadFinalOpinion`, elegibilidade, consolidacao historica e fluxo `start`/`saveDraft`/`complete`), mas sozinha nao libera homologacao. A homologacao continua dependente do parecer conclusivo final formal/documentalmente concluido, incluindo documento processual e assinaturas colegiadas finais nas fatias posteriores de `BE-CESAD-FINAL-01`.
+`BE-CESAD-FINAL-01A` concluiu a base funcional do parecer conclusivo final (`CesadFinalOpinion`, elegibilidade, consolidacao historica e fluxo `start`/`saveDraft`/`complete`). `BE-CESAD-FINAL-01B` concluiu a camada documental e a assinatura colegiada final, incluindo `ProcessDocument.opinionKind`, documento final `CESAD_OPINION / FINAL_CONCLUSIVE`, expected signers finais e documento `SIGNED` somente apos completude colegiada.
+
+Mesmo assim, a homologacao continua dependente de envio formal a homologacao em `BE-CESAD-FINAL-01C`. A 01B sozinha nao homologa, nao notifica e nao libera efeitos finais.
 
 ## Escopo previsto
 
@@ -56,12 +58,12 @@ Esta task registra a frente futura sem antecipar implementacao indevida.
 ## Dependencias
 
 - `BE-CESAD-FINAL-01A`, ja concluida no recorte funcional, sem liberar homologacao isoladamente;
-- `BE-CESAD-FINAL-01B`, para documento processual e assinatura colegiada do parecer final;
-- `BE-CESAD-FINAL-01C`, se mantida como ponte formal `SEND_TO_HOMOLOGATION`;
+- `BE-CESAD-FINAL-01B`, ja concluida no recorte documental e de assinatura colegiada final, sem liberar homologacao isoladamente;
+- `BE-CESAD-FINAL-01C`, como ponte formal `SEND_TO_HOMOLOGATION`, se mantida no roadmap;
 - `BE-FLOW-4STAGE-01`, concluida no recorte de progressao formal das quatro etapas;
 - `docs/workflow/four-stage-flow-and-appeals.md`;
 - regras futuras de recurso final.
 
 ## Proxima acao
 
-Aguardar a conclusao formal/documental do parecer conclusivo final e entao definir os atos minimos de homologacao, notificacao e ciencia.
+Aguardar a ponte formal `BE-CESAD-FINAL-01C` e entao definir os atos minimos de homologacao, notificacao e ciencia.
