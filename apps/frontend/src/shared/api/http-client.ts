@@ -19,7 +19,6 @@ type RefreshSessionResponse = {
   accessToken: string;
 };
 
-const DEFAULT_API_BASE_URL = 'http://localhost:3000';
 const UNAUTHORIZED_INVALIDATION_RESET_MS = 1000;
 
 let unauthorizedInvalidationInProgress = false;
@@ -27,7 +26,11 @@ let unauthorizedInvalidationResetTimer: ReturnType<typeof setTimeout> | null = n
 let refreshSessionPromise: Promise<string> | null = null;
 
 function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  if (!baseUrl) {
+    throw new Error('NEXT_PUBLIC_API_BASE_URL is not defined');
+  }
+  return baseUrl;
 }
 
 function buildUrl(path: string, params?: RequestOptions['params']) {

@@ -4,7 +4,7 @@ import { clearAccessToken, setAccessToken } from '@/shared/auth/access-token-sto
 import { HttpError } from './http-error';
 import { httpRequest } from './http-client';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 function jsonResponse(status: number, body: unknown): Response {
   return {
