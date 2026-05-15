@@ -135,10 +135,23 @@ Comando focado:
 - **Estilo dos testes:** asserts diretos sobre chamadas ao `fetchMock` (`mock.calls[0]`) para verificar URL, metodo, headers e body; sem snapshots; sem dados sensiveis; sem chamada real para endpoint.
 - **Limitacoes conhecidas deste recorte:** cobre apenas a camada de transporte e contrato de servico; nao cobre `AuthProvider`, `bootstrapSession`, hooks de sessao, telas autenticadas completas, jornadas processuais ou fluxos da chefia/CESAD; nao integra com CI; nao substitui validacao visual em navegador.
 
+## Recorte FE-TEST-01F - Ciclo do AuthProvider com vi.mock de auth-service
+
+- **Status documental:** recorte executado em 2026-05-15, sem prometer cobertura completa de testes frontend.
+- **Decisao operacional adotada para simulacao do ciclo:** mockar `@/shared/api/services/auth-service` via `vi.mock` (fabrica de modulo), expondo `refreshSessionMock`, `loginMock` e `logoutSessionMock` como `vi.fn()`. `next/navigation` e mockado com `usePathnameMock` e `replaceMock`/`refreshRouterMock`. O ciclo do `AuthProvider` e testado com renderizacao real do provider (sem subir backend), capturando o contexto via componente auxiliar `CaptureContext` que expoe `status`, `bootstrapError` e `session.user.role` em `data-testid`. `vi.stubGlobal('location', { pathname })` simula o caminho do navegador nos casos de bootstrap que leem `window.location.pathname`.
+- **Escopo do recorte:**
+  - `apps/frontend/src/shared/auth/auth-context.test.tsx` — 10 testes cobrindo: bootstrap bem-sucedido (status inicia como `loading` e resolve para `authenticated`); bootstrap com 401 em rota publica (anonymous, sem bootstrapError, sem redirect); bootstrap com 401 em rota protegida (bootstrapError de sessao expirada, redirect para `/sessao-expirada`); bootstrap com 500 (bootstrapError de servico indisponivel); bootstrap com TypeError (bootstrapError de falha de rede); signIn bem-sucedido (authenticated, redirect para home do papel); signOut bem-sucedido (anonymous, redirect para `/`); signOut com erro no logoutSession (completa o logout local mesmo assim); refreshSession bem-sucedido (sessao atualizada, status permanece authenticated); refreshSession com 401 (anonymous, sessao limpa).
+- **Arquivos criados:**
+  - `apps/frontend/src/shared/auth/auth-context.test.tsx`
+- **Comando para executar este recorte:**
+  - `npm run frontend:test:run -- auth-context` cobre apenas este arquivo (10 testes);
+  - `npm run frontend:test:run` executa toda a suite frontend (60 testes, 7 arquivos).
+- **Estilo dos testes:** asserts por `data-testid` para `status`, `bootstrapError` e `session-role`; `waitFor` para resolucao assincrona do bootstrap; `act` para acoes de signIn/signOut/refreshSession; sem snapshots; sem dados sensiveis; sem backend real.
+- **Limitacoes conhecidas deste recorte:** cobre o ciclo do `AuthProvider` isolado com services mockados; nao cobre integracao real do `AuthProvider` com `http-client` e retry de token em contexto de tela autenticada; nao cobre telas autenticadas completas, jornadas processuais ou fluxos da chefia/CESAD; nao integra com CI; nao substitui validacao visual em navegador.
+
 ## Proxima acao
 
-Manter como melhoria futura. Apos este recorte FE-TEST-01E, priorizar:
+Manter como melhoria futura. Apos FE-TEST-01F:
 
-- quando o `AuthProvider` ganhar uma janela dedicada, decidir como simular o ciclo `bootstrapSession` + `refreshSession` + `router.replace` sem reabrir contratos backend, antes de testar telas autenticadas completas;
-- avaliar gate de testes no pipeline somente quando `CI-GATES-01` existir;
-- nao acoplar estes testes a `FE-CHEFIA-02`, `FE-PROCESS-LIST-01` ou `FE-CESAD-01`, que continuam pendentes de backend.
+- avaliar cobertura de telas autenticadas completas (login-page, workspaces) em recorte proprio apos `CI-GATES-01` estar disponivel;
+- nao acoplar expansoes a `FE-CHEFIA-02`, `FE-PROCESS-LIST-01` ou `FE-CESAD-01`, que continuam pendentes de backend.

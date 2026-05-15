@@ -1,6 +1,6 @@
 # Frontend - Painel Ativo
 
-> Ultima atualizacao: 2026-05-15 (DOC-R8 — arquivamento de tasks resolvidas, atualizacao de referencias e mapeamento de diretorios nao implementados).
+> Ultima atualizacao: 2026-05-15 (FE-TEST-01F — ciclo do AuthProvider coberto; recortes A ao F concluidos).
 > Os arquivos de task ja resolvidos foram movidos para [`docs/archive/frontend/tasks/`](../../../archive/frontend/tasks/).
 > O indice de compatibilidade legado foi movido para [`docs/archive/roadmaps-legados/frontend-tasks-roadmap.md`](../../../archive/roadmaps-legados/frontend-tasks-roadmap.md).
 
@@ -13,7 +13,7 @@
 | [`FE-PROCESS-LIST-01`](./tasks/FE-PROCESS-LIST-01-authenticated-process-list.md) | Alta futura | Pendente | Endpoints backend seguros de listagem por perfil e autorizacao contextual | Aguardar contrato backend seguro antes de alterar telas ou remover IDs manuais. |
 | [`FE-CHEFIA-02`](./tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md) | Alta futura | Pendente | Listagem real dos processos da chefia autenticada e autorizacao backend | Aguardar contrato de listagem por chefia antes de remover fallback demonstrativo. |
 | [`FE-CESAD-01`](./tasks/FE-CESAD-01-real-cesad-screens.md) | Alta futura | Pendente | Backend de parecer CESAD final com documento/assinaturas ja entregue em `BE-CESAD-FINAL-01B`; ainda depende de `BE-CESAD-FINAL-01C`, contratos/capabilities frontend e decisao de integracao real | Aguardar `BE-CESAD-FINAL-01C` e contrato frontend especifico antes de conectar acoes ou remover fallback visual. |
-| [`FE-TEST-01`](./tasks/FE-TEST-01-frontend-test-strategy.md) | Media futura | Parcialmente executada (FE-TEST-01A, FE-TEST-01B, FE-TEST-01C e FE-TEST-01D concluidos); aberta apenas para expansoes futuras | Decisao operacional para cobrir `http-client`, services autenticados, ciclo real do `AuthProvider` e telas autenticadas | Avancar para `http-client`/services autenticados via `vi.stubGlobal('fetch', ...)` e ciclo real do `AuthProvider` sem acoplar a `FE-CHEFIA-02`, `FE-PROCESS-LIST-01` ou `FE-CESAD-01`. |
+| [`FE-TEST-01`](./tasks/FE-TEST-01-frontend-test-strategy.md) | Media futura | Parcialmente executada (FE-TEST-01A ao FE-TEST-01F concluidos); aberta apenas para expansoes futuras | Decisao operacional para cobrir telas autenticadas completas e ciclo de bootstrap via `AuthProvider` real integrado | Avaliar cobertura de telas autenticadas completas apos `CI-GATES-01` sem acoplar a `FE-CHEFIA-02`, `FE-PROCESS-LIST-01` ou `FE-CESAD-01`. |
 
 ---
 
