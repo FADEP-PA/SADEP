@@ -42,6 +42,7 @@ enum AuditEventType {
   CESAD_FINAL_OPINION_STARTED
   CESAD_FINAL_OPINION_DRAFT_SAVED
   CESAD_FINAL_OPINION_COMPLETED
+  CESAD_FINAL_OPINION_SIGNED
   SIGNATURE_REQUESTED
   DOCUMENT_SIGNED
   SELF_EVALUATION_SUBMITTED
@@ -75,6 +76,11 @@ enum DocumentStatus {
   READY_FOR_SIGNATURE
   SIGNED
   INVALIDATED_OR_SUPERSEDED
+}
+
+enum CesadOpinionKind {
+  STAGE
+  FINAL_CONCLUSIVE
 }
 
 enum SignatureProvider {
@@ -143,26 +149,27 @@ enum CesadStageOpinionSigningCapacity {
 }
 
 model User {
-  id                       String                 @id @default(cuid())
-  email                    String                 @unique
-  name                     String
-  passwordHash             String
-  role                     UserRole
-  isActive                 Boolean                @default(true)
-  createdAt                DateTime               @default(now())
-  updatedAt                DateTime               @updatedAt
-  evaluationProcesses      EvaluationProcess[]    @relation("EvaluationProcessEvaluatedUser")
-  auditEvents              AuditEvent[]           @relation("AuditEventActor")
-  signatureRecords         SignatureRecord[]      @relation("SignatureRecordSignatory")
-  sessions                 UserSession[]
-  supervisorEvaluations    SupervisorEvaluation[] @relation("SupervisorEvaluationEvaluator")
-  responsibleProcessStages ProcessStage[]         @relation("ProcessStageResponsibleSupervisor")
-  selfEvaluations          SelfEvaluation[]       @relation("SelfEvaluationAuthor")
-  cesadStageOpinions       CesadStageOpinion[]    @relation("CesadStageOpinionAuthor")
-  cesadFinalOpinions       CesadFinalOpinion[]    @relation("CesadFinalOpinionAuthor")
-  cesadCommissionMembers   CesadCommissionMember[]
+  id                               String                            @id @default(cuid())
+  email                            String                            @unique
+  name                             String
+  passwordHash                     String
+  role                             UserRole
+  isActive                         Boolean                           @default(true)
+  createdAt                        DateTime                          @default(now())
+  updatedAt                        DateTime                          @updatedAt
+  evaluationProcesses              EvaluationProcess[]               @relation("EvaluationProcessEvaluatedUser")
+  auditEvents                      AuditEvent[]                      @relation("AuditEventActor")
+  signatureRecords                 SignatureRecord[]                 @relation("SignatureRecordSignatory")
+  sessions                         UserSession[]
+  supervisorEvaluations            SupervisorEvaluation[]            @relation("SupervisorEvaluationEvaluator")
+  responsibleProcessStages         ProcessStage[]                    @relation("ProcessStageResponsibleSupervisor")
+  selfEvaluations                  SelfEvaluation[]                  @relation("SelfEvaluationAuthor")
+  cesadStageOpinions               CesadStageOpinion[]               @relation("CesadStageOpinionAuthor")
+  cesadFinalOpinions               CesadFinalOpinion[]               @relation("CesadFinalOpinionAuthor")
+  cesadCommissionMembers           CesadCommissionMember[]
   cesadStageOpinionExpectedSigners CesadStageOpinionExpectedSigner[] @relation("CesadStageOpinionExpectedSignerActingUser")
-  cesadStageAssignmentsCreated CesadStageAssignment[] @relation("CesadStageAssignmentAssignedByUser")
+  cesadFinalOpinionExpectedSigners CesadFinalOpinionExpectedSigner[] @relation("CesadFinalOpinionExpectedSignerActingUser")
+  cesadStageAssignmentsCreated     CesadStageAssignment[]            @relation("CesadStageAssignmentAssignedByUser")
 }
 
 model UserSession {
@@ -211,17 +218,17 @@ model EvaluationProcess {
 }
 
 model ProcessStage {
-  id                          String                @id @default(cuid())
+  id                          String                 @id @default(cuid())
   evaluationProcessId         String
   responsibleSupervisorUserId String?
   sequence                    Int
   stageCode                   String
   startedAt                   DateTime?
   endedAt                     DateTime?
-  createdAt                   DateTime              @default(now())
-  updatedAt                   DateTime              @updatedAt
-  evaluationProcess           EvaluationProcess     @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  responsibleSupervisor       User?                 @relation("ProcessStageResponsibleSupervisor", fields: [responsibleSupervisorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  evaluationProcess           EvaluationProcess      @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  responsibleSupervisor       User?                  @relation("ProcessStageResponsibleSupervisor", fields: [responsibleSupervisorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   documents                   ProcessDocument[]
   supervisorEvaluation        SupervisorEvaluation?
   selfEvaluation              SelfEvaluation?
@@ -258,6 +265,7 @@ model ProcessDocument {
   evaluationProcessId String
   processStageId      String?
   documentType        DocumentType
+  opinionKind         CesadOpinionKind?
   documentStatus      DocumentStatus    @default(DRAFT)
   version             Int               @default(1)
   artifactPath        String?
@@ -271,6 +279,7 @@ model ProcessDocument {
   @@index([evaluationProcessId])
   @@index([processStageId])
   @@index([documentType, documentStatus])
+  @@index([opinionKind])
 }
 
 model SupervisorEvaluation {
@@ -317,22 +326,22 @@ model SelfEvaluation {
 }
 
 model CesadStageOpinion {
-  id                String                  @id @default(cuid())
+  id                String                            @id @default(cuid())
   processId         String
-  processStageId    String                  @unique
+  processStageId    String                            @unique
   authorUserId      String
-  status            CesadStageOpinionStatus @default(DRAFT)
+  status            CesadStageOpinionStatus           @default(DRAFT)
   reportText        String
   legalBasis        String?
   conclusion        String
   stageConcept      String?
   stageResult       String?
   completedAt       DateTime?
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
-  evaluationProcess EvaluationProcess       @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  processStage      ProcessStage            @relation(fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  authorUser        User                    @relation("CesadStageOpinionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdAt         DateTime                          @default(now())
+  updatedAt         DateTime                          @updatedAt
+  evaluationProcess EvaluationProcess                 @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  processStage      ProcessStage                      @relation(fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  authorUser        User                              @relation("CesadStageOpinionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   expectedSigners   CesadStageOpinionExpectedSigner[]
 
   @@index([processId])
@@ -341,10 +350,10 @@ model CesadStageOpinion {
 }
 
 model CesadFinalOpinion {
-  id                   String                  @id @default(cuid())
-  processId            String                  @unique
+  id                   String                            @id @default(cuid())
+  processId            String                            @unique
   authorUserId         String
-  status               CesadFinalOpinionStatus @default(DRAFT)
+  status               CesadFinalOpinionStatus           @default(DRAFT)
   reportText           String
   legalBasis           String?
   finalConclusion      String
@@ -353,28 +362,30 @@ model CesadFinalOpinion {
   recommendation       String?
   consolidatedSnapshot Json?
   completedAt          DateTime?
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @updatedAt
-  evaluationProcess    EvaluationProcess       @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  authorUser           User                    @relation("CesadFinalOpinionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdAt            DateTime                          @default(now())
+  updatedAt            DateTime                          @updatedAt
+  evaluationProcess    EvaluationProcess                 @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  authorUser           User                              @relation("CesadFinalOpinionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  expectedSigners      CesadFinalOpinionExpectedSigner[]
 
   @@index([authorUserId])
   @@index([status])
 }
 
 model CesadCommission {
-  id                 String                 @id @default(cuid())
-  name               String
-  description        String?
-  status             CesadCommissionStatus  @default(ACTIVE)
-  effectiveStartDate DateTime
-  effectiveEndDate   DateTime?
-  acts               CesadCommissionAct[]
-  members            CesadCommissionMember[]
-  stageAssignments   CesadStageAssignment[]
+  id                          String                            @id @default(cuid())
+  name                        String
+  description                 String?
+  status                      CesadCommissionStatus             @default(ACTIVE)
+  effectiveStartDate          DateTime
+  effectiveEndDate            DateTime?
+  acts                        CesadCommissionAct[]
+  members                     CesadCommissionMember[]
+  stageAssignments            CesadStageAssignment[]
   stageOpinionExpectedSigners CesadStageOpinionExpectedSigner[]
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
+  finalOpinionExpectedSigners CesadFinalOpinionExpectedSigner[]
+  createdAt                   DateTime                          @default(now())
+  updatedAt                   DateTime                          @updatedAt
 
   @@index([status])
   @@index([effectiveStartDate])
@@ -403,20 +414,22 @@ model CesadCommissionAct {
 }
 
 model CesadCommissionMember {
-  id         String                       @id @default(cuid())
-  commissionId String
-  userId     String
-  actId      String?
-  roleType   CesadCommissionMemberRoleType
-  startDate  DateTime
-  endDate    DateTime?
-  createdAt  DateTime                     @default(now())
-  updatedAt  DateTime                     @updatedAt
-  commission CesadCommission              @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  user       User                         @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  act        CesadCommissionAct?          @relation(fields: [actId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  expectedSignerActingRows CesadStageOpinionExpectedSigner[] @relation("CesadStageOpinionExpectedSignerActingMember")
-  expectedSignerSubstitutionRows CesadStageOpinionExpectedSigner[] @relation("CesadStageOpinionExpectedSignerSubstitutedMember")
+  id                                         String                            @id @default(cuid())
+  commissionId                               String
+  userId                                     String
+  actId                                      String?
+  roleType                                   CesadCommissionMemberRoleType
+  startDate                                  DateTime
+  endDate                                    DateTime?
+  createdAt                                  DateTime                          @default(now())
+  updatedAt                                  DateTime                          @updatedAt
+  commission                                 CesadCommission                   @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user                                       User                              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  act                                        CesadCommissionAct?               @relation(fields: [actId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  expectedSignerActingRows                   CesadStageOpinionExpectedSigner[] @relation("CesadStageOpinionExpectedSignerActingMember")
+  expectedSignerSubstitutionRows             CesadStageOpinionExpectedSigner[] @relation("CesadStageOpinionExpectedSignerSubstitutedMember")
+  finalOpinionExpectedSignerActingRows       CesadFinalOpinionExpectedSigner[] @relation("CesadFinalOpinionExpectedSignerActingMember")
+  finalOpinionExpectedSignerSubstitutionRows CesadFinalOpinionExpectedSigner[] @relation("CesadFinalOpinionExpectedSignerSubstitutedMember")
 
   @@index([commissionId])
   @@index([userId])
@@ -426,7 +439,7 @@ model CesadCommissionMember {
 }
 
 model CesadStageOpinionExpectedSigner {
-  id                            String                                             @id @default(cuid())
+  id                            String                                        @id @default(cuid())
   cesadStageOpinionId           String
   commissionId                  String
   actingCommissionMemberId      String
@@ -439,14 +452,14 @@ model CesadStageOpinionExpectedSigner {
   roleTypeSnapshot              CesadCommissionMemberRoleType
   sortOrder                     Int
   frozenAt                      DateTime
-  createdAt                     DateTime                                           @default(now())
-  updatedAt                     DateTime                                           @updatedAt
-  cesadStageOpinion             CesadStageOpinion                                  @relation(fields: [cesadStageOpinionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  commission                    CesadCommission                                    @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  actingCommissionMember        CesadCommissionMember                              @relation("CesadStageOpinionExpectedSignerActingMember", fields: [actingCommissionMemberId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  substitutedCommissionMember   CesadCommissionMember?                             @relation("CesadStageOpinionExpectedSignerSubstitutedMember", fields: [substitutedCommissionMemberId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  actingUser                    User                                               @relation("CesadStageOpinionExpectedSignerActingUser", fields: [actingUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  signatureRecords              SignatureRecord[]                                  @relation("CesadStageOpinionExpectedSignerSignatureRecords")
+  createdAt                     DateTime                                      @default(now())
+  updatedAt                     DateTime                                      @updatedAt
+  cesadStageOpinion             CesadStageOpinion                             @relation(fields: [cesadStageOpinionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  commission                    CesadCommission                               @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  actingCommissionMember        CesadCommissionMember                         @relation("CesadStageOpinionExpectedSignerActingMember", fields: [actingCommissionMemberId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  substitutedCommissionMember   CesadCommissionMember?                        @relation("CesadStageOpinionExpectedSignerSubstitutedMember", fields: [substitutedCommissionMemberId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  actingUser                    User                                          @relation("CesadStageOpinionExpectedSignerActingUser", fields: [actingUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  signatureRecords              SignatureRecord[]                             @relation("CesadStageOpinionExpectedSignerSignatureRecords")
 
   @@unique([cesadStageOpinionId, actingCommissionMemberId])
   @@unique([cesadStageOpinionId, sortOrder])
@@ -458,27 +471,60 @@ model CesadStageOpinionExpectedSigner {
   @@index([derivationType])
 }
 
+model CesadFinalOpinionExpectedSigner {
+  id                            String                                        @id @default(cuid())
+  cesadFinalOpinionId           String
+  commissionId                  String
+  actingCommissionMemberId      String
+  actingUserId                  String
+  derivationType                CesadStageOpinionExpectedSignerDerivationType
+  signingCapacity               CesadStageOpinionSigningCapacity
+  substitutedCommissionMemberId String?
+  nameSnapshot                  String
+  emailSnapshot                 String
+  roleTypeSnapshot              CesadCommissionMemberRoleType
+  sortOrder                     Int
+  frozenAt                      DateTime
+  createdAt                     DateTime                                      @default(now())
+  updatedAt                     DateTime                                      @updatedAt
+  cesadFinalOpinion             CesadFinalOpinion                             @relation(fields: [cesadFinalOpinionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  commission                    CesadCommission                               @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  actingCommissionMember        CesadCommissionMember                         @relation("CesadFinalOpinionExpectedSignerActingMember", fields: [actingCommissionMemberId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  substitutedCommissionMember   CesadCommissionMember?                        @relation("CesadFinalOpinionExpectedSignerSubstitutedMember", fields: [substitutedCommissionMemberId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  actingUser                    User                                          @relation("CesadFinalOpinionExpectedSignerActingUser", fields: [actingUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  signatureRecords              SignatureRecord[]                             @relation("CesadFinalOpinionExpectedSignerSignatureRecords")
+
+  @@unique([cesadFinalOpinionId, actingCommissionMemberId])
+  @@unique([cesadFinalOpinionId, sortOrder])
+  @@index([cesadFinalOpinionId])
+  @@index([commissionId])
+  @@index([actingCommissionMemberId])
+  @@index([actingUserId])
+  @@index([substitutedCommissionMemberId])
+  @@index([derivationType])
+}
+
 model CesadStageAssignment {
-  id                        String                      @id @default(cuid())
-  processId                 String
-  processStageId            String
-  commissionId              String
-  status                    CesadStageAssignmentStatus  @default(ACTIVE)
-  assignedAt                DateTime
-  assignedByUserId          String?
-  assignmentReason          String?
-  referenceDate             DateTime
-  supersededAt              DateTime?
-  supersededByAssignmentId  String?
-  supersededReason          String?
-  createdAt                 DateTime                    @default(now())
-  updatedAt                 DateTime                    @updatedAt
-  evaluationProcess         EvaluationProcess           @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  processStage              ProcessStage                @relation(fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  commission                CesadCommission             @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  assignedByUser            User?                       @relation("CesadStageAssignmentAssignedByUser", fields: [assignedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  supersededByAssignment    CesadStageAssignment?       @relation("CesadStageAssignmentSupersession", fields: [supersededByAssignmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  supersededAssignments     CesadStageAssignment[]      @relation("CesadStageAssignmentSupersession")
+  id                       String                     @id @default(cuid())
+  processId                String
+  processStageId           String
+  commissionId             String
+  status                   CesadStageAssignmentStatus @default(ACTIVE)
+  assignedAt               DateTime
+  assignedByUserId         String?
+  assignmentReason         String?
+  referenceDate            DateTime
+  supersededAt             DateTime?
+  supersededByAssignmentId String?
+  supersededReason         String?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  evaluationProcess        EvaluationProcess          @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  processStage             ProcessStage               @relation(fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  commission               CesadCommission            @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  assignedByUser           User?                      @relation("CesadStageAssignmentAssignedByUser", fields: [assignedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  supersededByAssignment   CesadStageAssignment?      @relation("CesadStageAssignmentSupersession", fields: [supersededByAssignmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supersededAssignments    CesadStageAssignment[]     @relation("CesadStageAssignmentSupersession")
 
   @@index([processId])
   @@index([processStageId])
@@ -499,16 +545,20 @@ model SignatureRecord {
   externalReference                 String?
   signedAt                          DateTime?
   cesadStageOpinionExpectedSignerId String?
+  cesadFinalOpinionExpectedSignerId String?
   createdAt                         DateTime                         @default(now())
   updatedAt                         DateTime                         @updatedAt
   processDocument                   ProcessDocument                  @relation(fields: [processDocumentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   signatoryUser                     User                             @relation("SignatureRecordSignatory", fields: [signatoryUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   cesadStageOpinionExpectedSigner   CesadStageOpinionExpectedSigner? @relation("CesadStageOpinionExpectedSignerSignatureRecords", fields: [cesadStageOpinionExpectedSignerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cesadFinalOpinionExpectedSigner   CesadFinalOpinionExpectedSigner? @relation("CesadFinalOpinionExpectedSignerSignatureRecords", fields: [cesadFinalOpinionExpectedSignerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([processDocumentId, signatoryUserId, signatoryRole])
   @@unique([cesadStageOpinionExpectedSignerId])
+  @@unique([cesadFinalOpinionExpectedSignerId])
   @@index([processDocumentId])
   @@index([signatoryUserId])
   @@index([cesadStageOpinionExpectedSignerId])
+  @@index([cesadFinalOpinionExpectedSignerId])
   @@index([status])
 }

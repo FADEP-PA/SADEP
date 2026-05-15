@@ -5,6 +5,8 @@ export * from './cesad-commission-act';
 export * from './cesad-commission-member';
 export * from './cesad-commission';
 export * from './cesad-current-commission';
+export * from './cesad-final-opinion-expected-signer';
+export * from './cesad-final-opinion-signature';
 export * from './cesad-stage-opinion-expected-signer';
 export * from './cesad-stage-read';
 export * from './cesad-stage-opinion';

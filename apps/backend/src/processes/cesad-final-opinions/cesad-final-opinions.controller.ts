@@ -14,13 +14,17 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
+import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import { CesadFinalOpinionsService } from './cesad-final-opinions.service';
 import type { UpsertCesadFinalOpinionDto } from './dto/cesad-final-opinion.dto';
 
 @Controller('processes/:id/cesad-final-opinion')
 @UseGuards(JwtAuthGuard)
 export class CesadFinalOpinionsController {
-  constructor(private readonly service: CesadFinalOpinionsService) {}
+  constructor(
+    private readonly service: CesadFinalOpinionsService,
+    private readonly processDocumentsService: ProcessDocumentsService,
+  ) {}
 
   @Get('eligibility')
   async getEligibility(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
@@ -58,6 +62,30 @@ export class CesadFinalOpinionsController {
     @CurrentUser() user?: AuthenticatedUser,
   ) {
     return this.service.complete(id, this.ensureUser(user), this.parsePayload(body));
+  }
+
+  @Post('signatures/prepare')
+  async prepareSignatures(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    return this.processDocumentsService.prepareCesadFinalOpinionSignatures(
+      id,
+      this.ensureUser(user),
+    );
+  }
+
+  @Get('signatures')
+  async getSignatureStatus(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    return this.processDocumentsService.getCesadFinalOpinionSignatureStatus(
+      id,
+      this.ensureUser(user),
+    );
+  }
+
+  @Post('sign')
+  async signOpinion(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    return this.processDocumentsService.signCesadFinalOpinionDocument(
+      id,
+      this.ensureUser(user),
+    );
   }
 
   private ensureUser(user?: AuthenticatedUser): AuthenticatedUser {

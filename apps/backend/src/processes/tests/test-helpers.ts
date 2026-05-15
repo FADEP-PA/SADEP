@@ -133,26 +133,52 @@ export async function disposeTestContext(context: TestContext): Promise<void> {
 }
 
 export function applyCesadCommissionMemberDatabaseConstraints(): void {
+  applyMigrationSqlBlock({
+    migration: '20260423153000_add_cesad_commission_member',
+    beginMarker: 'CESAD_COMMISSION_MEMBER_CONSTRAINTS_BEGIN',
+    endMarker: 'CESAD_COMMISSION_MEMBER_CONSTRAINTS_END',
+    missingMessage: 'CESAD commission member custom constraints block was not found in migration',
+    emptyMessage: 'CESAD commission member custom constraints SQL is empty',
+  });
+}
+
+export function applyProcessDocumentFinalCesadOpinionDatabaseConstraints(): void {
+  applyMigrationSqlBlock({
+    migration: '20260515143000_add_cesad_final_opinion_documents_signatures',
+    beginMarker: 'PROCESS_DOCUMENT_FINAL_CESAD_OPINION_CONSTRAINTS_BEGIN',
+    endMarker: 'PROCESS_DOCUMENT_FINAL_CESAD_OPINION_CONSTRAINTS_END',
+    missingMessage: 'ProcessDocument final CESAD opinion constraints block was not found in migration',
+    emptyMessage: 'ProcessDocument final CESAD opinion constraints SQL is empty',
+  });
+}
+
+function applyMigrationSqlBlock(params: {
+  migration: string;
+  beginMarker: string;
+  endMarker: string;
+  missingMessage: string;
+  emptyMessage: string;
+}): void {
   const backendRoot = path.resolve(__dirname, '../../..');
   const migrationFile = path.join(
     backendRoot,
     'prisma',
     'migrations',
-    '20260423153000_add_cesad_commission_member',
+    params.migration,
     'migration.sql',
   );
   const migrationSql = readFileSync(migrationFile, 'utf-8');
   const customConstraintsMatch = migrationSql.match(
-    /-- CESAD_COMMISSION_MEMBER_CONSTRAINTS_BEGIN([\s\S]*?)-- CESAD_COMMISSION_MEMBER_CONSTRAINTS_END/,
+    new RegExp(`-- ${params.beginMarker}([\\s\\S]*?)-- ${params.endMarker}`),
   );
 
   if (!customConstraintsMatch) {
-    throw new Error('CESAD commission member custom constraints block was not found in migration');
+    throw new Error(params.missingMessage);
   }
 
   const customConstraintsSql = customConstraintsMatch[1]?.trim();
   if (!customConstraintsSql) {
-    throw new Error('CESAD commission member custom constraints SQL is empty');
+    throw new Error(params.emptyMessage);
   }
 
   execFileSync(

@@ -2,13 +2,18 @@ import assert from 'node:assert/strict';
 
 import {
   AuditEventType as PrismaAuditEventType,
+  Prisma,
   type PrismaClient,
   ProcessStatus as PrismaProcessStatus,
 } from '@prisma/client';
 import {
+  CesadOpinionKind,
   CesadFinalOpinionStatus,
+  DocumentStatus,
+  DocumentType,
   ProcessAction,
   ProcessStatus,
+  SignatureStatus,
   UserRole,
 } from '@sadep/contracts';
 
@@ -17,6 +22,7 @@ import { CesadFinalOpinionEligibilityService } from '../cesad-final-opinions/ces
 import { CesadFinalOpinionsService } from '../cesad-final-opinions/cesad-final-opinions.service';
 import {
   authenticatedUser,
+  applyProcessDocumentFinalCesadOpinionDatabaseConstraints,
   createActiveCesadCommission,
   createCesadStageAssignment,
   createProcess,
@@ -236,6 +242,7 @@ async function populateCompletedStage(
       evaluationProcessId: options.processId,
       processStageId: options.stageId,
       documentType: 'CESAD_OPINION',
+      opinionKind: 'STAGE',
       documentStatus: 'SIGNED',
       signatureRecords: {
         create: [
@@ -302,11 +309,112 @@ function buildPayload(overrides: Partial<{
   };
 }
 
+type FinalDocumentAfterConflict = {
+  id: string;
+  documentStatus: 'DRAFT' | 'CONSOLIDATED' | 'READY_FOR_SIGNATURE' | 'SIGNED' | 'INVALIDATED_OR_SUPERSEDED';
+};
+
+type FinalDocumentPrivateService = {
+  ensureCesadFinalOpinionDocument(
+    transaction: Prisma.TransactionClient,
+    processId: string,
+    cesadFinalOpinionId: string,
+    user: ReturnType<typeof authenticatedUser>,
+    processStatus: ProcessStatus,
+  ): Promise<{ documentId: string }>;
+};
+
+function buildFinalDocumentConflictTransaction(existingAfterConflict: FinalDocumentAfterConflict | null) {
+  let findFirstCalls = 0;
+  const updates: Array<{ where: { id: string }; data: { documentStatus: string } }> = [];
+  const p2002 = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+    code: 'P2002',
+    clientVersion: '6.19.3',
+  });
+
+  const transaction = {
+    processDocument: {
+      findFirst: async () => {
+        findFirstCalls += 1;
+        return findFirstCalls < 3 ? null : existingAfterConflict;
+      },
+      create: async () => {
+        throw p2002;
+      },
+      update: async (args: { where: { id: string }; data: { documentStatus: string } }) => {
+        updates.push(args);
+        return { ...existingAfterConflict, ...args.data };
+      },
+    },
+    auditEvent: {
+      create: async () => {
+        throw new Error('P2002 idempotency path must not emit document generation audit');
+      },
+    },
+  } as unknown as Prisma.TransactionClient;
+
+  return { transaction, updates, p2002 };
+}
+
+async function ensureFinalDocumentAfterP2002ForTest(
+  context: TestContext,
+  existingAfterConflict: FinalDocumentAfterConflict | null,
+) {
+  const { transaction, updates, p2002 } = buildFinalDocumentConflictTransaction(existingAfterConflict);
+  const service = context.processDocumentsService as unknown as FinalDocumentPrivateService;
+
+  return {
+    result: await service.ensureCesadFinalOpinionDocument(
+      transaction,
+      'process-final-p2002',
+      'final-opinion-p2002',
+      authenticatedUser('admin-p2002', UserRole.ADMIN),
+      ProcessStatus.PARECER_EMITIDO,
+    ),
+    updates,
+    p2002,
+  };
+}
+
 export async function runCesadFinalOpinionsServiceTests() {
   const context = await createTestContext('cesad-final-opinions-service-test');
+  applyProcessDocumentFinalCesadOpinionDatabaseConstraints();
   const services = buildFinalServices(context);
 
   try {
+    const readyAfterConflict = await ensureFinalDocumentAfterP2002ForTest(context, {
+      id: 'ready-final-doc',
+      documentStatus: 'READY_FOR_SIGNATURE',
+    });
+    assert.equal(readyAfterConflict.result.documentId, 'ready-final-doc');
+    assert.equal(readyAfterConflict.updates.length, 0);
+
+    const draftAfterConflict = await ensureFinalDocumentAfterP2002ForTest(context, {
+      id: 'draft-final-doc',
+      documentStatus: 'DRAFT',
+    });
+    assert.equal(draftAfterConflict.result.documentId, 'draft-final-doc');
+    assert.deepEqual(draftAfterConflict.updates, [
+      {
+        where: { id: 'draft-final-doc' },
+        data: { documentStatus: 'READY_FOR_SIGNATURE' },
+      },
+    ]);
+
+    await assert.rejects(
+      () =>
+        ensureFinalDocumentAfterP2002ForTest(context, {
+          id: 'invalidated-final-doc',
+          documentStatus: 'INVALIDATED_OR_SUPERSEDED',
+        }),
+      /invalidated CESAD final opinion document/,
+    );
+
+    await assert.rejects(
+      () => ensureFinalDocumentAfterP2002ForTest(context, null),
+      (error) => error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002',
+    );
+
     const evaluatedUser = await createUser(context.prisma, UserRole.INTERN_SERVER, 'cfo-evaluated@test.local');
     const supervisor = await createUser(
       context.prisma,
@@ -318,6 +426,12 @@ export async function runCesadFinalOpinionsServiceTests() {
       UserRole.CESAD_MEMBER,
       'cfo-cesad@test.local',
       'CESAD Titular Final',
+    );
+    const secondCesadSigner = await createUser(
+      context.prisma,
+      UserRole.CESAD_MEMBER,
+      'cfo-second-signer@test.local',
+      'CESAD Segundo Titular',
     );
     const unrelatedCesad = await createUser(
       context.prisma,
@@ -509,6 +623,34 @@ export async function runCesadFinalOpinionsServiceTests() {
       'complete without DRAFT must not create synthetic final opinion audit events',
     );
 
+    const draftOnlyReady = await buildFullyCompletedProcess(context, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+    });
+    await services.service.start(
+      draftOnlyReady.processId,
+      authenticatedUser(cesadMember.id, cesadMember.role),
+    );
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.prepareCesadFinalOpinionSignatures(
+          draftOnlyReady.processId,
+          authenticatedUser(cesadMember.id, cesadMember.role),
+        ),
+      /require a completed CESAD final opinion/,
+    );
+    const draftOnlyFinalDocuments = await context.prisma.processDocument.findMany({
+      where: {
+        evaluationProcessId: draftOnlyReady.processId,
+        processStageId: null,
+        documentType: 'CESAD_OPINION',
+      },
+    });
+    assert.equal(draftOnlyFinalDocuments.length, 0);
+
     // Start opinion
     const started = await services.service.start(
       ready.processId,
@@ -595,7 +737,7 @@ export async function runCesadFinalOpinionsServiceTests() {
     });
     assert.equal(processAfterCompletion.status, PrismaProcessStatus.PARECER_EMITIDO);
 
-    // No ProcessDocument was created for final opinion
+    // Functional completion does not automatically create the final ProcessDocument
     const finalOpinionDocuments = await context.prisma.processDocument.findMany({
       where: {
         evaluationProcessId: ready.processId,
@@ -605,7 +747,194 @@ export async function runCesadFinalOpinionsServiceTests() {
     assert.equal(
       finalOpinionDocuments.length,
       0,
-      'no ProcessDocument should be created for final opinion in this slice',
+      'functional completion must not create the final ProcessDocument before signature preparation',
+    );
+
+    await context.prisma.cesadCommissionMember.createMany({
+      data: [
+        {
+          commissionId: ready.commissionId,
+          userId: secondCesadSigner.id,
+          roleType: 'TITULAR',
+          startDate: new Date('2020-01-01T00:00:00.000Z'),
+        },
+        {
+          commissionId: ready.commissionId,
+          userId: assistant.id,
+          roleType: 'TITULAR',
+          startDate: new Date('2020-01-01T00:00:00.000Z'),
+        },
+        {
+          commissionId: ready.commissionId,
+          userId: admin.id,
+          roleType: 'TITULAR',
+          startDate: new Date('2020-01-01T00:00:00.000Z'),
+        },
+      ],
+    });
+
+    const prepared = await context.processDocumentsService.prepareCesadFinalOpinionSignatures(
+      ready.processId,
+      authenticatedUser(cesadMember.id, cesadMember.role),
+    );
+    assert.equal(prepared.processId, ready.processId);
+    assert.equal(prepared.cesadFinalOpinionId, completed.id);
+    assert.equal(prepared.document?.documentType, DocumentType.CESAD_OPINION);
+    assert.equal(prepared.document?.opinionKind, CesadOpinionKind.FINAL_CONCLUSIVE);
+    assert.equal(prepared.document?.documentStatus, DocumentStatus.READY_FOR_SIGNATURE);
+    assert.equal(prepared.expectedSigners.length, 2);
+    assert.deepEqual(
+      prepared.expectedSigners.map((signer) => signer.actingUserId).sort(),
+      [cesadMember.id, secondCesadSigner.id].sort(),
+    );
+    assert.equal(prepared.expectedSigners.some((signer) => signer.actingUserId === assistant.id), false);
+    assert.equal(prepared.expectedSigners.some((signer) => signer.actingUserId === admin.id), false);
+    assert.equal(
+      prepared.expectedSigners.every((signer) => signer.signatureStatus === SignatureStatus.PENDING),
+      true,
+    );
+    assert.equal(prepared.allExpectedSignersSigned, false);
+
+    const finalDocument = await context.prisma.processDocument.findUniqueOrThrow({
+      where: { id: prepared.document!.documentId },
+      include: { signatureRecords: true },
+    });
+    assert.equal(finalDocument.processStageId, null);
+    assert.equal(finalDocument.opinionKind, 'FINAL_CONCLUSIVE');
+    assert.equal(finalDocument.signatureRecords.length, 2);
+    assert.equal(
+      finalDocument.signatureRecords.every(
+        (signature) =>
+          signature.cesadFinalOpinionExpectedSignerId !== null &&
+          signature.cesadStageOpinionExpectedSignerId === null,
+      ),
+      true,
+    );
+
+    const stageOpinionDocuments = await context.prisma.processDocument.findMany({
+      where: {
+        evaluationProcessId: ready.processId,
+        documentType: 'CESAD_OPINION',
+        processStageId: { not: null },
+      },
+    });
+    assert.equal(stageOpinionDocuments.length, 4);
+    assert.equal(
+      stageOpinionDocuments.every((document) => document.opinionKind === 'STAGE'),
+      true,
+    );
+
+    const secondPrepare = await context.processDocumentsService.prepareCesadFinalOpinionSignatures(
+      ready.processId,
+      authenticatedUser(admin.id, admin.role),
+    );
+    assert.equal(secondPrepare.document?.documentId, prepared.document?.documentId);
+    assert.equal(secondPrepare.expectedSigners.length, 2);
+    const finalDocumentsAfterIdempotentPrepare = await context.prisma.processDocument.findMany({
+      where: {
+        evaluationProcessId: ready.processId,
+        processStageId: null,
+        documentType: 'CESAD_OPINION',
+        opinionKind: 'FINAL_CONCLUSIVE',
+      },
+    });
+    assert.equal(finalDocumentsAfterIdempotentPrepare.length, 1);
+    await assert.rejects(
+      context.prisma.processDocument.create({
+        data: {
+          evaluationProcessId: ready.processId,
+          processStageId: null,
+          documentType: 'CESAD_OPINION',
+          opinionKind: 'FINAL_CONCLUSIVE',
+          documentStatus: 'READY_FOR_SIGNATURE',
+          artifactPath: null,
+        },
+      }),
+      (error) => error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002',
+    );
+    assert.equal(
+      await context.prisma.cesadFinalOpinionExpectedSigner.count({
+        where: { cesadFinalOpinionId: completed.id },
+      }),
+      2,
+    );
+
+    const assistantReadStatus = await context.processDocumentsService.getCesadFinalOpinionSignatureStatus(
+      ready.processId,
+      authenticatedUser(assistant.id, assistant.role),
+    );
+    assert.equal(assistantReadStatus.document?.documentId, prepared.document?.documentId);
+
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.prepareCesadFinalOpinionSignatures(
+          ready.processId,
+          authenticatedUser(assistant.id, assistant.role),
+        ),
+      /Only CESAD_MEMBER can prepare CESAD final opinion signatures|CESAD contextual authorization denied/,
+    );
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.signCesadFinalOpinionDocument(
+          ready.processId,
+          authenticatedUser(admin.id, admin.role),
+        ),
+      /Only an expected CESAD_MEMBER can sign CESAD final opinion document/,
+    );
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.signCesadFinalOpinionDocument(
+          ready.processId,
+          authenticatedUser(assistant.id, assistant.role),
+        ),
+      /Only an expected CESAD_MEMBER can sign CESAD final opinion document/,
+    );
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.signCesadFinalOpinionDocument(
+          ready.processId,
+          authenticatedUser(unrelatedCesad.id, unrelatedCesad.role),
+        ),
+      /CESAD contextual authorization denied|not an expected signer/,
+    );
+
+    const partialSignature = await context.processDocumentsService.signCesadFinalOpinionDocument(
+      ready.processId,
+      authenticatedUser(cesadMember.id, cesadMember.role),
+    );
+    assert.equal(partialSignature.document?.documentStatus, DocumentStatus.READY_FOR_SIGNATURE);
+    assert.equal(partialSignature.allExpectedSignersSigned, false);
+
+    await assert.rejects(
+      () =>
+        context.processDocumentsService.signCesadFinalOpinionDocument(
+          ready.processId,
+          authenticatedUser(cesadMember.id, cesadMember.role),
+        ),
+      /already been completed or canceled/,
+    );
+
+    const completedSignature = await context.processDocumentsService.signCesadFinalOpinionDocument(
+      ready.processId,
+      authenticatedUser(secondCesadSigner.id, secondCesadSigner.role),
+    );
+    assert.equal(completedSignature.document?.documentStatus, DocumentStatus.SIGNED);
+    assert.equal(completedSignature.allExpectedSignersSigned, true);
+
+    const processAfterFinalSignatures = await context.prisma.evaluationProcess.findUniqueOrThrow({
+      where: { id: ready.processId },
+    });
+    assert.equal(processAfterFinalSignatures.status, PrismaProcessStatus.PARECER_EMITIDO);
+
+    const supervisorAndSelfDocuments = await context.prisma.processDocument.findMany({
+      where: {
+        evaluationProcessId: ready.processId,
+        documentType: { in: ['SUPERVISOR_EVALUATION', 'SELF_EVALUATION'] },
+      },
+    });
+    assert.equal(
+      supervisorAndSelfDocuments.every((document) => document.opinionKind === null),
+      true,
     );
 
     // === AUTHORIZATION TESTS ===
@@ -778,6 +1107,56 @@ export async function runCesadFinalOpinionsServiceTests() {
     assert.equal(completedMetadata.finalResult, 'Apto');
     assert.equal(completedMetadata.finalConcept, 'Satisfatório');
     assert.equal(completedMetadata.recommendation, 'Recomenda-se a homologação.');
+
+    const finalDocumentGeneratedEvents = auditEvents.filter((event) => {
+      const metadata = event.metadata as Record<string, unknown>;
+      return (
+        event.eventType === PrismaAuditEventType.DOCUMENT_GENERATED &&
+        metadata.action === ProcessAction.PREPARE_CESAD_FINAL_OPINION_SIGNATURES
+      );
+    });
+    assert.equal(finalDocumentGeneratedEvents.length, 1);
+    assert.equal(
+      (finalDocumentGeneratedEvents[0]!.metadata as Record<string, unknown>).opinionKind,
+      CesadOpinionKind.FINAL_CONCLUSIVE,
+    );
+
+    const finalSignatureRequestedEvents = auditEvents.filter((event) => {
+      const metadata = event.metadata as Record<string, unknown>;
+      return (
+        event.eventType === PrismaAuditEventType.SIGNATURE_REQUESTED &&
+        metadata.action === ProcessAction.PREPARE_CESAD_FINAL_OPINION_SIGNATURES
+      );
+    });
+    assert.equal(finalSignatureRequestedEvents.length, 2);
+    assert.equal(
+      finalSignatureRequestedEvents.every((event) => {
+        const metadata = event.metadata as Record<string, unknown>;
+        return (
+          metadata.documentId === prepared.document?.documentId &&
+          metadata.cesadFinalOpinionId === completed.id &&
+          metadata.opinionKind === CesadOpinionKind.FINAL_CONCLUSIVE
+        );
+      }),
+      true,
+    );
+
+    const finalSignedEvents = auditEvents.filter(
+      (event) => event.eventType === PrismaAuditEventType.CESAD_FINAL_OPINION_SIGNED,
+    );
+    assert.equal(finalSignedEvents.length, 2);
+    assert.equal(
+      finalSignedEvents.every((event) => {
+        const metadata = event.metadata as Record<string, unknown>;
+        return (
+          metadata.action === ProcessAction.SIGN_CESAD_FINAL_OPINION &&
+          metadata.documentId === prepared.document?.documentId &&
+          metadata.cesadFinalOpinionId === completed.id &&
+          metadata.opinionKind === CesadOpinionKind.FINAL_CONCLUSIVE
+        );
+      }),
+      true,
+    );
 
     // === EXTRA CHECK: completion blocked if process status is not PARECER_EMITIDO ===
     const noPareceProcess = await createProcess(
