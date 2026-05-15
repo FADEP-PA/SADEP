@@ -12,13 +12,15 @@ A partir da DOC-R1, os roadmaps passam a ter uma estrutura modular inicial por a
 - [`frontend/`](./frontend/): visao modular do roadmap frontend.
 - [`cross-cutting/`](./cross-cutting/): painel modular de problemas e frentes transversais.
 
-## Fontes de transicao
+## Fontes de transicao (arquivadas em DOC-R8)
 
-Os documentos abaixo continuam existindo como indices de compatibilidade durante a modularizacao:
+Os indices de compatibilidade legados foram movidos para `docs/archive/roadmaps-legados/` em 2026-05-15:
 
-- [`backend-implementation-tracker.md`](./backend-implementation-tracker.md): indice de compatibilidade do antigo tracker backend.
-- [`frontend-tasks-roadmap.md`](./frontend-tasks-roadmap.md): indice de compatibilidade do antigo roadmap frontend.
-- [`problemas-atuais-do-projeto.md`](./problemas-atuais-do-projeto.md): indice de compatibilidade do antigo painel transversal.
+- [`docs/archive/roadmaps-legados/backend-implementation-tracker.md`](../../archive/roadmaps-legados/backend-implementation-tracker.md): indice do antigo tracker backend.
+- [`docs/archive/roadmaps-legados/frontend-tasks-roadmap.md`](../../archive/roadmaps-legados/frontend-tasks-roadmap.md): indice do antigo roadmap frontend.
+- [`docs/archive/roadmaps-legados/problemas-atuais-do-projeto.md`](../../archive/roadmaps-legados/problemas-atuais-do-projeto.md): indice do antigo painel transversal.
+
+Os paineis modulares em `backend/active.md`, `frontend/active.md` e `cross-cutting/active-problems.md` sao agora a fonte primaria de informacao.
 
 ## Regra de convivencia entre os roadmaps
 
@@ -38,6 +40,7 @@ Os documentos abaixo continuam existindo como indices de compatibilidade durante
 - `DOC-R5` — validar documentacao final.
 - `DOC-R6` — reconciliacao documental controlada pos-varredura global: consolidar auth/session resolvido no recorte, manter pendencias criticas ativas e criar task files estruturais.
 - `DOC-R7` — atualizacao documental pos-ciclo CESAD/frontend: consolidar `BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02` e `BE-CESAD-ASSIGN-REPLACE-01` como resolvidas com ressalvas, reclassificar `BE-SEC-03` como guarda-chuva residual, atualizar auth frontend e registrar novas tasks de DX, logs, CI e testes frontend.
+- `DOC-R8` — arquivamento de tasks resolvidas (backend e frontend), remocao de indices de compatibilidade legados, mapeamento de diretorios de feature com apenas scaffold, limpeza de itens de documentacao reconciliados e atualizacao dos paineis ativos para refletir o estado real do codigo em 2026-05-15.
 
 ## Criterios de ciclo de vida
 

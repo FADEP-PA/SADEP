@@ -2,7 +2,7 @@
 
 Esta pasta concentra a visao modular do roadmap frontend do SADEP.
 
-O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md) continua existindo como indice de compatibilidade. A leitura operacional deve comecar por este diretorio modular.
+O documento legado foi arquivado em [`docs/archive/roadmaps-legados/frontend-tasks-roadmap.md`](../../../archive/roadmaps-legados/frontend-tasks-roadmap.md) (DOC-R8). A leitura operacional deve comecar por este diretorio modular.
 
 ## Arquivos
 
@@ -25,7 +25,6 @@ O documento legado [`../frontend-tasks-roadmap.md`](../frontend-tasks-roadmap.md
 ## Regras de transicao
 
 - Esta fase nao altera status de tasks.
-- Tasks concluidas ficam resumidas em [`resolved.md`](./resolved.md) ate fase posterior de arquivamento.
-- `resolved.md` resume itens concluidos, com cuidado especial para itens parcialmente resolvidos como `FT-05`/chefia.
-- Arquivamento real de historico fica fora da DOC-R3.
-- Arquivos detalhados das frentes ativas principais comecam a ser criados na DOC-R2, sem alterar status.
+- Tasks concluidas ficam resumidas em [`resolved.md`](./resolved.md).
+- Arquivos de task detalhados ja resolvidos foram movidos para [`docs/archive/frontend/tasks/`](../../../archive/frontend/tasks/) na DOC-R8.
+- Arquivos de task das frentes pendentes permanecem em [`tasks/`](./tasks/).

@@ -1,6 +1,6 @@
 # Backend — Itens Resolvidos
 
-Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker backend permanece como indice de compatibilidade em [`../backend-implementation-tracker.md`](../backend-implementation-tracker.md).
+Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker backend foi arquivado em [`docs/archive/roadmaps-legados/backend-implementation-tracker.md`](../../../archive/roadmaps-legados/backend-implementation-tracker.md). Os arquivos de task detalhados resolvidos foram movidos para [`docs/archive/backend/tasks/`](../../../archive/backend/tasks/).
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 

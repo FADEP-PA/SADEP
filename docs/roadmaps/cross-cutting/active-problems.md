@@ -1,6 +1,7 @@
 # Problemas Ativos Transversais
 
-Este painel resume problemas ativos ou alertas transversais. O antigo painel transversal permanece como indice de compatibilidade em [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md).
+> Ultima atualizacao: 2026-05-15 (DOC-R8 — remocao de itens de documentacao ja reconciliados, atualizacao de referencias e limpeza do painel ativo).
+> O indice de compatibilidade legado foi movido para [`docs/archive/roadmaps-legados/problemas-atuais-do-projeto.md`](../../../archive/roadmaps-legados/problemas-atuais-do-projeto.md).
 
 ## Seguranca
 
@@ -12,10 +13,11 @@ Este painel resume problemas ativos ou alertas transversais. O antigo painel tra
 ## Frontend / integracao
 
 - `FE-CHEFIA-01` — `/chefia-imediata` parcialmente integrada ao workspace real por processo informado na tela; validacao visual concluida e fallback demonstrativo/local ainda ativo.
-- `FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo.
-- `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado; melhoria futura propria e nao reabre `FT-24`, que foi resolvida no recorte frontend.
-- `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, autorizacao contextual e documentos.
-- `FE-TEST-01` — estrategia minima futura de testes frontend; melhoria de qualidade que nao substitui validacao visual/manual.
+- `FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo. Depende de contrato backend.
+- `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado; melhoria futura propria e nao reabre `FT-24`.
+- `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, autorizacao contextual e documentos. Depende de `BE-CESAD-FINAL-01B/C`.
+- `FE-TEST-01` — estrategia minima futura de testes frontend; parcialmente executada (01A, 01B, 01C, 01D concluidos). Aberta apenas para expansoes futuras.
+- **Diretorios de feature com apenas `.gitkeep`** — `features/assinaturas-eletronicas/`, `features/auditoria-historico/`, `features/autoavaliacao/`, `features/avaliacoes/`, `features/cesad-comissao/`, `features/chefia-imediata/`, `features/documentos-oficiais/`, `features/notificacoes-ciencia/`, `features/painel-gerencial-cesad/`, `features/processo-workflow/` e `features/servidor-estagiario/` sao scaffolds sem implementacao. Qualquer trabalho nesses modulos requer contrato backend correspondente.
 
 ## Sessao / auth
 
@@ -27,21 +29,18 @@ Observacao: a estrategia de producao com refresh/revogacao foi tratada increment
 
 Sem pendencia estrutural ativa nesta categoria apos o recorte `BE-ARCH-02`. Novos contratos funcionais devem nascer como tasks proprias.
 
+O proximo bloco de implementacao backend prioritario e `BE-CESAD-FINAL-01B` (documento e assinaturas do parecer final), que desbloqueia `BE-CESAD-FINAL-01C` e `BE-HOMOLOG-01`.
+
 ## DX / infra
 
-- [`DX-POSTCSS-01` — alerta de audit `postcss`/`next`](./tasks/DX-POSTCSS-01-audit-postcss-next.md) permanece como pendencia separada.
-- [`DX-DB-SEED-01` — seed minimo local e checagem de banco](./tasks/DX-DB-SEED-01-local-seed-bootstrap.md): alerta operacional; `db:check` pode falhar quando o banco local existe, mas nao recebeu o seed minimo; usar `npm run backend:bootstrap` para preparar o ambiente local quando necessario.
+- [`DX-POSTCSS-01` — alerta de audit `postcss`/`next`](./tasks/DX-POSTCSS-01-audit-postcss-next.md): permanece como pendencia separada.
+- [`DX-DB-SEED-01` — seed minimo local e checagem de banco](./tasks/DX-DB-SEED-01-local-seed-bootstrap.md): alerta operacional; `db:check` pode falhar quando o banco local existe sem seed minimo; usar `npm run backend:bootstrap` para preparar o ambiente local.
 - [`DX-FE-ENV-EXAMPLE-01` — criar `.env.example` do frontend](./tasks/DX-FE-ENV-EXAMPLE-01-frontend-env-example.md): task documental/configuracional futura para explicitar `NEXT_PUBLIC_API_BASE_URL` no setup/deploy frontend.
-- [`NOM-AEP-COOKIE-01` — nomenclatura residual do cookie de refresh](./tasks/NOM-AEP-COOKIE-01-refresh-cookie-name.md): o cookie default ainda usa `aep_pa_refresh`; tratar futuramente em task pequena propria, sem migracao ampla AEP -> SADEP.
-- `FE-ENV-01` — documentacao de variaveis frontend e riscos de fallback inseguro de API.
+- [`NOM-AEP-COOKIE-01` — nomenclatura residual do cookie de refresh`](./tasks/NOM-AEP-COOKIE-01-refresh-cookie-name.md): o cookie default ainda usa `aep_pa_refresh`; tratar futuramente em task pequena propria, sem migracao ampla AEP -> SADEP.
+- `FE-ENV-01` — documentacao de variaveis frontend e riscos de fallback inseguro de API. Pendente como task propria.
 - [`CI-GATES-01` — definir pipeline oficial de validacao](./tasks/CI-GATES-01-validation-pipeline.md): gates locais existem e passam, mas falta pipeline oficial evidente.
-- `DX-01` foi resolvido operacionalmente e fica resumido em [`resolved-problems.md`](./resolved-problems.md#dx-01--desalinhamento-local-do-next); nao confundir com o alerta ativo `DX-POSTCSS-01`.
-
-## Documentacao
-
-- `DOC-AUTH-STATE-01` — inconsistencia documental de `BE-ARCH-01E4B/E4C` reconciliada nesta atualizacao documental; mantida aqui apenas como referencia de rastreabilidade.
-- `DOC-FT24-STATE-01` — inconsistencia documental de `FT-24` reconciliada nesta atualizacao documental; mantida aqui apenas como referencia de rastreabilidade.
 
 ## Qualidade
 
-- Ausencia de testes frontend permanece como risco ou candidata futura de quality gate quando formalizada.
+- Ausencia de testes frontend de interacao permanece como risco ou candidata futura de quality gate quando formalizada.
+- `FE-TEST-01` permanece aberta para expansoes futuras (`http-client`, services autenticados, ciclo real do `AuthProvider`, hooks de sessao e telas autenticadas), sem acoplar a tasks que dependem de backend.

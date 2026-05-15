@@ -2,13 +2,13 @@
 
 Esta pasta concentra problemas e frentes transversais do SADEP.
 
-O documento legado [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-projeto.md) continua existindo como indice de compatibilidade. A leitura operacional deve comecar por este diretorio modular.
+O documento legado foi arquivado em [`docs/archive/roadmaps-legados/problemas-atuais-do-projeto.md`](../../../archive/roadmaps-legados/problemas-atuais-do-projeto.md) (DOC-R8). A leitura operacional deve comecar por este diretorio modular.
 
 ## Arquivos
 
 - [`active-problems.md`](./active-problems.md): painel vivo de problemas ativos ou alertas relevantes.
 - [`resolved-problems.md`](./resolved-problems.md): resumo de problemas transversais resolvidos ou mitigados.
-- [`archive-candidates.md`](./archive-candidates.md): lista preparatoria de candidatos a arquivamento futuro.
+- `archive-candidates.md`: arquivo preparatorio movido para `docs/archive/roadmaps-legados/` na DOC-R8; o arquivamento real foi executado nessa fase.
 - [`tasks/`](./tasks/): area que comeca a receber arquivos proprios de problemas ou tasks transversais principais.
 
 ## Categorias sugeridas
@@ -37,5 +37,5 @@ O documento legado [`../problemas-atuais-do-projeto.md`](../problemas-atuais-do-
 - Esta fase nao marca problemas como resolvidos.
 - `active-problems.md` e o painel vivo de problemas ativos.
 - `resolved-problems.md` registra problemas ja resolvidos ou mitigados.
-- `archive-candidates.md` prepara a fase futura de arquivamento sem mover arquivos.
-- Arquivos detalhados das frentes transversais principais comecam a ser criados na DOC-R2, sem alterar status.
+- O arquivamento real foi executado na DOC-R8; `archive-candidates.md` foi movido para o archive junto com os outros legados.
+- Arquivos detalhados das frentes transversais ativas permanecem em [`tasks/`](./tasks/).
