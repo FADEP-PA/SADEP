@@ -16,7 +16,7 @@
 - `FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo. Depende de contrato backend.
 - `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado; melhoria futura propria e nao reabre `FT-24`.
 - `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, autorizacao contextual e documentos. `BE-CESAD-FINAL-01B` ja entregou documento e assinatura final no backend; a integracao frontend continua dependente de `BE-CESAD-FINAL-01C` e de contrato/capability frontend especificos.
-- `FE-TEST-01` — estrategia minima futura de testes frontend; parcialmente executada (01A, 01B, 01C, 01D concluidos). Aberta apenas para expansoes futuras.
+- `FE-TEST-01` — estrategia minima futura de testes frontend; parcialmente executada (01A ao 01F concluidos). Aberta apenas para expansoes futuras.
 - **Diretorios de feature com apenas `.gitkeep`** — `features/assinaturas-eletronicas/`, `features/auditoria-historico/`, `features/autoavaliacao/`, `features/avaliacoes/`, `features/cesad-comissao/`, `features/chefia-imediata/`, `features/documentos-oficiais/`, `features/notificacoes-ciencia/`, `features/painel-gerencial-cesad/`, `features/processo-workflow/` e `features/servidor-estagiario/` sao scaffolds sem implementacao. Qualquer trabalho nesses modulos requer contrato backend correspondente.
 
 ## Sessao / auth
@@ -41,4 +41,4 @@ O proximo bloco de implementacao backend prioritario e `BE-CESAD-FINAL-01C` (env
 ## Qualidade
 
 - Ausencia de testes frontend de interacao permanece como risco ou candidata futura de quality gate quando formalizada.
-- `FE-TEST-01` permanece aberta para expansoes futuras (`http-client`, services autenticados, ciclo real do `AuthProvider`, hooks de sessao e telas autenticadas), sem acoplar a tasks que dependem de backend.
+- `FE-TEST-01` permanece aberta para expansoes futuras de telas autenticadas completas, hooks de sessao e integracao apos `CI-GATES-01`, sem acoplar a tasks que dependem de backend.

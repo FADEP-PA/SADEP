@@ -55,9 +55,9 @@ Os diretorios abaixo existem na estrutura mas nao possuem nenhum componente ou l
 
 ## Decisao operacional atual
 
-- Nenhuma das tres tasks pendentes dependentes de backend acima deve ser executada como implementacao frontend isolada enquanto os contratos backend correspondentes nao estiverem disponiveis.
+- Nenhuma das tasks de produto pendentes dependentes de backend acima deve ser executada como implementacao frontend isolada enquanto os contratos backend correspondentes nao estiverem disponiveis.
 - O frontend pode receber recortes seguros de documentacao, UX, responsividade, acessibilidade, dados demonstrativos ou qualidade, desde que nao prometa assinatura, emissao, homologacao, parecer final, persistencia ou integracao real inexistente.
-- `FE-TEST-01` esta parcialmente executada: `FE-TEST-01A` cobriu `ProcessRequestFeedback`; `FE-TEST-01B` cobriu o nucleo dos estados operacionais institucionais; `FE-TEST-01C` ampliou para os demais estados de `operational-states.tsx`; `FE-TEST-01D` cobriu os cinco ramos de `auth-guard.tsx` via `vi.mock`. Todos sem mock de backend real. Task permanece aberta apenas para expansoes futuras.
+- `FE-TEST-01` esta parcialmente executada: `FE-TEST-01A` cobriu `ProcessRequestFeedback`; `FE-TEST-01B` cobriu o nucleo dos estados operacionais institucionais; `FE-TEST-01C` ampliou para os demais estados de `operational-states.tsx`; `FE-TEST-01D` cobriu os cinco ramos de `auth-guard.tsx` via `vi.mock`; `FE-TEST-01E` e `FE-TEST-01F` completaram os recortes recentes de autenticacao ate o ciclo do `AuthProvider`. Task permanece aberta apenas para expansoes futuras, especialmente telas autenticadas completas e integracao apos `CI-GATES-01`.
 - O recorte `FE-TEST-01D` ajustou `scripts/check-frontend-copy.mjs` para ignorar arquivos com sufixo `.test.ts(x)`/`.test.js(x)`.
 - `FE-CHEFIA-01` permanece resolvida parcialmente no recorte de integracao inicial; a continuidade operacional e `FE-CHEFIA-02`, sem reabrir `FT-24`.
 - Dados demonstrativos e fallbacks visuais permanecem intencionais quando ajudam a validar telas sem backend completo.

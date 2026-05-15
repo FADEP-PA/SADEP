@@ -206,11 +206,10 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 
 - **Status documental:** concluida no recorte frontend operacional.
 - `NEXT_PUBLIC_API_BASE_URL` foi documentada como a variavel publica que define a origin da API consumida pelo frontend.
-- O comportamento local atual foi registrado: quando a variavel nao esta definida, `apps/frontend/src/shared/api/http-client.ts` usa fallback para `http://localhost:3000`.
-- Homologacao e producao devem definir `NEXT_PUBLIC_API_BASE_URL` explicitamente com origin HTTPS da API institucional, sem path final, query, fragmento, credenciais ou wildcard.
+- O comportamento operacional atual exige `NEXT_PUBLIC_API_BASE_URL` definida explicitamente; quando a variavel nao esta definida, `apps/frontend/src/shared/api/http-client.ts` falha de forma explicita, sem fallback hardcoded para `localhost`.
+- Desenvolvimento local, homologacao e producao devem definir `NEXT_PUBLIC_API_BASE_URL` explicitamente; em homologacao/producao, usar origin HTTPS da API institucional, sem path final, query, fragmento, credenciais ou wildcard.
 - `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` permanece removida e nao deve ser reintroduzida como configuracao frontend.
-- Nao houve alteracao de codigo, backend, Prisma, contracts, services/backend, autenticacao backend, dados demonstrativos ou lockfile.
-- Limitacao conhecida: transformar o fallback local em falha explicita de producao exige task propria de codigo, pois este recorte foi documental/operacional.
+- Nao houve alteracao de backend, Prisma, contracts, services/backend, autenticacao backend, dados demonstrativos ou lockfile neste registro documental.
 
 ## FT-16 — Layout base do parecer CESAD de etapa
 
@@ -220,7 +219,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - Dados demonstrativos seguros foram isolados em `apps/frontend/src/features/cesad/data/cesad-stage-opinion-demo.ts`.
 - O componente `ReadOnlyOpinionShell` permanece sem emissao, assinatura, homologacao, persistencia ou integracao com endpoint inexistente.
 - A consulta real de leitura consolidada da etapa foi preservada sem alterar backend, Prisma, contracts, autenticacao backend ou dados demonstrativos existentes.
-- Limitacoes conhecidas: elaboracao real, assinatura colegiada, autorizacao contextual e remocao de fallback dependem de tasks backend e de `FE-CESAD-01`.
+- Limitacoes conhecidas: elaboracao real no frontend, consumo das assinaturas colegiadas, autorizacao contextual em tela e remocao de fallback visual dependem de `FE-CESAD-01` e dos contratos/capabilities backend correspondentes.
 
 ## FT-26 — Limpeza de scaffolds e placeholders legados
 

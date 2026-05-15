@@ -12,7 +12,7 @@ Frontend, CESAD, documentos, workflow e integracao backend.
 
 A tela CESAD possui leitura consolidada por processo/etapa, mas a varredura global confirmou que o fluxo frontend ainda nao cobre de forma completa a emissao, acompanhamento documental e assinatura de parecer CESAD.
 
-Esta task deve acompanhar a evolucao backend de autorizacao contextual, documentos e assinatura colegiada.
+O backend ja possui autorizacao contextual, documento/assinatura colegiada do parecer CESAD de etapa e, apos `BE-CESAD-FINAL-01B`, documento processual e assinatura colegiada do parecer conclusivo final. Esta task permanece pendente porque essas capacidades ainda nao foram integradas ao frontend e porque o envio formal a homologacao depende de `BE-CESAD-FINAL-01C`.
 
 ## Escopo previsto
 
@@ -28,8 +28,8 @@ Esta task deve acompanhar a evolucao backend de autorizacao contextual, document
 
 - implementar autorizacao contextual no frontend;
 - substituir `BE-SEC-03`;
-- implementar assinatura colegiada antes do backend suportar o ciclo;
-- implementar parecer conclusivo final se `BE-CESAD-FINAL-01` ainda nao existir;
+- recriar regras de assinatura colegiada no frontend em vez de consumir contratos/capabilities backend;
+- implementar envio a homologacao, homologacao, notificacao ou ciencia;
 - alterar regras juridicas/processuais.
 
 ## Criterios de aceite
@@ -50,9 +50,11 @@ Esta task deve acompanhar a evolucao backend de autorizacao contextual, document
 
 - `BE-SEC-03` / `BE-CESAD-AUTH-01`;
 - `BE-DOC-CESAD-SIGN-01`;
-- endpoints backend de parecer CESAD;
+- `BE-CESAD-FINAL-01B`, ja concluida no backend para documento e assinatura final;
+- `BE-CESAD-FINAL-01C`, ainda pendente para envio formal a homologacao;
+- endpoints/backend contracts e capabilities de parecer CESAD a serem mapeados para a UI;
 - possivel `FE-PROCESS-LIST-01`.
 
 ## Proxima acao
 
-Aguardar ou mapear o contrato backend de parecer CESAD e capabilities antes de remover fallback visual.
+Mapear os contratos/capabilities backend existentes para parecer CESAD de etapa e parecer conclusivo final, aguardar a decisao da `BE-CESAD-FINAL-01C` quando a tela depender de envio formal a homologacao, e somente entao remover fallback visual.

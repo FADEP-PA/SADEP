@@ -13,8 +13,9 @@ Nesta etapa, o frontend já está autenticado, consome o backend real para login
 
 O cliente HTTP centralizado em `src/shared/api/http-client.ts` usa `NEXT_PUBLIC_API_BASE_URL` para montar as chamadas ao backend.
 
-- Em desenvolvimento local, o fallback atual e `http://localhost:3000` quando `NEXT_PUBLIC_API_BASE_URL` nao esta definida.
-- Em homologacao e producao, `NEXT_PUBLIC_API_BASE_URL` deve ser definida explicitamente com a origin HTTPS da API institucional.
+- Em desenvolvimento local, homologacao e producao, `NEXT_PUBLIC_API_BASE_URL` deve ser definida explicitamente.
+- Quando `NEXT_PUBLIC_API_BASE_URL` nao esta definida, o cliente HTTP falha de forma explicita; nao ha fallback hardcoded para `localhost`.
+- Em homologacao e producao, a variavel deve apontar para a origin HTTPS da API institucional.
 - O valor deve ser apenas a origin da API, sem path final, query, fragmento, credenciais ou wildcard.
 - `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` nao deve ser reintroduzida; a selecao/consulta de processos deve continuar pela UI ou por listagens reais futuras.
 
