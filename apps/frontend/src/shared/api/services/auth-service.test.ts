@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { login, logoutSession, refreshSession } from './auth-service';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 function jsonResponse(status: number, body: unknown): Response {
   return {
@@ -31,7 +31,7 @@ describe('auth-service', () => {
         jsonResponse(200, { accessToken: 'tok-123', user: { id: '1', role: 'ADMIN' } }),
       );
 
-      const result = await login({ email: 'admin@test.com', password: 'senha123' });
+      const result = await login({ email: 'admin@test.com', password: 'senha123', rememberMe: false });
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
