@@ -4,6 +4,14 @@ Este arquivo resume problemas transversais resolvidos ou mitigados. O antigo pai
 
 Esta separacao nao altera status, nao move documentos legados e nao arquiva historico. Problemas ativos continuam em [`./active-problems.md`](./active-problems.md).
 
+## DX-FE-ENV-EXAMPLE-01 e FE-ENV-01 — Configuração e Documentação de Variáveis de Ambiente do Frontend
+
+- **Status documental:** resolvidas.
+- Criado o arquivo `apps/frontend/.env.example` com `NEXT_PUBLIC_API_BASE_URL` para homologação/produção e local.
+- Atualizado o `docs/setup/local-setup.md` para instruir a cópia do arquivo `.env.example` para `.env.local` no ambiente de desenvolvimento local.
+- Atualizado o `apps/frontend/README.md` refletindo a alteração na configuração opcional.
+- Variáveis documentadas, evitando fallback silencioso de API.
+
 ## Varredura global pos-auth — 2026-05-07
 
 - **Status documental:** registrada e reconciliada.

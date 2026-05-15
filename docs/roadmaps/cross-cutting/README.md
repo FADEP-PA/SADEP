@@ -24,13 +24,12 @@ O documento legado foi arquivado em [`docs/archive/roadmaps-legados/problemas-at
 
 - `DX-POSTCSS-01` — alerta de audit `postcss`/`next`, sem `npm audit fix --force`.
 - `DX-DB-SEED-01` — seed minimo local e checagem de banco.
-- `DX-FE-ENV-EXAMPLE-01` — criar `.env.example` do frontend e documentar envs de setup/deploy.
 - `NOM-AEP-COOKIE-01` — nomenclatura residual do cookie de refresh.
 - `SEC-HARD-01` — hardening adicional de seguranca HTTP, rate limit e CSRF.
 - `SEC-LOG-PII-01` — reduzir PII e ruido em logs.
 - `CI-GATES-01` — definir pipeline oficial de validacao.
 - `BE-AUDIT-AUTH-01` — task backend relacionada a auditoria persistida de eventos de autenticacao.
-- `FE-CHEFIA-02`, `FE-PROCESS-LIST-01`, `FE-CESAD-01`, `FE-ENV-01` e `FE-TEST-01` — tasks frontend relacionadas a integracao real, DX e qualidade.
+- `FE-CHEFIA-02`, `FE-PROCESS-LIST-01`, `FE-CESAD-01` e `FE-TEST-01` — tasks frontend relacionadas a integracao real, DX e qualidade.
 
 ## Regras de transicao
 

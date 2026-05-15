@@ -18,10 +18,10 @@ O cliente HTTP centralizado em `src/shared/api/http-client.ts` usa `NEXT_PUBLIC_
 - O valor deve ser apenas a origin da API, sem path final, query, fragmento, credenciais ou wildcard.
 - `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` nao deve ser reintroduzida; a selecao/consulta de processos deve continuar pela UI ou por listagens reais futuras.
 
-Exemplo local opcional:
+Exemplo de configuração local (usando o arquivo `.env.example` copiado para `.env.local`):
 
-```powershell
-$env:NEXT_PUBLIC_API_BASE_URL='http://localhost:3000'
+```env
+NEXT_PUBLIC_API_BASE_URL="http://localhost:3000"
 ```
 
 ## Estrutura atual
