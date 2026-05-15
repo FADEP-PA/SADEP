@@ -113,12 +113,32 @@ Comando focado:
 - **Estilo dos testes:** mantido o padrao dos recortes anteriores — asserts por texto institucional visivel (`screen.getByText`) ou por `getByRole('link', { name })` para a saida do `/403`, sem snapshots, sem dependencia de classes CSS internas, sem chamada real para endpoint e sem dados sensiveis. Helpers `setAuthContext` e `buildAuthenticatedUser` mantem os testes legiveis e tipados em `AuthenticatedUser` do contrato.
 - **Limitacoes conhecidas deste recorte:** cobre apenas a logica de apresentacao do `AuthGuard`; nao cobre o ciclo real do `AuthProvider`, o bootstrap por `refreshAuthSession`, o `http-client`, retry com refresh, redirecionamentos `router.replace`/`window.location.assign`, hooks de sessao ou services HTTP; nao integra com CI; nao substitui validacao visual em navegador. A escolha de mockar `next/navigation` no nivel do teste deixa o teste imune a mudancas na arvore real de Next, mas implica que regressoes na integracao com o roteador devem ser cobertas em recorte proprio quando houver janela.
 
+## Recorte FE-TEST-01E - http-client, auth-service e processes-service com vi.stubGlobal
+
+- **Status documental:** recorte executado em 2026-05-15, sem prometer cobertura completa de testes frontend.
+- **Decisao operacional adotada para simulacao de fetch:** `vi.stubGlobal('fetch', fetchMock)` em `beforeEach` e `vi.unstubAllGlobals()` em `afterEach`, sem monkey-patching manual. O helper `jsonResponse(status, body)` constroi objetos `Response` minimos com `headers`, `ok`, `status` e `json`. Nenhum backend real foi iniciado.
+- **Isolamento de estado de modulo:** `http-client.ts` mantem estado de modulo (`unauthorizedInvalidationInProgress` com timer de 1000 ms e `refreshSessionPromise` para single-flight). O arquivo `http-client.test.ts` usa `vi.useFakeTimers()` em `beforeAll` e `vi.runAllTimers()` em `afterEach` para disparar o timer de reset entre testes sem esperar 1 segundo real. `clearAccessToken()` limpa o token de modulo apos cada teste.
+- **Simulacao de `window.location`:** `vi.stubGlobal('location', { assign: vi.fn(), pathname: '/inicio' })` no `beforeEach` substitui o objeto somente leitura do jsdom pela versao controlavel, necessario para verificar redirecionamentos do guard de sessao sem navegar de verdade.
+- **Escopo do recorte:**
+  - `apps/frontend/src/shared/api/http-client.test.ts` — 17 testes cobrindo: resposta JSON, resposta sem JSON, header `Authorization` com e sem token, cache `no-store`, serializacao de body, query string com omissao de `undefined`, URL base, `HttpError` 404/400/rede, retry automatico apos 401 (renovacao de token via refresh, falha no proprio refresh, ausencia de token, `retryOnUnauthorized: false`, rota `/auth/` bloqueada) e single-flight do refresh em requisicoes 401 concorrentes.
+  - `apps/frontend/src/shared/api/services/auth-service.test.ts` — 3 testes cobrindo contrato de `login` (POST `/auth/login`, body, `credentials: include`), `refreshSession` (POST `/auth/refresh`, `credentials: include`) e `logoutSession` (POST `/auth/logout`, `credentials: include`, resposta `{ ok: true }`).
+  - `apps/frontend/src/shared/api/services/processes-service.test.ts` — 4 testes cobrindo contrato de `getWorkflow` (URL, header Authorization), `getWorkflowHistory` (mapeamento `{ items, meta.total }`), `getInternWorkspaceSnapshot` (URL, header Authorization) e `transitionWorkflow` (POST, body serializado com `action` e `comment`).
+- **Arquivos criados:**
+  - `apps/frontend/src/shared/api/http-client.test.ts`
+  - `apps/frontend/src/shared/api/services/auth-service.test.ts`
+  - `apps/frontend/src/shared/api/services/processes-service.test.ts`
+- **Comando para executar este recorte:**
+  - `npm run frontend:test:run -- http-client` cobre apenas o http-client (17 testes);
+  - `npm run frontend:test:run -- auth-service` cobre apenas auth-service (3 testes);
+  - `npm run frontend:test:run -- processes-service` cobre apenas processes-service (4 testes);
+  - `npm run frontend:test:run` executa toda a suite frontend (50 testes, 6 arquivos).
+- **Estilo dos testes:** asserts diretos sobre chamadas ao `fetchMock` (`mock.calls[0]`) para verificar URL, metodo, headers e body; sem snapshots; sem dados sensiveis; sem chamada real para endpoint.
+- **Limitacoes conhecidas deste recorte:** cobre apenas a camada de transporte e contrato de servico; nao cobre `AuthProvider`, `bootstrapSession`, hooks de sessao, telas autenticadas completas, jornadas processuais ou fluxos da chefia/CESAD; nao integra com CI; nao substitui validacao visual em navegador.
+
 ## Proxima acao
 
-Manter como melhoria futura. Apos este recorte FE-TEST-01D, priorizar:
+Manter como melhoria futura. Apos este recorte FE-TEST-01E, priorizar:
 
-- cobrir `http-client.httpRequest` com `vi.stubGlobal('fetch', ...)` para mapeamento de erro (HttpError 4xx/5xx), retry com `/auth/refresh` em 401, propagacao do header `Authorization` e cache `no-store`, ainda sem subir backend real;
-- cobrir os services autenticados (`auth-service` e `processes-service`) no nivel de contrato consumido (URL, body e mapping), mantendo o padrao de mock de `fetch`;
 - quando o `AuthProvider` ganhar uma janela dedicada, decidir como simular o ciclo `bootstrapSession` + `refreshSession` + `router.replace` sem reabrir contratos backend, antes de testar telas autenticadas completas;
 - avaliar gate de testes no pipeline somente quando `CI-GATES-01` existir;
 - nao acoplar estes testes a `FE-CHEFIA-02`, `FE-PROCESS-LIST-01` ou `FE-CESAD-01`, que continuam pendentes de backend.
