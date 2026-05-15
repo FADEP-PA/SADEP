@@ -1,0 +1,16 @@
+import type { ReactNode } from 'react';
+
+import { AuthGuard } from '@/shared/auth/auth-guard';
+import { AppShell } from '@/shared/ui/app-shell';
+
+export default function AuthenticatedLayout({
+  children,
+}: Readonly<{
+  children: ReactNode;
+}>) {
+  return (
+    <AuthGuard>
+      <AppShell>{children}</AppShell>
+    </AuthGuard>
+  );
+}

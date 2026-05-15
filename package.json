@@ -1,0 +1,27 @@
+{
+  "name": "sadep",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "backend:bootstrap": "npm run bootstrap --workspace @sadep/backend",
+    "backend:build": "npm run build --workspace @sadep/backend",
+    "backend:start": "npm run start --workspace @sadep/backend",
+    "backend:start:prod": "npm run start:prod --workspace @sadep/backend",
+    "backend:start:dev": "npm run start:dev --workspace @sadep/backend",
+    "frontend:build": "npm run build --workspace @sadep/frontend",
+    "frontend:check": "npm run check --workspace @sadep/frontend",
+    "frontend:clean": "npm run clean --workspace @sadep/frontend",
+    "frontend:copy-check": "npm run copy-check --workspace @sadep/frontend",
+    "frontend:test": "npm run test --workspace @sadep/frontend --",
+    "frontend:test:run": "npm run test:run --workspace @sadep/frontend",
+    "frontend:typecheck": "npm run typecheck --workspace @sadep/frontend",
+    "frontend:start": "npm run start --workspace @sadep/frontend",
+    "frontend:start:dev": "npm run dev --workspace @sadep/frontend",
+    "frontend:test": "npm run test --workspace @sadep/frontend --",
+    "frontend:test:run": "npm run test:run --workspace @sadep/frontend --"
+  }
+}

@@ -1,0 +1,12 @@
+import type { Metadata } from 'next';
+
+import { LoginPage } from '@/features/auth/components/login-page';
+
+export const metadata: Metadata = {
+  title: 'SADEP | Login',
+  description: 'Tela de acesso ao sistema SADEP.',
+};
+
+export default function Home() {
+  return <LoginPage />;
+}

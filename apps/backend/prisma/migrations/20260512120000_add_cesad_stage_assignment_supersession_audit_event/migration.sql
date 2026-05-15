@@ -1,0 +1,3 @@
+-- SQLite stores Prisma enum values as text in the existing AuditEvent table.
+-- This migration records the datamodel addition of
+-- AuditEventType.CESAD_STAGE_ASSIGNMENT_SUPERSEDED without requiring SQL changes.
