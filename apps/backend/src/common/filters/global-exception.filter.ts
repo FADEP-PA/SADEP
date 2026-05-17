@@ -10,6 +10,7 @@ import { AppLogger } from '../logging/app-logger.service';
 
 type HttpRequestLike = {
   url: string;
+  method?: string;
 };
 
 type HttpResponseLike = {
@@ -43,7 +44,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     this.logger.error(
       Array.isArray(message) ? message.join(' | ') : message,
       exception instanceof Error ? exception.stack : undefined,
-      request.url,
+      `${request.method ?? 'UNKNOWN'} ${request.url}`,
     );
 
     response.status(status).json({
@@ -51,7 +52,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message,
       error: normalizedResponse?.error ?? (isHttpException ? exception.name : 'Internal Server Error'),
       details: normalizedResponse?.details,
-      path: request.url,
       timestamp: new Date().toISOString(),
     });
   }

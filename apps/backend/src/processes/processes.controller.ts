@@ -104,6 +104,10 @@ export class ProcessesController {
       throw new BadRequestException('Workflow comment must be a string when provided');
     }
 
+    if (typeof comment === 'string' && comment.length > 2000) {
+      throw new BadRequestException('Workflow comment must not exceed 2000 characters');
+    }
+
     return {
       action: action as ProcessAction,
       comment,
@@ -130,10 +134,14 @@ export class ProcessesController {
 
     if (typeof newCommissionId !== 'string' || newCommissionId.trim().length === 0) {
       details.newCommissionId = 'Nova comissão CESAD deve ser informada.';
+    } else if (newCommissionId.trim().length > 255) {
+      details.newCommissionId = 'ID da nova comissão CESAD não pode exceder 255 caracteres.';
     }
 
     if (typeof reason !== 'string' || reason.trim().length === 0) {
       details.reason = 'Motivo da reatribuição deve ser informado.';
+    } else if (reason.trim().length > 1000) {
+      details.reason = 'Motivo da reatribuição não pode exceder 1000 caracteres.';
     }
 
     let parsedReferenceDate: Date | undefined;
@@ -150,6 +158,8 @@ export class ProcessesController {
 
     if (formalActReference !== undefined && typeof formalActReference !== 'string') {
       details.formalActReference = 'Referência do ato formal deve ser texto quando informada.';
+    } else if (typeof formalActReference === 'string' && formalActReference.trim().length > 500) {
+      details.formalActReference = 'Referência do ato formal não pode exceder 500 caracteres.';
     }
 
     if (Object.keys(details).length > 0) {

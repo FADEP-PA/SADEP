@@ -1,13 +1,13 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { UserRole } from '@sadep/contracts';
 import type { LoginResponse } from '@sadep/contracts';
 import { Prisma } from '@prisma/client';
 
 import { AppLogger } from '../common/logging/app-logger.service';
 import { AppConfigService } from '../config/app-config.service';
-import { verifyPassword } from '../common/security/password-hasher';
+import { hashPassword, verifyPassword } from '../common/security/password-hasher';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { RefreshTokenService } from './refresh-token.service';
 import { REFRESH_TOKEN_REVOKED_REASON } from './session.constants';
@@ -66,13 +66,19 @@ type PersistedUserSessionWithUser = {
 };
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
+  private timingSentinelHash: string = '';
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly appConfigService: AppConfigService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly logger: AppLogger,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    this.timingSentinelHash = await hashPassword('timing-sentinel-for-user-not-found');
+  }
 
   async login(
     email: string,
@@ -83,8 +89,9 @@ export class AuthService {
     const user = await this.prismaService.user.findUnique({ where: { email: normalizedEmail } });
 
     if (!user || !user.isActive) {
+      await verifyPassword(password, this.timingSentinelHash);
       this.logAuthWarning('AUTH_LOGIN_FAILED', {
-        email: normalizedEmail,
+        email: maskEmail(normalizedEmail),
         reason: 'invalid_credentials',
       });
       throw new UnauthorizedException('Invalid credentials');
@@ -94,7 +101,7 @@ export class AuthService {
 
     if (!isValidPassword) {
       this.logAuthWarning('AUTH_LOGIN_FAILED', {
-        email: normalizedEmail,
+        email: maskEmail(normalizedEmail),
         reason: 'invalid_credentials',
       });
       throw new UnauthorizedException('Invalid credentials');
@@ -110,7 +117,7 @@ export class AuthService {
     const refreshSession = await this.createRefreshSession(user.id, authenticatedUser, context);
 
     this.logAuthInfo('AUTH_LOGIN_SUCCEEDED', {
-      email: user.email,
+      email: maskEmail(user.email),
       role: authenticatedUser.role,
       sessionFamilyId: refreshSession.familyId,
       userId: user.id,
@@ -345,8 +352,14 @@ export class AuthService {
     }
 
     const payload = this.parsePayload(encodedPayload);
+    const nowInSeconds = Math.floor(Date.now() / 1000);
+    const CLOCK_SKEW_TOLERANCE_SECONDS = 30;
 
-    if (payload.exp <= Math.floor(Date.now() / 1000)) {
+    if (payload.iat > nowInSeconds + CLOCK_SKEW_TOLERANCE_SECONDS) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    if (payload.exp <= nowInSeconds) {
       throw new UnauthorizedException('Token expired');
     }
 
@@ -624,4 +637,15 @@ export class AuthService {
 function normalizeNullableString(value: string | null | undefined): string | null {
   const normalizedValue = value?.trim();
   return normalizedValue ? normalizedValue : null;
+}
+
+function maskEmail(email: string): string {
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0) {
+    return '***';
+  }
+  const local = email.slice(0, atIndex);
+  const domain = email.slice(atIndex);
+  const visiblePrefix = local.slice(0, Math.min(2, local.length));
+  return `${visiblePrefix}***${domain}`;
 }

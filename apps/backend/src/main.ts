@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 
+import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app/app.module';
@@ -15,6 +16,25 @@ async function bootstrap() {
   const logger = app.get(AppLogger);
   app.useLogger(logger);
   app.useGlobalFilters(new GlobalExceptionFilter(logger));
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:'],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          frameSrc: ["'none'"],
+          upgradeInsecureRequests: [],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
 
   const appConfigService = app.get(AppConfigService);
   app.enableCors({
