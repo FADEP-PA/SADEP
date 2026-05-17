@@ -1584,10 +1584,13 @@ export class ProcessesService {
     }
 
     const normalizedComment = comment.trim();
+    if (normalizedComment.length > 2000) {
+      throw new BadRequestException('Comment must not exceed 2000 characters');
+    }
     return normalizedComment.length > 0 ? normalizedComment : null;
   }
 
-  private normalizeRequiredText(value: string, fieldLabel: string): string {
+  private normalizeRequiredText(value: string, fieldLabel: string, maxLength = 1000): string {
     if (typeof value !== 'string') {
       throw new BadRequestException(`${fieldLabel} must be a string`);
     }
@@ -1597,15 +1600,22 @@ export class ProcessesService {
       throw new BadRequestException(`${fieldLabel} is required`);
     }
 
+    if (normalizedValue.length > maxLength) {
+      throw new BadRequestException(`${fieldLabel} must not exceed ${maxLength} characters`);
+    }
+
     return normalizedValue;
   }
 
-  private normalizeOptionalText(value?: string): string | null {
+  private normalizeOptionalText(value?: string, maxLength = 500): string | null {
     if (typeof value !== 'string') {
       return null;
     }
 
     const normalizedValue = value.trim();
+    if (normalizedValue.length > maxLength) {
+      throw new BadRequestException(`Value must not exceed ${maxLength} characters`);
+    }
     return normalizedValue.length > 0 ? normalizedValue : null;
   }
 

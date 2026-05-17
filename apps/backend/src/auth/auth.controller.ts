@@ -11,6 +11,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { UserRole } from '@sadep/contracts';
 import type { LoginRequest, LoginResponse } from '@sadep/contracts';
 
@@ -27,10 +28,15 @@ import {
   setRefreshTokenCookie,
 } from './session-cookie';
 
+const MAX_EMAIL_LENGTH = 255;
+const MAX_PASSWORD_LENGTH = 256;
+const MAX_USER_AGENT_LENGTH = 512;
+
 type AuthHttpRequest = {
   headers: {
     cookie?: string | string[];
     'user-agent'?: string | string[];
+    origin?: string | string[];
   };
   ip?: string;
   socket?: {
@@ -47,6 +53,7 @@ export class AuthController {
     private readonly appConfigService: AppConfigService,
   ) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login')
   @HttpCode(200)
   async login(
@@ -61,18 +68,28 @@ export class AuthController {
       throw new BadRequestException('Email and password are required');
     }
 
+    if (email.length > MAX_EMAIL_LENGTH) {
+      throw new BadRequestException('Email is too long');
+    }
+
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      throw new BadRequestException('Password is too long');
+    }
+
     const loginResult = await this.authService.login(email, password, this.getSessionRequestContext(request));
     setRefreshTokenCookie(response, this.appConfigService, loginResult.refreshToken, loginResult.refreshExpiresAt);
 
     return this.toLoginResponse(loginResult);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('refresh')
   @HttpCode(200)
   async refresh(
     @Req() request: AuthHttpRequest,
     @Res({ passthrough: true }) response: AuthHttpResponse,
   ): Promise<LoginResponse> {
+    this.validateCsrfOrigin(request);
     const refreshToken = readRefreshTokenFromCookie(
       request.headers.cookie,
       this.appConfigService.refreshCookieName,
@@ -100,12 +117,14 @@ export class AuthController {
     }
   }
 
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Post('logout')
   @HttpCode(200)
   async logout(
     @Req() request: AuthHttpRequest,
     @Res({ passthrough: true }) response: AuthHttpResponse,
   ) {
+    this.validateCsrfOrigin(request);
     const refreshToken = readRefreshTokenFromCookie(
       request.headers.cookie,
       this.appConfigService.refreshCookieName,
@@ -149,11 +168,22 @@ export class AuthController {
   }
 
   private getSessionRequestContext(request: AuthHttpRequest) {
-    const userAgent = request.headers['user-agent'];
+    const rawUserAgent = request.headers['user-agent'];
+    const fullUserAgent = Array.isArray(rawUserAgent) ? rawUserAgent.join(' ') : (rawUserAgent ?? '');
+    const userAgent = fullUserAgent.slice(0, MAX_USER_AGENT_LENGTH) || null;
 
     return {
       ipAddress: request.ip ?? request.socket?.remoteAddress ?? null,
-      userAgent: Array.isArray(userAgent) ? userAgent.join(' ') : userAgent ?? null,
+      userAgent,
     };
+  }
+
+  private validateCsrfOrigin(request: AuthHttpRequest): void {
+    const originHeader = request.headers['origin'];
+    const origin = Array.isArray(originHeader) ? originHeader[0] : originHeader;
+
+    if (origin && origin !== this.appConfigService.frontendOrigin) {
+      throw new ForbiddenException('Invalid request origin');
+    }
   }
 }

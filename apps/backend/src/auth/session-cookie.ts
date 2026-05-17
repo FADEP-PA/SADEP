@@ -46,8 +46,11 @@ export function readRefreshTokenFromCookie(
       continue;
     }
 
-    const value = cookiePart.slice(separatorIndex + 1).trim();
-    return value ? decodeCookieValue(value) : null;
+    const rawValue = cookiePart.slice(separatorIndex + 1).trim();
+    if (!rawValue) {
+      return null;
+    }
+    return decodeCookieValue(rawValue);
   }
 
   return null;
@@ -84,10 +87,10 @@ function baseCookieOptions(appConfigService: AppConfigService): ClearRefreshCook
   };
 }
 
-function decodeCookieValue(value: string): string {
+function decodeCookieValue(value: string): string | null {
   try {
     return decodeURIComponent(value);
   } catch {
-    return value;
+    return null;
   }
 }
