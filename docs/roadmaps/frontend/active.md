@@ -1,6 +1,6 @@
 # Frontend - Painel Ativo
 
-> Ultima atualizacao: 2026-05-15 (FE-TEST-01F — ciclo do AuthProvider coberto; recortes A ao F concluidos).
+> Ultima atualizacao: 2026-05-21 (FE-CESAD-READ-01 — estado atual do workspace de leitura CESAD documentado).
 > Os arquivos de task ja resolvidos foram movidos para [`docs/archive/frontend/tasks/`](../../../archive/frontend/tasks/).
 > O indice de compatibilidade legado foi movido para [`docs/archive/roadmaps-legados/frontend-tasks-roadmap.md`](../../../archive/roadmaps-legados/frontend-tasks-roadmap.md).
 
@@ -12,6 +12,7 @@
 |---|---|---|---|---|
 | [`FE-PROCESS-LIST-01`](./tasks/FE-PROCESS-LIST-01-authenticated-process-list.md) | Alta futura | Pendente | Endpoints backend seguros de listagem por perfil e autorizacao contextual | Aguardar contrato backend seguro antes de alterar telas ou remover IDs manuais. |
 | [`FE-CHEFIA-02`](./tasks/FE-CHEFIA-02-supervisor-process-list-and-demo-removal.md) | Alta futura | Pendente | Listagem real dos processos da chefia autenticada e autorizacao backend | Aguardar contrato de listagem por chefia antes de remover fallback demonstrativo. |
+| [`FE-CESAD-READ-01`](./tasks/FE-CESAD-READ-01-cesad-read-workspace-atual.md) | — | Parcialmente executada (leitura consolidada real integrada; parecer em modo somente leitura; emissao, assinatura e parecer final ainda nao conectados) | — | Nenhuma acao pendente; continuidade em `FE-CESAD-01`. |
 | [`FE-CESAD-01`](./tasks/FE-CESAD-01-real-cesad-screens.md) | Alta futura | Pendente | Backend de parecer CESAD final com documento/assinaturas ja entregue em `BE-CESAD-FINAL-01B`; ainda depende de `BE-CESAD-FINAL-01C`, contratos/capabilities frontend e decisao de integracao real | Aguardar `BE-CESAD-FINAL-01C` e contrato frontend especifico antes de conectar acoes ou remover fallback visual. |
 | [`FE-TEST-01`](./tasks/FE-TEST-01-frontend-test-strategy.md) | Media futura | Parcialmente executada (FE-TEST-01A ao FE-TEST-01F concluidos); aberta apenas para expansoes futuras | Decisao operacional para cobrir telas autenticadas completas e ciclo de bootstrap via `AuthProvider` real integrado | Avaliar cobertura de telas autenticadas completas apos `CI-GATES-01` sem acoplar a `FE-CHEFIA-02`, `FE-PROCESS-LIST-01` ou `FE-CESAD-01`. |
 
@@ -27,7 +28,7 @@ A pasta `apps/frontend/src/features/` contem tanto componentes implementados qua
 |---|---|---|
 | `features/auth/` | `login-page.tsx` | Login funcional com JWT |
 | `features/process/` | Stage timeline, process history, process actions, process status, supervisor evaluation workspace, intern workspace, appeal status | Componentes de processo parcialmente integrados |
-| `features/cesad/` | Stage read workspace, read-only opinion shell, signature timeline, stage summary card, process header card, stage history panel, process warnings panel | CESAD de etapa com dados demonstrativos; CESAD final ainda nao integrado ao frontend, apesar da entrega backend da `BE-CESAD-FINAL-01B` |
+| `features/cesad/` | `CesadStageReadWorkspace`, `ReadOnlyOpinionShell`, `StageDocumentList`, `SignatureTimeline`, `StageSummaryCard`, `ProcessHeaderCard`, `StageHistoryPanel`, `ProcessWarningsPanel` | Leitura consolidada real integrada ao endpoint `/processes/:id/stages/:seq/consolidated-read`; exibe processo, servidor, etapa, avaliacoes, documentos, assinaturas e historico; parecer de etapa exibido quando retornado pelo backend, com fallback de ausencia; modo demonstrativo apenas na tela pre-consulta; emissao, assinatura e parecer final ainda nao conectados. Ver [`FE-CESAD-READ-01`](./tasks/FE-CESAD-READ-01-cesad-read-workspace-atual.md). |
 | `features/homologacao-autoridade/` | `homologation-authority-workspace.tsx`, `homologation-workspace-service.ts` | Workspace de homologacao preparado, sem backend funcional |
 | `features/dashboard/` | `process-dashboard-types.ts` | Tipos de dashboard |
 
