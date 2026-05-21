@@ -894,12 +894,6 @@ export function SupervisorEvaluationWorkspace() {
               <strong>{workspaceMode.detail}</strong>
             </div>
 
-            {!workspaceSnapshot ? (
-              <DemonstrationModeState
-                title="Processo nao selecionado"
-                description="A tela permanece demonstrativa ate que um processo seja informado para consulta autenticada."
-              />
-            ) : null}
           </>
         ) : null}
 

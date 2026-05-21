@@ -770,12 +770,6 @@ export function InternServerWorkspace() {
           </section>
         ) : null}
 
-        {!snapshot && !isSelfEvaluationExpanded ? (
-          <DemonstrationModeState
-            title="Processo nao selecionado"
-            description="A tela permanece demonstrativa ate que um processo seja informado para consulta autenticada."
-          />
-        ) : null}
 
         {isLoadingSnapshot ? (
           <InlineLoadingState

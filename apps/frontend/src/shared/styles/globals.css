@@ -351,9 +351,9 @@ button:disabled,
 
 .warning-button {
   border: 1px solid transparent;
-  background: linear-gradient(135deg, #c48a1d, #a86d09);
+  background: linear-gradient(135deg, #007cc0, #005fa3);
   color: #ffffff;
-  box-shadow: 0 16px 28px rgba(168, 109, 9, 0.2);
+  box-shadow: 0 16px 28px rgba(0, 124, 192, 0.2);
 }
 
 .warning-button:hover {
@@ -2189,8 +2189,10 @@ textarea {
 
 .app-shell {
   --sidebar-width: 19.5rem;
+  --sidebar-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  transition: grid-template-columns var(--sidebar-transition);
   min-height: 100vh;
   background:
     radial-gradient(circle at top right, rgba(0, 124, 192, 0.12), transparent 28%),
@@ -2413,13 +2415,28 @@ textarea {
   justify-content: center;
 }
 
+.app-shell__brand-copy,
+.app-shell__sidebar-group-label,
+.app-shell__sidebar-link-text,
+.app-shell__sidebar-footer-card .section-chip,
+.app-shell__sidebar-footer-card strong,
+.app-shell__sidebar-footer-card small {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--sidebar-transition),
+    visibility var(--sidebar-transition);
+}
+
 .app-shell--sidebar-collapsed .app-shell__brand-copy,
 .app-shell--sidebar-collapsed .app-shell__sidebar-group-label,
 .app-shell--sidebar-collapsed .app-shell__sidebar-link-text,
 .app-shell--sidebar-collapsed .app-shell__sidebar-footer-card .section-chip,
 .app-shell--sidebar-collapsed .app-shell__sidebar-footer-card strong,
 .app-shell--sidebar-collapsed .app-shell__sidebar-footer-card small {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .app-shell--sidebar-collapsed .app-shell__sidebar-link {
