@@ -71,8 +71,18 @@ export interface CesadFinalOpinionRef {
   recommendation: string | null;
   consolidatedSnapshot: CesadFinalOpinionConsolidatedSnapshotRef | null;
   completedAt: string | null;
+  sentToHomologationAt: string | null;
+  sentToHomologationByUserId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CesadFinalOpinionSendToHomologationRef {
+  processId: string;
+  cesadFinalOpinionId: string;
+  sentToHomologationAt: string;
+  sentToHomologationByUserId: string;
+  processStatus: string;
 }
 
 export interface CesadFinalOpinionInput {

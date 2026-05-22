@@ -94,7 +94,7 @@ describe('AuthService', () => {
     expect(result.refreshExpiresAt).toEqual(expect.any(Date));
     expect(logger.log).toHaveBeenCalledWith(
       expectAuthAuditEvent('AUTH_LOGIN_SUCCEEDED', {
-        email: 'maria.silva@test.local',
+        email: 'ma***@test.local',
         role: UserRole.CESAD_MEMBER,
         userId: 'user-123',
       }),
@@ -110,7 +110,7 @@ describe('AuthService', () => {
 
     expect(logger.warn).toHaveBeenCalledWith(
       expectAuthAuditEvent('AUTH_LOGIN_FAILED', {
-        email: 'maria.silva@test.local',
+        email: 'ma***@test.local',
         reason: 'invalid_credentials',
       }),
     );

@@ -3,12 +3,17 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   AuditEventType as PrismaAuditEventType,
   CesadFinalOpinionStatus as PrismaCesadFinalOpinionStatus,
+  CesadOpinionKind as PrismaCesadOpinionKind,
+  DocumentStatus as PrismaDocumentStatus,
+  DocumentType as PrismaDocumentType,
   Prisma,
   ProcessStatus as PrismaProcessStatus,
+  SignatureStatus as PrismaSignatureStatus,
   UserRole as PrismaUserRole,
 } from '@prisma/client';
 import {
@@ -32,6 +37,8 @@ import {
 import type {
   CesadFinalOpinionEligibilityResponseDto,
   CesadFinalOpinionResponseDto,
+  SendCesadFinalOpinionToHomologationDto,
+  SendCesadFinalOpinionToHomologationResponseDto,
   UpsertCesadFinalOpinionDto,
 } from './dto/cesad-final-opinion.dto';
 
@@ -48,6 +55,8 @@ type CesadFinalOpinionRow = {
   recommendation: string | null;
   consolidatedSnapshot: Prisma.JsonValue | null;
   completedAt: Date | null;
+  sentToHomologationAt: Date | null;
+  sentToHomologationByUserId: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -354,6 +363,152 @@ export class CesadFinalOpinionsService {
     });
   }
 
+  async sendToHomologation(
+    processId: string,
+    user: AuthenticatedUser,
+    payload: SendCesadFinalOpinionToHomologationDto = {},
+  ): Promise<SendCesadFinalOpinionToHomologationResponseDto> {
+    const comment = this.normalizeComment(payload.comment);
+
+    return this.prismaService.$transaction(async (transaction) => {
+      const process = await this.processesService.findProcessOrThrow(transaction, processId);
+      const processStatus = this.toContractProcessStatus(process.status);
+      this.ensureWriteAllowedForProcessStatus(processStatus);
+
+      await this.cesadContextAuthorizationService.ensureCanWriteCesadFinalOpinion({
+        user,
+        processId,
+        transaction,
+        allowAdmin: true,
+      });
+
+      const opinion = await transaction.cesadFinalOpinion.findUnique({
+        where: { processId },
+        include: {
+          expectedSigners: {
+            include: {
+              signatureRecords: true,
+            },
+            orderBy: { sortOrder: 'asc' },
+          },
+        },
+      });
+
+      if (!opinion) {
+        throw new NotFoundException('CESAD final opinion not found');
+      }
+
+      if (opinion.status !== PrismaCesadFinalOpinionStatus.COMPLETED) {
+        throw new BadRequestException(
+          'Only a COMPLETED CESAD final opinion can be sent to homologation',
+        );
+      }
+
+      if (opinion.sentToHomologationAt !== null) {
+        throw new ConflictException('CESAD final opinion has already been sent to homologation');
+      }
+
+      const finalDocument = await transaction.processDocument.findFirst({
+        where: {
+          evaluationProcessId: processId,
+          processStageId: null,
+          documentType: PrismaDocumentType.CESAD_OPINION,
+          opinionKind: PrismaCesadOpinionKind.FINAL_CONCLUSIVE,
+        },
+        include: {
+          signatureRecords: true,
+        },
+      });
+
+      if (!finalDocument) {
+        const mismatchedFinalCesadDocument = await transaction.processDocument.findFirst({
+          where: {
+            evaluationProcessId: processId,
+            processStageId: null,
+            documentType: PrismaDocumentType.CESAD_OPINION,
+          },
+        });
+
+        if (mismatchedFinalCesadDocument) {
+          throw new BadRequestException(
+            'CESAD final opinion document must have opinionKind FINAL_CONCLUSIVE',
+          );
+        }
+
+        throw new NotFoundException('CESAD final opinion document not found');
+      }
+
+      if (finalDocument.documentStatus !== PrismaDocumentStatus.SIGNED) {
+        throw new BadRequestException(
+          'CESAD final opinion document must be SIGNED before sending to homologation',
+        );
+      }
+
+      if (opinion.expectedSigners.length === 0) {
+        throw new BadRequestException(
+          'CESAD final opinion cannot be sent to homologation without expected signers',
+        );
+      }
+
+      const expectedSignerIds = opinion.expectedSigners.map((signer) => signer.id);
+      const completedFinalSignatures = finalDocument.signatureRecords.filter(
+        (signature) =>
+          signature.cesadFinalOpinionExpectedSignerId !== null &&
+          expectedSignerIds.includes(signature.cesadFinalOpinionExpectedSignerId) &&
+          signature.status === PrismaSignatureStatus.COMPLETED,
+      );
+
+      if (completedFinalSignatures.length !== expectedSignerIds.length) {
+        throw new BadRequestException(
+          'CESAD final opinion requires all expected signatures completed before sending to homologation',
+        );
+      }
+
+      const sentToHomologationAt = new Date();
+      const updatedOpinion = await transaction.cesadFinalOpinion.update({
+        where: { processId },
+        data: {
+          sentToHomologationAt,
+          sentToHomologationByUserId: user.sub,
+        },
+      });
+
+      await transaction.auditEvent.create({
+        data: this.buildAuditEvent({
+          processId,
+          cesadFinalOpinionId: opinion.id,
+          user,
+          eventType: AuditEventType.SENT_TO_HOMOLOGATION,
+          action: ProcessAction.SEND_TO_HOMOLOGATION,
+          processStatus,
+          occurredAt: sentToHomologationAt,
+          comment,
+          beforeState: {
+            cesadFinalOpinionStatus: CesadFinalOpinionStatus.COMPLETED,
+            sentToHomologationAt: null,
+          },
+          afterState: {
+            cesadFinalOpinionStatus: CesadFinalOpinionStatus.COMPLETED,
+            sentToHomologationAt: sentToHomologationAt.toISOString(),
+          },
+          sendToHomologation: {
+            finalOpinionDocumentId: finalDocument.id,
+            expectedSignerCount: expectedSignerIds.length,
+            completedSignatureCount: completedFinalSignatures.length,
+          },
+        }),
+      });
+
+      return {
+        processId,
+        cesadFinalOpinionId: updatedOpinion.id,
+        sentToHomologationAt: sentToHomologationAt.toISOString(),
+        sentToHomologationByUserId: user.sub,
+        processStatus,
+      };
+    });
+  }
+
   private ensureWriteAllowedForProcessStatus(status: ProcessStatus): void {
     if (status !== ProcessStatus.PARECER_EMITIDO) {
       throw new BadRequestException(
@@ -461,6 +616,11 @@ export class CesadFinalOpinionsService {
       finalResult: string | null;
       recommendation: string | null;
     };
+    sendToHomologation?: {
+      finalOpinionDocumentId: string;
+      expectedSignerCount: number;
+      completedSignatureCount: number;
+    };
   }): Prisma.AuditEventUncheckedCreateInput {
     const occurredAtIso = params.occurredAt.toISOString();
     const metadata: Record<string, unknown> = {
@@ -499,6 +659,15 @@ export class CesadFinalOpinionsService {
       }
     }
 
+    if (params.sendToHomologation) {
+      metadata.finalOpinionDocumentId = params.sendToHomologation.finalOpinionDocumentId;
+      metadata.opinionKind = 'FINAL_CONCLUSIVE';
+      metadata.documentStatus = 'SIGNED';
+      metadata.expectedSignerCount = params.sendToHomologation.expectedSignerCount;
+      metadata.completedSignatureCount = params.sendToHomologation.completedSignatureCount;
+      metadata.sentToHomologationAt = occurredAtIso;
+    }
+
     if (params.comment) {
       metadata.comment = params.comment;
     }
@@ -530,6 +699,8 @@ export class CesadFinalOpinionsService {
       recommendation: opinion.recommendation,
       consolidatedSnapshot: this.toContractSnapshot(opinion.consolidatedSnapshot),
       completedAt: opinion.completedAt?.toISOString() ?? null,
+      sentToHomologationAt: opinion.sentToHomologationAt?.toISOString() ?? null,
+      sentToHomologationByUserId: opinion.sentToHomologationByUserId,
       createdAt: opinion.createdAt.toISOString(),
       updatedAt: opinion.updatedAt.toISOString(),
     };

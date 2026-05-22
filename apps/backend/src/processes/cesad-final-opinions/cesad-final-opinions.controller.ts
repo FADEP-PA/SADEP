@@ -16,7 +16,10 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import { CesadFinalOpinionsService } from './cesad-final-opinions.service';
-import type { UpsertCesadFinalOpinionDto } from './dto/cesad-final-opinion.dto';
+import type {
+  SendCesadFinalOpinionToHomologationDto,
+  UpsertCesadFinalOpinionDto,
+} from './dto/cesad-final-opinion.dto';
 
 @Controller('processes/:id/cesad-final-opinion')
 @UseGuards(JwtAuthGuard)
@@ -62,6 +65,19 @@ export class CesadFinalOpinionsController {
     @CurrentUser() user?: AuthenticatedUser,
   ) {
     return this.service.complete(id, this.ensureUser(user), this.parsePayload(body));
+  }
+
+  @Post('send-to-homologation')
+  async sendToHomologation(
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return this.service.sendToHomologation(
+      id,
+      this.ensureUser(user),
+      this.parseSendToHomologationPayload(body),
+    );
   }
 
   @Post('signatures/prepare')
@@ -165,5 +181,20 @@ export class CesadFinalOpinionsController {
       ...(typeof recommendation === 'string' ? { recommendation } : {}),
       ...(typeof comment === 'string' ? { comment } : {}),
     };
+  }
+
+  private parseSendToHomologationPayload(
+    body: Record<string, unknown>,
+  ): SendCesadFinalOpinionToHomologationDto {
+    if (!body || typeof body !== 'object') {
+      return {};
+    }
+
+    const { comment } = body;
+    if (comment !== undefined && typeof comment !== 'string') {
+      throw new BadRequestException('Comment must be a string when provided');
+    }
+
+    return typeof comment === 'string' ? { comment } : {};
   }
 }

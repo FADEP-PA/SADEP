@@ -166,6 +166,7 @@ model User {
   selfEvaluations                  SelfEvaluation[]                  @relation("SelfEvaluationAuthor")
   cesadStageOpinions               CesadStageOpinion[]               @relation("CesadStageOpinionAuthor")
   cesadFinalOpinions               CesadFinalOpinion[]               @relation("CesadFinalOpinionAuthor")
+  cesadFinalOpinionsSentToHomologation CesadFinalOpinion[]           @relation("CesadFinalOpinionSentToHomologationBy")
   cesadCommissionMembers           CesadCommissionMember[]
   cesadStageOpinionExpectedSigners CesadStageOpinionExpectedSigner[] @relation("CesadStageOpinionExpectedSignerActingUser")
   cesadFinalOpinionExpectedSigners CesadFinalOpinionExpectedSigner[] @relation("CesadFinalOpinionExpectedSignerActingUser")
@@ -362,13 +363,17 @@ model CesadFinalOpinion {
   recommendation       String?
   consolidatedSnapshot Json?
   completedAt          DateTime?
+  sentToHomologationAt DateTime?
+  sentToHomologationByUserId String?
   createdAt            DateTime                          @default(now())
   updatedAt            DateTime                          @updatedAt
   evaluationProcess    EvaluationProcess                 @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   authorUser           User                              @relation("CesadFinalOpinionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sentToHomologationBy User?                             @relation("CesadFinalOpinionSentToHomologationBy", fields: [sentToHomologationByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   expectedSigners      CesadFinalOpinionExpectedSigner[]
 
   @@index([authorUserId])
+  @@index([sentToHomologationByUserId])
   @@index([status])
 }
 
