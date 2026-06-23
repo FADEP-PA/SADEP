@@ -83,14 +83,14 @@ npm run db:check --workspace @sadep/backend
 
 Após o seed, os usuários abaixo ficam disponíveis:
 
-| Perfil | E-mail | Senha |
-| --- | --- | --- |
-| Admin | `admin@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Chefia | `supervisor@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| CESAD | `cesad@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Assistente da Comissao | `assistant@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Autoridade Homologadora | `authority@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Servidor | `server@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Perfil                  | E-mail                   | Senha                        |
+| ----------------------- | ------------------------ | ---------------------------- |
+| Admin                   | `admin@sadep.local`      | valor de `DEV_SEED_PASSWORD` |
+| Chefia                  | `supervisor@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| CESAD                   | `cesad@sadep.local`      | valor de `DEV_SEED_PASSWORD` |
+| Assistente da Comissao  | `assistant@sadep.local`  | valor de `DEV_SEED_PASSWORD` |
+| Autoridade Homologadora | `authority@sadep.local`  | valor de `DEV_SEED_PASSWORD` |
+| Servidor                | `server@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
 
 ## Execução do backend
 
@@ -105,7 +105,7 @@ Backend esperado:
 
 ## Execução do frontend
 
-### Configuracao da API consumida pelo frontend
+### Configuração da API consumida pelo frontend
 
 O frontend consome a API a partir de `NEXT_PUBLIC_API_BASE_URL`.
 
@@ -116,6 +116,7 @@ Copy-Item apps\frontend\.env.example apps\frontend\.env.local
 ```
 
 O codigo atual usa `http://localhost:3000` como fallback quando `NEXT_PUBLIC_API_BASE_URL` nao esta definida. Ainda assim, a variavel pode ser definida explicitamente quando o backend local estiver em outra origin.
+
 - **Homologacao e producao**: `NEXT_PUBLIC_API_BASE_URL` deve ser definida explicitamente com a origin HTTPS da API institucional, sem path final, query, fragmento, credenciais ou wildcard.
 - `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` nao deve ser configurada. A dependencia dessa env tecnica foi removida no recorte `FT-24`.
 - Se a API nao estiver na origin configurada, o frontend deve exibir erro de comunicacao em vez de mascarar o problema como ausencia de dados.

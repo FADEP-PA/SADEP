@@ -1,6 +1,7 @@
 # Worker
 
 Estrutura reservada para processamento assincrono futuro:
+
 - geração de PDF
 - notificações
 - assinaturas/documentos

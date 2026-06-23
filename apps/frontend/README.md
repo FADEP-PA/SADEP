@@ -1,6 +1,7 @@
 # Frontend (Next.js)
 
 Interface operacional desacoplada para os perfis:
+
 - servidor-estagiário
 - chefia imediata
 - CESAD/comissão
@@ -154,6 +155,7 @@ Convenções de UI:
 ```
 
 Campos mínimos obrigatórios nesta etapa:
+
 - `sub`
 - `email`
 - `role`
@@ -231,6 +233,7 @@ Catálogo centralizado usado pelo frontend:
 - `ADMIN` → `Administrador técnico`
 
 Cada perfil também possui:
+
 - descrição curta padronizada
 - rota inicial autenticada
 - rota inicial autenticada
