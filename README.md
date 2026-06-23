@@ -59,7 +59,7 @@ npm run frontend:start:dev
 
 ### 4. Acessos locais
 
-- Frontend: `http://localhost:3001`
+- Frontend: `http://localhost:5000`
 - Backend healthcheck: `http://localhost:3000/health`
 
 ### 5. Credenciais de desenvolvimento

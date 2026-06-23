@@ -10,9 +10,9 @@ describe('validateEnvironmentVariables', () => {
     expect(
       validateEnvironmentVariables({
         ...BASE_CONFIG,
-        FRONTEND_ORIGIN: 'http://localhost:3001/',
+        FRONTEND_ORIGIN: 'http://localhost:5000/',
       }).FRONTEND_ORIGIN,
-    ).toBe('http://localhost:3001');
+    ).toBe('http://localhost:5000');
   });
 
   it('rejects wildcard frontend origin', () => {

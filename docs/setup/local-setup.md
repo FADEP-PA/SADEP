@@ -45,7 +45,7 @@ DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
 - `DEV_SEED_PASSWORD` e obrigatorio para o seed local.
 - Os usuarios seed mantem e-mails previsiveis; a senha de todos passa a ser o valor de `DEV_SEED_PASSWORD`.
 - Nao ha mais senha fixa versionada para usuarios seed.
-- Em desenvolvimento local, os defaults de sessao usam `ACCESS_TOKEN_TTL=1h`, `REFRESH_TOKEN_TTL=7d`, cookie `HttpOnly` em `/auth`, `COOKIE_SECURE=false`, `COOKIE_SAMESITE=lax` e `FRONTEND_ORIGIN=http://localhost:3001`.
+- Em desenvolvimento local, os defaults de sessao usam `ACCESS_TOKEN_TTL=1h`, `REFRESH_TOKEN_TTL=7d`, cookie `HttpOnly` em `/auth`, `COOKIE_SECURE=false`, `COOKIE_SAMESITE=lax` e `FRONTEND_ORIGIN=http://localhost:5000`.
 - `FRONTEND_ORIGIN` deve ser uma origin `http` ou `https` sem path, query, fragmento, credenciais ou wildcard. Em producao, deve usar `https`.
 - `COOKIE_DOMAIN`, quando definido, deve ser apenas dominio, sem protocolo, porta, wildcard ou path. Em producao, `localhost` nao e permitido como dominio de cookie.
 - `COOKIE_PATH` deve iniciar com `/` e nao deve conter whitespace, semicolon, query ou fragmento.
@@ -134,24 +134,24 @@ npm run frontend:start:dev
 
 Frontend esperado:
 
-- URL: `http://localhost:3001`
+- URL: `http://localhost:5000`
 
 ## Ordem recomendada
 
 1. Subir o backend
 2. Confirmar `http://localhost:3000/health`
 3. Subir o frontend
-4. Acessar `http://localhost:3001`
+4. Acessar `http://localhost:5000`
 
 ## Problemas comuns
 
-### Porta 3000 ou 3001 já em uso
+### Porta 3000 ou 5000 já em uso
 
 Se aparecer `EADDRINUSE`, identifique o processo:
 
 ```powershell
 netstat -ano | findstr :3000
-netstat -ano | findstr :3001
+netstat -ano | findstr :5000
 ```
 
 Depois encerre o PID correspondente:
@@ -218,7 +218,7 @@ Checklist mínimo para validar o ambiente:
 - banco sincronizado com `db push`
 - seed e `db:check` executados
 - backend respondendo em `3000`
-- frontend respondendo em `3001`
+- frontend respondendo em `5000`
 - login funcionando com `admin@sadep.local` e a senha definida em `DEV_SEED_PASSWORD`
 
 Para validar o frontend antes de considerar uma alteração segura:
