@@ -312,30 +312,50 @@ function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot)
   };
 }
 
+function calculateTotalAndAverage(factors: EvaluationFactorDraft[]) {
+  if (factors.length === 0) {
+    return { totalStageScore: '0.0', stageAverage: '0.0' };
+  }
+  const total = factors.reduce((sum, factor) => {
+    const factorAvg = factor.items.length > 0
+      ? factor.items.reduce((itemSum, item) => itemSum + item.score, 0) / factor.items.length
+      : 0;
+    return sum + factorAvg;
+  }, 0);
+  const average = total / factors.length;
+  return {
+    totalStageScore: total.toFixed(1),
+    stageAverage: average.toFixed(1),
+  };
+}
+
 function createEvaluationDraft(
   row: SupervisorDashboardRow,
   evaluation?: SupervisorEvaluationWithDocumentContextRef | null,
 ): EvaluationDraft {
   const storedCriteria = evaluation?.content.criteria ?? [];
+  const factors = FACTOR_TEMPLATES.map((factor) => ({
+    id: factor.id,
+    title: factor.title,
+    items: factor.items.map((item) => ({
+      id: item.id,
+      label: item.label,
+      score: storedCriteria.find((criterion) => criterion.code === item.id)?.rating ?? 1,
+    })),
+  }));
+
+  const { totalStageScore, stageAverage } = calculateTotalAndAverage(factors);
 
   return {
     row,
     unitCompetencies: evaluation?.summary ?? '',
     serverAssignments: '',
     generalComments: evaluation?.generalComments ?? '',
-    totalStageScore: '0.0',
-    stageAverage: '0.0',
+    totalStageScore,
+    stageAverage,
     administrativeConcept: 'Insuficiente',
     monthlyObservations: [],
-    factors: FACTOR_TEMPLATES.map((factor) => ({
-      id: factor.id,
-      title: factor.title,
-      items: factor.items.map((item) => ({
-        id: item.id,
-        label: item.label,
-        score: storedCriteria.find((criterion) => criterion.code === item.id)?.rating ?? 1,
-      })),
-    })),
+    factors,
     expandedFactorIds: [],
   };
 }
@@ -456,7 +476,7 @@ function EvaluationFactorCard({
         </div>
 
         <div className="evaluation-detail__factor-metric">
-              <span>Média do fator</span>
+          <span>Média do fator</span>
           <strong>{average.toFixed(1)}</strong>
         </div>
       </button>
@@ -634,23 +654,29 @@ export function SupervisorEvaluationWorkspace() {
         return current;
       }
 
+      const nextFactors = current.factors.map((factor) =>
+        factor.id === factorId
+          ? {
+            ...factor,
+            items: factor.items.map((item) =>
+              item.id === itemId
+                ? {
+                  ...item,
+                  score: Math.min(100, Math.max(0, score)),
+                }
+                : item,
+            ),
+          }
+          : factor,
+      );
+
+      const { totalStageScore, stageAverage } = calculateTotalAndAverage(nextFactors);
+
       return {
         ...current,
-        factors: current.factors.map((factor) =>
-          factor.id === factorId
-            ? {
-                ...factor,
-                items: factor.items.map((item) =>
-                  item.id === itemId
-                    ? {
-                        ...item,
-                        score: Math.min(100, Math.max(0, score)),
-                      }
-                    : item,
-                ),
-              }
-            : factor,
-        ),
+        factors: nextFactors,
+        totalStageScore,
+        stageAverage,
       };
     });
   }
@@ -844,13 +870,13 @@ export function SupervisorEvaluationWorkspace() {
   const isRealProcessLoaded = Boolean(workspaceSnapshot);
   const workspaceMode = isRealProcessLoaded
     ? {
-        label: 'Processo informado carregado',
-        detail: `Registro do processo ${workspaceSnapshot?.process.id} exibido junto aos dados demonstrativos preservados.`,
-      }
+      label: 'Processo informado carregado',
+      detail: `Registro do processo ${workspaceSnapshot?.process.id} exibido junto aos dados demonstrativos preservados.`,
+    }
     : {
-        label: 'Visualizacao demonstrativa',
-        detail: 'Dados ficticios e seguros permanecem disponiveis para apresentacao visual da jornada da chefia.',
-      };
+      label: 'Visualizacao demonstrativa',
+      detail: 'Dados ficticios e seguros permanecem disponiveis para apresentacao visual da jornada da chefia.',
+    };
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
@@ -976,9 +1002,9 @@ export function SupervisorEvaluationWorkspace() {
                     setActiveEvaluation((current) =>
                       current
                         ? {
-                            ...current,
-                            unitCompetencies: event.target.value,
-                          }
+                          ...current,
+                          unitCompetencies: event.target.value,
+                        }
                         : current,
                     )
                   }
@@ -1000,9 +1026,9 @@ export function SupervisorEvaluationWorkspace() {
                     setActiveEvaluation((current) =>
                       current
                         ? {
-                            ...current,
-                            serverAssignments: event.target.value,
-                          }
+                          ...current,
+                          serverAssignments: event.target.value,
+                        }
                         : current,
                     )
                   }
@@ -1327,50 +1353,50 @@ export function SupervisorEvaluationWorkspace() {
                           : 'supervisor-dashboard__row'
                       }
                     >
-                    <div className="supervisor-dashboard__server" data-label="Servidor">
-                      <strong>{row.serverName}</strong>
-                      {row.source === 'real' ? <span>processo informado carregado</span> : null}
-                    </div>
+                      <div className="supervisor-dashboard__server" data-label="Servidor">
+                        <strong>{row.serverName}</strong>
+                        {row.source === 'real' ? <span>processo informado carregado</span> : null}
+                      </div>
 
-                    <div className="supervisor-dashboard__cell supervisor-dashboard__registration" data-label="Matrícula">
-                      {row.registration}
-                    </div>
-                    <div className="supervisor-dashboard__cell" data-label="Cargo">{row.role}</div>
-                    <div className="supervisor-dashboard__cell" data-label="Exercício">{row.exerciseStart}</div>
-                    <div className="supervisor-dashboard__cell" data-label="Status">
-                      <span className={getStatusClassName(row.status)}>{getStatusLabel(row.status)}</span>
-                    </div>
-                    <div className="supervisor-dashboard__cell" data-label="Etapa atual">
-                      <span className={getStageClassName(row.status)}>{row.stageLabel}</span>
-                    </div>
-                    <div className="supervisor-dashboard__cell" data-label="Prazo limite">{row.deadline}</div>
-                    <div className="supervisor-dashboard__cell supervisor-dashboard__cell--center" data-label="Avaliações anteriores">
-                      {row.canReviewPrevious ? (
+                      <div className="supervisor-dashboard__cell supervisor-dashboard__registration" data-label="Matrícula">
+                        {row.registration}
+                      </div>
+                      <div className="supervisor-dashboard__cell" data-label="Cargo">{row.role}</div>
+                      <div className="supervisor-dashboard__cell" data-label="Exercício">{row.exerciseStart}</div>
+                      <div className="supervisor-dashboard__cell" data-label="Status">
+                        <span className={getStatusClassName(row.status)}>{getStatusLabel(row.status)}</span>
+                      </div>
+                      <div className="supervisor-dashboard__cell" data-label="Etapa atual">
+                        <span className={getStageClassName(row.status)}>{row.stageLabel}</span>
+                      </div>
+                      <div className="supervisor-dashboard__cell" data-label="Prazo limite">{row.deadline}</div>
+                      <div className="supervisor-dashboard__cell supervisor-dashboard__cell--center" data-label="Avaliações anteriores">
+                        {row.canReviewPrevious ? (
+                          <button
+                            type="button"
+                            className="secondary-button supervisor-dashboard__ghost-action"
+                            onClick={() => openPreviousEvaluations(row)}
+                          >
+                            Visualizar
+                          </button>
+                        ) : (
+                          <span className="supervisor-dashboard__empty-value">Nao aplicavel</span>
+                        )}
+                      </div>
+                      <div className="supervisor-dashboard__cell supervisor-dashboard__cell--end" data-label="Ação">
                         <button
                           type="button"
-                          className="secondary-button supervisor-dashboard__ghost-action"
-                          onClick={() => openPreviousEvaluations(row)}
+                          className={
+                            row.actionDisabled
+                              ? 'secondary-button supervisor-dashboard__primary-action supervisor-dashboard__primary-action--disabled'
+                              : 'supervisor-dashboard__primary-action'
+                          }
+                          disabled={row.actionDisabled}
+                          onClick={() => openEvaluation(row)}
                         >
-                          Visualizar
+                          {row.actionLabel}
                         </button>
-                      ) : (
-                        <span className="supervisor-dashboard__empty-value">Nao aplicavel</span>
-                      )}
-                    </div>
-                    <div className="supervisor-dashboard__cell supervisor-dashboard__cell--end" data-label="Ação">
-                      <button
-                        type="button"
-                        className={
-                          row.actionDisabled
-                            ? 'secondary-button supervisor-dashboard__primary-action supervisor-dashboard__primary-action--disabled'
-                            : 'supervisor-dashboard__primary-action'
-                        }
-                        disabled={row.actionDisabled}
-                        onClick={() => openEvaluation(row)}
-                      >
-                        {row.actionLabel}
-                      </button>
-                    </div>
+                      </div>
                     </article>
                   ))
                 ) : (
