@@ -2,7 +2,7 @@
 
 ## Status
 
-Ativa como guarda-chuva / fase principal parcialmente entregue.
+Concluida no recorte planejado / todas as tres fatias entregues.
 
 ## Area
 
@@ -16,13 +16,13 @@ A [`ADR-005 — Modelagem do parecer conclusivo final da CESAD`](../../../archit
 
 ## Decisao de status
 
-`BE-CESAD-FINAL-01` nao esta concluida integralmente.
+`BE-CESAD-FINAL-01` esta concluida no recorte planejado das tres fatias.
 
 A primeira fatia, [`BE-CESAD-FINAL-01A — Modelo funcional, elegibilidade e consolidacao historica`](./BE-CESAD-FINAL-01A-functional-model-eligibility.md), foi concluida, auditada, corrigida e aprovada.
 
-A segunda fatia, [`BE-CESAD-FINAL-01B — Documento e assinaturas colegiadas do parecer final`](./BE-CESAD-FINAL-01B-document-signatures.md), tambem foi concluida, auditada, corrigida e aprovada.
+A segunda fatia, [`BE-CESAD-FINAL-01B — Documento e assinaturas colegiadas do parecer final`](./BE-CESAD-FINAL-01B-document-signatures.md), foi concluida, auditada, corrigida e aprovada.
 
-A frente principal permanece ativa como guarda-chuva porque ainda falta `BE-CESAD-FINAL-01C — Envio formal a homologacao`. A conclusao da 01B nao implementa `SEND_TO_HOMOLOGATION`, homologacao, notificacao, ciencia, recursos ou frontend.
+A terceira fatia, [`BE-CESAD-FINAL-01C — Envio formal a homologacao`](./BE-CESAD-FINAL-01C-send-to-homologation.md), foi concluida com o commit `a0e5b2d feat(backend): send final CESAD opinion to homologation`.
 
 ## Fatias
 
@@ -42,9 +42,10 @@ A frente principal permanece ativa como guarda-chuva porque ainda falta `BE-CESA
 
 ### BE-CESAD-FINAL-01C — Envio formal a homologacao
 
-- **Status:** pendente; dependente do parecer final funcional `COMPLETED` e do documento final `SIGNED`.
+- **Status:** concluida / aprovada.
+- **Commit funcional:** `a0e5b2d feat(backend): send final CESAD opinion to homologation`.
 - **Arquivo:** [`BE-CESAD-FINAL-01C-send-to-homologation.md`](./BE-CESAD-FINAL-01C-send-to-homologation.md).
-- **Escopo:** ponte `SEND_TO_HOMOLOGATION`, sem homologar, notificar, registrar ciencia ou publicar portaria.
+- **Escopo:** ponte `SEND_TO_HOMOLOGATION`, endpoint `POST /processes/:id/cesad-final-opinion/send-to-homologation`, migration `20260522120000_add_final_opinion_homologation_send`, auditoria `SENT_TO_HOMOLOGATION` e guardas completas; sem homologar, notificar, registrar ciencia ou publicar portaria.
 
 ## Ja entregue em 01A
 
@@ -103,10 +104,11 @@ A frente principal permanece ativa como guarda-chuva porque ainda falta `BE-CESA
 - Auditoria de preparacao/solicitacao de assinatura e assinatura final.
 - Testes backend ampliados e validacoes tecnicas aprovadas.
 
-## Ainda falta
+## Fora do recorte preservado
 
-- `SEND_TO_HOMOLOGATION`.
-- Integracao posterior com `BE-HOMOLOG-01`.
+- Homologacao, notificacao, ciencia, recursos, avaliacao substitutiva e portaria seguem em `BE-HOMOLOG-01` e tasks proprias.
+- Frontend, GOVBR real, PDF real, versionamento/invalidacao documental amplo.
+- Apagar ou sobrescrever pareceres de etapa.
 
 ## Escopo consolidado da frente principal
 
@@ -146,4 +148,4 @@ A frente principal permanece ativa como guarda-chuva porque ainda falta `BE-CESA
 
 ## Proxima acao
 
-Executar `BE-CESAD-FINAL-01C — Envio formal a homologacao`, decidindo a ponte `SEND_TO_HOMOLOGATION` sem antecipar homologacao, notificacao, ciencia, recursos, frontend ou GOVBR.
+`BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia, agora que a ponte formal `SEND_TO_HOMOLOGATION` foi implementada em `BE-CESAD-FINAL-01C`.

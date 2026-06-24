@@ -64,6 +64,23 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - O recorte de progressao formal agora cobre quatro etapas materializadas, lifecycle por `startedAt`/`endedAt`, protecao de etapas futuras, completude documental forte para fechamento, auditoria e autorizacao contextual/administrativa controlada.
 - Ressalvas: parecer conclusivo final permanece em `BE-CESAD-FINAL-01`; homologacao/notificacao/ciencia permanecem em `BE-HOMOLOG-01`; recursos e frontend permanecem fora deste recorte; apos a etapa 4, `BE-CESAD-FINAL-01` deve usar leitura/consolidacao historica, nao resolver etapa ativa.
 
+## BE-CESAD-FINAL-01C — Envio formal a homologacao
+
+- **Status documental:** concluida / aprovada.
+- **Commit funcional:** `a0e5b2d feat(backend): send final CESAD opinion to homologation`.
+- **Task file:** [`BE-CESAD-FINAL-01C-send-to-homologation.md`](./tasks/BE-CESAD-FINAL-01C-send-to-homologation.md).
+- **ADR relacionada:** [`ADR-005 — Modelagem do parecer conclusivo final da CESAD`](../../architecture/adr/adr-005-final-cesad-opinion-modeling.md).
+- Adicionou `ProcessAction.SEND_TO_HOMOLOGATION`.
+- Adicionou `AuditEventType.SENT_TO_HOMOLOGATION`.
+- Criou a migration `20260522120000_add_final_opinion_homologation_send` com campos `sentToHomologationAt` e `sentToHomologationByUserId` em `CesadFinalOpinion`.
+- Implementou o endpoint `POST /processes/:id/cesad-final-opinion/send-to-homologation`.
+- Implementou guardas obrigatorias: `CesadFinalOpinion` em `COMPLETED`, `sentToHomologationAt = null` (nao enviada anteriormente), documento final `ProcessDocument` com `documentType = CESAD_OPINION`, `processStageId = null`, `opinionKind = FINAL_CONCLUSIVE` e `documentStatus = SIGNED`, todas as assinaturas de `CesadFinalOpinionExpectedSigner` em `COMPLETED`.
+- Persistiu `sentToHomologationAt` e `sentToHomologationByUserId` transacionalmente.
+- Registrou auditoria `SENT_TO_HOMOLOGATION` com ator, papel, processo, action e contexto do envio.
+- Payload aceita `comment` opcional.
+- Nao homologou, nao notificou, nao registrou ciencia e nao alterou conteudo do parecer final.
+- Encerrou `BE-CESAD-FINAL-01` como guarda-chuva; homologacao, notificacao e ciencia seguem em `BE-HOMOLOG-01`.
+
 ## BE-CESAD-FINAL-01A — Modelo funcional, elegibilidade e consolidacao historica
 
 - **Status documental:** concluida / auditada / corrigida / aprovada.

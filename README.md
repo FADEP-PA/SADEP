@@ -2,6 +2,14 @@
 
 Sistema de Avaliação de Desempenho de Estágio Probatório do Estado do Pará.
 
+## Novo desenvolvedor?
+
+Leia primeiro: **[docs/onboarding.md](docs/onboarding.md)**
+
+Cobre o que o SADEP faz, o domínio do problema, a arquitetura, o fluxo processual, o que está implementado hoje e como contribuir. Setup local, credenciais, mapa da documentação e validações obrigatórias antes de qualquer PR — tudo no mesmo lugar.
+
+---
+
 ## Branch de referência
 
 Este repositório deve ser utilizado na branch `develop`.

@@ -2,7 +2,9 @@
 
 ## Status
 
-Pendente, dependente de parecer final funcional `COMPLETED` e documento final `SIGNED`.
+Concluida / auditada / aprovada.
+
+**Commit funcional:** `a0e5b2d feat(backend): send final CESAD opinion to homologation`
 
 ## Area
 
@@ -57,6 +59,18 @@ A `BE-CESAD-FINAL-01B` nao implementou `SEND_TO_HOMOLOGATION`, nao homologou, na
 - `BE-CESAD-FINAL-01B` concluida/auditada/corrigida/aprovada, com documento final e assinatura colegiada final implementados.
 - `BE-HOMOLOG-01` como frente posterior de homologacao, notificacao e ciencia.
 
+## Entregue
+
+- `ProcessAction.SEND_TO_HOMOLOGATION` como acao de workflow.
+- `AuditEventType.SENT_TO_HOMOLOGATION` como audit event.
+- Migration `20260522120000_add_final_opinion_homologation_send` com campos `sentToHomologationAt` e `sentToHomologationByUserId` em `CesadFinalOpinion`.
+- Endpoint `POST /processes/:id/cesad-final-opinion/send-to-homologation`.
+- Guardas obrigatorias: `CesadFinalOpinion` em `COMPLETED`, `sentToHomologationAt = null`, documento final `CESAD_OPINION / FINAL_CONCLUSIVE` em `SIGNED` e todas as assinaturas dos expected signers finais em `COMPLETED`.
+- Campo opcional `comment` aceito no payload.
+- Registro de `sentToHomologationAt` e `sentToHomologationByUserId` persistidos transacionalmente.
+- Auditoria `SENT_TO_HOMOLOGATION` com ator, papel, processo e contexto do envio.
+- Nao homologa, nao notifica, nao registra ciencia e nao altera conteudo do parecer final.
+
 ## Proxima acao
 
-Confirmar se `SEND_TO_HOMOLOGATION` continua sendo a ponte formal desejada e implementar somente o envio formal, sem homologar, notificar, registrar ciencia ou publicar portaria.
+`BE-HOMOLOG-01` — fluxo de homologacao, notificacao e ciencia. O `sendToHomologation` esta concluido e serve de base formal para a autoridade homologadora atuar.

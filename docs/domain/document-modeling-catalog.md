@@ -1,8 +1,8 @@
 # SADEP — Catálogo Oficial de Modelagem Documental
 
 **Status:** Aprovado para referência de projeto  
-**Versão:** 1.2.0
-**Data:** 2026-05-15
+**Versão:** 1.3.0
+**Data:** 2026-06-24
 **Escopo:** Diretriz oficial de modelagem documental do SADEP  
 **Aplicação:** Backend, frontend, workflow, geração documental, assinatura e auditoria
 
@@ -471,7 +471,7 @@ O parecer conclusivo final deve suportar, no mínimo:
 - habilitação do processo para homologação.
 
 #### Status no roadmap
-Consolidado no backend em `BE-CESAD-FINAL-01B` no recorte documental e de assinatura colegiada final. O envio formal à homologação permanece pendente em `BE-CESAD-FINAL-01C`.
+Consolidado no backend no recorte documental e de assinatura colegiada final (`BE-CESAD-FINAL-01B`) e no envio formal a homologacao (`BE-CESAD-FINAL-01C`, commit `a0e5b2d`). Proximo passo: `BE-HOMOLOG-01`.
 
 ---
 
@@ -880,7 +880,7 @@ Registro funcional do recurso no sistema, dentro do prazo recursal final.
 | Avaliação da chefia | Formulário | `SupervisorEvaluation` | `SUPERVISOR_EVALUATION` | chefia + servidor | já consolidado |
 | Autoavaliação | Formulário | `SelfEvaluation` | `SELF_EVALUATION` | servidor + chefia | já consolidado |
 | Parecer CESAD de etapa | Conteúdo estruturado | `CesadOpinion` | `CESAD_OPINION` com `opinionKind = STAGE` | membros da CESAD | consolidado no backend |
-| Parecer CESAD conclusivo final | Conteúdo estruturado | `CesadFinalOpinion` | `CESAD_OPINION` com `opinionKind = FINAL_CONCLUSIVE` | membros da CESAD via `CesadFinalOpinionExpectedSigner` | documento e assinatura consolidados; envio à homologação pendente |
+| Parecer CESAD conclusivo final | Conteúdo estruturado | `CesadFinalOpinion` | `CESAD_OPINION` com `opinionKind = FINAL_CONCLUSIVE` | membros da CESAD via `CesadFinalOpinionExpectedSigner` | documento, assinatura e envio a homologacao consolidados no backend |
 | Homologação | Ato decisório | `HomologationDecision` | `HOMOLOGATION_RECORD` | autoridade homologadora | posterior |
 | Notificação | Template | `ResultNotification` | `RESULT_NOTIFICATION` | autoridade homologadora | posterior |
 | Ciência | Ato formal | `Acknowledgement` | `ACKNOWLEDGEMENT_RECORD` | servidor | posterior |
@@ -973,7 +973,7 @@ Cada `ProcessDocument` deve, idealmente, manter ou permitir derivar:
 - parecer conclusivo final
 - assinaturas do parecer final
 
-Status: concluida no recorte funcional, documental e de assinatura colegiada final por `BE-CESAD-FINAL-01A` e `BE-CESAD-FINAL-01B`; envio formal a homologacao permanece em `BE-CESAD-FINAL-01C`.
+Status: concluida no recorte funcional (`BE-CESAD-FINAL-01A`), documental e de assinatura colegiada final (`BE-CESAD-FINAL-01B`), e envio formal a homologacao (`BE-CESAD-FINAL-01C`, commit `a0e5b2d`).
 
 ### Prioridade 4 — formalização decisória
 - homologação
@@ -1021,6 +1021,7 @@ Ficam considerados consolidados, para fins de continuidade do projeto:
 | 1.0.0 | 2026-03-27 | Criação inicial do catálogo oficial de modelagem documental, consolidando avaliação da chefia, autoavaliação, parecer CESAD, homologação, notificação, ciência e portaria. Inclusão do modelo real de notificação pessoal e das regras futuras da portaria. |
 | 1.1.0 | 2026-03-27 | Atualização para diferenciar parecer CESAD de etapa e parecer conclusivo final, registrar a trava de homologação após 4 etapas, incluir artefatos documentais mínimos de recursos e atualizar a ordem recomendada de implementação. |
 | 1.2.0 | 2026-05-15 | Atualizacao pós-`BE-CESAD-FINAL-01B`: registra `ProcessDocument.opinionKind`, parecer de etapa como `STAGE`, parecer final como `FINAL_CONCLUSIVE`, documento final process-wide, expected signers finais próprios e assinatura colegiada final antes do envio formal à homologação. |
+| 1.3.0 | 2026-06-24 | Atualizacao pos-`BE-CESAD-FINAL-01C`: registra envio formal a homologacao como concluido; atualiza status do parecer conclusivo final para refletir o ciclo completo (funcional, documental, assinatura e envio). |
 
 ---
 

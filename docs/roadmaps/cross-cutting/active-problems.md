@@ -1,6 +1,6 @@
 # Problemas Ativos Transversais
 
-> Ultima atualizacao: 2026-05-15 (DOC-R8 — remocao de itens de documentacao ja reconciliados, atualizacao de referencias e limpeza do painel ativo).
+> Ultima atualizacao: 2026-06-24 (BE-CESAD-FINAL-01C — reconciliacao documental pos-implementacao).
 > O indice de compatibilidade legado foi movido para [`docs/archive/roadmaps-legados/problemas-atuais-do-projeto.md`](../../../archive/roadmaps-legados/problemas-atuais-do-projeto.md).
 
 ## Seguranca
@@ -15,7 +15,7 @@
 - `FE-CHEFIA-01` — `/chefia-imediata` parcialmente integrada ao workspace real por processo informado na tela; validacao visual concluida e fallback demonstrativo/local ainda ativo.
 - `FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo. Depende de contrato backend.
 - `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado; melhoria futura propria e nao reabre `FT-24`.
-- `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, autorizacao contextual e documentos. `BE-CESAD-FINAL-01B` ja entregou documento e assinatura final no backend; a integracao frontend continua dependente de `BE-CESAD-FINAL-01C` e de contrato/capability frontend especificos.
+- `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, autorizacao contextual e documentos. `BE-CESAD-FINAL-01B` ja entregou documento e assinatura final; `BE-CESAD-FINAL-01C` ja entregou o envio formal a homologacao. A integracao frontend continua dependente de contrato/capability frontend especificos.
 - `FE-TEST-01` — estrategia minima futura de testes frontend; parcialmente executada (01A ao 01F concluidos). Aberta apenas para expansoes futuras.
 - **Diretorios de feature com apenas `.gitkeep`** — `features/assinaturas-eletronicas/`, `features/auditoria-historico/`, `features/autoavaliacao/`, `features/avaliacoes/`, `features/cesad-comissao/`, `features/chefia-imediata/`, `features/documentos-oficiais/`, `features/notificacoes-ciencia/`, `features/painel-gerencial-cesad/`, `features/processo-workflow/` e `features/servidor-estagiario/` sao scaffolds sem implementacao. Qualquer trabalho nesses modulos requer contrato backend correspondente.
 
@@ -29,7 +29,7 @@ Observacao: a estrategia de producao com refresh/revogacao foi tratada increment
 
 Sem pendencia estrutural ativa nesta categoria apos o recorte `BE-ARCH-02`. Novos contratos funcionais devem nascer como tasks proprias.
 
-O proximo bloco de implementacao backend prioritario e `BE-CESAD-FINAL-01C` (envio formal a homologacao), agora que `BE-CESAD-FINAL-01B` concluiu documento e assinaturas do parecer final. A 01C deve implementar apenas a ponte formal `SEND_TO_HOMOLOGATION`, sem homologar, notificar ou registrar ciencia.
+O proximo bloco de implementacao backend prioritario e `BE-HOMOLOG-01` (homologacao, notificacao e ciencia). `BE-CESAD-FINAL-01C` concluiu a ponte formal `SEND_TO_HOMOLOGATION` com o commit `a0e5b2d`.
 
 ## DX / infra
 
