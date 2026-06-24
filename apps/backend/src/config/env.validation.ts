@@ -114,7 +114,7 @@ export function validateEnvironmentVariables(config: Record<string, unknown>): A
     throw new Error('Invalid REFRESH_TOKEN_HMAC_SECRET: expected at least 32 characters in production.');
   }
 
-  const frontendOrigin = String(config.FRONTEND_ORIGIN ?? 'http://localhost:3001').trim();
+  const frontendOrigin = String(config.FRONTEND_ORIGIN ?? 'http://localhost:5000').trim();
 
   if (!frontendOrigin) {
     throw new Error('Invalid FRONTEND_ORIGIN: value is required.');

@@ -50,7 +50,7 @@ Para validar apenas as precondições mínimas do banco local sem subir o Nest:
 
 - `npm run db:check --workspace @sadep/backend`
 
-> Observação: para integração local com o frontend em `http://localhost:3001`, o backend agora usa `FRONTEND_ORIGIN` para responder corretamente ao preflight CORS (`OPTIONS`) em endpoints como `/auth/login`.
+> Observação: para integração local com o frontend em `http://localhost:5000`, o backend agora usa `FRONTEND_ORIGIN` para responder corretamente ao preflight CORS (`OPTIONS`) em endpoints como `/auth/login`.
 
 ## Estratégia de testes e typecheck
 

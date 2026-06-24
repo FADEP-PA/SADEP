@@ -36,19 +36,19 @@ A pasta `apps/frontend/src/features/` contem tanto componentes implementados qua
 
 Os diretorios abaixo existem na estrutura mas nao possuem nenhum componente ou logica implementada. Qualquer feature que dependa deles requer implementacao do zero:
 
-| Diretorio | Feature reservada para |
-|---|---|
-| `features/assinaturas-eletronicas/` | Modulo de assinaturas eletronicas (GOVBR e internas) |
-| `features/auditoria-historico/` | Visualizacao do historico de auditoria |
-| `features/autoavaliacao/` | Workspace de autoavaliacao do servidor estagiario |
-| `features/avaliacoes/` | Workspace de avaliacoes da chefia imediata |
-| `features/cesad-comissao/` | Gerenciamento de comissao CESAD (membros, atos, vigencia) |
-| `features/chefia-imediata/` | Workspace da chefia imediata com listagem segura de processos |
-| `features/documentos-oficiais/` | Gerenciamento e visualizacao de documentos oficiais |
-| `features/notificacoes-ciencia/` | Notificacoes e registro de ciencia do servidor |
-| `features/painel-gerencial-cesad/` | Painel gerencial da CESAD |
-| `features/processo-workflow/` | Componentes do motor de workflow de processo |
-| `features/servidor-estagiario/` | Workspace do servidor estagiario |
+| Diretorio                           | Feature reservada para                                        |
+| ----------------------------------- | ------------------------------------------------------------- |
+| `features/assinaturas-eletronicas/` | Modulo de assinaturas eletronicas (GOVBR e internas)          |
+| `features/auditoria-historico/`     | Visualizacao do historico de auditoria                        |
+| `features/autoavaliacao/`           | Workspace de autoavaliacao do servidor estagiario             |
+| `features/avaliacoes/`              | Workspace de avaliacoes da chefia imediata                    |
+| `features/cesad-comissao/`          | Gerenciamento de comissao CESAD (membros, atos, vigencia)     |
+| `features/chefia-imediata/`         | Workspace da chefia imediata com listagem segura de processos |
+| `features/documentos-oficiais/`     | Gerenciamento e visualizacao de documentos oficiais           |
+| `features/notificacoes-ciencia/`    | Notificacoes e registro de ciencia do servidor                |
+| `features/painel-gerencial-cesad/`  | Painel gerencial da CESAD                                     |
+| `features/processo-workflow/`       | Componentes do motor de workflow de processo                  |
+| `features/servidor-estagiario/`     | Workspace do servidor estagiario                              |
 
 > **Atencao:** os workspaces de autoavaliacao, avaliacoes da chefia, gestao de comissao CESAD e notificacoes dependem de contratos backend ainda nao implementados. Nao iniciar implementacao frontend isolada nesses modulos sem contrato backend correspondente.
 

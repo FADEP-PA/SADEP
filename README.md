@@ -59,21 +59,21 @@ npm run frontend:start:dev
 
 ### 4. Acessos locais
 
-- Frontend: `http://localhost:3001`
+- Frontend: `http://localhost:5000`
 - Backend healthcheck: `http://localhost:3000/health`
 
 ### 5. Credenciais de desenvolvimento
 
 Os usuarios seed continuam disponiveis com e-mails previsiveis para testes locais. A senha de todos eles e o valor configurado em `DEV_SEED_PASSWORD`; nao ha mais senha fixa versionada.
 
-| Perfil | E-mail | Senha |
-| --- | --- | --- |
-| Admin | `admin@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Chefia | `supervisor@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| CESAD | `cesad@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Assistente da Comissao | `assistant@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Autoridade Homologadora | `authority@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Servidor | `server@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Perfil                  | E-mail                   | Senha                        |
+| ----------------------- | ------------------------ | ---------------------------- |
+| Admin                   | `admin@sadep.local`      | valor de `DEV_SEED_PASSWORD` |
+| Chefia                  | `supervisor@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| CESAD                   | `cesad@sadep.local`      | valor de `DEV_SEED_PASSWORD` |
+| Assistente da Comissao  | `assistant@sadep.local`  | valor de `DEV_SEED_PASSWORD` |
+| Autoridade Homologadora | `authority@sadep.local`  | valor de `DEV_SEED_PASSWORD` |
+| Servidor                | `server@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
 
 ## Build e start de produção do backend
 

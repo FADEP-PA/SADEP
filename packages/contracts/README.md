@@ -11,6 +11,7 @@ Pacote de vocabulário compartilhado do domínio SADEP e contratos compartilhado
 ## Papel do pacote no monorepo
 
 Este pacote concentra contratos compartilhados entre os apps, especialmente:
+
 - vocabulário comum do domínio
 - tipos de workflow, documentos e auditoria
 - base para futuros contratos de API e eventos de domínio
@@ -50,6 +51,7 @@ Esse build compila apenas os contratos existentes e mantém o pacote pequeno. O 
 ## Relação com os documentos do projeto
 
 Este pacote prepara o vocabulário compartilhado necessário para os próximos incrementos, mantendo compatibilidade com:
+
 - `docs/AGENTS.md`
 - `docs/workflow-engine.md`
 - `docs/process-document.md`

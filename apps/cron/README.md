@@ -1,6 +1,7 @@
 # Cron
 
 Estrutura reservada para rotinas agendadas futuras:
+
 - monitoramento de prazos
 - alertas e vencimentos
 - atualização de indicadores operacionais

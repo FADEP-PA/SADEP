@@ -45,7 +45,7 @@ DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
 - `DEV_SEED_PASSWORD` e obrigatorio para o seed local.
 - Os usuarios seed mantem e-mails previsiveis; a senha de todos passa a ser o valor de `DEV_SEED_PASSWORD`.
 - Nao ha mais senha fixa versionada para usuarios seed.
-- Em desenvolvimento local, os defaults de sessao usam `ACCESS_TOKEN_TTL=1h`, `REFRESH_TOKEN_TTL=7d`, cookie `HttpOnly` em `/auth`, `COOKIE_SECURE=false`, `COOKIE_SAMESITE=lax` e `FRONTEND_ORIGIN=http://localhost:3001`.
+- Em desenvolvimento local, os defaults de sessao usam `ACCESS_TOKEN_TTL=1h`, `REFRESH_TOKEN_TTL=7d`, cookie `HttpOnly` em `/auth`, `COOKIE_SECURE=false`, `COOKIE_SAMESITE=lax` e `FRONTEND_ORIGIN=http://localhost:5000`.
 - `FRONTEND_ORIGIN` deve ser uma origin `http` ou `https` sem path, query, fragmento, credenciais ou wildcard. Em producao, deve usar `https`.
 - `COOKIE_DOMAIN`, quando definido, deve ser apenas dominio, sem protocolo, porta, wildcard ou path. Em producao, `localhost` nao e permitido como dominio de cookie.
 - `COOKIE_PATH` deve iniciar com `/` e nao deve conter whitespace, semicolon, query ou fragmento.
@@ -83,14 +83,14 @@ npm run db:check --workspace @sadep/backend
 
 Após o seed, os usuários abaixo ficam disponíveis:
 
-| Perfil | E-mail | Senha |
-| --- | --- | --- |
-| Admin | `admin@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Chefia | `supervisor@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| CESAD | `cesad@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Assistente da Comissao | `assistant@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Autoridade Homologadora | `authority@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| Servidor | `server@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| Perfil                  | E-mail                   | Senha                        |
+| ----------------------- | ------------------------ | ---------------------------- |
+| Admin                   | `admin@sadep.local`      | valor de `DEV_SEED_PASSWORD` |
+| Chefia                  | `supervisor@sadep.local` | valor de `DEV_SEED_PASSWORD` |
+| CESAD                   | `cesad@sadep.local`      | valor de `DEV_SEED_PASSWORD` |
+| Assistente da Comissao  | `assistant@sadep.local`  | valor de `DEV_SEED_PASSWORD` |
+| Autoridade Homologadora | `authority@sadep.local`  | valor de `DEV_SEED_PASSWORD` |
+| Servidor                | `server@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
 
 ## Execução do backend
 
@@ -105,7 +105,7 @@ Backend esperado:
 
 ## Execução do frontend
 
-### Configuracao da API consumida pelo frontend
+### Configuração da API consumida pelo frontend
 
 O frontend consome a API a partir de `NEXT_PUBLIC_API_BASE_URL`.
 
@@ -116,6 +116,7 @@ Copy-Item apps\frontend\.env.example apps\frontend\.env.local
 ```
 
 O codigo atual usa `http://localhost:3000` como fallback quando `NEXT_PUBLIC_API_BASE_URL` nao esta definida. Ainda assim, a variavel pode ser definida explicitamente quando o backend local estiver em outra origin.
+
 - **Homologacao e producao**: `NEXT_PUBLIC_API_BASE_URL` deve ser definida explicitamente com a origin HTTPS da API institucional, sem path final, query, fragmento, credenciais ou wildcard.
 - `NEXT_PUBLIC_TECHNICAL_PROCESS_ID` nao deve ser configurada. A dependencia dessa env tecnica foi removida no recorte `FT-24`.
 - Se a API nao estiver na origin configurada, o frontend deve exibir erro de comunicacao em vez de mascarar o problema como ausencia de dados.
@@ -134,24 +135,24 @@ npm run frontend:start:dev
 
 Frontend esperado:
 
-- URL: `http://localhost:3001`
+- URL: `http://localhost:5000`
 
 ## Ordem recomendada
 
 1. Subir o backend
 2. Confirmar `http://localhost:3000/health`
 3. Subir o frontend
-4. Acessar `http://localhost:3001`
+4. Acessar `http://localhost:5000`
 
 ## Problemas comuns
 
-### Porta 3000 ou 3001 já em uso
+### Porta 3000 ou 5000 já em uso
 
 Se aparecer `EADDRINUSE`, identifique o processo:
 
 ```powershell
 netstat -ano | findstr :3000
-netstat -ano | findstr :3001
+netstat -ano | findstr :5000
 ```
 
 Depois encerre o PID correspondente:
@@ -218,7 +219,7 @@ Checklist mínimo para validar o ambiente:
 - banco sincronizado com `db push`
 - seed e `db:check` executados
 - backend respondendo em `3000`
-- frontend respondendo em `3001`
+- frontend respondendo em `5000`
 - login funcionando com `admin@sadep.local` e a senha definida em `DEV_SEED_PASSWORD`
 
 Para validar o frontend antes de considerar uma alteração segura:
