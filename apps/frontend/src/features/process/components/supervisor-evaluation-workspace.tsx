@@ -312,9 +312,22 @@ function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot)
   };
 }
 
+function getConceptByAverage(average: number) {
+  if (average < 50) {
+    return { label: 'Insuficiente', className: 'evaluation-detail__concept evaluation-detail__concept--bad' };
+  }
+  if (average < 70) {
+    return { label: 'Regular', className: 'evaluation-detail__concept evaluation-detail__concept--regular' };
+  }
+  if (average < 90) {
+    return { label: 'Bom', className: 'evaluation-detail__concept evaluation-detail__concept--good' };
+  }
+  return { label: 'Excelente', className: 'evaluation-detail__concept evaluation-detail__concept--great' };
+}
+
 function calculateTotalAndAverage(factors: EvaluationFactorDraft[]) {
   if (factors.length === 0) {
-    return { totalStageScore: '0.0', stageAverage: '0.0' };
+    return { totalStageScore: '0.0', stageAverage: '0.0', administrativeConcept: 'Insuficiente' };
   }
   const total = factors.reduce((sum, factor) => {
     const factorAvg = factor.items.length > 0
@@ -323,9 +336,11 @@ function calculateTotalAndAverage(factors: EvaluationFactorDraft[]) {
     return sum + factorAvg;
   }, 0);
   const average = total / factors.length;
+  const concept = getConceptByAverage(average);
   return {
     totalStageScore: total.toFixed(1),
     stageAverage: average.toFixed(1),
+    administrativeConcept: concept.label,
   };
 }
 
@@ -344,7 +359,7 @@ function createEvaluationDraft(
     })),
   }));
 
-  const { totalStageScore, stageAverage } = calculateTotalAndAverage(factors);
+  const { totalStageScore, stageAverage, administrativeConcept } = calculateTotalAndAverage(factors);
 
   return {
     row,
@@ -353,7 +368,7 @@ function createEvaluationDraft(
     generalComments: evaluation?.generalComments ?? '',
     totalStageScore,
     stageAverage,
-    administrativeConcept: 'Insuficiente',
+    administrativeConcept,
     monthlyObservations: [],
     factors,
     expandedFactorIds: [],
@@ -670,19 +685,30 @@ export function SupervisorEvaluationWorkspace() {
           : factor,
       );
 
-      const { totalStageScore, stageAverage } = calculateTotalAndAverage(nextFactors);
+      const { totalStageScore, stageAverage, administrativeConcept } = calculateTotalAndAverage(nextFactors);
 
       return {
         ...current,
         factors: nextFactors,
         totalStageScore,
         stageAverage,
+        administrativeConcept,
       };
     });
   }
 
   function updateFinalResult(field: 'totalStageScore' | 'stageAverage' | 'administrativeConcept', value: string) {
-    setActiveEvaluation((current) => (current ? { ...current, [field]: value } : current));
+    setActiveEvaluation((current) => {
+      if (!current) {
+        return current;
+      }
+      if (field === 'stageAverage') {
+        const numValue = Number(value || 0);
+        const concept = getConceptByAverage(numValue);
+        return { ...current, stageAverage: value, administrativeConcept: concept.label };
+      }
+      return { ...current, [field]: value };
+    });
   }
 
   function clearDefaultFinalScore(field: 'totalStageScore' | 'stageAverage') {
@@ -1197,21 +1223,10 @@ export function SupervisorEvaluationWorkspace() {
 
                 <label>
                   <span>Conceito administrativo</span>
-                  <div className="evaluation-detail__concept-picker" role="group" aria-label="Conceito administrativo">
-                    {ADMINISTRATIVE_CONCEPT_OPTIONS.map((concept) => (
-                      <button
-                        key={concept}
-                        type="button"
-                        className={
-                          activeEvaluation.administrativeConcept === concept
-                            ? 'evaluation-detail__concept-option evaluation-detail__concept-option--active'
-                            : 'evaluation-detail__concept-option'
-                        }
-                        onClick={() => updateFinalResult('administrativeConcept', concept)}
-                      >
-                        {concept}
-                      </button>
-                    ))}
+                  <div className="evaluation-detail__concept-tag-wrap" aria-label="Conceito administrativo">
+                    <div className={getConceptByAverage(Number(activeEvaluation.stageAverage || 0)).className}>
+                      {activeEvaluation.administrativeConcept}
+                    </div>
                   </div>
                 </label>
               </div>
