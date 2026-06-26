@@ -1,3 +1,0 @@
--- SQLite stores Prisma enum values as text in the existing AuditEvent table.
--- This migration records the datamodel addition of AuditEventType.STAGE_COMPLETED
--- without requiring SQL changes.
