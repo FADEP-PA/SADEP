@@ -1,9 +1,7 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
-  HttpStatus,
   Param,
   Post,
   Put,
@@ -16,8 +14,9 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import { CesadFinalOpinionsService } from './cesad-final-opinions.service';
-import type {
+import {
   SendCesadFinalOpinionToHomologationDto,
+  StartCesadFinalOpinionDto,
   UpsertCesadFinalOpinionDto,
 } from './dto/cesad-final-opinion.dto';
 
@@ -42,42 +41,37 @@ export class CesadFinalOpinionsController {
   @Post('start')
   async start(
     @Param('id') id: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: StartCesadFinalOpinionDto,
     @CurrentUser() user?: AuthenticatedUser,
   ) {
-    const comment = this.parseOptionalComment(body);
-    return this.service.start(id, this.ensureUser(user), comment ? { comment } : {});
+    return this.service.start(id, this.ensureUser(user), body.comment ? { comment: body.comment } : {});
   }
 
   @Put('draft')
   async saveDraft(
     @Param('id') id: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: UpsertCesadFinalOpinionDto,
     @CurrentUser() user?: AuthenticatedUser,
   ) {
-    return this.service.saveDraft(id, this.ensureUser(user), this.parsePayload(body));
+    return this.service.saveDraft(id, this.ensureUser(user), body);
   }
 
   @Post('complete')
   async complete(
     @Param('id') id: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: UpsertCesadFinalOpinionDto,
     @CurrentUser() user?: AuthenticatedUser,
   ) {
-    return this.service.complete(id, this.ensureUser(user), this.parsePayload(body));
+    return this.service.complete(id, this.ensureUser(user), body);
   }
 
   @Post('send-to-homologation')
   async sendToHomologation(
     @Param('id') id: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: SendCesadFinalOpinionToHomologationDto,
     @CurrentUser() user?: AuthenticatedUser,
   ) {
-    return this.service.sendToHomologation(
-      id,
-      this.ensureUser(user),
-      this.parseSendToHomologationPayload(body),
-    );
+    return this.service.sendToHomologation(id, this.ensureUser(user), body);
   }
 
   @Post('signatures/prepare')
@@ -109,92 +103,5 @@ export class CesadFinalOpinionsController {
       throw new UnauthorizedException('Authenticated user not found');
     }
     return user;
-  }
-
-  private parseOptionalComment(body: Record<string, unknown>): string | undefined {
-    if (!body || typeof body !== 'object') {
-      return undefined;
-    }
-    const comment = body.comment;
-    if (comment === undefined) {
-      return undefined;
-    }
-    if (typeof comment !== 'string') {
-      throw new BadRequestException('Comment must be a string when provided');
-    }
-    return comment;
-  }
-
-  private parsePayload(body: Record<string, unknown>): UpsertCesadFinalOpinionDto {
-    if (!body || typeof body !== 'object') {
-      throw new BadRequestException('Request body must be an object');
-    }
-
-    const {
-      reportText,
-      legalBasis,
-      finalConclusion,
-      finalResult,
-      finalConcept,
-      recommendation,
-      comment,
-    } = body;
-    const details: Record<string, string> = {};
-
-    if (typeof reportText !== 'string') {
-      details.reportText = 'Relatório do parecer final deve ser enviado em texto.';
-    }
-    if (legalBasis !== undefined && typeof legalBasis !== 'string') {
-      details.legalBasis = 'Fundamento legal deve ser texto quando informado.';
-    }
-    if (typeof finalConclusion !== 'string') {
-      details.finalConclusion = 'Conclusão final deve ser enviada em texto.';
-    }
-    if (finalResult !== undefined && typeof finalResult !== 'string') {
-      details.finalResult = 'Resultado final deve ser texto quando informado.';
-    }
-    if (finalConcept !== undefined && typeof finalConcept !== 'string') {
-      details.finalConcept = 'Conceito final deve ser texto quando informado.';
-    }
-    if (recommendation !== undefined && typeof recommendation !== 'string') {
-      details.recommendation = 'Recomendação deve ser texto quando informada.';
-    }
-    if (comment !== undefined && typeof comment !== 'string') {
-      details.comment = 'Comentário deve ser texto quando informado.';
-    }
-
-    if (Object.keys(details).length > 0) {
-      throw new BadRequestException({
-        statusCode: HttpStatus.BAD_REQUEST,
-        message: 'CESAD final opinion payload is invalid',
-        error: 'Bad Request',
-        details,
-      });
-    }
-
-    return {
-      reportText: reportText as string,
-      finalConclusion: finalConclusion as string,
-      ...(typeof legalBasis === 'string' ? { legalBasis } : {}),
-      ...(typeof finalResult === 'string' ? { finalResult } : {}),
-      ...(typeof finalConcept === 'string' ? { finalConcept } : {}),
-      ...(typeof recommendation === 'string' ? { recommendation } : {}),
-      ...(typeof comment === 'string' ? { comment } : {}),
-    };
-  }
-
-  private parseSendToHomologationPayload(
-    body: Record<string, unknown>,
-  ): SendCesadFinalOpinionToHomologationDto {
-    if (!body || typeof body !== 'object') {
-      return {};
-    }
-
-    const { comment } = body;
-    if (comment !== undefined && typeof comment !== 'string') {
-      throw new BadRequestException('Comment must be a string when provided');
-    }
-
-    return typeof comment === 'string' ? { comment } : {};
   }
 }

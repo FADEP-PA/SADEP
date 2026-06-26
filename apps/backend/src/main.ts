@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 
 import { AppModule } from './app/app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -16,6 +17,7 @@ async function bootstrap() {
   const logger = app.get(AppLogger);
   app.useLogger(logger);
   app.useGlobalFilters(new GlobalExceptionFilter(logger));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   app.use(
     helmet({
