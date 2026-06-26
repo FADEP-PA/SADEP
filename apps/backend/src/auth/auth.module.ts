@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 
 import { AppLogger } from '../common/logging/app-logger.service';
@@ -11,6 +12,15 @@ import { RefreshTokenService } from './refresh-token.service';
 import { RolesGuard } from './guards/roles.guard';
 
 @Module({
+  imports: [
+    JwtModule.registerAsync({
+      useFactory: (config: AppConfigService) => ({
+        secret: config.jwtSecret,
+        signOptions: { expiresIn: config.accessTokenTtlSeconds },
+      }),
+      inject: [AppConfigService],
+    }),
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,

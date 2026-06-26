@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 
 import { UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@sadep/contracts';
 
 import { hashPassword } from '../common/security/password-hasher';
@@ -12,6 +13,7 @@ import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   let service: AuthService;
+  let jwtService: JwtService;
   let prismaService: {
     $transaction: jest.Mock;
     user: {
@@ -51,11 +53,17 @@ describe('AuthService', () => {
       refreshTokenTtlSeconds: 7 * 24 * 60 * 60,
     } as AppConfigService;
 
+    jwtService = new JwtService({
+      secret: 'unit-test-secret-with-at-least-32-characters',
+      signOptions: { expiresIn: 60 * 60 },
+    });
+
     service = new AuthService(
       prismaService as unknown as PrismaService,
       appConfigService,
       new RefreshTokenService(appConfigService),
       logger as unknown as AppLogger,
+      jwtService,
     );
   });
 

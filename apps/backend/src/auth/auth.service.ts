@@ -1,6 +1,7 @@
-import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import { Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@sadep/contracts';
 import type { LoginResponse } from '@sadep/contracts';
 import { Prisma } from '@prisma/client';
@@ -12,16 +13,6 @@ import { PrismaService } from '../infrastructure/database/prisma.service';
 import { RefreshTokenService } from './refresh-token.service';
 import { REFRESH_TOKEN_REVOKED_REASON } from './session.constants';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
-
-type JwtHeader = {
-  alg: 'HS256';
-  typ: 'JWT';
-};
-
-type JwtPayload = AuthenticatedUser & {
-  exp: number;
-  iat: number;
-};
 
 type PersistedAuthenticatedUser = {
   id: string;
@@ -74,6 +65,7 @@ export class AuthService implements OnModuleInit {
     private readonly appConfigService: AppConfigService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly logger: AppLogger,
+    private readonly jwtService: JwtService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -325,42 +317,19 @@ export class AuthService implements OnModuleInit {
   }
 
   verifyToken(token: string): AuthenticatedUser {
-    const [encodedHeader, encodedPayload, encodedSignature, ...extraParts] = token.split('.');
+    let payload: unknown;
 
-    if (!encodedHeader || !encodedPayload || !encodedSignature || extraParts.length > 0) {
+    try {
+      payload = this.jwtService.verify(token);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Token expired');
+      }
       throw new UnauthorizedException('Invalid token');
     }
 
-    const header = this.parseHeader(encodedHeader);
-
-    if (header.alg !== 'HS256' || header.typ !== 'JWT') {
+    if (!this.isValidJwtPayload(payload)) {
       throw new UnauthorizedException('Invalid token');
-    }
-
-    const expectedSignature = this.sign(`${encodedHeader}.${encodedPayload}`);
-    const providedSignatureBuffer = Buffer.from(encodedSignature, 'base64url');
-    const expectedSignatureBuffer = Buffer.from(expectedSignature, 'base64url');
-
-    if (providedSignatureBuffer.length === 0 || providedSignatureBuffer.length !== expectedSignatureBuffer.length) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    const isValidSignature = timingSafeEqual(providedSignatureBuffer, expectedSignatureBuffer);
-
-    if (!isValidSignature) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    const payload = this.parsePayload(encodedPayload);
-    const nowInSeconds = Math.floor(Date.now() / 1000);
-    const CLOCK_SKEW_TOLERANCE_SECONDS = 30;
-
-    if (payload.iat > nowInSeconds + CLOCK_SKEW_TOLERANCE_SECONDS) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    if (payload.exp <= nowInSeconds) {
-      throw new UnauthorizedException('Token expired');
     }
 
     return {
@@ -421,80 +390,21 @@ export class AuthService implements OnModuleInit {
   }
 
   private signToken(user: AuthenticatedUser): string {
-    const nowInSeconds = Math.floor(Date.now() / 1000);
-    const header: JwtHeader = { alg: 'HS256', typ: 'JWT' };
-    const payload: JwtPayload = {
-      ...user,
-      iat: nowInSeconds,
-      exp: nowInSeconds + this.appConfigService.accessTokenTtlSeconds,
-    };
-
-    const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
-    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
-    const signature = this.sign(`${encodedHeader}.${encodedPayload}`);
-
-    return `${encodedHeader}.${encodedPayload}.${signature}`;
+    return this.jwtService.sign({ ...user });
   }
 
-  private sign(value: string): string {
-    return createHmac('sha256', this.appConfigService.jwtSecret).update(value).digest('base64url');
-  }
-
-  private parseHeader(encodedHeader: string): JwtHeader {
-    let parsedHeader: unknown;
-
-    try {
-      parsedHeader = JSON.parse(Buffer.from(encodedHeader, 'base64url').toString('utf-8'));
-    } catch {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    if (!this.isJwtHeader(parsedHeader)) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    return parsedHeader;
-  }
-
-  private parsePayload(encodedPayload: string): JwtPayload {
-    let parsedPayload: unknown;
-
-    try {
-      parsedPayload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf-8'));
-    } catch {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    if (!this.isJwtPayload(parsedPayload)) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    return parsedPayload;
-  }
-
-  private isJwtHeader(value: unknown): value is JwtHeader {
+  private isValidJwtPayload(value: unknown): value is AuthenticatedUser {
     if (!value || typeof value !== 'object') {
       return false;
     }
 
-    const candidate = value as Partial<JwtHeader>;
-    return candidate.alg === 'HS256' && candidate.typ === 'JWT';
-  }
-
-  private isJwtPayload(value: unknown): value is JwtPayload {
-    if (!value || typeof value !== 'object') {
-      return false;
-    }
-
-    const candidate = value as Partial<JwtPayload>;
+    const candidate = value as Record<string, unknown>;
 
     return (
       typeof candidate.sub === 'string' &&
       typeof candidate.email === 'string' &&
       typeof candidate.name === 'string' &&
-      typeof candidate.role === 'string' &&
-      typeof candidate.iat === 'number' &&
-      typeof candidate.exp === 'number'
+      typeof candidate.role === 'string'
     );
   }
 
