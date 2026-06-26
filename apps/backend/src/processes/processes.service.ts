@@ -6,26 +6,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  AuditEventType as PrismaAuditEventType,
-  CesadCommissionMemberRoleType as PrismaCesadCommissionMemberRoleType,
   CesadCommissionStatus as PrismaCesadCommissionStatus,
   CesadStageAssignmentStatus as PrismaCesadStageAssignmentStatus,
-  CesadStageOpinionExpectedSignerDerivationType as PrismaCesadStageOpinionExpectedSignerDerivationType,
-  CesadStageOpinionSigningCapacity as PrismaCesadStageOpinionSigningCapacity,
-  CesadStageOpinionStatus as PrismaCesadStageOpinionStatus,
-  DocumentStatus as PrismaDocumentStatus,
   DocumentType as PrismaDocumentType,
   Prisma,
-  PrismaClient,
-  ProcessStatus as PrismaProcessStatus,
-  SignatureStatus as PrismaSignatureStatus,
   SupervisorEvaluationStatus as PrismaSupervisorEvaluationStatus,
   UserRole as PrismaUserRole,
 } from '@prisma/client';
 import {
   AuditEventType,
   type AuditMetadata,
-  DocumentType,
   ProcessAction,
   ProcessStatus,
   UserRole,
@@ -41,18 +31,30 @@ import type {
 } from './dto/workflow-transition.dto';
 import {
   CASE_2_FINAL_PROCESS_STAGE_SEQUENCE,
-  CASE_2_PROCESS_STAGE_SEQUENCES,
-  getCase2ProcessStageCode,
   isActiveProcessStage,
   isCompletedProcessStage,
   isFutureProcessStage,
 } from './process-stages.constants';
+import { ProcessStageService } from './process-stage.service';
+import {
+  type ProcessAccessContext,
+  toDatabaseAuditEventType,
+  toDatabaseProcessStatus,
+  toDatabaseRole,
+  toContractAuditEventType,
+  toContractProcessStatus,
+  toContractUserRole,
+} from './process-type-mappers';
+import { StageClosureGuardService } from './stage-closure-guard.service';
 import {
   getAvailableWorkflowTransitions,
   getWorkflowTransition,
   isWorkflowAction,
   isWorkflowAuditEventTypeForAction,
 } from './workflow-catalog';
+
+import type { PrismaTransactionClient } from './process-type-mappers';
+export type { PrismaTransactionClient };
 
 const CESAD_PROCESS_ACCESS_ALLOWED_STATUSES = new Set<ProcessStatus>([
   ProcessStatus.EM_ANALISE_CESAD,
@@ -69,18 +71,6 @@ const CESAD_STAGE_ASSIGNMENT_SUPERSEDER_ROLES = new Set<UserRole>([
   UserRole.ADMIN,
   UserRole.HOMOLOGATION_AUTHORITY,
 ]);
-
-type ProcessAccessContext = {
-  id: string;
-  status: ProcessStatus;
-  evaluatedUserId: string;
-  currentStage: {
-    id: string;
-    sequence: number;
-    stageCode: string;
-    responsibleSupervisorUserId: string | null;
-  };
-};
 
 type CesadStageAssignmentTransitionContext = {
   id: string;
@@ -110,16 +100,13 @@ type SupersedeCesadStageAssignmentResponse = {
   formalActReference: string | null;
 };
 
-export type PrismaTransactionClient = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
-
 @Injectable()
 export class ProcessesService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly cesadContextAuthorizationService: CesadContextAuthorizationService,
+    private readonly processStageService: ProcessStageService,
+    private readonly stageClosureGuardService: StageClosureGuardService,
   ) {}
 
   async getWorkflow(processId: string, user: AuthenticatedUser): Promise<WorkflowResponseDto> {
@@ -146,20 +133,20 @@ export class ProcessesService {
     return events
       .filter((event) =>
         this.isPublicWorkflowHistoryEvent(
-          this.toContractAuditEventType(event.eventType),
+          toContractAuditEventType(event.eventType),
           event.metadata,
         ),
       )
       .map((event) => {
         const metadata = this.asAuditMetadata(event.metadata);
-        const eventType = this.toContractAuditEventType(event.eventType);
+        const eventType = toContractAuditEventType(event.eventType);
 
         return {
           id: event.id,
           action: metadata?.action ?? this.mapEventTypeToAction(eventType),
           eventType,
           actorUserId: event.actorUserId,
-          actorRole: this.toContractUserRole(event.actorRole),
+          actorRole: toContractUserRole(event.actorRole),
           beforeState: event.beforeState,
           afterState: event.afterState,
           comment: this.readComment(event.metadata),
@@ -201,8 +188,8 @@ export class ProcessesService {
     const formalActReference = this.normalizeOptionalText(payload.formalActReference);
 
     return this.prismaService.$transaction(async (transaction) => {
-      const process = await this.findProcessOrThrow(transaction, processId);
-      const processStatus = this.toContractProcessStatus(process.status);
+      const process = await this.processStageService.findProcessOrThrow(transaction, processId);
+      const processStatus = toContractProcessStatus(process.status);
 
       if (processStatus !== ProcessStatus.EM_ANALISE_CESAD) {
         throw new BadRequestException(
@@ -210,19 +197,16 @@ export class ProcessesService {
         );
       }
 
-      const stage = await this.findStageBySequenceOrThrow(transaction, processId, stageSequence);
-      this.assertStageIsActiveForArtifactCreation(stage);
+      const stage = await this.processStageService.findStageBySequenceOrThrow(transaction, processId, stageSequence);
+      this.processStageService.assertStageIsActiveForArtifactCreation(stage);
+
       const activeAssignments = await transaction.cesadStageAssignment.findMany({
         where: {
           processId,
           processStageId: stage.id,
           status: PrismaCesadStageAssignmentStatus.ACTIVE,
         },
-        select: {
-          id: true,
-          commissionId: true,
-          status: true,
-        },
+        select: { id: true, commissionId: true, status: true },
         orderBy: { assignedAt: 'desc' },
       });
 
@@ -275,11 +259,7 @@ export class ProcessesService {
       }
 
       const expectedSignerCount = await transaction.cesadStageOpinionExpectedSigner.count({
-        where: {
-          cesadStageOpinion: {
-            processStageId: stage.id,
-          },
-        },
+        where: { cesadStageOpinion: { processStageId: stage.id } },
       });
 
       if (expectedSignerCount > 0) {
@@ -326,11 +306,7 @@ export class ProcessesService {
           assignmentReason: normalizedReason,
           referenceDate,
         },
-        select: {
-          id: true,
-          commissionId: true,
-          status: true,
-        },
+        select: { id: true, commissionId: true, status: true },
       });
 
       await transaction.cesadStageAssignment.update({
@@ -347,8 +323,8 @@ export class ProcessesService {
         data: {
           evaluationProcessId: processId,
           actorUserId: user.sub,
-          actorRole: this.toDatabaseRole(user.role),
-          eventType: this.toDatabaseAuditEventType(AuditEventType.CESAD_STAGE_ASSIGNMENT_SUPERSEDED),
+          actorRole: toDatabaseRole(user.role),
+          eventType: toDatabaseAuditEventType(AuditEventType.CESAD_STAGE_ASSIGNMENT_SUPERSEDED),
           beforeState: {
             cesadStageAssignmentId: previousAssignment.id,
             cesadStageAssignmentStatus: previousAssignment.status,
@@ -400,232 +376,42 @@ export class ProcessesService {
     });
   }
 
-  async ensureProcessExists(processId: string): Promise<void> {
-    const process = await this.prismaService.evaluationProcess.findUnique({
-      where: { id: processId },
-      select: { id: true },
-    });
+  // ---------------------------------------------------------------------------
+  // Delegating wrappers — stage lifecycle (ProcessStageService)
+  // ---------------------------------------------------------------------------
 
-    if (!process) {
-      throw new NotFoundException(`Evaluation process ${processId} was not found`);
-    }
+  async ensureProcessExists(processId: string): Promise<void> {
+    return this.processStageService.ensureProcessExists(processId);
   }
 
   async resolveCurrentStageOrThrow(
     transaction: PrismaTransactionClient,
     processId: string,
-  ): Promise<{
-    id: string;
-    sequence: number;
-    stageCode: string;
-    responsibleSupervisorUserId: string | null;
-    startedAt: Date | null;
-    endedAt: Date | null;
-  }> {
-    const stages = await transaction.processStage.findMany({
-      where: { evaluationProcessId: processId },
-      select: {
-        id: true,
-        sequence: true,
-        stageCode: true,
-        responsibleSupervisorUserId: true,
-        startedAt: true,
-        endedAt: true,
-      },
-      orderBy: { sequence: 'asc' },
-    });
-
-    if (stages.length === 0) {
-      throw new NotFoundException(`No process stage was found for evaluation process ${processId}`);
-    }
-
-    return this.resolveActiveStageFromListOrThrow(stages, processId);
+  ) {
+    return this.processStageService.resolveCurrentStageOrThrow(transaction, processId);
   }
 
   async resolveLatestStartedStageForReadOrThrow(
     transaction: PrismaTransactionClient,
     processId: string,
-  ): Promise<{
-    id: string;
-    sequence: number;
-    stageCode: string;
-    responsibleSupervisorUserId: string | null;
-    startedAt: Date | null;
-    endedAt: Date | null;
-  }> {
-    const stages = await transaction.processStage.findMany({
-      where: { evaluationProcessId: processId },
-      select: {
-        id: true,
-        sequence: true,
-        stageCode: true,
-        responsibleSupervisorUserId: true,
-        startedAt: true,
-        endedAt: true,
-      },
-      orderBy: { sequence: 'asc' },
-    });
-
-    if (stages.length === 0) {
-      throw new NotFoundException(`No process stage was found for evaluation process ${processId}`);
-    }
-
-    const activeStage = this.resolveActiveStageFromList(stages, processId);
-
-    if (activeStage) {
-      return activeStage;
-    }
-
-    const startedStages = stages.filter((stage) => stage.startedAt !== null);
-    const latestStartedStage = startedStages.at(-1);
-
-    if (!latestStartedStage) {
-      throw new ConflictException(
-        `No active or completed process stage was found for evaluation process ${processId}`,
-      );
-    }
-
-    return latestStartedStage;
+  ) {
+    return this.processStageService.resolveLatestStartedStageForReadOrThrow(transaction, processId);
   }
 
   async ensureFourProcessStages(
     transaction: PrismaTransactionClient,
     processId: string,
     options: { referenceDate?: Date } = {},
-  ): Promise<Array<{
-    id: string;
-    sequence: number;
-    stageCode: string;
-    responsibleSupervisorUserId: string | null;
-    startedAt: Date | null;
-    endedAt: Date | null;
-  }>> {
-    const process = await transaction.evaluationProcess.findUnique({
-      where: { id: processId },
-      select: { id: true },
-    });
-
-    if (!process) {
-      throw new NotFoundException(`Evaluation process ${processId} was not found`);
-    }
-
-    const existingStages = await transaction.processStage.findMany({
-      where: { evaluationProcessId: processId },
-      select: {
-        id: true,
-        sequence: true,
-        stageCode: true,
-        responsibleSupervisorUserId: true,
-        startedAt: true,
-        endedAt: true,
-      },
-      orderBy: { sequence: 'asc' },
-    });
-
-    const activeStages = existingStages.filter(isActiveProcessStage);
-
-    if (activeStages.length > 1) {
-      throw new ConflictException(
-        `Evaluation process ${processId} has more than one active process stage`,
-      );
-    }
-
-    const supervisorUserId =
-      activeStages[0]?.responsibleSupervisorUserId ??
-      existingStages.find((stage) => stage.sequence === 1)?.responsibleSupervisorUserId ??
-      existingStages.find((stage) => stage.responsibleSupervisorUserId)?.responsibleSupervisorUserId ??
-      null;
-    const referenceDate = options.referenceDate ?? new Date();
-    const hasAnyStage = existingStages.length > 0;
-    const hasActiveStage = activeStages.length === 1;
-    const hasStartedStage = existingStages.some((stage) => stage.startedAt !== null);
-    const existingStageOne = existingStages.find((stage) => stage.sequence === 1);
-
-    if (
-      existingStageOne &&
-      existingStageOne.startedAt === null &&
-      existingStageOne.endedAt === null &&
-      !hasActiveStage &&
-      !hasStartedStage
-    ) {
-      await transaction.processStage.update({
-        where: { id: existingStageOne.id },
-        data: { startedAt: referenceDate },
-      });
-    }
-
-    for (const sequence of CASE_2_PROCESS_STAGE_SEQUENCES) {
-      const stageCode = getCase2ProcessStageCode(sequence);
-      const stageAlreadyExists = existingStages.some(
-        (stage) => stage.sequence === sequence || stage.stageCode === stageCode,
-      );
-
-      if (stageAlreadyExists) {
-        continue;
-      }
-
-      const shouldCreateActiveStageOne = sequence === 1 && !hasAnyStage && !hasActiveStage;
-
-      await transaction.processStage.create({
-        data: {
-          evaluationProcessId: processId,
-          sequence,
-          stageCode,
-          responsibleSupervisorUserId: supervisorUserId,
-          startedAt: shouldCreateActiveStageOne ? referenceDate : null,
-          endedAt: null,
-        },
-      });
-    }
-
-    return transaction.processStage.findMany({
-      where: { evaluationProcessId: processId },
-      select: {
-        id: true,
-        sequence: true,
-        stageCode: true,
-        responsibleSupervisorUserId: true,
-        startedAt: true,
-        endedAt: true,
-      },
-      orderBy: { sequence: 'asc' },
-    });
+  ) {
+    return this.processStageService.ensureFourProcessStages(transaction, processId, options);
   }
 
   async findStageBySequenceOrThrow(
     transaction: PrismaTransactionClient,
     processId: string,
     sequence: number,
-  ): Promise<{
-    id: string;
-    sequence: number;
-    stageCode: string;
-    responsibleSupervisorUserId: string | null;
-    startedAt: Date | null;
-    endedAt: Date | null;
-  }> {
-    const stage = await transaction.processStage.findFirst({
-      where: {
-        evaluationProcessId: processId,
-        sequence,
-      },
-      select: {
-        id: true,
-        sequence: true,
-        stageCode: true,
-        responsibleSupervisorUserId: true,
-        startedAt: true,
-        endedAt: true,
-      },
-    });
-
-    if (!stage) {
-      throw new NotFoundException(
-        `Process stage ${sequence} was not found for evaluation process ${processId}`,
-      );
-    }
-
-    return stage;
+  ) {
+    return this.processStageService.findStageBySequenceOrThrow(transaction, processId, sequence);
   }
 
   assertStageIsActiveForArtifactCreation(stage: {
@@ -634,20 +420,56 @@ export class ProcessesService {
     startedAt: Date | null;
     endedAt: Date | null;
   }): void {
-    if (isActiveProcessStage(stage)) {
-      return;
-    }
+    return this.processStageService.assertStageIsActiveForArtifactCreation(stage);
+  }
 
-    if (isFutureProcessStage(stage)) {
-      throw new BadRequestException(
-        `Process stage ${stage.sequence} (${stage.stageCode}) is future and cannot receive stage artifacts yet`,
-      );
-    }
+  async findProcessOrThrow(transaction: PrismaTransactionClient, processId: string) {
+    return this.processStageService.findProcessOrThrow(transaction, processId);
+  }
 
-    throw new BadRequestException(
-      `Process stage ${stage.sequence} (${stage.stageCode}) is not active and cannot receive new stage artifacts`,
+  // ---------------------------------------------------------------------------
+  // Delegating wrappers — stage closure validation (StageClosureGuardService)
+  // ---------------------------------------------------------------------------
+
+  async areRequiredStageDocumentsComplete(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    processStageId: string,
+  ): Promise<boolean> {
+    return this.stageClosureGuardService.areRequiredStageDocumentsComplete(
+      transaction,
+      processId,
+      processStageId,
     );
   }
+
+  async ensureCurrentStageIsCompleteForStageClosure(
+    transaction: PrismaTransactionClient,
+    process: ProcessAccessContext,
+  ) {
+    return this.stageClosureGuardService.ensureCurrentStageIsCompleteForStageClosure(
+      transaction,
+      process,
+    );
+  }
+
+  async ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage(
+    transaction: PrismaTransactionClient,
+    processId: string,
+    processStageId: string,
+    frozenAt: Date,
+  ): Promise<void> {
+    return this.stageClosureGuardService.ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage(
+      transaction,
+      processId,
+      processStageId,
+      frozenAt,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Workflow transition internals
+  // ---------------------------------------------------------------------------
 
   async transitionWorkflowInTransaction(
     transaction: PrismaTransactionClient,
@@ -748,7 +570,7 @@ export class ProcessesService {
     let cesadStageAssignment: CesadStageAssignmentTransitionContext | null = null;
 
     if (payload.action === ProcessAction.SEND_TO_CESAD) {
-      const documentsComplete = await this.areRequiredStageDocumentsComplete(
+      const documentsComplete = await this.stageClosureGuardService.areRequiredStageDocumentsComplete(
         transaction,
         process.id,
         process.currentStage.id,
@@ -769,12 +591,13 @@ export class ProcessesService {
     }
 
     if (payload.action === ProcessAction.ISSUE_CESAD_OPINION) {
-      await this.ensureCompletedCesadStageOpinionAndFreezeExpectedSigners(
+      await this.stageClosureGuardService.ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage(
         transaction,
-        process,
+        process.id,
+        process.currentStage.id,
         new Date(occurredAt),
       );
-      await this.ensureSignedCesadOpinionDocumentForIssue(transaction, process);
+      await this.stageClosureGuardService.ensureSignedCesadOpinionDocumentForIssue(transaction, process);
     }
 
     if (payload.action === ProcessAction.COMPLETE_CURRENT_STAGE) {
@@ -791,7 +614,7 @@ export class ProcessesService {
 
     await transaction.evaluationProcess.update({
       where: { id: process.id },
-      data: { status: this.toDatabaseProcessStatus(transition.to) },
+      data: { status: toDatabaseProcessStatus(transition.to) },
     });
 
     const metadata: Prisma.InputJsonValue = {
@@ -819,8 +642,8 @@ export class ProcessesService {
       data: {
         evaluationProcessId: process.id,
         actorUserId: user.sub,
-        actorRole: this.toDatabaseRole(user.role),
-        eventType: this.toDatabaseAuditEventType(transition.eventType),
+        actorRole: toDatabaseRole(user.role),
+        eventType: toDatabaseAuditEventType(transition.eventType),
         beforeState: { status: process.status },
         afterState: { status: transition.to },
         metadata,
@@ -840,7 +663,7 @@ export class ProcessesService {
     normalizedComment: string | null,
     occurredAt: Date,
   ): Promise<ProcessStatus> {
-    const completenessSummary = await this.ensureCurrentStageIsCompleteForStageClosure(
+    const completenessSummary = await this.stageClosureGuardService.ensureCurrentStageIsCompleteForStageClosure(
       transaction,
       process,
     );
@@ -885,7 +708,7 @@ export class ProcessesService {
     let nextStage: typeof stages[number] | null = null;
 
     if (!isFinalStage) {
-      const candidateNextStage = stages.find((stage) => stage.sequence === currentStage.sequence + 1);
+      const candidateNextStage = stages.find((s) => s.sequence === currentStage.sequence + 1);
 
       if (!candidateNextStage) {
         throw new BadRequestException(
@@ -940,7 +763,7 @@ export class ProcessesService {
     if (nextProcessStatus !== previousProcessStatus) {
       await transaction.evaluationProcess.update({
         where: { id: process.id },
-        data: { status: this.toDatabaseProcessStatus(nextProcessStatus) },
+        data: { status: toDatabaseProcessStatus(nextProcessStatus) },
       });
     }
 
@@ -977,8 +800,8 @@ export class ProcessesService {
       data: {
         evaluationProcessId: process.id,
         actorUserId: user.sub,
-        actorRole: this.toDatabaseRole(user.role),
-        eventType: this.toDatabaseAuditEventType(eventType),
+        actorRole: toDatabaseRole(user.role),
+        eventType: toDatabaseAuditEventType(eventType),
         beforeState: {
           status: previousProcessStatus,
           completedProcessStageId: currentStage.id,
@@ -1003,256 +826,6 @@ export class ProcessesService {
     return nextProcessStatus;
   }
 
-  async findProcessOrThrow(transaction: PrismaTransactionClient, processId: string) {
-    const process = await transaction.evaluationProcess.findUnique({
-      where: { id: processId },
-      select: { id: true, status: true, evaluatedUserId: true },
-    });
-
-    if (!process) {
-      throw new NotFoundException(`Evaluation process ${processId} was not found`);
-    }
-
-    return process;
-  }
-
-  async areRequiredStageDocumentsComplete(
-    transaction: PrismaTransactionClient,
-    processId: string,
-    processStageId: string,
-  ): Promise<boolean> {
-    const documents = await transaction.processDocument.findMany({
-      where: {
-        evaluationProcessId: processId,
-        processStageId,
-        documentType: {
-          in: [PrismaDocumentType.SUPERVISOR_EVALUATION, PrismaDocumentType.SELF_EVALUATION],
-        },
-      },
-      include: {
-        signatureRecords: true,
-      },
-    });
-
-    const supervisorEvaluationDocument = documents.find(
-      (document) => document.documentType === PrismaDocumentType.SUPERVISOR_EVALUATION,
-    );
-    const selfEvaluationDocument = documents.find(
-      (document) => document.documentType === PrismaDocumentType.SELF_EVALUATION,
-    );
-
-    return (
-      this.isDocumentComplete(supervisorEvaluationDocument, DocumentType.SUPERVISOR_EVALUATION) &&
-      this.isDocumentComplete(selfEvaluationDocument, DocumentType.SELF_EVALUATION)
-    );
-  }
-
-  async ensureCurrentStageIsCompleteForStageClosure(
-    transaction: PrismaTransactionClient,
-    process: ProcessAccessContext,
-  ): Promise<{
-    supervisorEvaluationDocumentSigned: boolean;
-    selfEvaluationDocumentSigned: boolean;
-    cesadStageOpinionCompleted: boolean;
-    cesadOpinionDocumentSigned: boolean;
-    cesadExpectedSignersCount: number;
-  }> {
-    if (process.status !== ProcessStatus.PARECER_EMITIDO) {
-      throw new BadRequestException(
-        `Current stage can only be completed while process is in ${ProcessStatus.PARECER_EMITIDO} status`,
-      );
-    }
-
-    const documentsComplete = await this.areRequiredStageDocumentsComplete(
-      transaction,
-      process.id,
-      process.currentStage.id,
-    );
-
-    if (!documentsComplete) {
-      throw new BadRequestException(
-        'Current stage cannot be completed before the supervisor evaluation and self evaluation documents are fully signed',
-      );
-    }
-
-    const opinion = await transaction.cesadStageOpinion.findUnique({
-      where: { processStageId: process.currentStage.id },
-      select: {
-        id: true,
-        status: true,
-        expectedSigners: {
-          select: {
-            id: true,
-            actingUserId: true,
-          },
-        },
-      },
-    });
-
-    if (!opinion || opinion.status !== PrismaCesadStageOpinionStatus.COMPLETED) {
-      throw new BadRequestException(
-        'Current stage cannot be completed before the CESAD stage opinion is COMPLETED',
-      );
-    }
-
-    if (opinion.expectedSigners.length === 0) {
-      throw new BadRequestException(
-        'Current stage cannot be completed before CESAD opinion expected signers have been frozen',
-      );
-    }
-
-    const cesadOpinionDocument = await transaction.processDocument.findFirst({
-      where: {
-        evaluationProcessId: process.id,
-        processStageId: process.currentStage.id,
-        documentType: PrismaDocumentType.CESAD_OPINION,
-      },
-      include: {
-        signatureRecords: true,
-      },
-    });
-
-    if (!cesadOpinionDocument) {
-      throw new BadRequestException(
-        'Current stage cannot be completed before a CESAD opinion document exists for the stage',
-      );
-    }
-
-    if (cesadOpinionDocument.documentStatus !== PrismaDocumentStatus.SIGNED) {
-      throw new BadRequestException(
-        'Current stage cannot be completed before the CESAD opinion document is fully signed',
-      );
-    }
-
-    const allCesadSignersCompleted = opinion.expectedSigners.every((expectedSigner) =>
-      cesadOpinionDocument.signatureRecords.some(
-        (signature) =>
-          signature.status === PrismaSignatureStatus.COMPLETED &&
-          signature.signatoryRole === PrismaUserRole.CESAD_MEMBER &&
-          (
-            signature.cesadStageOpinionExpectedSignerId === expectedSigner.id ||
-            signature.signatoryUserId === expectedSigner.actingUserId
-          ),
-      ),
-    );
-
-    if (!allCesadSignersCompleted) {
-      throw new BadRequestException(
-        'Current stage cannot be completed before all expected CESAD signers have signed the document',
-      );
-    }
-
-    return {
-      supervisorEvaluationDocumentSigned: true,
-      selfEvaluationDocumentSigned: true,
-      cesadStageOpinionCompleted: true,
-      cesadOpinionDocumentSigned: true,
-      cesadExpectedSignersCount: opinion.expectedSigners.length,
-    };
-  }
-
-  async ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage(
-    transaction: PrismaTransactionClient,
-    processId: string,
-    processStageId: string,
-    frozenAt: Date,
-  ): Promise<void> {
-    const opinion = await transaction.cesadStageOpinion.findUnique({
-      where: { processStageId },
-      select: {
-        id: true,
-        status: true,
-        _count: {
-          select: { expectedSigners: true },
-        },
-      },
-    });
-
-    if (!opinion || opinion.status !== PrismaCesadStageOpinionStatus.COMPLETED) {
-      throw new BadRequestException(
-        'Process can only issue CESAD opinion after a completed CESAD stage opinion exists for the current stage',
-      );
-    }
-
-    if (opinion._count.expectedSigners > 0) {
-      return;
-    }
-
-    const assignment = await transaction.cesadStageAssignment.findFirst({
-      where: {
-        processId,
-        processStageId,
-        status: PrismaCesadStageAssignmentStatus.ACTIVE,
-      },
-      select: {
-        id: true,
-        commissionId: true,
-      },
-      orderBy: { assignedAt: 'desc' },
-    });
-
-    if (!assignment) {
-      throw new BadRequestException(
-        'Cannot derive CESAD opinion expected signers because no active CESAD stage assignment was found for the current stage',
-      );
-    }
-
-    const commission = await transaction.cesadCommission.findUnique({
-      where: { id: assignment.commissionId },
-      select: {
-        id: true,
-        members: {
-          where: {
-            roleType: PrismaCesadCommissionMemberRoleType.TITULAR,
-            startDate: { lte: frozenAt },
-            OR: [{ endDate: null }, { endDate: { gte: frozenAt } }],
-            user: {
-              role: { not: PrismaUserRole.COMMISSION_ASSISTANT },
-              isActive: true,
-            },
-          },
-          select: {
-            id: true,
-            userId: true,
-            roleType: true,
-            startDate: true,
-            createdAt: true,
-            user: {
-              select: {
-                email: true,
-                name: true,
-              },
-            },
-          },
-          orderBy: [{ startDate: 'asc' }, { createdAt: 'asc' }],
-        },
-      },
-    });
-
-    if (!commission || commission.members.length === 0) {
-      throw new BadRequestException(
-        'Cannot derive CESAD opinion expected signers because the assigned CESAD commission has no active titular member for the freeze date',
-      );
-    }
-
-    await transaction.cesadStageOpinionExpectedSigner.createMany({
-      data: commission.members.map((member, index) => ({
-        cesadStageOpinionId: opinion.id,
-        commissionId: commission.id,
-        actingCommissionMemberId: member.id,
-        actingUserId: member.userId,
-        derivationType: PrismaCesadStageOpinionExpectedSignerDerivationType.ACTIVE_TITULAR,
-        signingCapacity: PrismaCesadStageOpinionSigningCapacity.EFFECTIVE_MEMBER,
-        substitutedCommissionMemberId: null,
-        nameSnapshot: member.user.name,
-        emailSnapshot: member.user.email,
-        roleTypeSnapshot: member.roleType,
-        sortOrder: index + 1,
-        frozenAt,
-      })),
-    });
-  }
-
   private async ensureActiveCesadStageAssignment(
     transaction: PrismaTransactionClient,
     process: ProcessAccessContext,
@@ -1264,29 +837,17 @@ export class ProcessesService {
         processStageId: process.currentStage.id,
         status: PrismaCesadStageAssignmentStatus.ACTIVE,
       },
-      select: {
-        id: true,
-        commissionId: true,
-        status: true,
-      },
+      select: { id: true, commissionId: true, status: true },
       orderBy: { assignedAt: 'desc' },
     });
 
     if (activeAssignments.length > 1) {
-      throw new ConflictException(
-        'Process stage has more than one active CESAD stage assignment',
-      );
+      throw new ConflictException('Process stage has more than one active CESAD stage assignment');
     }
 
     if (activeAssignments.length === 1) {
       const assignment = activeAssignments[0]!;
-
-      return {
-        id: assignment.id,
-        commissionId: assignment.commissionId,
-        status: assignment.status,
-        created: false,
-      };
+      return { id: assignment.id, commissionId: assignment.commissionId, status: assignment.status, created: false };
     }
 
     const matchingCommissions = await transaction.cesadCommission.findMany({
@@ -1321,11 +882,7 @@ export class ProcessesService {
         assignedByUserId: user.sub,
         referenceDate: assignedAt,
       },
-      select: {
-        id: true,
-        commissionId: true,
-        status: true,
-      },
+      select: { id: true, commissionId: true, status: true },
     });
 
     return {
@@ -1334,84 +891,6 @@ export class ProcessesService {
       status: createdAssignment.status,
       created: true,
     };
-  }
-
-  private async ensureCompletedCesadStageOpinionAndFreezeExpectedSigners(
-    transaction: PrismaTransactionClient,
-    process: ProcessAccessContext,
-    frozenAt: Date,
-  ): Promise<void> {
-    await this.ensureCompletedCesadStageOpinionAndFreezeExpectedSignersForStage(
-      transaction,
-      process.id,
-      process.currentStage.id,
-      frozenAt,
-    );
-  }
-
-  private async ensureSignedCesadOpinionDocumentForIssue(
-    transaction: PrismaTransactionClient,
-    process: ProcessAccessContext,
-  ): Promise<void> {
-    const opinion = await transaction.cesadStageOpinion.findUnique({
-      where: { processStageId: process.currentStage.id },
-      select: {
-        id: true,
-        expectedSigners: {
-          select: {
-            id: true,
-            actingUserId: true,
-          },
-        },
-      },
-    });
-
-    if (!opinion || opinion.expectedSigners.length === 0) {
-      throw new BadRequestException(
-        'Process can only issue CESAD opinion after expected signers have been frozen',
-      );
-    }
-
-    const document = await transaction.processDocument.findFirst({
-      where: {
-        evaluationProcessId: process.id,
-        processStageId: process.currentStage.id,
-        documentType: PrismaDocumentType.CESAD_OPINION,
-      },
-      include: {
-        signatureRecords: true,
-      },
-    });
-
-    if (!document) {
-      throw new BadRequestException(
-        'Process can only issue CESAD opinion after a signed CESAD opinion document exists for the current stage',
-      );
-    }
-
-    if (document.documentStatus !== PrismaDocumentStatus.SIGNED) {
-      throw new BadRequestException(
-        'Process can only issue CESAD opinion after the CESAD opinion document is fully signed',
-      );
-    }
-
-    const allExpectedSignersCompleted = opinion.expectedSigners.every((expectedSigner) =>
-      document.signatureRecords.some(
-        (signature) =>
-          signature.status === PrismaSignatureStatus.COMPLETED &&
-          signature.signatoryRole === PrismaUserRole.CESAD_MEMBER &&
-          (
-            signature.cesadStageOpinionExpectedSignerId === expectedSigner.id ||
-            signature.signatoryUserId === expectedSigner.actingUserId
-          ),
-      ),
-    );
-
-    if (!allExpectedSignersCompleted) {
-      throw new BadRequestException(
-        'Process can only issue CESAD opinion after all expected CESAD signers have signed the document',
-      );
-    }
   }
 
   async ensureUserHasProcessAccess(
@@ -1500,11 +979,14 @@ export class ProcessesService {
       throw new NotFoundException(`No process stage was found for evaluation process ${processId}`);
     }
 
-    const currentStage = this.resolveActiveStageFromListOrThrow(process.stages, processId);
+    const currentStage = this.processStageService.resolveActiveStageFromListOrThrow(
+      process.stages,
+      processId,
+    );
 
     return {
       id: process.id,
-      status: this.toContractProcessStatus(process.status),
+      status: toContractProcessStatus(process.status),
       evaluatedUserId: process.evaluatedUserId,
       currentStage: {
         id: currentStage.id,
@@ -1515,56 +997,25 @@ export class ProcessesService {
     };
   }
 
-  private resolveActiveStageFromListOrThrow<T extends {
-    startedAt: Date | null;
-    endedAt: Date | null;
-  }>(stages: T[], processId: string): T {
-    const activeStage = this.resolveActiveStageFromList(stages, processId);
-
-    if (!activeStage) {
-      throw new ConflictException(
-        `No active process stage was found for evaluation process ${processId}`,
-      );
+  private ensureCanSupersedeCesadStageAssignment(user: AuthenticatedUser): void {
+    if (!CESAD_STAGE_ASSIGNMENT_SUPERSEDER_ROLES.has(user.role)) {
+      throw new ForbiddenException(`Role ${user.role} cannot supersede CESAD stage assignment`);
     }
-
-    return activeStage;
-  }
-
-  private resolveActiveStageFromList<T extends {
-    startedAt: Date | null;
-    endedAt: Date | null;
-  }>(stages: T[], processId: string): T | null {
-    const activeStages = stages.filter(isActiveProcessStage);
-
-    if (activeStages.length > 1) {
-      throw new ConflictException(
-        `Evaluation process ${processId} has more than one active process stage`,
-      );
-    }
-
-    return activeStages[0] ?? null;
   }
 
   private isPublicWorkflowHistoryEvent(eventType: AuditEventType, metadata: unknown): boolean {
     const metadataRecord = this.asMetadataRecord(metadata);
 
-    if (metadataRecord?.origin === 'PROCESS_DOCUMENT') {
-      return false;
-    }
+    if (metadataRecord?.origin === 'PROCESS_DOCUMENT') return false;
 
     const action = this.readProcessAction(metadataRecord);
-    if (!action) {
-      return false;
-    }
+    if (!action) return false;
 
     return isWorkflowAuditEventTypeForAction(eventType, action);
   }
 
   private asMetadataRecord(metadata: unknown): Record<string, unknown> | null {
-    if (!metadata || typeof metadata !== 'object') {
-      return null;
-    }
-
+    if (!metadata || typeof metadata !== 'object') return null;
     return metadata as Record<string, unknown>;
   }
 
@@ -1579,15 +1030,13 @@ export class ProcessesService {
   }
 
   private normalizeComment(comment?: string): string | null {
-    if (typeof comment !== 'string') {
-      return null;
-    }
+    if (typeof comment !== 'string') return null;
 
-    const normalizedComment = comment.trim();
-    if (normalizedComment.length > 2000) {
+    const normalized = comment.trim();
+    if (normalized.length > 2000) {
       throw new BadRequestException('Comment must not exceed 2000 characters');
     }
-    return normalizedComment.length > 0 ? normalizedComment : null;
+    return normalized.length > 0 ? normalized : null;
   }
 
   private normalizeRequiredText(value: string, fieldLabel: string, maxLength = 1000): string {
@@ -1595,51 +1044,37 @@ export class ProcessesService {
       throw new BadRequestException(`${fieldLabel} must be a string`);
     }
 
-    const normalizedValue = value.trim();
-    if (normalizedValue.length === 0) {
+    const normalized = value.trim();
+    if (normalized.length === 0) {
       throw new BadRequestException(`${fieldLabel} is required`);
     }
 
-    if (normalizedValue.length > maxLength) {
+    if (normalized.length > maxLength) {
       throw new BadRequestException(`${fieldLabel} must not exceed ${maxLength} characters`);
     }
 
-    return normalizedValue;
+    return normalized;
   }
 
   private normalizeOptionalText(value?: string, maxLength = 500): string | null {
-    if (typeof value !== 'string') {
-      return null;
-    }
+    if (typeof value !== 'string') return null;
 
-    const normalizedValue = value.trim();
-    if (normalizedValue.length > maxLength) {
+    const normalized = value.trim();
+    if (normalized.length > maxLength) {
       throw new BadRequestException(`Value must not exceed ${maxLength} characters`);
     }
-    return normalizedValue.length > 0 ? normalizedValue : null;
-  }
-
-  private ensureCanSupersedeCesadStageAssignment(user: AuthenticatedUser): void {
-    if (!CESAD_STAGE_ASSIGNMENT_SUPERSEDER_ROLES.has(user.role)) {
-      throw new ForbiddenException(
-        `Role ${user.role} cannot supersede CESAD stage assignment`,
-      );
-    }
+    return normalized.length > 0 ? normalized : null;
   }
 
   private readComment(metadata: unknown): string | null {
-    if (!metadata || typeof metadata !== 'object' || !('comment' in metadata)) {
-      return null;
-    }
+    if (!metadata || typeof metadata !== 'object' || !('comment' in metadata)) return null;
 
     const comment = (metadata as Record<string, unknown>).comment;
     return typeof comment === 'string' && comment.trim().length > 0 ? comment : null;
   }
 
   private asAuditMetadata(metadata: unknown): AuditMetadata | null {
-    if (!metadata || typeof metadata !== 'object') {
-      return null;
-    }
+    if (!metadata || typeof metadata !== 'object') return null;
 
     const candidate = metadata as Partial<AuditMetadata>;
 
@@ -1671,87 +1106,5 @@ export class ProcessesService {
       default:
         throw new BadRequestException(`Workflow history contains unsupported event type ${eventType}`);
     }
-  }
-
-  private isDocumentComplete(
-    document:
-      | {
-          documentType: PrismaDocumentType;
-          documentStatus: PrismaDocumentStatus;
-          signatureRecords: Array<{
-            signatoryRole: PrismaUserRole;
-            status: PrismaSignatureStatus;
-          }>;
-        }
-      | undefined,
-    documentType: DocumentType,
-  ): boolean {
-    if (!document || document.documentStatus !== PrismaDocumentStatus.SIGNED) {
-      return false;
-    }
-
-    const expectedRoles =
-      documentType === DocumentType.SUPERVISOR_EVALUATION
-        ? [PrismaUserRole.IMMEDIATE_SUPERVISOR, PrismaUserRole.INTERN_SERVER]
-        : [PrismaUserRole.INTERN_SERVER, PrismaUserRole.IMMEDIATE_SUPERVISOR];
-
-    return expectedRoles.every((role) =>
-      document.signatureRecords.some(
-        (signature) =>
-          signature.signatoryRole === role && signature.status === PrismaSignatureStatus.COMPLETED,
-      ),
-    );
-  }
-
-  private toContractProcessStatus(status: PrismaProcessStatus): ProcessStatus {
-    if (!Object.values(ProcessStatus).includes(status as ProcessStatus)) {
-      throw new BadRequestException(`Unsupported process status ${status}`);
-    }
-
-    return status as ProcessStatus;
-  }
-
-  private toContractAuditEventType(eventType: PrismaAuditEventType): AuditEventType {
-    if (!Object.values(AuditEventType).includes(eventType as AuditEventType)) {
-      throw new BadRequestException(`Unsupported audit event type ${eventType}`);
-    }
-
-    return eventType as AuditEventType;
-  }
-
-  private toContractUserRole(role: PrismaUserRole | null): UserRole | null {
-    if (role === null) {
-      return null;
-    }
-
-    if (!Object.values(UserRole).includes(role as UserRole)) {
-      throw new BadRequestException(`Unsupported user role ${role}`);
-    }
-
-    return role as UserRole;
-  }
-
-  private toDatabaseProcessStatus(status: ProcessStatus): PrismaProcessStatus {
-    if (!Object.values(PrismaProcessStatus).includes(status as PrismaProcessStatus)) {
-      throw new BadRequestException(`Unsupported process status ${status}`);
-    }
-
-    return status as PrismaProcessStatus;
-  }
-
-  private toDatabaseRole(role: UserRole): PrismaUserRole {
-    if (!Object.values(PrismaUserRole).includes(role as PrismaUserRole)) {
-      throw new BadRequestException(`Unsupported user role ${role}`);
-    }
-
-    return role as PrismaUserRole;
-  }
-
-  private toDatabaseAuditEventType(eventType: AuditEventType): PrismaAuditEventType {
-    if (!Object.values(PrismaAuditEventType).includes(eventType as PrismaAuditEventType)) {
-      throw new BadRequestException(`Unsupported audit event type ${eventType}`);
-    }
-
-    return eventType as PrismaAuditEventType;
   }
 }

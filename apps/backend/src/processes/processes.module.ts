@@ -14,10 +14,12 @@ import { CesadStageOpinionsService } from './cesad-stage-opinions/cesad-stage-op
 import { CesadStageReadController } from './cesad-stage-read.controller';
 import { CesadStageReadService } from './cesad-stage-read.service';
 import { InternWorkspaceService } from './intern-workspace/intern-workspace.service';
+import { ProcessStageService } from './process-stage.service';
 import { ProcessesController } from './processes.controller';
 import { ProcessesService } from './processes.service';
 import { SelfEvaluationsController } from './self-evaluations/self-evaluations.controller';
 import { SelfEvaluationsService } from './self-evaluations/self-evaluations.service';
+import { StageClosureGuardService } from './stage-closure-guard.service';
 import { SupervisorEvaluationsController } from './supervisor-evaluations/supervisor-evaluations.controller';
 import { SupervisorEvaluationsService } from './supervisor-evaluations/supervisor-evaluations.service';
 
@@ -33,6 +35,8 @@ import { SupervisorEvaluationsService } from './supervisor-evaluations/superviso
   ],
   providers: [
     ProcessesService,
+    ProcessStageService,
+    StageClosureGuardService,
     CesadStageOpinionsService,
     CesadStageReadService,
     CesadFinalOpinionsService,

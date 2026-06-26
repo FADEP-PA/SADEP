@@ -28,6 +28,11 @@ import {
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
 import { CesadContextAuthorizationService } from '../../cesad/authorization/cesad-context-authorization.service';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import {
+  toDatabaseAuditEventType,
+  toDatabaseRole,
+  toContractProcessStatus as toContractProcessStatusShared,
+} from '../process-type-mappers';
 import { ProcessesService, type PrismaTransactionClient } from '../processes.service';
 import { CesadFinalOpinionConsolidationService } from './cesad-final-opinion-consolidation.service';
 import {
@@ -732,23 +737,14 @@ export class CesadFinalOpinionsService {
   }
 
   private toContractProcessStatus(status: PrismaProcessStatus): ProcessStatus {
-    if (!Object.values(ProcessStatus).includes(status as ProcessStatus)) {
-      throw new BadRequestException(`Unsupported process status ${status}`);
-    }
-    return status as ProcessStatus;
+    return toContractProcessStatusShared(status);
   }
 
   private toDatabaseRole(role: UserRole): PrismaUserRole {
-    if (!Object.values(PrismaUserRole).includes(role as PrismaUserRole)) {
-      throw new ForbiddenException(`Unsupported user role ${role}`);
-    }
-    return role as PrismaUserRole;
+    return toDatabaseRole(role);
   }
 
   private toDatabaseAuditEventType(eventType: AuditEventType): PrismaAuditEventType {
-    if (!Object.values(PrismaAuditEventType).includes(eventType as PrismaAuditEventType)) {
-      throw new BadRequestException(`Unsupported audit event type ${eventType}`);
-    }
-    return eventType as PrismaAuditEventType;
+    return toDatabaseAuditEventType(eventType);
   }
 }
