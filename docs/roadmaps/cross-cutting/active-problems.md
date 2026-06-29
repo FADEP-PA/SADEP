@@ -12,7 +12,7 @@
 
 ## Frontend / integracao
 
-- `FE-CHEFIA-01` — `/chefia-imediata` parcialmente integrada ao workspace real por processo informado na tela; validacao visual concluida e fallback demonstrativo/local ainda ativo.
+- `FE-CHEFIA-01` — **encerrado** (2026-06-29). Continuidade era `FE-CHEFIA-02`, concluida nesta sessao. Lista real de processos carregada ao montar; fallback demonstrativo (`DASHBOARD_ROWS`) removido. Nenhuma pendencia residual.
 - `FE-PROCESS-LIST-01` — **encerrado** (2026-06-29). `GET /processes` criado no backend com filtro por perfil; servidor estagiario auto-carrega o unico processo ao montar o workspace.
 - `FE-CHEFIA-02` — **encerrado** (2026-06-29). Supervisor carrega lista real de processos via API ao montar workspace; fallback demonstrativo removido; `DASHBOARD_ROWS` substituido por dados reais mapeados de `ProcessListItemRef`.
 - `FE-CESAD-01` — **encerrado** (2026-06-29). Editor de parecer CESAD integrado (`CesadStageOpinionEditor`); API calls para draft e complete adicionadas; workspace auto-seleciona o primeiro processo `EM_ANALISE_CESAD` da lista. Leitura consolidada existente preservada como fallback quando parecer ja esta concluido.
