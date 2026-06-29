@@ -171,6 +171,8 @@ model User {
   cesadStageOpinionExpectedSigners CesadStageOpinionExpectedSigner[] @relation("CesadStageOpinionExpectedSignerActingUser")
   cesadFinalOpinionExpectedSigners CesadFinalOpinionExpectedSigner[] @relation("CesadFinalOpinionExpectedSignerActingUser")
   cesadStageAssignmentsCreated     CesadStageAssignment[]            @relation("CesadStageAssignmentAssignedByUser")
+  homologationRecordsAsHomologator HomologationRecord[]              @relation("HomologationRecordHomologatedBy")
+  homologationRecordsAsNotifier    HomologationRecord[]              @relation("HomologationRecordNotifiedBy")
 }
 
 model UserSession {
@@ -213,6 +215,7 @@ model EvaluationProcess {
   cesadStageOpinions    CesadStageOpinion[]
   cesadFinalOpinions    CesadFinalOpinion[]
   cesadStageAssignments CesadStageAssignment[]
+  homologationRecord    HomologationRecord?
 
   @@index([evaluatedUserId])
   @@index([status])
@@ -538,6 +541,25 @@ model CesadStageAssignment {
   @@index([supersededByAssignmentId])
   @@index([status])
   @@index([processStageId, status])
+}
+
+model HomologationRecord {
+  id                  String            @id @default(cuid())
+  processId           String            @unique
+  homologatedAt       DateTime
+  homologatedByUserId String
+  homologationRemarks String?
+  notifiedAt          DateTime?
+  notifiedByUserId    String?
+  acknowledgedAt      DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  evaluationProcess   EvaluationProcess @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  homologatedByUser   User              @relation("HomologationRecordHomologatedBy", fields: [homologatedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  notifiedByUser      User?             @relation("HomologationRecordNotifiedBy", fields: [notifiedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([homologatedByUserId])
+  @@index([notifiedByUserId])
 }
 
 model SignatureRecord {
