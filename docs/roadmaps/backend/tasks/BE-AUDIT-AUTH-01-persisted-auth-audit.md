@@ -2,7 +2,7 @@
 
 ## Status
 
-Melhoria futura.
+**Encerrado** (2026-06-29).
 
 ## Area
 
@@ -53,6 +53,14 @@ Esta task registra a evolucao futura para persistir eventos relevantes de auth q
 - politica de auditoria persistida do projeto;
 - possivel revisao de `AuditEvent`.
 
-## Proxima acao
+## Decisao tomada
 
-Definir se eventos de autenticacao devem compartilhar `AuditEvent` ou ter modelo proprio antes de qualquer implementacao.
+Modelo proprio `AuthAuditEvent` (nao reutiliza `AuditEvent` que requer `evaluationProcessId`).
+
+## Implementacao (2026-06-29)
+
+- Schema: enum `AuthAuditEventType` (LOGIN_SUCCESS, LOGIN_FAILURE, REFRESH_ACCEPTED, REFRESH_REJECTED, REUSE_DETECTED, LOGOUT, LOGOUT_IDEMPOTENT) + modelo `AuthAuditEvent` com indices em `(eventType, occurredAt)`, `(userId, occurredAt)`, `sessionId` e `familyId`.
+- Migration: `20260629100000_add_auth_audit_event`.
+- `AuthAuditService.persistAsync()` — fire-and-forget, nunca lanca excecao, nao armazena tokens/senhas.
+- `AuthService` — chama `persistAsync` apos cada `logAuthWarning`/`logAuthInfo` existente, com payload minimo (userId quando identificavel, sessionId, familyId, IP, userAgent, failureReason).
+- Testes: `auth-audit.service.spec.ts` — 7 casos cobrindo sucesso, falha, refresh, reuso, logout, fire-and-forget e ausencia de dados sensiveis.

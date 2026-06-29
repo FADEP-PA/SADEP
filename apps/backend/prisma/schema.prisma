@@ -16,6 +16,16 @@ enum UserRole {
   ADMIN
 }
 
+enum AuthAuditEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILURE
+  REFRESH_ACCEPTED
+  REFRESH_REJECTED
+  REUSE_DETECTED
+  LOGOUT
+  LOGOUT_IDEMPOTENT
+}
+
 enum ProcessStatus {
   EM_AVALIACAO
   AGUARDANDO_ASSINATURA
@@ -173,6 +183,7 @@ model User {
   cesadStageAssignmentsCreated     CesadStageAssignment[]            @relation("CesadStageAssignmentAssignedByUser")
   homologationRecordsAsHomologator HomologationRecord[]              @relation("HomologationRecordHomologatedBy")
   homologationRecordsAsNotifier    HomologationRecord[]              @relation("HomologationRecordNotifiedBy")
+  authAuditEvents                  AuthAuditEvent[]
 }
 
 model UserSession {
@@ -198,6 +209,24 @@ model UserSession {
   @@index([userId, familyId])
   @@index([expiresAt])
   @@index([revokedAt])
+}
+
+model AuthAuditEvent {
+  id            String             @id @default(cuid())
+  eventType     AuthAuditEventType
+  userId        String?
+  sessionId     String?
+  familyId      String?
+  ipAddress     String?
+  userAgent     String?
+  failureReason String?
+  occurredAt    DateTime           @default(now())
+  user          User?              @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([eventType, occurredAt])
+  @@index([userId, occurredAt])
+  @@index([sessionId])
+  @@index([familyId])
 }
 
 model EvaluationProcess {

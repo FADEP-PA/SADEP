@@ -4,12 +4,13 @@ import { Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@sadep/contracts';
 import type { LoginResponse } from '@sadep/contracts';
-import { Prisma } from '@prisma/client';
+import { AuthAuditEventType, Prisma } from '@prisma/client';
 
 import { AppLogger } from '../common/logging/app-logger.service';
 import { AppConfigService } from '../config/app-config.service';
 import { hashPassword, verifyPassword } from '../common/security/password-hasher';
 import { PrismaService } from '../infrastructure/database/prisma.service';
+import { AuthAuditService } from './auth-audit.service';
 import { RefreshTokenService } from './refresh-token.service';
 import { REFRESH_TOKEN_REVOKED_REASON } from './session.constants';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
@@ -66,6 +67,7 @@ export class AuthService implements OnModuleInit {
     private readonly refreshTokenService: RefreshTokenService,
     private readonly logger: AppLogger,
     private readonly jwtService: JwtService,
+    private readonly authAuditService: AuthAuditService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -86,6 +88,12 @@ export class AuthService implements OnModuleInit {
         email: maskEmail(normalizedEmail),
         reason: 'invalid_credentials',
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.LOGIN_FAILURE,
+        failureReason: 'invalid_credentials',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -95,6 +103,13 @@ export class AuthService implements OnModuleInit {
       this.logAuthWarning('AUTH_LOGIN_FAILED', {
         email: maskEmail(normalizedEmail),
         reason: 'invalid_credentials',
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.LOGIN_FAILURE,
+        userId: user.id,
+        failureReason: 'invalid_credentials',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
       });
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -114,6 +129,13 @@ export class AuthService implements OnModuleInit {
       sessionFamilyId: refreshSession.familyId,
       userId: user.id,
     });
+    this.authAuditService.persistAsync({
+      eventType: AuthAuditEventType.LOGIN_SUCCESS,
+      userId: user.id,
+      familyId: refreshSession.familyId,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    });
 
     return {
       accessToken: this.signToken(authenticatedUser),
@@ -130,6 +152,12 @@ export class AuthService implements OnModuleInit {
     if (!refreshToken) {
       this.logAuthWarning('AUTH_REFRESH_REJECTED', {
         reason: 'missing_token',
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        failureReason: 'missing_token',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
       });
       throw new UnauthorizedException('Invalid refresh session');
     }
@@ -154,6 +182,12 @@ export class AuthService implements OnModuleInit {
       this.logAuthWarning('AUTH_REFRESH_REJECTED', {
         reason: 'session_not_found',
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        failureReason: 'session_not_found',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -165,6 +199,15 @@ export class AuthService implements OnModuleInit {
         sessionId: session.id,
         userId: session.userId,
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REUSE_DETECTED,
+        userId: session.userId,
+        sessionId: session.id,
+        familyId: session.familyId,
+        failureReason: 'rotated_or_reused_session',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -175,6 +218,15 @@ export class AuthService implements OnModuleInit {
         sessionId: session.id,
         userId: session.userId,
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        userId: session.userId,
+        sessionId: session.id,
+        familyId: session.familyId,
+        failureReason: 'revoked_session',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -184,6 +236,15 @@ export class AuthService implements OnModuleInit {
         reason: 'expired_session',
         sessionId: session.id,
         userId: session.userId,
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        userId: session.userId,
+        sessionId: session.id,
+        familyId: session.familyId,
+        failureReason: 'expired_session',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
       });
       throw new UnauthorizedException('Invalid refresh session');
     }
@@ -229,6 +290,15 @@ export class AuthService implements OnModuleInit {
             sessionId: session.id,
             userId: session.userId,
           });
+          this.authAuditService.persistAsync({
+            eventType: AuthAuditEventType.REUSE_DETECTED,
+            userId: session.userId,
+            sessionId: session.id,
+            familyId: session.familyId,
+            failureReason: 'rotation_conflict',
+            ipAddress: context.ipAddress,
+            userAgent: context.userAgent,
+          });
           throw new UnauthorizedException('Invalid refresh session');
         }
 
@@ -269,6 +339,14 @@ export class AuthService implements OnModuleInit {
       nextSessionId,
       userId: session.userId,
     });
+    this.authAuditService.persistAsync({
+      eventType: AuthAuditEventType.REFRESH_ACCEPTED,
+      userId: session.userId,
+      sessionId: nextSessionId,
+      familyId: session.familyId,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    });
 
     return {
       accessToken: this.signToken(authenticatedUser),
@@ -283,18 +361,26 @@ export class AuthService implements OnModuleInit {
       this.logAuthInfo('AUTH_LOGOUT_SKIPPED', {
         reason: 'missing_token',
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.LOGOUT_IDEMPOTENT,
+        failureReason: 'missing_token',
+      });
       return;
     }
 
     const refreshTokenHash = this.refreshTokenService.hashToken(refreshToken);
     const session = await this.prismaService.userSession.findUnique({
       where: { refreshTokenHash },
-      select: { id: true },
+      select: { id: true, userId: true, familyId: true },
     });
 
     if (!session) {
       this.logAuthInfo('AUTH_LOGOUT_SKIPPED', {
         reason: 'session_not_found',
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.LOGOUT_IDEMPOTENT,
+        failureReason: 'session_not_found',
       });
       return;
     }
@@ -313,6 +399,12 @@ export class AuthService implements OnModuleInit {
     this.logAuthInfo('AUTH_LOGOUT_SUCCEEDED', {
       changed: logoutResult.count,
       sessionId: session.id,
+    });
+    this.authAuditService.persistAsync({
+      eventType: AuthAuditEventType.LOGOUT,
+      userId: session.userId,
+      sessionId: session.id,
+      familyId: session.familyId,
     });
   }
 
@@ -462,6 +554,13 @@ export class AuthService implements OnModuleInit {
         sessionId: session.id,
         userId: session.userId,
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        userId: session.userId,
+        sessionId: session.id,
+        familyId: session.familyId,
+        failureReason: 'inactive_user',
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -476,6 +575,13 @@ export class AuthService implements OnModuleInit {
         reason: 'role_changed',
         sessionId: session.id,
         userId: session.userId,
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        userId: session.userId,
+        sessionId: session.id,
+        familyId: session.familyId,
+        failureReason: 'role_changed',
       });
       throw new UnauthorizedException('Invalid refresh session');
     }

@@ -5,6 +5,7 @@ import { Reflector } from '@nestjs/core';
 import { AppLogger } from '../common/logging/app-logger.service';
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../infrastructure/database/prisma.service';
+import { AuthAuditService } from './auth-audit.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -25,6 +26,7 @@ import { RolesGuard } from './guards/roles.guard';
   controllers: [AuthController],
   providers: [
     AuthService,
+    AuthAuditService,
     JwtAuthGuard,
     RefreshTokenService,
     RolesGuard,
