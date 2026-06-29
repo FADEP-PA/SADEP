@@ -2,7 +2,7 @@
 
 ## Status
 
-Pendente operacional.
+**Encerrado** (2026-06-29). `docs/setup/local-setup.md` atualizado: referencias a SQLite removidas, PostgreSQL (Docker Compose) documentado como pre-requisito, `DATABASE_URL` explicitada no `.env` de exemplo, bootstrap atualizado para refletir `prisma migrate deploy` em vez de `db push`, checklist de verificacao revisado.
 
 ## Area
 
