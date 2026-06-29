@@ -139,8 +139,7 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Quand
 
 ## Pendentes relevantes
 
-- [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`.
-- [`BE-CONTRACT-CESAD-ASSIGN-01` — expor status de assignment CESAD em contracts](./tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md): condicional/futura.
+- `BE-CESAD-REG-01` — Cadastro e gerenciamento de comissoes CESAD: implementar endpoints de mutacao (`POST`/`PUT`) para criacao de comissoes, registro de atos designativos (`CesadCommissionAct`) e gestao de membros (titulares/suplentes) com regras de vigencia e encerramento.
 - [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`.
 - [`BE-CONTRACT-CESAD-ASSIGN-01` — expor status de assignment CESAD em contracts](./tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md): condicional/futura; so deve ser executada se API publica ou frontend passarem a consumir diretamente o status de `CesadStageAssignment`.
 
