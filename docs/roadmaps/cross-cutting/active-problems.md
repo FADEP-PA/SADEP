@@ -1,6 +1,6 @@
 # Problemas Ativos Transversais
 
-> Ultima atualizacao: 2026-06-29 (BE-HOMOLOG-01 e FE-CESAD-READ-01 — verificacao e fechamento).
+> Ultima atualizacao: 2026-06-29 (BE-CONTRACT-CESAD-ASSIGN-01 e scaffolds — fechamento de todas as tasks abertas).
 > O indice de compatibilidade legado foi movido para [`docs/archive/roadmaps-legados/problemas-atuais-do-projeto.md`](../../../archive/roadmaps-legados/problemas-atuais-do-projeto.md).
 
 ## Seguranca
@@ -17,7 +17,7 @@
 - `FE-CHEFIA-02` — **encerrado** (2026-06-29). Supervisor carrega lista real de processos via API ao montar workspace; fallback demonstrativo removido; `DASHBOARD_ROWS` substituido por dados reais mapeados de `ProcessListItemRef`.
 - `FE-CESAD-01` — **encerrado** (2026-06-29). Editor de parecer CESAD integrado (`CesadStageOpinionEditor`); API calls para draft e complete adicionadas; workspace auto-seleciona o primeiro processo `EM_ANALISE_CESAD` da lista. Leitura consolidada existente preservada como fallback quando parecer ja esta concluido.
 - `FE-TEST-01` — **encerrado** (2026-06-29). 79 testes em 9 arquivos (01A–01I). Recortes finais: LoginPage (01G), getProcessList/getCesadStageOpinion/saveDraft/complete em processes-service (01H), CesadStageOpinionEditor (01I). Proxima expansao de qualidade via CI-GATES-01.
-- **Diretorios de feature com apenas `.gitkeep`** — `features/assinaturas-eletronicas/`, `features/auditoria-historico/`, `features/autoavaliacao/`, `features/avaliacoes/`, `features/cesad-comissao/`, `features/chefia-imediata/`, `features/documentos-oficiais/`, `features/notificacoes-ciencia/`, `features/painel-gerencial-cesad/`, `features/processo-workflow/` e `features/servidor-estagiario/` sao scaffolds sem implementacao. Qualquer trabalho nesses modulos requer contrato backend correspondente.
+- **Scaffolds** — **encerrado** (2026-06-29, verificado). Nenhum `.gitkeep` remanescente; todas as rotas autenticadas (`servidor-estagiario`, `chefia-imediata`, `cesad-comissao`, `homologacao-autoridade`, `admin`, `perfil`, `processos`) possuem `page.tsx` com componentes reais ou paginas de acesso restrito.
 
 ## Sessao / auth
 
@@ -31,6 +31,7 @@ Sem pendencia estrutural ativa nesta categoria apos o recorte `BE-ARCH-02`. Novo
 
 - `BE-HOMOLOG-01` — **encerrado** (2026-06-29, verificado). `HomologationService` + `HomologationController` implementados com endpoints `/approve`, `/return-for-regularization`, `/notify`, `/acknowledge`; `HomologationRecord` no schema; documentos gerados por fase; 17 testes em `homologation.service.spec.ts`. Bloco recursal (`ENCERRADO`, recurso por etapa) sem implementacao — task propria quando necessario.
 - `FE-CESAD-READ-01` — **encerrado** (2026-06-29). Leitura consolidada operacional; pendencias registradas no doc foram resolvidas por `FE-CESAD-01` e `FE-PROCESS-LIST-01`. Parecer conclusivo final aguarda frontend separado apos evolucao de `BE-HOMOLOG-01`.
+- `BE-CONTRACT-CESAD-ASSIGN-01` — **encerrado** (2026-06-29) sem implementacao. Criterio condicional (consumo frontend de `CesadStageAssignmentStatus`) nao foi atingido. Supersessao ja tratada por `SUPERSEDE_CESAD_STAGE_ASSIGNMENT`.
 
 ## DX / infra
 

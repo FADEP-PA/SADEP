@@ -2,7 +2,7 @@
 
 ## Status
 
-Condicional / futura.
+**Encerrado** (2026-06-29) — critério de aceite nunca atingido e tarefa descontinuada. Nenhum endpoint publico nem consumo frontend exige `CesadStageAssignmentStatus` em `@sadep/contracts`. A supersessao de assignment CESAD ja e tratada pela action `SUPERSEDE_CESAD_STAGE_ASSIGNMENT` sem expor o status interno. Caso surja demanda real, abrir task propria.
 
 ## Area
 
@@ -41,4 +41,4 @@ No recorte atual, o frontend nao consome diretamente o status da assignment. Por
 
 ## Proxima acao
 
-Manter como alerta condicional. Nao implementar enquanto o status de assignment nao for parte de contrato publico ou consumo frontend real.
+Nenhuma. Task encerrada sem implementacao — critério condicional nao foi atingido.
