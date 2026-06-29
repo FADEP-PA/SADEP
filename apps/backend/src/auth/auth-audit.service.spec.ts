@@ -1,12 +1,11 @@
 import { AuthAuditEventType } from '@prisma/client';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { AuthAuditService } from './auth-audit.service';
 
 function makePrismaMock() {
   return {
     authAuditEvent: {
-      create: vi.fn().mockResolvedValue({}),
+      create: jest.fn().mockResolvedValue({}),
     },
   };
 }

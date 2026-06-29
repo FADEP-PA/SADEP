@@ -9,6 +9,7 @@ import { AppLogger } from '../common/logging/app-logger.service';
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { RefreshTokenService } from './refresh-token.service';
+import { AuthAuditService } from './auth-audit.service';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
@@ -64,6 +65,7 @@ describe('AuthService', () => {
       new RefreshTokenService(appConfigService),
       logger as unknown as AppLogger,
       jwtService,
+      { persistAsync: jest.fn() } as unknown as AuthAuditService,
     );
   });
 
