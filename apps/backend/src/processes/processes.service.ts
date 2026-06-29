@@ -109,6 +109,45 @@ export class ProcessesService {
     private readonly stageClosureGuardService: StageClosureGuardService,
   ) {}
 
+  async listForUser(user: AuthenticatedUser) {
+    const where: Prisma.EvaluationProcessWhereInput =
+      user.role === UserRole.INTERN_SERVER
+        ? { evaluatedUserId: user.sub }
+        : user.role === UserRole.IMMEDIATE_SUPERVISOR
+          ? { stages: { some: { responsibleSupervisorUserId: user.sub } } }
+          : {};
+
+    const processes = await this.prismaService.evaluationProcess.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        evaluatedUser: { select: { name: true, email: true } },
+        stages: {
+          where: { startedAt: { not: null }, endedAt: null },
+          orderBy: { sequence: 'asc' },
+          take: 1,
+          include: { responsibleSupervisor: { select: { name: true } } },
+        },
+      },
+    });
+
+    return {
+      items: processes.map((p) => {
+        const activeStage = p.stages[0];
+        return {
+          id: p.id,
+          status: toContractProcessStatus(p.status),
+          evaluatedUserName: p.evaluatedUser.name,
+          evaluatedUserEmail: p.evaluatedUser.email,
+          currentStageSequence: activeStage?.sequence ?? 1,
+          responsibleSupervisorName: activeStage?.responsibleSupervisor?.name ?? null,
+          createdAt: p.createdAt.toISOString(),
+        };
+      }),
+      total: processes.length,
+    };
+  }
+
   async getWorkflow(processId: string, user: AuthenticatedUser): Promise<WorkflowResponseDto> {
     const process = await this.ensureUserHasProcessAccess(this.prismaService, processId, user);
 

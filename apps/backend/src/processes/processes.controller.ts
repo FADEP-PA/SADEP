@@ -25,6 +25,15 @@ export class ProcessesController {
     private readonly internWorkspaceService: InternWorkspaceService,
   ) {}
 
+  @Get()
+  async listProcesses(@CurrentUser() user?: AuthenticatedUser) {
+    if (!user) {
+      throw new UnauthorizedException('Authenticated user not found');
+    }
+
+    return this.processesService.listForUser(user);
+  }
+
   @Get(':id/intern-workspace')
   async getInternWorkspace(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
     if (!user) {
