@@ -19,6 +19,7 @@ import { RolesGuard } from './guards/roles.guard';
         signOptions: { expiresIn: config.accessTokenTtlSeconds },
       }),
       inject: [AppConfigService],
+      extraProviders: [AppConfigService],
     }),
   ],
   controllers: [AuthController],
