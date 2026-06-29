@@ -1,12 +1,12 @@
 # Backend — Painel Ativo
 
-> Ultima atualizacao: 2026-06-24 (BE-CESAD-FINAL-01C — atualizacao documental pos-aprovacao).
+> Ultima atualizacao: 2026-06-29 (BE-HOMOLOG-01 — homologacao, notificacao e ciencia concluidos).
 > Os arquivos de task ja resolvidos foram movidos para [`../../../../docs/archive/backend/tasks/`](../../../archive/backend/tasks/).
 > Os indices de compatibilidade legados foram movidos para [`../../../../docs/archive/roadmaps-legados/`](../../../archive/roadmaps-legados/).
 
 ## Proxima prioridade imediata
 
-**`BE-HOMOLOG-01`** — Modelar fluxo de homologacao, notificacao e ciencia. A `BE-CESAD-FINAL-01C` concluiu a ponte formal `SEND_TO_HOMOLOGATION`; a proxima pendencia e implementar o fluxo de decisao da autoridade homologadora, notificacao do servidor e ciencia.
+**`BE-SEC-03`** — Estender autorizacao contextual CESAD aos novos endpoints de homologacao. A `BE-HOMOLOG-01` implementou o fluxo completo; o proximo passo e revisar se os endpoints de homologacao precisam de camada de autorizacao contextual adicional alem dos guards de role ja presentes.
 
 ---
 
@@ -51,6 +51,18 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Quand
 - **Escopo entregue:** entidade funcional `CesadFinalOpinion`, enum/status `CesadFinalOpinionStatus`, relacoes com `EvaluationProcess` e autor `User`, unicidade funcional por processo, `consolidatedSnapshot`, contracts/refs minimos, actions e audit events do parecer final.
 - **Endpoints implementados:** `GET /processes/:id/cesad-final-opinion/eligibility`, `GET /processes/:id/cesad-final-opinion`, `POST /processes/:id/cesad-final-opinion/start`, `PUT /processes/:id/cesad-final-opinion/draft`, `POST /processes/:id/cesad-final-opinion/complete`.
 - **Continuidade:** a camada documental e de assinatura colegiada final foi concluida posteriormente em `BE-CESAD-FINAL-01B`; `SEND_TO_HOMOLOGATION`, homologacao, notificacao, ciencia, recursos e frontend permanecem fora do recorte.
+
+### BE-HOMOLOG-01 — Homologacao, notificacao e ciencia do resultado
+
+- **Status operacional:** concluida / aprovada.
+- **Commits funcionais:** `47d3e8a`, `b41a340`, `94ea40f`, `bc3a5b5`.
+- **Escopo entregue:** modelo `HomologationRecord` com migration `20260629000000_add_homologation_record`; tipos contracts `HomologationStatusRef`, `ApproveHomologationRequest` e `NotifyResultRequest`; `HomologationService` com fluxo completo; `HomologationController` registrado em `ProcessesModule`.
+- **Endpoints implementados:** `GET /processes/:id/homologation`, `POST approve`, `POST return-for-regularization`, `POST notify`, `POST acknowledge`.
+- **Transicoes de status:** `PARECER_EMITIDO` → `HOMOLOGADO` (approve) → `NOTIFICADO` (notify) → `CIENTE` (acknowledge); `PARECER_EMITIDO` → `EM_AVALIACAO` (return-for-regularization).
+- **Guardas implementadas:** HOMOLOGATION_AUTHORITY/ADMIN para approve, notify e return; only evaluated server para acknowledge; CESAD final opinion sentToHomologationAt != null antes de approve; idempotencia por ConflictException em todos os passos.
+- **Documentos criados:** HOMOLOGATION_RECORD, RESULT_NOTIFICATION e ACKNOWLEDGEMENT_RECORD como ProcessDocument CONSOLIDATED.
+- **Auditoria:** RESULT_HOMOLOGATED, ADJUSTMENT_REQUESTED, NOTIFICATION_SENT e ACKNOWLEDGEMENT_RECORDED registrados.
+- **Testes:** 12 testes unitarios cobrindo casos felizes e todas as guardas; jest.config.js atualizado com homologation/ no testMatch.
 
 ### BE-CESAD-FINAL-01C — Envio formal a homologacao
 
@@ -127,8 +139,7 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Quand
 
 ## Pendentes relevantes
 
-- [`BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD](./tasks/BE-SEC-03-cesad-contextual-authorization.md): permanece ativo apenas como guarda-chuva estrutural para integracoes futuras com parecer conclusivo final, homologacao/notificacao/ciencia e documentos posteriores.
-- **[PRIORIDADE ALTA]** [`BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia](./tasks/BE-HOMOLOG-01-homologation-notification-acknowledgement.md): pendente; a ponte formal `SEND_TO_HOMOLOGATION` foi concluida em `BE-CESAD-FINAL-01C`; esta task deve modelar a decisao da autoridade homologadora, notificacao do servidor e ciencia.
+- **[PRIORIDADE ALTA]** [`BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD](./tasks/BE-SEC-03-cesad-contextual-authorization.md): estender autorizacao contextual CESAD aos endpoints de homologacao quando necessario; revisar se guards de role actuais sao suficientes.
 - [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`.
 - [`BE-CONTRACT-CESAD-ASSIGN-01` — expor status de assignment CESAD em contracts](./tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md): condicional/futura; so deve ser executada se API publica ou frontend passarem a consumir diretamente o status de `CesadStageAssignment`.
 

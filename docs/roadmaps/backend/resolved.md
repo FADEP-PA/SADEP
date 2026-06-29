@@ -4,6 +4,32 @@ Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker 
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## BE-HOMOLOG-01 — Homologacao, notificacao e ciencia do resultado
+
+- **Status documental:** concluida / aprovada.
+- **Commits funcionais:** `47d3e8a feat(backend): adiciona modelo HomologationRecord ao schema`, `b41a340 feat(contracts): adiciona tipos HomologationStatusRef e requests de homologacao`, `94ea40f feat(backend): implementa HomologationService e controller com fluxo completo`, `bc3a5b5 test(backend): adiciona testes unitarios para HomologationService`.
+- Adicionou modelo Prisma `HomologationRecord` com `processId`, `homologatedAt`, `homologatedByUserId`, `homologationRemarks`, `notifiedAt`, `notifiedByUserId`, `acknowledgedAt` e relacoes com `EvaluationProcess`, `User (HomologatedBy)` e `User (NotifiedBy)`.
+- Criou migration `20260629000000_add_homologation_record` com tabela, unique index e foreign keys.
+- Adicionou tipos contracts `HomologationStatusRef`, `ApproveHomologationRequest` e `NotifyResultRequest` em `packages/contracts/src/types/homologation.ts`.
+- Criou `HomologationService` com metodos `getStatus`, `approve`, `returnForRegularization`, `notify` e `acknowledge`.
+- Criou `HomologationController` com endpoints:
+  - `GET /processes/:id/homologation` — le status da homologacao;
+  - `POST /processes/:id/homologation/approve` — autoridade homologa; transicao PARECER_EMITIDO → HOMOLOGADO;
+  - `POST /processes/:id/homologation/return-for-regularization` — autoridade devolve; transicao PARECER_EMITIDO → EM_AVALIACAO;
+  - `POST /processes/:id/homologation/notify` — autoridade notifica; transicao HOMOLOGADO → NOTIFICADO;
+  - `POST /processes/:id/homologation/acknowledge` — servidor avaliado registra ciencia; transicao NOTIFICADO → CIENTE.
+- Registrou `HomologationController` e `HomologationService` em `ProcessesModule`.
+- Guardas de approve: role HOMOLOGATION_AUTHORITY/ADMIN, status PARECER_EMITIDO, CesadFinalOpinion.sentToHomologationAt != null, sem HomologationRecord preexistente.
+- Guardas de notify: role HOMOLOGATION_AUTHORITY/ADMIN, status HOMOLOGADO, HomologationRecord existente e notifiedAt === null.
+- Guardas de acknowledge: user.sub === process.evaluatedUserId, status NOTIFICADO, HomologationRecord existente e acknowledgedAt === null.
+- Guardas de return: role HOMOLOGATION_AUTHORITY/ADMIN, status PARECER_EMITIDO, sem HomologationRecord preexistente.
+- Cada etapa cria ProcessDocument correspondente (HOMOLOGATION_RECORD, RESULT_NOTIFICATION, ACKNOWLEDGEMENT_RECORD) com status CONSOLIDATED.
+- Auditoria registrada: RESULT_HOMOLOGATED, ADJUSTMENT_REQUESTED, NOTIFICATION_SENT e ACKNOWLEDGEMENT_RECORDED.
+- 12 testes unitarios cobrindo todos os metodos com casos felizes e guardas de erro.
+- Atualizou `jest.config.js` para incluir `src/processes/homologation/**/*.spec.ts` no testMatch.
+- Validacoes aprovadas: `npm run build --workspace @sadep/contracts`, `npx prisma generate`, `npm run typecheck --workspace @sadep/backend`, `npm run test:unit --workspace @sadep/backend` com 70 testes passando.
+- Fora do recorte preservado: CESAD contextual authorization para endpoints de homologacao (BE-SEC-03), frontend, portaria/publicacao, geracao de PDF, versionamento documental amplo, encerramento formal (ENCERRADO) e recursos.
+
 ## BE-FLOW-4STAGE-01A — Materializar quatro etapas e corrigir resolucao de etapa atual
 
 - **Status documental:** concluida / auditada / aprovada com ressalvas.
