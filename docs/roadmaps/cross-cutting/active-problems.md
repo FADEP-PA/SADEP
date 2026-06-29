@@ -5,7 +5,7 @@
 
 ## Seguranca
 
-- `BE-SEC-03` — autorizacao contextual CESAD por processo; o risco critico imediato foi reduzido substancialmente. `BE-CESAD-AUTH-01` aplicou politica contextual aos endpoints sensiveis atuais, `BE-CESAD-AUTH-02` criou `CesadStageAssignment` como vinculo persistido comissao-processo-etapa, `BE-CESAD-ASSIGN-REPLACE-01` implementou reatribuicao/supersessao formal em recorte seguro, e `BE-DOC-CESAD-SIGN-01` concluiu a assinatura colegiada do parecer CESAD de etapa. O guarda-chuva permanece ativo apenas por lacunas futuras de workflow completo, parecer conclusivo final, homologacao/notificacao/ciencia, documentos posteriores e demais integracoes estruturais.
+- `BE-SEC-03` — **encerrado** (2026-06-29). Revisao confirmou que os endpoints de homologacao nao requerem autorizacao CESAD contextual; guards de role sao suficientes. Todas as fatias executivas anteriores cobriram os pontos criticos. Novas integracoes futuras devem nascer como tasks proprias.
 - [`SEC-HARD-01` — hardening adicional de seguranca HTTP, rate limit e CSRF](./tasks/SEC-HARD-01-http-rate-limit-csrf.md): melhoria futura separada de `BE-ARCH-01E5`.
 - [`SEC-LOG-PII-01` — reduzir PII e ruido em logs](./tasks/SEC-LOG-PII-01-auth-logs-pii-noise.md): subtarefa de hardening para revisar e-mails em logs de auth e stacks/mensagens de erros esperados no filtro global.
 - `BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao; task backend futura, separada de `BE-ARCH-01F`.

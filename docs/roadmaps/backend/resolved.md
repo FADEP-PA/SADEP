@@ -4,6 +4,17 @@ Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker 
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
+## BE-SEC-03 — Guarda-chuva residual de autorizacao contextual CESAD
+
+- **Status documental:** encerrado / revisado / aprovado.
+- **Revisao em:** 2026-06-29.
+- Revisao confirmou que os endpoints de homologacao (`approve`, `return-for-regularization`, `notify`, `acknowledge`, `getStatus`) nao requerem autorizacao contextual CESAD.
+- Os atores do fluxo de homologacao sao `HOMOLOGATION_AUTHORITY`, `ADMIN` e o servidor avaliado (`evaluatedUserId`) — nenhum deles e `CESAD_MEMBER`, portanto o `CesadContextAuthorizationService` nao se aplica.
+- Guards de role implementados em `HomologationService` sao suficientes para proteger todos os endpoints do fluxo.
+- As quatro fatias executivas anteriores (`BE-CESAD-AUTH-01`, `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01`, `BE-DOC-CESAD-SIGN-01`) cobriram todos os pontos criticos de autorizacao CESAD contextual do sistema.
+- Nenhum codigo foi alterado — a revisao confirmou que a implementacao existente ja esta correta.
+- Guarda-chuva encerrado formalmente; novas integracoes futuras devem nascer como tasks proprias.
+
 ## BE-HOMOLOG-01 — Homologacao, notificacao e ciencia do resultado
 
 - **Status documental:** concluida / aprovada.

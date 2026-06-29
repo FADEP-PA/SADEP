@@ -1,12 +1,12 @@
 # Backend — Painel Ativo
 
-> Ultima atualizacao: 2026-06-29 (BE-HOMOLOG-01 — homologacao, notificacao e ciencia concluidos).
+> Ultima atualizacao: 2026-06-29 (BE-SEC-03 — revisado e encerrado como guarda-chuva; homologacao nao requer autorizacao CESAD contextual).
 > Os arquivos de task ja resolvidos foram movidos para [`../../../../docs/archive/backend/tasks/`](../../../archive/backend/tasks/).
 > Os indices de compatibilidade legados foram movidos para [`../../../../docs/archive/roadmaps-legados/`](../../../archive/roadmaps-legados/).
 
 ## Proxima prioridade imediata
 
-**`BE-SEC-03`** — Estender autorizacao contextual CESAD aos novos endpoints de homologacao. A `BE-HOMOLOG-01` implementou o fluxo completo; o proximo passo e revisar se os endpoints de homologacao precisam de camada de autorizacao contextual adicional alem dos guards de role ja presentes.
+**`NOM-AEP-COOKIE-01`** — Renomear o cookie de refresh de `aep_pa_refresh` para nome SADEP. Task pequena e independente, sem dependencias de backend ou frontend.
 
 ---
 
@@ -139,7 +139,8 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Quand
 
 ## Pendentes relevantes
 
-- **[PRIORIDADE ALTA]** [`BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD](./tasks/BE-SEC-03-cesad-contextual-authorization.md): estender autorizacao contextual CESAD aos endpoints de homologacao quando necessario; revisar se guards de role actuais sao suficientes.
+- [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`.
+- [`BE-CONTRACT-CESAD-ASSIGN-01` — expor status de assignment CESAD em contracts](./tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md): condicional/futura.
 - [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`.
 - [`BE-CONTRACT-CESAD-ASSIGN-01` — expor status de assignment CESAD em contracts](./tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md): condicional/futura; so deve ser executada se API publica ou frontend passarem a consumir diretamente o status de `CesadStageAssignment`.
 
