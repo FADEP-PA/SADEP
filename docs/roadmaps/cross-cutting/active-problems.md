@@ -7,7 +7,7 @@
 
 - `BE-SEC-03` — **encerrado** (2026-06-29). Revisao confirmou que os endpoints de homologacao nao requerem autorizacao CESAD contextual; guards de role sao suficientes. Todas as fatias executivas anteriores cobriram os pontos criticos. Novas integracoes futuras devem nascer como tasks proprias.
 - [`SEC-HARD-01` — hardening adicional de seguranca HTTP, rate limit e CSRF](./tasks/SEC-HARD-01-http-rate-limit-csrf.md): melhoria futura separada de `BE-ARCH-01E5`.
-- [`SEC-LOG-PII-01` — reduzir PII e ruido em logs](./tasks/SEC-LOG-PII-01-auth-logs-pii-noise.md): subtarefa de hardening para revisar e-mails em logs de auth e stacks/mensagens de erros esperados no filtro global.
+- `SEC-LOG-PII-01` — **encerrado** (2026-06-29). E-mails ja mascarados via `maskEmail()` em `auth.service.ts`; `GlobalExceptionFilter` corrigido para logar 5xx como `error` com stack, 401/403 como `debug` e demais 4xx como `warn` sem stack.
 - `BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao; task backend futura, separada de `BE-ARCH-01F`.
 
 ## Frontend / integracao

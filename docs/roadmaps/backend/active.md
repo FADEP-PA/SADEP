@@ -6,7 +6,7 @@
 
 ## Proxima prioridade imediata
 
-**`SEC-LOG-PII-01`** — Remover PII (e-mails) e ruido dos logs de autenticacao. Task pequena e independente.
+**`SEC-HARD-01`** — Hardening adicional de seguranca HTTP: rate limiting refinado e protecao CSRF.
 
 ---
 

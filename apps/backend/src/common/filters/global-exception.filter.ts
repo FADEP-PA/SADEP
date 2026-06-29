@@ -23,9 +23,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   constructor(private readonly logger: AppLogger) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
-    const context = host.switchToHttp();
-    const response = context.getResponse<HttpResponseLike>();
-    const request = context.getRequest<HttpRequestLike>();
+    const httpContext = host.switchToHttp();
+    const response = httpContext.getResponse<HttpResponseLike>();
+    const request = httpContext.getRequest<HttpRequestLike>();
 
     const isHttpException = exception instanceof HttpException;
     const status = isHttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
@@ -41,11 +41,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const message =
       normalizedResponse?.message ?? (isHttpException ? exception.message : 'Internal server error');
 
-    this.logger.error(
-      Array.isArray(message) ? message.join(' | ') : message,
-      exception instanceof Error ? exception.stack : undefined,
-      `${request.method ?? 'UNKNOWN'} ${request.url}`,
-    );
+    const context = `${request.method ?? 'UNKNOWN'} ${request.url}`;
+    const flatMessage = Array.isArray(message) ? message.join(' | ') : message;
+
+    if (status >= 500) {
+      this.logger.error(flatMessage, exception instanceof Error ? exception.stack : undefined, context);
+    } else if (status === 401 || status === 403) {
+      this.logger.debug(`[${status}] ${flatMessage}`, context);
+    } else {
+      this.logger.warn(`[${status}] ${flatMessage}`, context);
+    }
 
     response.status(status).json({
       statusCode: status,
