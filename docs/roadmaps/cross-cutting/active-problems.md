@@ -1,6 +1,6 @@
 # Problemas Ativos Transversais
 
-> Ultima atualizacao: 2026-06-24 (BE-CESAD-FINAL-01C — reconciliacao documental pos-implementacao).
+> Ultima atualizacao: 2026-06-29 (BE-HOMOLOG-01 e FE-CESAD-READ-01 — verificacao e fechamento).
 > O indice de compatibilidade legado foi movido para [`docs/archive/roadmaps-legados/problemas-atuais-do-projeto.md`](../../../archive/roadmaps-legados/problemas-atuais-do-projeto.md).
 
 ## Seguranca
@@ -29,7 +29,8 @@ Observacao: a estrategia de producao com refresh/revogacao foi tratada increment
 
 Sem pendencia estrutural ativa nesta categoria apos o recorte `BE-ARCH-02`. Novos contratos funcionais devem nascer como tasks proprias.
 
-O proximo bloco de implementacao backend prioritario e `BE-HOMOLOG-01` (homologacao, notificacao e ciencia). `BE-CESAD-FINAL-01C` concluiu a ponte formal `SEND_TO_HOMOLOGATION` com o commit `a0e5b2d`.
+- `BE-HOMOLOG-01` — **encerrado** (2026-06-29, verificado). `HomologationService` + `HomologationController` implementados com endpoints `/approve`, `/return-for-regularization`, `/notify`, `/acknowledge`; `HomologationRecord` no schema; documentos gerados por fase; 17 testes em `homologation.service.spec.ts`. Bloco recursal (`ENCERRADO`, recurso por etapa) sem implementacao — task propria quando necessario.
+- `FE-CESAD-READ-01` — **encerrado** (2026-06-29). Leitura consolidada operacional; pendencias registradas no doc foram resolvidas por `FE-CESAD-01` e `FE-PROCESS-LIST-01`. Parecer conclusivo final aguarda frontend separado apos evolucao de `BE-HOMOLOG-01`.
 
 ## DX / infra
 
