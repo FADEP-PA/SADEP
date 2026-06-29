@@ -6,6 +6,7 @@ module.exports = {
     '<rootDir>/src/application/**/*.spec.ts',
     '<rootDir>/src/auth/auth.service.spec.ts',
     '<rootDir>/src/config/**/*.spec.ts',
+    '<rootDir>/src/processes/homologation/**/*.spec.ts',
     '<rootDir>/src/processes/intern-workspace/**/*.spec.ts',
     '<rootDir>/src/processes/supervisor-evaluations/**/*.spec.ts',
   ],
