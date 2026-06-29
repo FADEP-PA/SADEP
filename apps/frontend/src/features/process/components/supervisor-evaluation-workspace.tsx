@@ -3,12 +3,14 @@
 import {
   ProcessStatus,
   UserRole,
+  type ProcessListItemRef,
   type SupervisorEvaluationWithDocumentContextRef,
 } from '@sadep/contracts';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import {
+  getProcessList,
   getSupervisorEvaluationWorkspaceSnapshot,
   rectifySupervisorEvaluation,
   saveSupervisorEvaluationDraft,
@@ -35,82 +37,27 @@ const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
 
 type OperationMode = 'draft' | 'submit';
 
-const PREVIOUS_EVALUATION_HISTORY: Record<string, PreviousEvaluationItem[]> = {
-  'SUP-001': [
-    { stageLabel: '1ª etapa', conclusionDate: '15/02/2024', statusLabel: 'Concluída', actionLabel: 'Visualizar PDF' },
-    { stageLabel: '2ª etapa', conclusionDate: '20/08/2024', statusLabel: 'Concluída', actionLabel: 'Visualizar PDF' },
-    { stageLabel: '3ª etapa', conclusionDate: '10/02/2025', statusLabel: 'Concluída', actionLabel: 'Visualizar PDF' },
-  ],
-  'SUP-002': [
-    { stageLabel: '2ª etapa', conclusionDate: '21/04/2024', statusLabel: 'Concluída', actionLabel: 'Visualizar PDF' },
-    { stageLabel: '3ª etapa', conclusionDate: '09/09/2024', statusLabel: 'Concluída', actionLabel: 'Visualizar PDF' },
-  ],
-};
-
-const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
-  {
-    id: 'SUP-001',
-    serverName: 'João da Silva',
-    registration: '459134-1',
-    role: 'Professor Nivel II',
-    exerciseStart: '10/02/2022',
-    status: 'EM_AVALIACAO',
-    stageLabel: '3ª etapa',
-    deadline: '15/10/2024',
-    canReviewPrevious: true,
-    actionLabel: 'Avaliar',
-    supervisorName: 'Maria Oliveira',
-    supervisorRole: 'Diretora',
-    trackingPeriod: 'JAN/2024 a JUN/2024',
-  },
-  {
-    id: 'SUP-002',
-    serverName: 'Maria Santos',
-    registration: '857358-2',
-    role: 'Professor Nivel II',
-    exerciseStart: '15/05/2021',
-    status: 'EM_AVALIACAO',
-    stageLabel: '4ª etapa',
-    deadline: '20/11/2024',
-    canReviewPrevious: true,
-    actionLabel: 'Avaliar',
-    supervisorName: 'Maria Oliveira',
-    supervisorRole: 'Diretora',
-    trackingPeriod: 'JUL/2024 a DEZ/2024',
-  },
-  {
-    id: 'SUP-003',
-    serverName: 'Carlos Lima',
-    registration: '631842-1',
-    role: 'Analista',
-    exerciseStart: '01/03/2020',
-    status: 'CONCLUIDO',
-    stageLabel: 'Todas concluidas',
+function fromApiItem(item: ProcessListItemRef): SupervisorDashboardRow {
+  const dashboardStatus = toDashboardStatus(item.status as ProcessStatus);
+  const isActive = dashboardStatus === 'EM_AVALIACAO' || dashboardStatus === 'AGUARDANDO_ASSINATURA';
+  return {
+    id: item.id,
+    serverName: item.evaluatedUserName,
+    registration: item.evaluatedUserEmail,
+    role: 'Servidor em avaliação',
+    exerciseStart: new Date(item.createdAt).toLocaleDateString('pt-BR'),
+    status: dashboardStatus,
+    stageLabel: `${item.currentStageSequence}ª etapa`,
     deadline: '-',
-    canReviewPrevious: true,
-    actionLabel: 'Visualizar',
-    actionDisabled: true,
-    supervisorName: 'Paulo Cardoso',
-    supervisorRole: 'Coordenador',
-    trackingPeriod: 'JAN/2024 a JUN/2024',
-  },
-  {
-    id: 'SUP-004',
-    serverName: 'Ana Pereira',
-    registration: '274916-2',
-    role: 'Professor',
-    exerciseStart: '12/08/2021',
-    status: 'EM_ANALISE_CESAD',
-    stageLabel: '4ª etapa',
-    deadline: '05/09/2024',
     canReviewPrevious: false,
-    actionLabel: 'Visualizar',
-    actionDisabled: true,
-    supervisorName: 'Maria Oliveira',
-    supervisorRole: 'Diretora',
-    trackingPeriod: 'JUL/2024 a DEZ/2024',
-  },
-];
+    actionLabel: isActive ? 'Avaliar' : 'Visualizar',
+    actionDisabled: !isActive,
+    supervisorName: item.responsibleSupervisorName ?? 'Chefia imediata',
+    supervisorRole: 'Chefia imediata',
+    trackingPeriod: 'Período institucional',
+    source: 'real',
+  };
+}
 
 const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: string; label: string }> }> = [
   {
@@ -285,6 +232,8 @@ export function SupervisorEvaluationWorkspace() {
   const [activeEvaluation, setActiveEvaluation] = useState<EvaluationDraft | null>(null);
   const [previousReviewRow, setPreviousReviewRow] = useState<SupervisorDashboardRow | null>(null);
   const [workspaceSnapshot, setWorkspaceSnapshot] = useState<SupervisorEvaluationWorkspaceSnapshot | null>(null);
+  const [apiRows, setApiRows] = useState<SupervisorDashboardRow[] | null>(null);
+  const [isLoadingList, setIsLoadingList] = useState(false);
   const [processIdInput, setProcessIdInput] = useState('');
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
@@ -295,17 +244,28 @@ export function SupervisorEvaluationWorkspace() {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!session) return;
+    setIsLoadingList(true);
+    getProcessList()
+      .then((result) => setApiRows(result.items.map(fromApiItem)))
+      .catch(() => setApiRows([]))
+      .finally(() => setIsLoadingList(false));
+  }, [session]);
+
+  const baseRows = apiRows ?? [];
   const dashboardRows = useMemo(
-    () => (workspaceSnapshot ? [createRealDashboardRow(workspaceSnapshot), ...DASHBOARD_ROWS] : DASHBOARD_ROWS),
-    [workspaceSnapshot],
+    () =>
+      workspaceSnapshot && !baseRows.some((r) => r.id === workspaceSnapshot.process.id)
+        ? [createRealDashboardRow(workspaceSnapshot), ...baseRows]
+        : baseRows,
+    [workspaceSnapshot, baseRows],
   );
   const filteredRows = useMemo(
     () => dashboardRows.filter((row) => selectedFilters.includes(row.status)),
     [dashboardRows, selectedFilters],
   );
-  const previousEvaluationHistory = previousReviewRow
-    ? PREVIOUS_EVALUATION_HISTORY[previousReviewRow.id] ?? []
-    : [];
+  const previousEvaluationHistory: PreviousEvaluationItem[] = [];
 
   async function loadSupervisorWorkspace(processId: string) {
     if (!session) return;
@@ -449,15 +409,19 @@ export function SupervisorEvaluationWorkspace() {
     !isRealEvaluation || Boolean(workspaceSnapshot?.canSubmit || workspaceSnapshot?.canRectify);
   const submitButtonLabel = workspaceSnapshot?.canRectify ? 'Retificar avaliação' : 'Enviar para assinatura';
   const isRealProcessLoaded = Boolean(workspaceSnapshot);
-  const workspaceMode = isRealProcessLoaded
-    ? {
-        label: 'Processo informado carregado',
-        detail: `Registro do processo ${workspaceSnapshot?.process.id} exibido junto aos dados demonstrativos preservados.`,
-      }
-    : {
-        label: 'Visualizacao demonstrativa',
-        detail: 'Dados ficticios e seguros permanecem disponiveis para apresentacao visual da jornada da chefia.',
-      };
+  const workspaceMode = isLoadingList
+    ? { label: 'Carregando lista de processos', detail: 'Consultando processos vinculados a esta chefia.' }
+    : apiRows !== null
+      ? {
+          label: `${apiRows.length} processo(s) encontrado(s)`,
+          detail: isRealProcessLoaded
+            ? `Workspace detalhado carregado para o processo ${workspaceSnapshot?.process.id}.`
+            : 'Lista real da chefia autenticada. Use o campo abaixo para carregar o workspace detalhado de um processo.',
+        }
+      : {
+          label: 'Identificador do processo',
+          detail: 'Informe o ID do processo para consultar o workspace real da chefia.',
+        };
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>

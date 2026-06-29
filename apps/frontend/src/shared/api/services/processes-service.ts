@@ -11,12 +11,15 @@ import {
   InternServerWorkspaceSnapshotRef,
   ProcessStatus,
   ProcessAction,
+  ProcessListRef,
   SupervisorEvaluationDocumentContextRef,
   SupervisorEvaluationContentInput,
   SupervisorEvaluationWithDocumentContextRef,
   SelfEvaluationWithDocumentContextRef,
   UserRole,
 } from '@sadep/contracts';
+
+export type { ProcessListRef };
 
 export type UpsertSupervisorEvaluationInput = {
   summary: string;
@@ -58,6 +61,13 @@ export type SupervisorEvaluationWorkspaceSnapshot = {
 const AUTHENTICATED_REQUEST = {
   useStoredAccessToken: true,
 } as const;
+
+export async function getProcessList() {
+  return httpRequest<ProcessListRef>('/processes', {
+    ...AUTHENTICATED_REQUEST,
+    method: 'GET',
+  });
+}
 
 export async function getWorkflow(processId: string) {
   return httpRequest<WorkflowResponse>(`/processes/${processId}/workflow`, {
