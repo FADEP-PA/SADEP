@@ -3,9 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearAccessToken, setAccessToken } from '@/shared/auth/access-token-store';
 import { ProcessAction } from '@sadep/contracts';
 import {
+  completeCesadStageOpinion,
+  getCesadStageOpinion,
   getInternWorkspaceSnapshot,
+  getProcessList,
   getWorkflow,
   getWorkflowHistory,
+  saveCesadStageOpinionDraft,
   transitionWorkflow,
 } from './processes-service';
 
@@ -96,6 +100,72 @@ describe('processes-service', () => {
         JSON.stringify({ action: ProcessAction.SEND_TO_CESAD, comment: 'Encaminhado' }),
       );
       expect(result).toMatchObject({ status: 'EM_AVALIACAO_CESAD' });
+    });
+  });
+
+  describe('getProcessList', () => {
+    it('faz GET /processes com Authorization Bearer e retorna items e total', async () => {
+      const payload = {
+        items: [{ id: PROCESS_ID, status: 'EM_AVALIACAO', evaluatedUserName: 'Joao' }],
+        total: 1,
+      };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await getProcessList();
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes`);
+      expect(init.method).toBe('GET');
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result.items).toHaveLength(1);
+      expect(result.total).toBe(1);
+    });
+  });
+
+  describe('getCesadStageOpinion', () => {
+    it('faz GET /processes/:id/stages/:seq/cesad-stage-opinion com Authorization Bearer', async () => {
+      const payload = { id: 'op-1', reportText: 'Relatorio', status: 'DRAFT' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await getCesadStageOpinion(PROCESS_ID, 2);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/stages/2/cesad-stage-opinion`);
+      expect(init.method).toBe('GET');
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result).toMatchObject({ id: 'op-1' });
+    });
+  });
+
+  describe('saveCesadStageOpinionDraft', () => {
+    it('faz PUT /processes/:id/stages/:seq/cesad-stage-opinion/draft com body serializado', async () => {
+      const body = { reportText: 'Rascunho', conclusion: 'Favoravel' };
+      const payload = { id: 'op-2', ...body, status: 'DRAFT' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await saveCesadStageOpinionDraft(PROCESS_ID, 2, body);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/stages/2/cesad-stage-opinion/draft`);
+      expect(init.method).toBe('PUT');
+      expect(init.body).toBe(JSON.stringify(body));
+      expect(result).toMatchObject({ id: 'op-2', status: 'DRAFT' });
+    });
+  });
+
+  describe('completeCesadStageOpinion', () => {
+    it('faz POST /processes/:id/stages/:seq/cesad-stage-opinion/complete com body serializado', async () => {
+      const body = { reportText: 'Relatorio final', conclusion: 'Desfavoravel' };
+      const payload = { id: 'op-3', ...body, status: 'COMPLETED' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await completeCesadStageOpinion(PROCESS_ID, 3, body);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/stages/3/cesad-stage-opinion/complete`);
+      expect(init.method).toBe('POST');
+      expect(init.body).toBe(JSON.stringify(body));
+      expect(result).toMatchObject({ id: 'op-3', status: 'COMPLETED' });
     });
   });
 });
