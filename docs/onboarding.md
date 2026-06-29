@@ -39,20 +39,21 @@ npm run frontend:start:dev
 ```
 
 URLs locais:
+
 - Frontend: `http://localhost:5000`
 - Backend: `http://localhost:3000`
 - Healthcheck: `http://localhost:3000/health`
 
 Credenciais de desenvolvimento (senha = valor de `DEV_SEED_PASSWORD`):
 
-| Perfil | E-mail |
-|---|---|
-| Admin | `admin@sadep.local` |
-| Chefia | `supervisor@sadep.local` |
-| CESAD | `cesad@sadep.local` |
-| Assistente da Comissão | `assistant@sadep.local` |
-| Autoridade Homologadora | `authority@sadep.local` |
-| Servidor | `server@sadep.local` |
+| Perfil                  | E-mail                   |
+| ----------------------- | ------------------------ |
+| Admin                   | `admin@sadep.local`      |
+| Chefia                  | `supervisor@sadep.local` |
+| CESAD                   | `cesad@sadep.local`      |
+| Assistente da Comissão  | `assistant@sadep.local`  |
+| Autoridade Homologadora | `authority@sadep.local`  |
+| Servidor                | `server@sadep.local`     |
 
 ---
 
@@ -70,14 +71,14 @@ Servidores públicos do Estado do Pará em estágio probatório passam por um pr
 
 ### Os atores do processo
 
-| Role | Quem é | O que faz |
-|---|---|---|
-| `INTERN_SERVER` | Servidor avaliado | Preenche autoavaliação, assina documentos, visualiza resultados |
-| `IMMEDIATE_SUPERVISOR` | Chefia imediata | Preenche avaliação, assina documentos da etapa |
-| `CESAD_MEMBER` | Membro da comissão CESAD | Elabora pareceres, assina documentos, analisa recursos |
-| `COMMISSION_ASSISTANT` | Assistente administrativo da CESAD | Leitura e apoio, sem escrita de parecer nem transição de workflow |
-| `HOMOLOGATION_AUTHORITY` | Autoridade homologadora | Decide sobre homologação, assina notificação |
-| `ADMIN` | Administrador do sistema | Acesso administrativo amplo, executa transições controladas |
+| Role                     | Quem é                             | O que faz                                                         |
+| ------------------------ | ---------------------------------- | ----------------------------------------------------------------- |
+| `INTERN_SERVER`          | Servidor avaliado                  | Preenche autoavaliação, assina documentos, visualiza resultados   |
+| `IMMEDIATE_SUPERVISOR`   | Chefia imediata                    | Preenche avaliação, assina documentos da etapa                    |
+| `CESAD_MEMBER`           | Membro da comissão CESAD           | Elabora pareceres, assina documentos, analisa recursos            |
+| `COMMISSION_ASSISTANT`   | Assistente administrativo da CESAD | Leitura e apoio, sem escrita de parecer nem transição de workflow |
+| `HOMOLOGATION_AUTHORITY` | Autoridade homologadora            | Decide sobre homologação, assina notificação                      |
+| `ADMIN`                  | Administrador do sistema           | Acesso administrativo amplo, executa transições controladas       |
 
 ### O ciclo de cada etapa
 
@@ -169,9 +170,11 @@ config/                   — Validação de variáveis de ambiente
 ```
 
 O arquivo mais importante para entender o workflow:
+
 - [`apps/backend/src/processes/workflow-catalog.ts`](../apps/backend/src/processes/workflow-catalog.ts) — define as 5 transições possíveis
 
 O schema do banco:
+
 - [`apps/backend/prisma/schema.prisma`](../apps/backend/prisma/schema.prisma) — todas as entidades
 
 ### Frontend (`apps/frontend/src/`)
@@ -206,20 +209,20 @@ Exporta enums e tipos TypeScript usados tanto pelo backend quanto pelo frontend:
 
 ## 5. As entidades de domínio principais
 
-| Entidade | Papel |
-|---|---|
-| `EvaluationProcess` | Processo administrativo único — tem status macro + 4 stages |
-| `ProcessStage` | Uma das 4 etapas — lifecycle por `startedAt`/`endedAt` |
-| `SupervisorEvaluation` | Avaliação da chefia por etapa (DRAFT → SUBMITTED) |
-| `SelfEvaluation` | Autoavaliação do servidor por etapa (DRAFT → SUBMITTED) |
-| `CesadStageOpinion` | Parecer CESAD de etapa (DRAFT → COMPLETED) |
-| `CesadFinalOpinion` | Parecer conclusivo final (DRAFT → COMPLETED → `sentToHomologationAt`) |
-| `CesadCommission` | Comissão CESAD com vigência e membros |
-| `CesadStageAssignment` | Vínculo persistido comissão–processo–etapa (criado no SEND_TO_CESAD) |
-| `ProcessDocument` | Documento processual formal (DRAFT → READY_FOR_SIGNATURE → SIGNED) |
-| `SignatureRecord` | Registro de assinatura individual (PENDING → COMPLETED) |
-| `AuditEvent` | Trilha de auditoria imutável de todos os atos relevantes |
-| `UserSession` | Sessão ativa com refresh token (HttpOnly cookie) |
+| Entidade               | Papel                                                                 |
+| ---------------------- | --------------------------------------------------------------------- |
+| `EvaluationProcess`    | Processo administrativo único — tem status macro + 4 stages           |
+| `ProcessStage`         | Uma das 4 etapas — lifecycle por `startedAt`/`endedAt`                |
+| `SupervisorEvaluation` | Avaliação da chefia por etapa (DRAFT → SUBMITTED)                     |
+| `SelfEvaluation`       | Autoavaliação do servidor por etapa (DRAFT → SUBMITTED)               |
+| `CesadStageOpinion`    | Parecer CESAD de etapa (DRAFT → COMPLETED)                            |
+| `CesadFinalOpinion`    | Parecer conclusivo final (DRAFT → COMPLETED → `sentToHomologationAt`) |
+| `CesadCommission`      | Comissão CESAD com vigência e membros                                 |
+| `CesadStageAssignment` | Vínculo persistido comissão–processo–etapa (criado no SEND_TO_CESAD)  |
+| `ProcessDocument`      | Documento processual formal (DRAFT → READY_FOR_SIGNATURE → SIGNED)    |
+| `SignatureRecord`      | Registro de assinatura individual (PENDING → COMPLETED)               |
+| `AuditEvent`           | Trilha de auditoria imutável de todos os atos relevantes              |
+| `UserSession`          | Sessão ativa com refresh token (HttpOnly cookie)                      |
 
 ### Lifecycle de etapa
 
@@ -250,11 +253,11 @@ Nunca há mais de uma etapa ativa simultaneamente. Etapas futuras não recebem d
 
 ### Backend — próximas prioridades
 
-| Task | Descrição |
-|---|---|
+| Task                | Descrição                                                        |
+| ------------------- | ---------------------------------------------------------------- |
 | **`BE-HOMOLOG-01`** | Fluxo de homologação, notificação e ciência — próxima prioridade |
-| `BE-AUDIT-AUTH-01` | Auditoria persistida de eventos de autenticação |
-| `SEC-HARD-01` | Rate limit + CSRF + hardening HTTP |
+| `BE-AUDIT-AUTH-01`  | Auditoria persistida de eventos de autenticação                  |
+| `SEC-HARD-01`       | Rate limit + CSRF + hardening HTTP                               |
 
 ### Frontend — o que existe
 
@@ -328,39 +331,39 @@ Se qualquer uma dessas validações falhar, o código não está pronto.
 
 ### Entender o domínio e o fluxo
 
-| O que você quer entender | Onde ler |
-|---|---|
+| O que você quer entender                  | Onde ler                                                                                    |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Fluxo das 4 etapas, recursos, homologação | [`docs/workflow/four-stage-flow-and-appeals.md`](./workflow/four-stage-flow-and-appeals.md) |
-| Documentos do processo, ciclo documental | [`docs/domain/document-modeling-catalog.md`](./domain/document-modeling-catalog.md) |
-| Instrumentos de avaliação (Anexos I–V) | [`docs/domain/evaluation-instruments.md`](./domain/evaluation-instruments.md) |
-| Semântica dos eventos de auditoria | [`docs/domain/audit-event-semantics.md`](./domain/audit-event-semantics.md) |
+| Documentos do processo, ciclo documental  | [`docs/domain/document-modeling-catalog.md`](./domain/document-modeling-catalog.md)         |
+| Instrumentos de avaliação (Anexos I–V)    | [`docs/domain/evaluation-instruments.md`](./domain/evaluation-instruments.md)               |
+| Semântica dos eventos de auditoria        | [`docs/domain/audit-event-semantics.md`](./domain/audit-event-semantics.md)                 |
 
 ### Decisões arquiteturais
 
-| Decisão | Onde ler |
-|---|---|
-| Por que workflow próprio (sem BPM externa) | [`docs/architecture/adr/adr-001-workflow-engine-strategy.md`](./architecture/adr/adr-001-workflow-engine-strategy.md) |
+| Decisão                                                | Onde ler                                                                                                                                    |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Por que workflow próprio (sem BPM externa)             | [`docs/architecture/adr/adr-001-workflow-engine-strategy.md`](./architecture/adr/adr-001-workflow-engine-strategy.md)                       |
 | Estratégia de sessão (refresh token + cookie HttpOnly) | [`docs/architecture/adr/adr-002-session-refresh-revocation-strategy.md`](./architecture/adr/adr-002-session-refresh-revocation-strategy.md) |
-| CesadStageAssignment (vínculo comissão–etapa) | [`docs/architecture/adr/adr-003-cesad-stage-assignment.md`](./architecture/adr/adr-003-cesad-stage-assignment.md) |
-| Progressão das 4 etapas | [`docs/architecture/adr/adr-004-four-stage-progression.md`](./architecture/adr/adr-004-four-stage-progression.md) |
-| Parecer conclusivo final (CesadFinalOpinion) | [`docs/architecture/adr/adr-005-final-cesad-opinion-modeling.md`](./architecture/adr/adr-005-final-cesad-opinion-modeling.md) |
+| CesadStageAssignment (vínculo comissão–etapa)          | [`docs/architecture/adr/adr-003-cesad-stage-assignment.md`](./architecture/adr/adr-003-cesad-stage-assignment.md)                           |
+| Progressão das 4 etapas                                | [`docs/architecture/adr/adr-004-four-stage-progression.md`](./architecture/adr/adr-004-four-stage-progression.md)                           |
+| Parecer conclusivo final (CesadFinalOpinion)           | [`docs/architecture/adr/adr-005-final-cesad-opinion-modeling.md`](./architecture/adr/adr-005-final-cesad-opinion-modeling.md)               |
 
 ### Estado atual do projeto
 
-| O que você quer saber | Onde ler |
-|---|---|
-| O que está implementado no backend | [`docs/roadmaps/backend/active.md`](./roadmaps/backend/active.md) |
-| Histórico do que foi implementado | [`docs/roadmaps/backend/resolved.md`](./roadmaps/backend/resolved.md) |
-| O que está implementado no frontend | [`docs/roadmaps/frontend/active.md`](./roadmaps/frontend/active.md) |
-| Problemas transversais ativos | [`docs/roadmaps/cross-cutting/active-problems.md`](./roadmaps/cross-cutting/active-problems.md) |
+| O que você quer saber               | Onde ler                                                                                        |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| O que está implementado no backend  | [`docs/roadmaps/backend/active.md`](./roadmaps/backend/active.md)                               |
+| Histórico do que foi implementado   | [`docs/roadmaps/backend/resolved.md`](./roadmaps/backend/resolved.md)                           |
+| O que está implementado no frontend | [`docs/roadmaps/frontend/active.md`](./roadmaps/frontend/active.md)                             |
+| Problemas transversais ativos       | [`docs/roadmaps/cross-cutting/active-problems.md`](./roadmaps/cross-cutting/active-problems.md) |
 
 ### Regras arquiteturais obrigatórias
 
-| Recurso | Onde ler |
-|---|---|
-| Regras gerais (leia antes de qualquer implementação) | [`AGENTS.md`](../AGENTS.md) |
-| Como usar a workflow-engine | [`docs/skills/workflow-engine-skill.md`](./skills/workflow-engine-skill.md) |
-| Como modelar documentos processuais | [`docs/skills/process-document-skill.md`](./skills/process-document-skill.md) |
+| Recurso                                              | Onde ler                                                                      |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Regras gerais (leia antes de qualquer implementação) | [`AGENTS.md`](../AGENTS.md)                                                   |
+| Como usar a workflow-engine                          | [`docs/skills/workflow-engine-skill.md`](./skills/workflow-engine-skill.md)   |
+| Como modelar documentos processuais                  | [`docs/skills/process-document-skill.md`](./skills/process-document-skill.md) |
 
 ---
 

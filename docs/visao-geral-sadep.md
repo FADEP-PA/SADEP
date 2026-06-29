@@ -1,7 +1,9 @@
 # SADEP — Guia Conceitual e Visão Geral do Sistema
 
 **Status:** Aprovado para referência institucional e de negócio
+
 **Escopo:** Guia explicativo completo sobre o funcionamento do SADEP, perfis de usuários, etapas do processo, regras de homologação e recursos administrativos
+
 **Público-Alvo:** Gestores, servidores, comissões de avaliação e auditores (abordagem não técnica)
 
 ---

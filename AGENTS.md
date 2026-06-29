@@ -57,9 +57,11 @@ Violação dessas regras gera nulidade jurídica ou inconsistência processual g
 ## 5. Estrutura Processual do MVP
 
 ### Caso coberto
+
 - **Caso 2** (ingresso após 31/07/2015)
 
 ### Modelo processual
+
 - **1 processo administrativo**
 - **4 etapas internas obrigatórias**
 - cada etapa possui ciclo documental próprio
@@ -86,6 +88,7 @@ Estados macro obrigatórios:
 Nenhuma transição pode ser feita fora da `workflow-engine`.
 
 ### Observação importante
+
 Estados macro do processo **não substituem** subestados internos de documento, parecer, recurso ou etapa.
 
 Sempre que possível, detalhes internos devem ser modelados sem inflar indevidamente o estado macro do processo.
@@ -95,6 +98,7 @@ Sempre que possível, detalhes internos devem ser modelados sem inflar indevidam
 ## 7. Regras do Fluxo de 4 Etapas
 
 ### Regra estrutural
+
 No Caso 2:
 
 - cada etapa possui avaliação da chefia
@@ -104,6 +108,7 @@ No Caso 2:
 - parecer CESAD da etapa, quando concluído
 
 ### Regra de consolidação
+
 Após a conclusão da 4ª etapa, o sistema pode habilitar:
 
 - elaboração do parecer conclusivo final
@@ -111,6 +116,7 @@ Após a conclusão da 4ª etapa, o sistema pode habilitar:
 - envio à autoridade homologadora
 
 ### Trava obrigatória
+
 Antes disso, o sistema não deve:
 
 - habilitar homologação final
@@ -118,6 +124,7 @@ Antes disso, o sistema não deve:
 - liberar publicação de portaria
 
 ### Fonte normativa interna
+
 O detalhamento oficial desse fluxo está no documento:
 
 - `docs/workflow/four-stage-flow-and-appeals.md`
@@ -131,18 +138,21 @@ Esse documento deve prevalecer sobre interpretações simplificadas.
 O domínio já reserva espaço para recursos, mesmo quando nem todos os fluxos estiverem implementados.
 
 ### Recurso por etapa
+
 - cabível contra resultado/parecer da etapa
 - dirigido à CESAD
 - prazo de 5 dias da ciência/visualização do resultado da etapa
 - suspende a fase contestada no ponto cabível
 
 ### Recurso final
+
 - cabível contra resultado final homologado/notificado
 - dirigido à autoridade homologadora
 - prazo de 5 dias da visualização/ciência da notificação
 - suspende o resultado final no ponto cabível
 
 ### Regra de reavaliação
+
 No recurso de etapa, a chefia pode:
 
 - manter a avaliação, com justificativa
@@ -181,6 +191,7 @@ O projeto utiliza como referências obrigatórias, entre outras, as seguintes di
 - `docs/workflow/four-stage-flow-and-appeals.md`
 
 ### Regra de uso
+
 - Se envolver estado do processo → usar `workflow-engine-skill`
 - Se envolver documento oficial → usar `process-document-skill`
 - Se envolver tipologia e ciclo de documentos → usar `document-modeling-catalog`

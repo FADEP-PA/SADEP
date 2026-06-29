@@ -1,7 +1,9 @@
 # SADEP — Roadmap Consolidado: Estado Atual e Próximos Passos
 
 **Status:** Documento de Planejamento Operacional e Estratégico
+
 **Escopo:** Inventário completo do que já foi desenvolvido (Backend, Frontend e Workflow) e o detalhamento estruturado do que precisa ser implementado
+
 **Referência Principal:** Nivelamento de código e documentações operacionais (`backend/active.md` e `frontend/active.md`)
 
 ---
@@ -20,7 +22,7 @@ A base atual do SADEP já possui o núcleo de workflow, segurança e fundações
 
 ### 2.1. Backend & Workflow (Domínio e API)
 
-- **Progressão Formal de 4 Etapas (`BE-FLOW-4STAGE-01`):*
+- _Progressão Formal de 4 Etapas (`BE-FLOW-4STAGE-01`):_
   - Materialização estrutural de 4 etapas avaliativas obrigatórias (`ETAPA_1` a `ETAPA_4`) para o Caso 2.
   - Lógica robusta de ciclo de vida (etapas ativas vs. futuras), impedindo que etapas futuras recebam documentos ou assinaturas indevidas.
   - Implementação da ação `COMPLETE_CURRENT_STAGE`, que encerra formalmente a etapa ativa, aciona a guarda documental (exigindo avaliações e pareceres devidamente assinados) e abre sequencialmente a próxima etapa.
@@ -111,7 +113,7 @@ Para manter o ritmo de entrega com a máxima integridade e segurança, o roadmap
 | **Fase 1<br>(Atual)** | **Fechamento do Fluxo Principal** | • `BE-HOMOLOG-01` (Homologação, Notificação e Ciência)<br>• `BE-SEC-03` (Segurança residual)                                                      | Finaliza a espinha dorsal do processo no backend, cobrindo o rito do início ao fim.                |
 |      **Fase 2**       | **Destravamento de Interfaces**   | • `FE-PROCESS-LIST-01` e `FE-CHEFIA-02` (Listagens reais)<br>• `FE-CESAD-01` (Telas ativas da CESAD)<br>• Workspaces de Avaliação e Autoavaliação | Substitui os dados demonstrativos no frontend por integrações reais e seguras com a API.           |
 |      **Fase 3**       | **Defesa e Publicação**           | • APIs e Telas do Bloco Recursal (Recurso de Etapa e Final)<br>• Módulo de Portaria e Integração DOE                                              | Garante o direito de defesa (contraditório) ao servidor e prepara os atos para publicação oficial. |
-|      **Fase 4**       | **Hardening e Ecossistema**       | • Assinaturas Externas (GOV.BR)<br>• `BE-AUDIT-AUTH-01` (Auditoria persistida de auth)<br>• Painel Gerencial da CESAD                             | Eleva o nível de segurança, conformidade e integração institucional do sistema.                    |
+|      **Fase 4**       | **Hardening e Ecossistema**       | • Assinaturas Externas (GOV.BR)<br>• `BE-AUDIT-AUTH-01` (Auditoria persistida de auth)<br>• Cadastro e Gestão de Comissões CESAD                  | Eleva o nível de segurança, conformidade e integração institucional do sistema.                    |
 
 ---
 
