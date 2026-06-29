@@ -7,6 +7,8 @@ import type {
   WorkflowResponse,
 } from '@/features/dashboard/types/process-dashboard-types';
 import {
+  CesadStageOpinionInput,
+  CesadStageOpinionRef,
   CesadStageReadSnapshotRef,
   InternServerWorkspaceSnapshotRef,
   ProcessStatus,
@@ -137,6 +139,35 @@ export async function getCesadStageReadSnapshot(
       ...AUTHENTICATED_REQUEST,
       method: 'GET',
     },
+  );
+}
+
+export async function getCesadStageOpinion(processId: string, stageSequence: number) {
+  return httpRequest<CesadStageOpinionRef | null>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion`,
+    { ...AUTHENTICATED_REQUEST, method: 'GET' },
+  );
+}
+
+export async function saveCesadStageOpinionDraft(
+  processId: string,
+  stageSequence: number,
+  body: CesadStageOpinionInput,
+) {
+  return httpRequest<CesadStageOpinionRef>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/draft`,
+    { ...AUTHENTICATED_REQUEST, method: 'PUT', body },
+  );
+}
+
+export async function completeCesadStageOpinion(
+  processId: string,
+  stageSequence: number,
+  body: CesadStageOpinionInput,
+) {
+  return httpRequest<CesadStageOpinionRef>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/complete`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST', body },
   );
 }
 

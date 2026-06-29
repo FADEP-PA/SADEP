@@ -1,7 +1,13 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { UserRole, type CesadStageReadSnapshotRef } from '@sadep/contracts';
+import { useEffect, useState, type FormEvent } from 'react';
+import {
+  CesadStageOpinionStatus,
+  ProcessStatus,
+  UserRole,
+  type CesadStageOpinionInput,
+  type CesadStageReadSnapshotRef,
+} from '@sadep/contracts';
 
 import {
   formatDateTime,
@@ -19,7 +25,12 @@ import {
   getRequestErrorMessage,
   isHttpErrorStatus,
 } from '@/shared/api/http-error';
-import { getCesadStageReadSnapshot } from '@/shared/api/services/processes-service';
+import {
+  completeCesadStageOpinion,
+  getCesadStageReadSnapshot,
+  getProcessList,
+  saveCesadStageOpinionDraft,
+} from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { ContentState } from '@/shared/ui/content-state';
@@ -35,6 +46,10 @@ import {
 import { PageSection } from '@/shared/ui/page-section';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
+import {
+  CesadStageOpinionEditor,
+  type CesadStageOpinionFormState,
+} from './cesad-stage-opinion-editor';
 import { ProcessHeaderCard } from './process-header-card';
 import { ProcessWarningsPanel } from './process-warnings-panel';
 import { ReadOnlyOpinionShell } from './read-only-opinion-shell';
@@ -77,6 +92,19 @@ function buildStageTimelineItems(snapshot: CesadStageReadSnapshotRef): StageTime
   });
 }
 
+function buildOpinionEditorState(
+  snapshot: CesadStageReadSnapshotRef | null,
+): CesadStageOpinionFormState {
+  const opinion = snapshot?.cesadStageOpinion;
+  return {
+    reportText: opinion?.reportText ?? '',
+    legalBasis: opinion?.legalBasis ?? '',
+    conclusion: opinion?.conclusion ?? '',
+    stageConcept: opinion?.stageConcept ?? '',
+    stageResult: opinion?.stageResult ?? '',
+  };
+}
+
 export function CesadStageReadWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState('');
@@ -90,6 +118,28 @@ export function CesadStageReadWorkspace() {
   const locatedDocuments = snapshot?.documents.filter((document) => document.exists).length ?? 0;
   const missingDocuments = snapshot?.documentationStatus.missingRequiredDocumentTypes.length ?? 0;
   const pendingSignatures = snapshot?.documentationStatus.pendingSignatureDocumentTypes.length ?? 0;
+
+  const isCesadMember = session?.user.role === UserRole.CESAD_MEMBER;
+  const opinionIsEditable =
+    isCesadMember &&
+    snapshot !== null &&
+    (snapshot.cesadStageOpinion === null ||
+      snapshot.cesadStageOpinion.status === CesadStageOpinionStatus.DRAFT);
+
+  useEffect(() => {
+    if (!session) return;
+    getProcessList()
+      .then((result) => {
+        const firstActive = result.items.find(
+          (item) => item.status === ProcessStatus.EM_ANALISE_CESAD,
+        );
+        if (firstActive) {
+          setProcessId(firstActive.id);
+        }
+      })
+      .catch(() => undefined);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -456,11 +506,23 @@ export function CesadStageReadWorkspace() {
                   )}
                 </InfoCard>
 
-                <ReadOnlyOpinionShell
-                  opinion={snapshot.cesadStageOpinion}
-                  stageLabel={`Etapa ${snapshot.stage.sequence} - ${snapshot.stage.stageCode}`}
-                  processLabel={snapshot.process.id}
-                />
+                {opinionIsEditable ? (
+                  <CesadStageOpinionEditor
+                    initialState={buildOpinionEditorState(snapshot)}
+                    onSaveDraft={async (input: CesadStageOpinionInput) => {
+                      await saveCesadStageOpinionDraft(snapshot.process.id, snapshot.stage.sequence, input);
+                    }}
+                    onComplete={async (input: CesadStageOpinionInput) => {
+                      await completeCesadStageOpinion(snapshot.process.id, snapshot.stage.sequence, input);
+                    }}
+                  />
+                ) : (
+                  <ReadOnlyOpinionShell
+                    opinion={snapshot.cesadStageOpinion}
+                    stageLabel={`Etapa ${snapshot.stage.sequence} - ${snapshot.stage.stageCode}`}
+                    processLabel={snapshot.process.id}
+                  />
+                )}
               </div>
 
               <StageDocumentList documents={snapshot.documents} />
