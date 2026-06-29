@@ -2,7 +2,7 @@
 
 ## Status
 
-Parcialmente executada. Leitura consolidada real integrada ao backend; parecer de etapa e parecer conclusivo final ainda em modo somente leitura com fallback demonstrativo.
+**Encerrado** (2026-06-29). O que estava pendente nesta task foi completado pelas tasks subsequentes: `FE-CESAD-01` integrou o editor de parecer de etapa (`CesadStageOpinionEditor`) e a API de draft/complete; `FE-PROCESS-LIST-01` eliminou a necessidade de informar o ID manualmente para CESAD. A leitura consolidada via `getCesadStageReadSnapshot` permanece operacional. Parecer conclusivo final e assinatura colegiada aguardam frontend separado apos `BE-HOMOLOG-01`.
 
 ## Area
 
@@ -67,11 +67,11 @@ Os seguintes tipos sao consumidos diretamente:
 
 | Funcionalidade | Motivo | Task relacionada |
 |---|---|---|
-| Emissao de parecer de etapa | Requer contrato de escrita e capabilities backend para `START_CESAD_OPINION`, `SAVE_CESAD_OPINION_DRAFT`, `COMPLETE_CESAD_STAGE_OPINION` | `FE-CESAD-01` |
-| Assinatura colegiada do parecer de etapa | Requer `BE-DOC-CESAD-SIGN-01` integrado ao frontend | `FE-CESAD-01` |
-| Parecer conclusivo final | Backend de documento e assinatura entregue em `BE-CESAD-FINAL-01B`; envio formal a homologacao aguarda `BE-CESAD-FINAL-01C` | `FE-CESAD-01` |
-| Listagem de processos autorizados | Sem listagem segura por perfil; usuario informa o ID manualmente | `FE-PROCESS-LIST-01` |
+| Parecer conclusivo final (leitura/assinatura) | Frontend aguarda contratos de `CesadFinalOpinion` e fluxo de homologacao | `BE-HOMOLOG-01` |
 | Gerenciamento de comissao | `features/cesad-comissao/` e `features/painel-gerencial-cesad/` sao scaffolds sem implementacao | Sem task aberta |
+
+> `FE-CESAD-01` concluida (2026-06-29): editor de parecer de etapa integrado.
+> `FE-PROCESS-LIST-01` concluida (2026-06-29): listagem segura por perfil via `GET /processes`.
 
 ## Fora do escopo desta task
 
@@ -102,4 +102,4 @@ Os seguintes tipos sao consumidos diretamente:
 
 ## Proxima acao
 
-Nenhuma para esta task. O que esta implementado esta operacional. A continuidade fica em `FE-CESAD-01`, condicionada a `BE-CESAD-FINAL-01C` e ao mapeamento de contracts/capabilities para emissao e assinatura.
+Nenhuma. Task encerrada. Proximas expansoes do workspace CESAD dependem de `BE-HOMOLOG-01` (homologacao, notificacao e ciencia) para o fluxo final.
