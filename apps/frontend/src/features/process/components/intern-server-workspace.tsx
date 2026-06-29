@@ -6,11 +6,12 @@ import {
   UserRole,
   type InternServerWorkspaceSnapshotRef,
 } from '@sadep/contracts';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import type { WorkflowHistoryItem } from '@/features/dashboard/types/process-dashboard-types';
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import {
+  getProcessList,
   getWorkflowHistory,
   getInternWorkspaceSnapshot,
   saveSelfEvaluationDraft,
@@ -382,6 +383,19 @@ export function InternServerWorkspace() {
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
   const [activeOperation, setActiveOperation] = useState<ActionOperation>(null);
   const [isSelfEvaluationExpanded, setIsSelfEvaluationExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!session) return;
+    getProcessList()
+      .then((result) => {
+        if (result.items.length === 1 && result.items[0]) {
+          setProcessIdInput(result.items[0].id);
+          void loadProcessSnapshot(result.items[0].id);
+        }
+      })
+      .catch(() => undefined);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   const displayName = getDisplayName(session?.user.name);
   const heroIdentity = useMemo(
