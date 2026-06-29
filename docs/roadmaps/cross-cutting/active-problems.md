@@ -13,9 +13,9 @@
 ## Frontend / integracao
 
 - `FE-CHEFIA-01` — `/chefia-imediata` parcialmente integrada ao workspace real por processo informado na tela; validacao visual concluida e fallback demonstrativo/local ainda ativo.
-- `FE-CHEFIA-02` — listagem segura de processos da chefia e remocao de fallback demonstrativo. Depende de contrato backend.
-- `FE-PROCESS-LIST-01` — listagem segura de processos por perfil autenticado; melhoria futura propria e nao reabre `FT-24`.
-- `FE-CESAD-01` — integracao real das telas CESAD com processos, pareceres, autorizacao contextual e documentos. `BE-CESAD-FINAL-01B` ja entregou documento e assinatura final; `BE-CESAD-FINAL-01C` ja entregou o envio formal a homologacao. A integracao frontend continua dependente de contrato/capability frontend especificos.
+- `FE-PROCESS-LIST-01` — **encerrado** (2026-06-29). `GET /processes` criado no backend com filtro por perfil; servidor estagiario auto-carrega o unico processo ao montar o workspace.
+- `FE-CHEFIA-02` — **encerrado** (2026-06-29). Supervisor carrega lista real de processos via API ao montar workspace; fallback demonstrativo removido; `DASHBOARD_ROWS` substituido por dados reais mapeados de `ProcessListItemRef`.
+- `FE-CESAD-01` — **encerrado** (2026-06-29). Editor de parecer CESAD integrado (`CesadStageOpinionEditor`); API calls para draft e complete adicionadas; workspace auto-seleciona o primeiro processo `EM_ANALISE_CESAD` da lista. Leitura consolidada existente preservada como fallback quando parecer ja esta concluido.
 - `FE-TEST-01` — estrategia minima futura de testes frontend; parcialmente executada (01A ao 01F concluidos). Aberta apenas para expansoes futuras.
 - **Diretorios de feature com apenas `.gitkeep`** — `features/assinaturas-eletronicas/`, `features/auditoria-historico/`, `features/autoavaliacao/`, `features/avaliacoes/`, `features/cesad-comissao/`, `features/chefia-imediata/`, `features/documentos-oficiais/`, `features/notificacoes-ciencia/`, `features/painel-gerencial-cesad/`, `features/processo-workflow/` e `features/servidor-estagiario/` sao scaffolds sem implementacao. Qualquer trabalho nesses modulos requer contrato backend correspondente.
 
