@@ -2,7 +2,7 @@
 
 ## Status
 
-Futura / melhoria de qualidade.
+**Encerrado** (2026-06-29). 79 testes em 9 arquivos — recortes 01A ao 01I concluidos.
 
 ## Area
 
@@ -149,9 +149,51 @@ Comando focado:
 - **Estilo dos testes:** asserts por `data-testid` para `status`, `bootstrapError` e `session-role`; `waitFor` para resolucao assincrona do bootstrap; `act` para acoes de signIn/signOut/refreshSession; sem snapshots; sem dados sensiveis; sem backend real.
 - **Limitacoes conhecidas deste recorte:** cobre o ciclo do `AuthProvider` isolado com services mockados; nao cobre integracao real do `AuthProvider` com `http-client` e retry de token em contexto de tela autenticada; nao cobre telas autenticadas completas, jornadas processuais ou fluxos da chefia/CESAD; nao integra com CI; nao substitui validacao visual em navegador.
 
-## Proxima acao
+## Recorte FE-TEST-01G - LoginPage com vi.mock de useAuth
 
-Manter como melhoria futura. Apos FE-TEST-01F:
+- **Status documental:** recorte executado em 2026-06-29.
+- **Escopo do recorte:** testes de apresentacao e interacao de `apps/frontend/src/features/auth/components/login-page.tsx`.
+- **Decisao operacional:** `useAuth` mockado via `vi.mock('@/shared/auth/auth-context', ...)` para controlar `signIn`, `status` e `bootstrapError`. `getByLabelText` resolve os campos via `htmlFor` + `id`. `signIn` e mockada como `vi.fn()` (resolve ou rejeita conforme o caso de teste).
+- **Casos cobertos:**
+  - renderiza campos de email, senha, checkbox e botao de submit;
+  - chama `signIn` com `{ email, password, rememberMe }` corretos ao submeter;
+  - exibe `"Entrando..."` e desabilita o botao durante a submissao pendente;
+  - exibe mensagem de erro quando `signIn` rejeita com `Error`;
+  - exibe `bootstrapError` quando presente e nao ha `errorMessage` proprio;
+  - desabilita todos os campos e o botao quando `status === 'loading'`.
+- **Arquivo criado:** `apps/frontend/src/features/auth/components/login-page.test.tsx` (6 testes).
+- **Suite apos este recorte:** 66 testes em 8 arquivos.
 
-- avaliar cobertura de telas autenticadas completas (login-page, workspaces) em recorte proprio apos `CI-GATES-01` estar disponivel;
-- nao acoplar expansoes a `FE-CHEFIA-02`, `FE-PROCESS-LIST-01` ou `FE-CESAD-01`, que continuam pendentes de backend.
+## Recorte FE-TEST-01H - processes-service ampliado (getProcessList, getCesadStageOpinion, saveDraft, complete)
+
+- **Status documental:** recorte executado em 2026-06-29.
+- **Escopo do recorte:** extensao de `apps/frontend/src/shared/api/services/processes-service.test.ts` com os servicos adicionados em sessoes anteriores.
+- **Casos cobertos:**
+  - `getProcessList` — GET `/processes` com header `Authorization: Bearer`, retorna `{ items, total }`;
+  - `getCesadStageOpinion` — GET `/processes/:id/stages/:seq/cesad-stage-opinion` com header `Authorization: Bearer`;
+  - `saveCesadStageOpinionDraft` — PUT com body serializado em JSON;
+  - `completeCesadStageOpinion` — POST com body serializado em JSON.
+- **Arquivo atualizado:** `apps/frontend/src/shared/api/services/processes-service.test.ts` (+ 4 testes, total 8 neste arquivo).
+- **Suite apos este recorte:** 70 testes em 8 arquivos.
+
+## Recorte FE-TEST-01I - CesadStageOpinionEditor
+
+- **Status documental:** recorte executado em 2026-06-29.
+- **Escopo do recorte:** testes do componente `apps/frontend/src/features/cesad/components/cesad-stage-opinion-editor.tsx`.
+- **Decisao operacional:** `onSaveDraft` e `onComplete` passados como `vi.fn()` — controle total sem subir servico real. `toOpinionInput` e testada indiretamente via os callbacks (validacao de campo obrigatorio dispara antes de chamar o callback). Estados de loading e feedback sao verificados via `waitFor` apos `act`.
+- **Casos cobertos:**
+  - renderiza todos os campos do formulario (relatorio, fundamentacao, conclusao, conceito, resultado);
+  - renderiza os botoes "Salvar rascunho" e "Concluir parecer";
+  - chama `onSaveDraft` com payload correto (incluindo campos opcionais preenchidos);
+  - chama `onComplete` com payload correto;
+  - exibe "Rascunho do parecer salvo." apos salvar com sucesso;
+  - exibe mensagem de erro quando `onSaveDraft` rejeita;
+  - exibe erro de validacao quando `reportText` esta vazio (sem chamar callback);
+  - exibe erro de validacao quando `conclusion` esta vazio (sem chamar callback);
+  - desabilita ambos os botoes enquanto o salvamento esta pendente.
+- **Arquivo criado:** `apps/frontend/src/features/cesad/components/cesad-stage-opinion-editor.test.tsx` (9 testes).
+- **Suite final:** 79 testes em 9 arquivos.
+
+## Resultado final
+
+Task encerrada. 79 testes automatizados cobrindo: estados operacionais institucionais, AuthGuard, http-client (retry/single-flight), auth-service, processes-service, AuthProvider, LoginPage e CesadStageOpinionEditor. Nenhum backend real, nenhum dado sensivel persistido. A proxima expansao de qualidade sera formalizada em `CI-GATES-01` (pipeline oficial).

@@ -16,7 +16,7 @@
 - `FE-PROCESS-LIST-01` — **encerrado** (2026-06-29). `GET /processes` criado no backend com filtro por perfil; servidor estagiario auto-carrega o unico processo ao montar o workspace.
 - `FE-CHEFIA-02` — **encerrado** (2026-06-29). Supervisor carrega lista real de processos via API ao montar workspace; fallback demonstrativo removido; `DASHBOARD_ROWS` substituido por dados reais mapeados de `ProcessListItemRef`.
 - `FE-CESAD-01` — **encerrado** (2026-06-29). Editor de parecer CESAD integrado (`CesadStageOpinionEditor`); API calls para draft e complete adicionadas; workspace auto-seleciona o primeiro processo `EM_ANALISE_CESAD` da lista. Leitura consolidada existente preservada como fallback quando parecer ja esta concluido.
-- `FE-TEST-01` — estrategia minima futura de testes frontend; parcialmente executada (01A ao 01F concluidos). Aberta apenas para expansoes futuras.
+- `FE-TEST-01` — **encerrado** (2026-06-29). 79 testes em 9 arquivos (01A–01I). Recortes finais: LoginPage (01G), getProcessList/getCesadStageOpinion/saveDraft/complete em processes-service (01H), CesadStageOpinionEditor (01I). Proxima expansao de qualidade via CI-GATES-01.
 - **Diretorios de feature com apenas `.gitkeep`** — `features/assinaturas-eletronicas/`, `features/auditoria-historico/`, `features/autoavaliacao/`, `features/avaliacoes/`, `features/cesad-comissao/`, `features/chefia-imediata/`, `features/documentos-oficiais/`, `features/notificacoes-ciencia/`, `features/painel-gerencial-cesad/`, `features/processo-workflow/` e `features/servidor-estagiario/` sao scaffolds sem implementacao. Qualquer trabalho nesses modulos requer contrato backend correspondente.
 
 ## Sessao / auth
@@ -40,5 +40,4 @@ O proximo bloco de implementacao backend prioritario e `BE-HOMOLOG-01` (homologa
 
 ## Qualidade
 
-- Ausencia de testes frontend de interacao permanece como risco ou candidata futura de quality gate quando formalizada.
-- `FE-TEST-01` permanece aberta para expansoes futuras de telas autenticadas completas, hooks de sessao e integracao apos `CI-GATES-01`, sem acoplar a tasks que dependem de backend.
+- `FE-TEST-01` encerrado. A expansao de cobertura e o gate oficial de qualidade continuam via `CI-GATES-01`.
