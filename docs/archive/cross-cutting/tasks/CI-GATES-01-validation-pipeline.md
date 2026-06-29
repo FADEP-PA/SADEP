@@ -2,7 +2,7 @@
 
 ## Status
 
-Pendente / DX e qualidade.
+**Encerrado** (2026-06-29). Pipeline `.github/workflows/ci.yml` complementado com tres gates ausentes: `git diff --check` (whitespace), `npx prisma validate` (schema) e `npm run frontend:copy-check` (copy institucional). Jobs existentes (typecheck backend/frontend, testes unitarios backend, testes frontend, build backend/frontend) mantidos sem alteracao.
 
 ## Area
 
