@@ -353,7 +353,7 @@ function assertSetCookie(response: Response): string {
   const setCookie = response.headers.get('set-cookie');
 
   assert.ok(setCookie);
-  assert.match(setCookie, /aep_pa_refresh=/);
+  assert.match(setCookie, /sadep_refresh=/);
 
   return setCookie;
 }
@@ -361,14 +361,14 @@ function assertSetCookie(response: Response): string {
 function extractRefreshCookie(setCookie: string): string {
   const [cookie] = setCookie.split(';');
   assert.ok(cookie);
-  assert.match(cookie, /^aep_pa_refresh=/);
+  assert.match(cookie, /^sadep_refresh=/);
 
   return cookie;
 }
 
 function assertRefreshCookieCleared(response: Response): void {
   const setCookie = assertSetCookie(response);
-  assert.match(setCookie, /aep_pa_refresh=;/);
+  assert.match(setCookie, /sadep_refresh=;/);
   assert.match(setCookie, /Path=\/auth/i);
 }
 

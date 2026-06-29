@@ -6,7 +6,7 @@
 
 ## Proxima prioridade imediata
 
-**`NOM-AEP-COOKIE-01`** — Renomear o cookie de refresh de `aep_pa_refresh` para nome SADEP. Task pequena e independente, sem dependencias de backend ou frontend.
+**`SEC-LOG-PII-01`** — Remover PII (e-mails) e ruido dos logs de autenticacao. Task pequena e independente.
 
 ---
 

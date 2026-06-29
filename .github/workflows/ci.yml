@@ -44,7 +44,7 @@ jobs:
       REFRESH_TOKEN_HMAC_SECRET: ci-refresh-secret-placeholder-32-chars
       ACCESS_TOKEN_TTL: 1h
       REFRESH_TOKEN_TTL: 7d
-      REFRESH_COOKIE_NAME: aep_pa_refresh
+      REFRESH_COOKIE_NAME: sadep_refresh
       COOKIE_SECURE: 'false'
       COOKIE_SAMESITE: lax
       COOKIE_DOMAIN: ''
@@ -82,7 +82,7 @@ jobs:
       REFRESH_TOKEN_HMAC_SECRET: ci-refresh-secret-placeholder-32-chars
       ACCESS_TOKEN_TTL: 1h
       REFRESH_TOKEN_TTL: 7d
-      REFRESH_COOKIE_NAME: aep_pa_refresh
+      REFRESH_COOKIE_NAME: sadep_refresh
       COOKIE_SECURE: 'false'
       COOKIE_SAMESITE: lax
       COOKIE_DOMAIN: ''

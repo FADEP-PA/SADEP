@@ -35,7 +35,7 @@ O proximo bloco de implementacao backend prioritario e `BE-HOMOLOG-01` (homologa
 
 - [`DX-POSTCSS-01` — alerta de audit `postcss`/`next`](./tasks/DX-POSTCSS-01-audit-postcss-next.md): permanece como pendencia separada.
 - [`DX-DB-SEED-01` — seed minimo local e checagem de banco](./tasks/DX-DB-SEED-01-local-seed-bootstrap.md): alerta operacional; `db:check` pode falhar quando o banco local existe sem seed minimo; usar `npm run backend:bootstrap` para preparar o ambiente local.
-- [`NOM-AEP-COOKIE-01` — nomenclatura residual do cookie de refresh`](./tasks/NOM-AEP-COOKIE-01-refresh-cookie-name.md): o cookie default ainda usa `aep_pa_refresh`; tratar futuramente em task pequena propria, sem migracao ampla AEP -> SADEP.
+- `NOM-AEP-COOKIE-01` — **encerrado** (2026-06-29). Cookie renomeado de `aep_pa_refresh` para `sadep_refresh` em `env.validation.ts`, `.env.example`, `ci.yml` e `auth.endpoint.spec.ts`.
 - [`CI-GATES-01` — definir pipeline oficial de validacao](./tasks/CI-GATES-01-validation-pipeline.md): gates locais existem e passam, mas falta pipeline oficial evidente.
 
 ## Qualidade
