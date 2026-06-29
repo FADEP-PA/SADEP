@@ -2,7 +2,16 @@
 
 ## Status
 
-Pendente alta, dependente de parecer conclusivo final.
+**Encerrado** — implementado em sessoes anteriores, verificado em 2026-06-29.
+
+Endpoints ativos em `HomologationController` (`/processes/:id/homologation`):
+- `GET /` — status atual (`HomologationStatusRef`)
+- `POST /approve` — homologa (`PARECER_EMITIDO` → `HOMOLOGADO`), exige `sentToHomologationAt` preenchido; cria `ProcessDocument.HOMOLOGATION_RECORD`
+- `POST /return-for-regularization` — devolve (`PARECER_EMITIDO` → `EM_AVALIACAO`); roles: `HOMOLOGATION_AUTHORITY`, `ADMIN`
+- `POST /notify` — notifica (`HOMOLOGADO` → `NOTIFICADO`); cria `ProcessDocument.RESULT_NOTIFICATION`
+- `POST /acknowledge` — ciencia (`NOTIFICADO` → `CIENTE`); so o proprio `INTERN_SERVER` avaliado pode executar; cria `ProcessDocument.ACKNOWLEDGEMENT_RECORD`
+
+`HomologationRecord` no schema (colunas `homologatedAt`, `notifiedAt`, `acknowledgedAt`) + `AuditEvent` em cada transicao. 17 testes em `homologation.service.spec.ts` cobrindo fluxo autorizado, tentativa prematura, conflito e roles invalidas.
 
 ## Area
 
@@ -66,4 +75,4 @@ Mesmo assim, a homologacao continua dependente de envio formal a homologacao em 
 
 ## Proxima acao
 
-Aguardar a ponte formal `BE-CESAD-FINAL-01C` e entao definir os atos minimos de homologacao, notificacao e ciencia.
+Nenhuma. Task encerrada. O bloco recursal (`ENCERRADO`, `CLOSE_PROCESS`, recurso por etapa e recurso final) nao tem implementacao e deve nascer como task propria quando necessario.
