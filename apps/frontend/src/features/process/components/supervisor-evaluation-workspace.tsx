@@ -5,7 +5,7 @@ import {
   UserRole,
   type SupervisorEvaluationWithDocumentContextRef,
 } from '@sadep/contracts';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import {
@@ -20,110 +20,30 @@ import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
-import { DemonstrationModeState, EmptyState } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
+
+import { SupervisorDashboardTable } from './supervisor-dashboard-table';
+import { EvaluationDetailView } from './supervisor-evaluation-form';
+import type {
+  EvaluationDraft,
+  PreviousEvaluationItem,
+  SupervisorDashboardRow,
+  SupervisorDashboardStatus,
+} from './supervisor-evaluation-types';
 
 const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
 
-type SupervisorDashboardStatus =
-  | 'EM_AVALIACAO'
-  | 'AGUARDANDO_ASSINATURA'
-  | 'EM_ANALISE_CESAD'
-  | 'CONCLUIDO';
-
-type SupervisorDashboardRow = {
-  id: string;
-  serverName: string;
-  registration: string;
-  role: string;
-  exerciseStart: string;
-  status: SupervisorDashboardStatus;
-  stageLabel: string;
-  deadline: string;
-  canReviewPrevious: boolean;
-  actionLabel: string;
-  actionDisabled?: boolean;
-  supervisorName: string;
-  supervisorRole: string;
-  trackingPeriod: string;
-  source?: 'demo' | 'real';
-};
-
-type EvaluationFactorItemDraft = {
-  id: string;
-  label: string;
-  score: number;
-};
-
-type EvaluationFactorDraft = {
-  id: string;
-  title: string;
-  items: EvaluationFactorItemDraft[];
-};
-
-type MonthlyObservation = {
-  id: string;
-  monthLabel: string;
-  description: string;
-  attachmentName: string;
-};
-
-type EvaluationDraft = {
-  row: SupervisorDashboardRow;
-  unitCompetencies: string;
-  serverAssignments: string;
-  generalComments: string;
-  totalStageScore: string;
-  stageAverage: string;
-  administrativeConcept: string;
-  monthlyObservations: MonthlyObservation[];
-  factors: EvaluationFactorDraft[];
-  expandedFactorIds: string[];
-};
-
 type OperationMode = 'draft' | 'submit';
-
-type PreviousEvaluationItem = {
-  stageLabel: string;
-  conclusionDate: string;
-  statusLabel: string;
-  actionLabel: string;
-};
 
 const PREVIOUS_EVALUATION_HISTORY: Record<string, PreviousEvaluationItem[]> = {
   'SUP-001': [
-    {
-      stageLabel: '1ª etapa',
-      conclusionDate: '15/02/2024',
-      statusLabel: 'Concluída',
-      actionLabel: 'Visualizar PDF',
-    },
-    {
-      stageLabel: '2ª etapa',
-      conclusionDate: '20/08/2024',
-      statusLabel: 'Concluída',
-      actionLabel: 'Visualizar PDF',
-    },
-    {
-      stageLabel: '3ª etapa',
-      conclusionDate: '10/02/2025',
-      statusLabel: 'Concluída',
-      actionLabel: 'Visualizar PDF',
-    },
+    { stageLabel: '1ª etapa', conclusionDate: '15/02/2024', statusLabel: 'Concluída', actionLabel: 'Visualizar PDF' },
+    { stageLabel: '2ª etapa', conclusionDate: '20/08/2024', statusLabel: 'Concluída', actionLabel: 'Visualizar PDF' },
+    { stageLabel: '3ª etapa', conclusionDate: '10/02/2025', statusLabel: 'Concluída', actionLabel: 'Visualizar PDF' },
   ],
   'SUP-002': [
-    {
-      stageLabel: '2ª etapa',
-      conclusionDate: '21/04/2024',
-      statusLabel: 'Concluída',
-      actionLabel: 'Visualizar PDF',
-    },
-    {
-      stageLabel: '3ª etapa',
-      conclusionDate: '09/09/2024',
-      statusLabel: 'Concluída',
-      actionLabel: 'Visualizar PDF',
-    },
+    { stageLabel: '2ª etapa', conclusionDate: '21/04/2024', statusLabel: 'Concluída', actionLabel: 'Visualizar PDF' },
+    { stageLabel: '3ª etapa', conclusionDate: '09/09/2024', statusLabel: 'Concluída', actionLabel: 'Visualizar PDF' },
   ],
 };
 
@@ -192,29 +112,6 @@ const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
   },
 ];
 
-const STATUS_FILTERS: Array<{ id: SupervisorDashboardStatus; label: string }> = [
-  { id: 'EM_AVALIACAO', label: 'Em avaliação' },
-  { id: 'AGUARDANDO_ASSINATURA', label: 'Aguardando assinatura' },
-  { id: 'EM_ANALISE_CESAD', label: 'Em análise CESAD' },
-  { id: 'CONCLUIDO', label: 'Concluídos' },
-];
-
-const MONTHLY_OBSERVATION_OPTIONS = [
-  '1º mês',
-  '2º mês',
-  '3º mês',
-  '4º mês',
-  '5º mês',
-  '6º mês',
-  '7º mês',
-  '8º mês',
-  '9º mês',
-  '10º mês',
-  '11º mês',
-  '12º mês',
-] as const;
-const ADMINISTRATIVE_CONCEPT_OPTIONS = ['Insuficiente', 'Regular', 'Bom', 'Excelente'] as const;
-
 const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: string; label: string }> }> = [
   {
     id: 'assiduidade',
@@ -269,18 +166,13 @@ const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: st
 ];
 
 function toDashboardStatus(status: ProcessStatus): SupervisorDashboardStatus {
-  if (status === ProcessStatus.EM_AVALIACAO) {
-    return 'EM_AVALIACAO';
-  }
-
+  if (status === ProcessStatus.EM_AVALIACAO) return 'EM_AVALIACAO';
   if (status === ProcessStatus.AGUARDANDO_ASSINATURA || status === ProcessStatus.ASSINADO) {
     return 'AGUARDANDO_ASSINATURA';
   }
-
   if (status === ProcessStatus.EM_ANALISE_CESAD || status === ProcessStatus.PARECER_EMITIDO) {
     return 'EM_ANALISE_CESAD';
   }
-
   return 'CONCLUIDO';
 }
 
@@ -312,38 +204,6 @@ function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot)
   };
 }
 
-function getConceptByAverage(average: number) {
-  if (average < 50) {
-    return { label: 'Insuficiente', className: 'evaluation-detail__concept evaluation-detail__concept--bad' };
-  }
-  if (average < 70) {
-    return { label: 'Regular', className: 'evaluation-detail__concept evaluation-detail__concept--regular' };
-  }
-  if (average < 90) {
-    return { label: 'Bom', className: 'evaluation-detail__concept evaluation-detail__concept--good' };
-  }
-  return { label: 'Excelente', className: 'evaluation-detail__concept evaluation-detail__concept--great' };
-}
-
-function calculateTotalAndAverage(factors: EvaluationFactorDraft[]) {
-  if (factors.length === 0) {
-    return { totalStageScore: '0.0', stageAverage: '0.0', administrativeConcept: 'Insuficiente' };
-  }
-  const total = factors.reduce((sum, factor) => {
-    const factorAvg = factor.items.length > 0
-      ? factor.items.reduce((itemSum, item) => itemSum + item.score, 0) / factor.items.length
-      : 0;
-    return sum + factorAvg;
-  }, 0);
-  const average = total / factors.length;
-  const concept = getConceptByAverage(average);
-  return {
-    totalStageScore: total.toFixed(1),
-    stageAverage: average.toFixed(1),
-    administrativeConcept: concept.label,
-  };
-}
-
 function createEvaluationDraft(
   row: SupervisorDashboardRow,
   evaluation?: SupervisorEvaluationWithDocumentContextRef | null,
@@ -359,16 +219,22 @@ function createEvaluationDraft(
     })),
   }));
 
-  const { totalStageScore, stageAverage, administrativeConcept } = calculateTotalAndAverage(factors);
+  const total = factors.reduce((sum, factor) => {
+    const avg = factor.items.length > 0
+      ? factor.items.reduce((s, item) => s + item.score, 0) / factor.items.length
+      : 0;
+    return sum + avg;
+  }, 0);
+  const average = factors.length > 0 ? total / factors.length : 0;
 
   return {
     row,
     unitCompetencies: evaluation?.summary ?? '',
     serverAssignments: '',
     generalComments: evaluation?.generalComments ?? '',
-    totalStageScore,
-    stageAverage,
-    administrativeConcept,
+    totalStageScore: total.toFixed(1),
+    stageAverage: average.toFixed(1),
+    administrativeConcept: average < 50 ? 'Insuficiente' : average < 70 ? 'Regular' : average < 90 ? 'Bom' : 'Excelente',
     monthlyObservations: [],
     factors,
     expandedFactorIds: [],
@@ -411,130 +277,10 @@ function buildSupervisorEvaluationPayload(
   };
 }
 
-function getStatusLabel(status: SupervisorDashboardStatus) {
-  if (status === 'EM_AVALIACAO') {
-    return 'Em avaliação';
-  }
-
-  if (status === 'AGUARDANDO_ASSINATURA') {
-    return 'Aguardando assinatura';
-  }
-
-  if (status === 'EM_ANALISE_CESAD') {
-    return 'Em análise CESAD';
-  }
-
-  return 'Homologado';
-}
-
-function getStatusClassName(status: SupervisorDashboardStatus) {
-  if (status === 'EM_AVALIACAO') {
-    return 'supervisor-dashboard__pill supervisor-dashboard__pill--neutral';
-  }
-
-  if (status === 'AGUARDANDO_ASSINATURA') {
-    return 'supervisor-dashboard__pill supervisor-dashboard__pill--warning';
-  }
-
-  if (status === 'EM_ANALISE_CESAD') {
-    return 'supervisor-dashboard__pill supervisor-dashboard__pill--info';
-  }
-
-  return 'supervisor-dashboard__pill supervisor-dashboard__pill--success';
-}
-
-function getStageClassName(status: SupervisorDashboardStatus) {
-  if (status === 'CONCLUIDO') {
-    return 'supervisor-dashboard__stage-chip supervisor-dashboard__stage-chip--done';
-  }
-
-  return 'supervisor-dashboard__stage-chip';
-}
-
-function calculateFactorAverage(factor: EvaluationFactorDraft) {
-  const total = factor.items.reduce((sum, item) => sum + item.score, 0);
-  return total / factor.items.length;
-}
-
-function formatValidationDate(date = new Date()) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(date);
-}
-
-function EvaluationFactorCard({
-  factor,
-  isExpanded,
-  onToggle,
-  onScoreChange,
-}: {
-  factor: EvaluationFactorDraft;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onScoreChange: (itemId: string, score: number) => void;
-}) {
-  const subtotal = factor.items.reduce((sum, item) => sum + item.score, 0);
-  const average = calculateFactorAverage(factor);
-
-  return (
-    <section className="evaluation-detail__factor-card">
-      <button
-        type="button"
-        className="evaluation-detail__factor-header"
-        onClick={onToggle}
-      >
-        <div className="evaluation-detail__factor-title">
-          <span>{isExpanded ? '▼' : '▶'}</span>
-          <strong>{factor.title}</strong>
-        </div>
-
-        <div className="evaluation-detail__factor-metric">
-          <span>Média do fator</span>
-          <strong>{average.toFixed(1)}</strong>
-        </div>
-      </button>
-
-      {isExpanded ? (
-        <div className="evaluation-detail__factor-body">
-          {factor.items.map((item) => (
-            <div key={item.id} className="evaluation-detail__score-row">
-              <p>{item.label}</p>
-
-              <div className="evaluation-detail__score-input-wrap">
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={item.score}
-                  onChange={(event) => onScoreChange(item.id, Number(event.target.value || 0))}
-                />
-                <span>Nota</span>
-              </div>
-            </div>
-          ))}
-
-          <div className="evaluation-detail__factor-footer">
-            <div>
-              <span>Soma bruta subfatores</span>
-              <strong>{subtotal.toFixed(1)}</strong>
-            </div>
-            <div>
-              <span>Pontuação final do fator (média)</span>
-              <strong>{average.toFixed(1)}</strong>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
 export function SupervisorEvaluationWorkspace() {
   const { session } = useAuth();
   const [selectedFilters, setSelectedFilters] = useState<SupervisorDashboardStatus[]>(
-    STATUS_FILTERS.map((item) => item.id),
+    ['EM_AVALIACAO', 'AGUARDANDO_ASSINATURA', 'EM_ANALISE_CESAD', 'CONCLUIDO'],
   );
   const [activeEvaluation, setActiveEvaluation] = useState<EvaluationDraft | null>(null);
   const [previousReviewRow, setPreviousReviewRow] = useState<SupervisorDashboardRow | null>(null);
@@ -553,7 +299,6 @@ export function SupervisorEvaluationWorkspace() {
     () => (workspaceSnapshot ? [createRealDashboardRow(workspaceSnapshot), ...DASHBOARD_ROWS] : DASHBOARD_ROWS),
     [workspaceSnapshot],
   );
-
   const filteredRows = useMemo(
     () => dashboardRows.filter((row) => selectedFilters.includes(row.status)),
     [dashboardRows, selectedFilters],
@@ -563,9 +308,7 @@ export function SupervisorEvaluationWorkspace() {
     : [];
 
   async function loadSupervisorWorkspace(processId: string) {
-    if (!session) {
-      return;
-    }
+    if (!session) return;
 
     setIsLoadingWorkspace(true);
     setLoadErrorMessage(null);
@@ -575,10 +318,7 @@ export function SupervisorEvaluationWorkspace() {
       const snapshot = await getSupervisorEvaluationWorkspaceSnapshot(processId);
       setWorkspaceSnapshot(snapshot);
       setActiveEvaluation((current) => {
-        if (!current || current.row.source !== 'real') {
-          return current;
-        }
-
+        if (!current || current.row.source !== 'real') return current;
         return createEvaluationDraft(createRealDashboardRow(snapshot), snapshot.supervisorEvaluation);
       });
     } catch (error) {
@@ -598,7 +338,6 @@ export function SupervisorEvaluationWorkspace() {
 
   function handleLoadWorkspace(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     const normalizedProcessId = processIdInput.trim();
 
     if (!normalizedProcessId) {
@@ -615,22 +354,14 @@ export function SupervisorEvaluationWorkspace() {
   function toggleFilter(filterId: SupervisorDashboardStatus) {
     setSelectedFilters((current) => {
       if (current.includes(filterId)) {
-        if (current.length === 1) {
-          return current;
-        }
-
-        return current.filter((item) => item !== filterId);
+        return current.length === 1 ? current : current.filter((item) => item !== filterId);
       }
-
       return [...current, filterId];
     });
   }
 
   function openEvaluation(row: SupervisorDashboardRow) {
-    if (row.actionDisabled) {
-      return;
-    }
-
+    if (row.actionDisabled) return;
     setActionErrorMessage(null);
     setFeedbackMessage(null);
     setActiveEvaluation(
@@ -640,172 +371,8 @@ export function SupervisorEvaluationWorkspace() {
     );
   }
 
-  function openPreviousEvaluations(row: SupervisorDashboardRow) {
-    setPreviousReviewRow(row);
-  }
-
-  function closePreviousEvaluations() {
-    setPreviousReviewRow(null);
-  }
-
-  function toggleFactor(factorId: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        expandedFactorIds: current.expandedFactorIds.includes(factorId)
-          ? current.expandedFactorIds.filter((item) => item !== factorId)
-          : [...current.expandedFactorIds, factorId],
-      };
-    });
-  }
-
-  function updateFactorScore(factorId: string, itemId: string, score: number) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      const nextFactors = current.factors.map((factor) =>
-        factor.id === factorId
-          ? {
-            ...factor,
-            items: factor.items.map((item) =>
-              item.id === itemId
-                ? {
-                  ...item,
-                  score: Math.min(100, Math.max(0, score)),
-                }
-                : item,
-            ),
-          }
-          : factor,
-      );
-
-      const { totalStageScore, stageAverage, administrativeConcept } = calculateTotalAndAverage(nextFactors);
-
-      return {
-        ...current,
-        factors: nextFactors,
-        totalStageScore,
-        stageAverage,
-        administrativeConcept,
-      };
-    });
-  }
-
-  function updateFinalResult(field: 'totalStageScore' | 'stageAverage' | 'administrativeConcept', value: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-      if (field === 'stageAverage') {
-        const numValue = Number(value || 0);
-        const concept = getConceptByAverage(numValue);
-        return { ...current, stageAverage: value, administrativeConcept: concept.label };
-      }
-      return { ...current, [field]: value };
-    });
-  }
-
-  function clearDefaultFinalScore(field: 'totalStageScore' | 'stageAverage') {
-    setActiveEvaluation((current) =>
-      current && current[field] === '0.0' ? { ...current, [field]: '' } : current,
-    );
-  }
-
-  function addMonthlyObservation() {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      const nextIndex = current.monthlyObservations.length + 1;
-      const selectedMonths = new Set(current.monthlyObservations.map((observation) => observation.monthLabel));
-      const nextMonth =
-        MONTHLY_OBSERVATION_OPTIONS.find((month) => !selectedMonths.has(month)) ??
-        MONTHLY_OBSERVATION_OPTIONS[Math.min(nextIndex - 1, MONTHLY_OBSERVATION_OPTIONS.length - 1)];
-
-      return {
-        ...current,
-        monthlyObservations: [
-          ...current.monthlyObservations,
-          {
-            id: `obs-${nextIndex}`,
-            monthLabel: nextMonth,
-            description: '',
-            attachmentName: '',
-          },
-        ],
-      };
-    });
-  }
-
-  function updateMonthlyObservationMonth(id: string, monthLabel: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        monthlyObservations: current.monthlyObservations.map((observation) =>
-          observation.id === id ? { ...observation, monthLabel } : observation,
-        ),
-      };
-    });
-  }
-
-  function updateMonthlyObservationDescription(id: string, description: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        monthlyObservations: current.monthlyObservations.map((observation) =>
-          observation.id === id ? { ...observation, description } : observation,
-        ),
-      };
-    });
-  }
-
-  function updateMonthlyObservationAttachment(id: string, attachmentName: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        monthlyObservations: current.monthlyObservations.map((observation) =>
-          observation.id === id ? { ...observation, attachmentName } : observation,
-        ),
-      };
-    });
-  }
-
-  function removeMonthlyObservation(id: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        monthlyObservations: current.monthlyObservations.filter((observation) => observation.id !== id),
-      };
-    });
-  }
-
   async function handleSaveDraft() {
-    if (!activeEvaluation) {
-      return;
-    }
+    if (!activeEvaluation) return;
 
     setIsSavingDraft(true);
     setFeedbackMessage(null);
@@ -813,7 +380,6 @@ export function SupervisorEvaluationWorkspace() {
 
     if (activeEvaluation.row.source !== 'real') {
       await new Promise((resolve) => setTimeout(resolve, 300));
-
       setIsSavingDraft(false);
       setFeedbackMessage('Rascunho salvo localmente.');
       return;
@@ -823,11 +389,9 @@ export function SupervisorEvaluationWorkspace() {
       if (!session || !workspaceSnapshot) {
         throw new Error('Sessão ou processo real indisponível para salvar a avaliação.');
       }
-
       if (!workspaceSnapshot.canEditDraft) {
         throw new Error('O salvamento de rascunho nao esta liberado para o estado atual do processo.');
       }
-
       await saveSupervisorEvaluationDraft(
         workspaceSnapshot.process.id,
         buildSupervisorEvaluationPayload(activeEvaluation, 'draft'),
@@ -842,9 +406,7 @@ export function SupervisorEvaluationWorkspace() {
   }
 
   async function handleSubmitEvaluation() {
-    if (!activeEvaluation) {
-      return;
-    }
+    if (!activeEvaluation) return;
 
     setIsSubmittingEvaluation(true);
     setFeedbackMessage(null);
@@ -852,7 +414,6 @@ export function SupervisorEvaluationWorkspace() {
 
     if (activeEvaluation.row.source !== 'real') {
       await new Promise((resolve) => setTimeout(resolve, 500));
-
       setIsSubmittingEvaluation(false);
       setFeedbackMessage('Avaliação encaminhada para assinatura da chefia imediata.');
       return;
@@ -862,7 +423,6 @@ export function SupervisorEvaluationWorkspace() {
       if (!session || !workspaceSnapshot) {
         throw new Error('Sessão ou processo real indisponível para enviar a avaliação.');
       }
-
       const payload = buildSupervisorEvaluationPayload(activeEvaluation, 'submit');
 
       if (workspaceSnapshot.canRectify) {
@@ -872,11 +432,9 @@ export function SupervisorEvaluationWorkspace() {
         if (!workspaceSnapshot.canSubmit) {
           throw new Error('O envio da avaliacao nao esta liberado para o estado atual do processo.');
         }
-
         await submitSupervisorEvaluation(workspaceSnapshot.process.id, payload);
         setFeedbackMessage('Avaliacao enviada para formalizacao documental.');
       }
-
       await loadSupervisorWorkspace(workspaceSnapshot.process.id);
     } catch (error) {
       setActionErrorMessage(getRequestErrorMessage(error, 'Não foi possível enviar a avaliação da chefia.'));
@@ -885,9 +443,6 @@ export function SupervisorEvaluationWorkspace() {
     }
   }
 
-  const pendingCount = DASHBOARD_ROWS.filter((row) =>
-    ['EM_AVALIACAO', 'AGUARDANDO_ASSINATURA'].includes(row.status),
-  ).length;
   const isRealEvaluation = activeEvaluation?.row.source === 'real';
   const canSaveActiveDraft = !isRealEvaluation || Boolean(workspaceSnapshot?.canEditDraft);
   const canSubmitActiveEvaluation =
@@ -896,13 +451,13 @@ export function SupervisorEvaluationWorkspace() {
   const isRealProcessLoaded = Boolean(workspaceSnapshot);
   const workspaceMode = isRealProcessLoaded
     ? {
-      label: 'Processo informado carregado',
-      detail: `Registro do processo ${workspaceSnapshot?.process.id} exibido junto aos dados demonstrativos preservados.`,
-    }
+        label: 'Processo informado carregado',
+        detail: `Registro do processo ${workspaceSnapshot?.process.id} exibido junto aos dados demonstrativos preservados.`,
+      }
     : {
-      label: 'Visualizacao demonstrativa',
-      detail: 'Dados ficticios e seguros permanecem disponiveis para apresentacao visual da jornada da chefia.',
-    };
+        label: 'Visualizacao demonstrativa',
+        detail: 'Dados ficticios e seguros permanecem disponiveis para apresentacao visual da jornada da chefia.',
+      };
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
@@ -945,7 +500,6 @@ export function SupervisorEvaluationWorkspace() {
               <span>{workspaceMode.label}</span>
               <strong>{workspaceMode.detail}</strong>
             </div>
-
           </>
         ) : null}
 
@@ -966,510 +520,35 @@ export function SupervisorEvaluationWorkspace() {
         ) : null}
 
         {activeEvaluation ? (
-          <div className="evaluation-detail">
-            <button
-              type="button"
-              className="ghost-button evaluation-detail__back"
-              onClick={() => setActiveEvaluation(null)}
-            >
-              ← Voltar
-            </button>
-
-            <div className="evaluation-detail__heading">
-              <h3>Avaliação de desempenho - {activeEvaluation.row.stageLabel}</h3>
-              <p>Relatório Técnico Individual de Estágio Probatório</p>
-            </div>
-
-            <section className="evaluation-detail__card">
-              <div className="evaluation-detail__section-title">
-                I. Identificação do servidor e chefia (somente leitura)
-              </div>
-
-              <div className="evaluation-detail__identity-grid">
-                <div>
-                  <span>Nome do servidor</span>
-                  <strong>{activeEvaluation.row.serverName}</strong>
-                </div>
-                <div>
-                  <span>Cargo / matrícula</span>
-                  <strong>
-                    {activeEvaluation.row.role} / {activeEvaluation.row.registration}
-                  </strong>
-                </div>
-                <div>
-                  <span>Data exercício</span>
-                  <strong>{activeEvaluation.row.exerciseStart}</strong>
-                </div>
-                <div>
-                  <span>Período de acompanhamento</span>
-                  <strong>{activeEvaluation.row.trackingPeriod}</strong>
-                </div>
-                <div>
-                  <span>Unidade de lotação</span>
-                  <strong>Escola Estadual X</strong>
-                </div>
-                <div>
-                  <span>Chefia imediata</span>
-                  <strong>{activeEvaluation.row.supervisorName}</strong>
-                </div>
-                <div>
-                  <span>Cargo da chefia</span>
-                  <strong>{activeEvaluation.row.supervisorRole}</strong>
-                </div>
-              </div>
-            </section>
-
-            <section className="evaluation-detail__card">
-              <div className="evaluation-detail__section-title">II. Competência da unidade</div>
-              <label className="field-group">
-                <textarea
-                  value={activeEvaluation.unitCompetencies}
-                  onChange={(event) =>
-                    setActiveEvaluation((current) =>
-                      current
-                        ? {
-                          ...current,
-                          unitCompetencies: event.target.value,
-                        }
-                        : current,
-                    )
-                  }
-                  rows={5}
-                  placeholder="Descreva as competências e objetivos da unidade escolar..."
-                />
-                <small>{activeEvaluation.unitCompetencies.length} / 450 caracteres</small>
-              </label>
-            </section>
-
-            <section className="evaluation-detail__card">
-              <div className="evaluation-detail__section-title">
-                III. Atribuições do servidor-estagiário no período
-              </div>
-              <label className="field-group">
-                <textarea
-                  value={activeEvaluation.serverAssignments}
-                  onChange={(event) =>
-                    setActiveEvaluation((current) =>
-                      current
-                        ? {
-                          ...current,
-                          serverAssignments: event.target.value,
-                        }
-                        : current,
-                    )
-                  }
-                  rows={5}
-                  placeholder="Descreva as tarefas e responsabilidades específicas do servidor..."
-                />
-                <small>{activeEvaluation.serverAssignments.length} / 450 caracteres</small>
-              </label>
-            </section>
-
-            <section className="evaluation-detail__card">
-              <div className="evaluation-detail__section-header">
-                <div className="evaluation-detail__section-title">
-                  IV. Considerações sobre o período (mensal)
-                </div>
-
-                <button
-                  type="button"
-                  className="evaluation-detail__compact-button"
-                  onClick={addMonthlyObservation}
-                >
-                  + Inserir observação
-                </button>
-              </div>
-
-              {activeEvaluation.monthlyObservations.length > 0 ? (
-                <div className="evaluation-detail__observation-list">
-                  {activeEvaluation.monthlyObservations.map((observation) => (
-                    <article key={observation.id} className="evaluation-detail__observation-item">
-                      <div className="evaluation-detail__observation-row">
-                        <label className="evaluation-detail__month-select">
-                          <span>Mês da observação</span>
-                          <select
-                            value={observation.monthLabel}
-                            onChange={(event) =>
-                              updateMonthlyObservationMonth(observation.id, event.target.value)
-                            }
-                          >
-                            {MONTHLY_OBSERVATION_OPTIONS.map((month) => (
-                              <option key={month} value={month}>
-                                {month}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <button
-                          type="button"
-                          className="ghost-button"
-                          onClick={() => removeMonthlyObservation(observation.id)}
-                        >
-                          Remover
-                        </button>
-                      </div>
-                      <textarea
-                        value={observation.description}
-                        onChange={(event) =>
-                          updateMonthlyObservationDescription(observation.id, event.target.value)
-                        }
-                        rows={4}
-                        placeholder="Relate fatos e evidências do desempenho observado..."
-                      />
-
-                      <div className="evaluation-detail__observation-attachment">
-                        <label>
-                          <input
-                            type="file"
-                            onChange={(event) =>
-                              updateMonthlyObservationAttachment(
-                                observation.id,
-                                event.target.files?.[0]?.name ?? '',
-                              )
-                            }
-                          />
-                          <span>Anexar arquivo</span>
-                        </label>
-
-                        <small>
-                          {observation.attachmentName || 'Nenhum arquivo anexado para este mês.'}
-                        </small>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  title="Nenhuma observacao mensal registrada"
-                  description="Inclua uma observacao para documentar fatos relevantes deste periodo."
-                />
-              )}
-            </section>
-
-            <section className="evaluation-detail__card">
-              <div className="evaluation-detail__section-title">
-                V. Instruções para avaliação técnica (conceitos oficiais)
-              </div>
-
-              <div className="evaluation-detail__concept-table">
-                <div className="evaluation-detail__concept-header">
-                  <div>Faixa de pontos</div>
-                  <div>Conceito</div>
-                  <div>Descrição técnica</div>
-                </div>
-                <div className="evaluation-detail__concept-row">
-                  <div>0 a 49,9</div>
-                  <div className="evaluation-detail__concept evaluation-detail__concept--bad">Insuficiente</div>
-                  <div>"O servidor não atendeu as expectativas de desempenho definidas previamente."</div>
-                </div>
-                <div className="evaluation-detail__concept-row">
-                  <div>50 a 69,9</div>
-                  <div className="evaluation-detail__concept evaluation-detail__concept--regular">Regular</div>
-                  <div>"O servidor atendeu parcialmente as expectativas de desempenho definidas previamente, necessitando melhorar a atuação."</div>
-                </div>
-                <div className="evaluation-detail__concept-row">
-                  <div>70 a 89,9</div>
-                  <div className="evaluation-detail__concept evaluation-detail__concept--good">Bom</div>
-                  <div>"O servidor atendeu as expectativas de desempenho definidas previamente, porém ainda apresentou aspectos passíveis de melhora."</div>
-                </div>
-                <div className="evaluation-detail__concept-row">
-                  <div>90 a 100</div>
-                  <div className="evaluation-detail__concept evaluation-detail__concept--great">Excelente</div>
-                  <div>"O servidor apresentou desempenho plenamente satisfatório quanto ao aspecto avaliado, superando as expectativas."</div>
-                </div>
-              </div>
-            </section>
-
-            <div className="evaluation-detail__factors-title">VI. Pontuação dos fatores</div>
-
-            <div className="evaluation-detail__factor-stack">
-              {activeEvaluation.factors.map((factor) => (
-                <EvaluationFactorCard
-                  key={factor.id}
-                  factor={factor}
-                  isExpanded={activeEvaluation.expandedFactorIds.includes(factor.id)}
-                  onToggle={() => toggleFactor(factor.id)}
-                  onScoreChange={(itemId, score) => updateFactorScore(factor.id, itemId, score)}
-                />
-              ))}
-            </div>
-
-            <section className="evaluation-detail__card evaluation-detail__summary-card">
-              <div className="evaluation-detail__final-score-panel">
-                <label>
-                  <span>Pontuação total da etapa (soma das médias)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={activeEvaluation.totalStageScore ?? '0.0'}
-                    onFocus={() => clearDefaultFinalScore('totalStageScore')}
-                    onChange={(event) => updateFinalResult('totalStageScore', event.target.value)}
-                  />
-                </label>
-
-                <label>
-                  <span>Média da etapa</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={activeEvaluation.stageAverage ?? '0.0'}
-                    onFocus={() => clearDefaultFinalScore('stageAverage')}
-                    onChange={(event) => updateFinalResult('stageAverage', event.target.value)}
-                  />
-                </label>
-
-                <label>
-                  <span>Conceito administrativo</span>
-                  <div className="evaluation-detail__concept-tag-wrap" aria-label="Conceito administrativo">
-                    <div className={getConceptByAverage(Number(activeEvaluation.stageAverage || 0)).className}>
-                      {activeEvaluation.administrativeConcept}
-                    </div>
-                  </div>
-                </label>
-              </div>
-
-              <p className="evaluation-detail__final-note">
-                "A média da 4ª etapa será provisória, devendo ser confirmada conforme normas específicas."
-              </p>
-
-              <div className="evaluation-detail__signature-card">
-                <div className="evaluation-detail__signature-title">
-                  Validação do Relatório Individual de Estágio Probatório
-                </div>
-
-                <div className="evaluation-detail__signature-grid">
-                  <div className="evaluation-detail__signature-box">
-                    <div>Aguardando conclusão do preenchimento</div>
-                    <strong>{activeEvaluation.row.serverName}</strong>
-                    <span>Assinatura do servidor-estagiário</span>
-                  </div>
-
-                  <div className="evaluation-detail__signature-box">
-                    <div>Aguardando conclusão do preenchimento</div>
-                    <strong>{activeEvaluation.row.supervisorName}</strong>
-                    <span>Assinatura da chefia imediata ({activeEvaluation.row.supervisorRole})</span>
-                  </div>
-                </div>
-
-                <div className="evaluation-detail__signature-place-date">
-                  Belém, Pará - {formatValidationDate()}
-                </div>
-              </div>
-
-              {feedbackMessage ? (
-                <div className="evaluation-detail__feedback">{feedbackMessage}</div>
-              ) : null}
-
-              {actionErrorMessage ? (
-                <FeedbackAlert
-                  title="Operação não concluída"
-                  tone="error"
-                  description={actionErrorMessage}
-                />
-              ) : null}
-
-              <div className="evaluation-detail__actions">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={isSavingDraft || isSubmittingEvaluation || !canSaveActiveDraft}
-                  onClick={handleSaveDraft}
-                >
-                  {isSavingDraft ? 'Salvando...' : 'Salvar rascunho'}
-                </button>
-                <button
-                  type="button"
-                  className="warning-button"
-                  disabled={isSubmittingEvaluation || isSavingDraft || !canSubmitActiveEvaluation}
-                  onClick={handleSubmitEvaluation}
-                >
-                  {isSubmittingEvaluation ? 'Submetendo...' : submitButtonLabel}
-                </button>
-              </div>
-            </section>
-          </div>
+          <EvaluationDetailView
+            evaluation={activeEvaluation}
+            isSavingDraft={isSavingDraft}
+            isSubmittingEvaluation={isSubmittingEvaluation}
+            canSaveActiveDraft={canSaveActiveDraft}
+            canSubmitActiveEvaluation={canSubmitActiveEvaluation}
+            submitButtonLabel={submitButtonLabel}
+            feedbackMessage={feedbackMessage}
+            actionErrorMessage={actionErrorMessage}
+            onChange={(updater) =>
+              setActiveEvaluation((current) => (current ? updater(current) : null))
+            }
+            onBack={() => setActiveEvaluation(null)}
+            onSaveDraft={() => void handleSaveDraft()}
+            onSubmit={() => void handleSubmitEvaluation()}
+          />
         ) : (
-          <div className="supervisor-dashboard">
-            <section className="supervisor-dashboard__table-card">
-              <div className="supervisor-dashboard__filters">
-                <div className="supervisor-dashboard__filters-title">
-                  <button
-                    type="button"
-                    className="supervisor-dashboard__filters-trigger"
-                    aria-label="Abrir filtros por status"
-                    aria-expanded={isFilterPanelOpen}
-                    aria-controls="supervisor-status-filters"
-                    onClick={() => setIsFilterPanelOpen((current) => !current)}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M4.5 6.5h15l-6 6.7v3.9l-3 1.7v-5.6l-6-6.7Z"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                  <span>Filtrar por status</span>
-                </div>
-
-                {isFilterPanelOpen ? (
-                  <div
-                    id="supervisor-status-filters"
-                    className="supervisor-dashboard__filter-popover"
-                    role="dialog"
-                    aria-label="Filtros por status da avaliação"
-                  >
-                    <div className="supervisor-dashboard__filter-popover-header">
-                      <strong>Status exibidos</strong>
-                      <span>{selectedFilters.length} de {STATUS_FILTERS.length} ativos</span>
-                    </div>
-
-                    <div className="supervisor-dashboard__filter-options">
-                      {STATUS_FILTERS.map((filter) => (
-                        <label key={filter.id} className="supervisor-dashboard__filter-option">
-                          <input
-                            type="checkbox"
-                            checked={selectedFilters.includes(filter.id)}
-                            onChange={() => toggleFilter(filter.id)}
-                          />
-                          <span>{filter.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="supervisor-dashboard__table-header">
-                <div>Servidor</div>
-                <div>Matrícula</div>
-                <div>Cargo</div>
-                <div>Exercício</div>
-                <div>Status</div>
-                <div>Etapa atual</div>
-                <div>Prazo limite</div>
-                <div>Avaliações anteriores</div>
-                <div>Ação</div>
-              </div>
-
-              <div className="supervisor-dashboard__rows">
-                {filteredRows.length > 0 ? (
-                  filteredRows.map((row) => (
-                    <article
-                      key={row.id}
-                      className={
-                        row.source === 'real'
-                          ? 'supervisor-dashboard__row supervisor-dashboard__row--real'
-                          : 'supervisor-dashboard__row'
-                      }
-                    >
-                      <div className="supervisor-dashboard__server" data-label="Servidor">
-                        <strong>{row.serverName}</strong>
-                        {row.source === 'real' ? <span>processo informado carregado</span> : null}
-                      </div>
-
-                      <div className="supervisor-dashboard__cell supervisor-dashboard__registration" data-label="Matrícula">
-                        {row.registration}
-                      </div>
-                      <div className="supervisor-dashboard__cell" data-label="Cargo">{row.role}</div>
-                      <div className="supervisor-dashboard__cell" data-label="Exercício">{row.exerciseStart}</div>
-                      <div className="supervisor-dashboard__cell" data-label="Status">
-                        <span className={getStatusClassName(row.status)}>{getStatusLabel(row.status)}</span>
-                      </div>
-                      <div className="supervisor-dashboard__cell" data-label="Etapa atual">
-                        <span className={getStageClassName(row.status)}>{row.stageLabel}</span>
-                      </div>
-                      <div className="supervisor-dashboard__cell" data-label="Prazo limite">{row.deadline}</div>
-                      <div className="supervisor-dashboard__cell supervisor-dashboard__cell--center" data-label="Avaliações anteriores">
-                        {row.canReviewPrevious ? (
-                          <button
-                            type="button"
-                            className="secondary-button supervisor-dashboard__ghost-action"
-                            onClick={() => openPreviousEvaluations(row)}
-                          >
-                            Visualizar
-                          </button>
-                        ) : (
-                          <span className="supervisor-dashboard__empty-value">Nao aplicavel</span>
-                        )}
-                      </div>
-                      <div className="supervisor-dashboard__cell supervisor-dashboard__cell--end" data-label="Ação">
-                        <button
-                          type="button"
-                          className={
-                            row.actionDisabled
-                              ? 'secondary-button supervisor-dashboard__primary-action supervisor-dashboard__primary-action--disabled'
-                              : 'supervisor-dashboard__primary-action'
-                          }
-                          disabled={row.actionDisabled}
-                          onClick={() => openEvaluation(row)}
-                        >
-                          {row.actionLabel}
-                        </button>
-                      </div>
-                    </article>
-                  ))
-                ) : (
-                  <EmptyState
-                    title="Nenhum servidor encontrado nos filtros"
-                    description="Ajuste os filtros de status para voltar a exibir os registros disponiveis."
-                  />
-                )}
-              </div>
-            </section>
-
-            {previousReviewRow ? (
-              <div className="previous-evaluations-modal">
-                <div className="previous-evaluations-modal__backdrop" onClick={closePreviousEvaluations} />
-                <div className="previous-evaluations-modal__content">
-                  <header className="previous-evaluations-modal__header">
-                    <h2>AVALIAÇÕES ANTERIORES DO SERVIDOR</h2>
-                    <p>
-                      {previousReviewRow.serverName} • Matrícula: {previousReviewRow.registration}
-                    </p>
-                  </header>
-
-                  <div className="previous-evaluations-modal__table">
-                    <div className="previous-evaluations-modal__row previous-evaluations-modal__row--header">
-                      <span>Etapa</span>
-                      <span>Data de conclusão</span>
-                      <span>Ação</span>
-                    </div>
-                    {previousEvaluationHistory.length > 0 ? (
-                      previousEvaluationHistory.map((historyItem) => (
-                        <div key={historyItem.stageLabel} className="previous-evaluations-modal__row">
-                          <div>
-                            <strong>{historyItem.stageLabel}</strong>
-                            <span>{historyItem.statusLabel.toLowerCase()}</span>
-                          </div>
-                          <span>{historyItem.conclusionDate}</span>
-                          <button type="button" className="supervisor-dashboard__primary-action">
-                            {historyItem.actionLabel}
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <EmptyState
-                        title="Nenhuma avaliacao anterior localizada"
-                        description="Este registro nao possui historico anterior para exibicao no momento."
-                      />
-                    )}
-                  </div>
-
-                  <div className="previous-evaluations-modal__footer">
-                    <button type="button" className="supervisor-dashboard__primary-action" onClick={closePreviousEvaluations}>
-                      Fechar visualização
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </div>
+          <SupervisorDashboardTable
+            filteredRows={filteredRows}
+            selectedFilters={selectedFilters}
+            isFilterPanelOpen={isFilterPanelOpen}
+            previousReviewRow={previousReviewRow}
+            previousEvaluationHistory={previousEvaluationHistory}
+            onToggleFilterPanel={() => setIsFilterPanelOpen((current) => !current)}
+            onToggleFilter={toggleFilter}
+            onOpenEvaluation={openEvaluation}
+            onOpenPreviousEvaluations={(row) => setPreviousReviewRow(row)}
+            onClosePreviousEvaluations={() => setPreviousReviewRow(null)}
+          />
         )}
       </PageSection>
     </AuthGuard>
