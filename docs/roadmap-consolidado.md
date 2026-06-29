@@ -83,6 +83,8 @@ flowchart TD
    - Modelar a entidade `PublicationOrdinance`, suporte a portarias individuais e coletivas, geração de numeração sequencial transacional (sem repetição ou colisão) e estrutura de dados copiável para o sistema do Diário Oficial (DOE).
 4. **Bloco Recursal Completo (`BE-APPEAL-01` / Futuro):**
    - Implementar as APIs para abertura de recurso de etapa (com travamento automático após 5 dias da ciência), geração do despacho preliminar da CESAD, resposta da chefia (com abertura de Avaliação Substitutiva no caso de reavaliação) e o rito de Recurso Final à Autoridade Homologadora.
+5. **`BE-CESAD-REG-01` — Cadastro e Gerenciamento de Comissões CESAD:**
+   - Atualmente, a API conta apenas com endpoints de consulta (`GET /cesad/commissions`, `GET /cesad/commission-members`, etc.). Falta implementar os endpoints de mutação (`POST` e `PUT`) para o cadastro de novas comissões, associação de atos designativos (`CesadCommissionAct`), inclusão/alteração de membros (titulares e suplentes) e regras de vigência e encerramento de mandatos.
 
 ### 3.2. Frontend (Dependente de Contratos Backend)
 
@@ -92,13 +94,15 @@ O desenvolvimento das telas a seguir está expressamente condicionado à existê
    - Implementar a listagem real dos processos vinculados ao perfil logado (chefia, servidor ou comissão), removendo os fallbacks demonstrativos e a inserção manual de IDs.
 2. **`FE-CESAD-01` — Workspaces Ativos da CESAD:**
    - Conectar as telas reais para elaboração de pareceres de etapa, elaboração do Parecer Conclusivo Final, disparo da preparação de assinaturas e interface de coleta de assinaturas colegiadas.
-3. **Desenvolvimento dos Módulos em Scaffold (`.gitkeep`):**
+3. **`FE-CESAD-REG-01` — Gestão e Cadastro de Comissões (`features/cesad-comissao`):**
+   - Criar a interface administrativa completa para o cadastro de novas comissões da CESAD, gestão de membros (inclusão, alteração de status, titularidade/suplência) e registro dos atos de nomeação, integrando com as APIs de mutação de `BE-CESAD-REG-01`.
+4. **Desenvolvimento dos Módulos em Scaffold (`.gitkeep`):**
    - A base frontend possui vários diretórios estruturais vazios (apenas reservados) em `apps/frontend/src/features/`. Eles precisarão ser construídos do zero assim que o backend fornecer as fundações:
      - `features/homologacao-autoridade/` (Conectar à API da Autoridade Homologadora);
      - `features/notificacoes-ciencia/` (Tela de visualização de notificação e clique de ciência do servidor);
      - `features/assinaturas-eletronicas/` (Integração de provedores, como GOV.BR);
      - `features/avaliacoes/` e `features/autoavaliacao/` (Workspaces ativos de preenchimento);
-     - `features/painel-gerencial-cesad/` e `features/cesad-comissao/`.
+     - `features/painel-gerencial-cesad/`.
 
 ---
 
@@ -111,7 +115,7 @@ Para manter o ritmo de entrega com a máxima integridade e segurança, o roadmap
 | **Fase 1<br>(Atual)** | **Fechamento do Fluxo Principal** | • `BE-HOMOLOG-01` (Homologação, Notificação e Ciência)<br>• `BE-SEC-03` (Segurança residual)                                                      | Finaliza a espinha dorsal do processo no backend, cobrindo o rito do início ao fim.                |
 |      **Fase 2**       | **Destravamento de Interfaces**   | • `FE-PROCESS-LIST-01` e `FE-CHEFIA-02` (Listagens reais)<br>• `FE-CESAD-01` (Telas ativas da CESAD)<br>• Workspaces de Avaliação e Autoavaliação | Substitui os dados demonstrativos no frontend por integrações reais e seguras com a API.           |
 |      **Fase 3**       | **Defesa e Publicação**           | • APIs e Telas do Bloco Recursal (Recurso de Etapa e Final)<br>• Módulo de Portaria e Integração DOE                                              | Garante o direito de defesa (contraditório) ao servidor e prepara os atos para publicação oficial. |
-|      **Fase 4**       | **Hardening e Ecossistema**       | • Assinaturas Externas (GOV.BR)<br>• `BE-AUDIT-AUTH-01` (Auditoria persistida de auth)<br>• Painel Gerencial da CESAD                             | Eleva o nível de segurança, conformidade e integração institucional do sistema.                    |
+|      **Fase 4**       | **Hardening e Ecossistema**       | • Assinaturas Externas (GOV.BR)<br>• `BE-AUDIT-AUTH-01` (Auditoria persistida de auth)<br>• Cadastro e Gestão de Comissões CESAD                  | Eleva o nível de segurança, conformidade e integração institucional do sistema.                    |
 
 ---
 
