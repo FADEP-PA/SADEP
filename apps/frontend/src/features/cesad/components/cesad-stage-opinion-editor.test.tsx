@@ -1,5 +1,7 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+
+import type { CesadStageOpinionInput } from '@sadep/contracts';
 
 import { CesadStageOpinionEditor } from './cesad-stage-opinion-editor';
 import type { CesadStageOpinionFormState } from './cesad-stage-opinion-editor';
@@ -21,12 +23,12 @@ const FILLED_FORM: CesadStageOpinionFormState = {
 };
 
 describe('CesadStageOpinionEditor', () => {
-  let onSaveDraft: ReturnType<typeof vi.fn>;
-  let onComplete: ReturnType<typeof vi.fn>;
+  let onSaveDraft: Mock<(input: CesadStageOpinionInput) => Promise<void>>;
+  let onComplete: Mock<(input: CesadStageOpinionInput) => Promise<void>>;
 
   beforeEach(() => {
-    onSaveDraft = vi.fn().mockResolvedValue(undefined);
-    onComplete = vi.fn().mockResolvedValue(undefined);
+    onSaveDraft = vi.fn<(input: CesadStageOpinionInput) => Promise<void>>().mockResolvedValue(undefined);
+    onComplete = vi.fn<(input: CesadStageOpinionInput) => Promise<void>>().mockResolvedValue(undefined);
   });
 
   it('renderiza todos os campos do formulario', () => {
