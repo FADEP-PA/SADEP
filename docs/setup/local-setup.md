@@ -7,6 +7,13 @@ Este documento descreve o fluxo padrão para instalar, preparar e executar o SAD
 - Node.js instalado
 - npm disponível no terminal
 - Windows PowerShell ou terminal equivalente
+- **PostgreSQL acessível** — o projeto usa PostgreSQL 17. A forma mais simples localmente é o Docker:
+
+```powershell
+docker compose up -d
+```
+
+O `docker-compose.yml` na raiz sobe o PostgreSQL na porta `5432` com usuário `sadep`, senha `sadep_local_dev` e banco `sadep`. Aguarde o healthcheck passar antes de rodar o bootstrap.
 
 ## Branch de trabalho
 
@@ -35,6 +42,7 @@ Copy-Item apps\backend\.env.example apps\backend\.env
 Edite `apps\backend\.env` antes do bootstrap e defina os valores locais obrigatorios:
 
 ```env
+DATABASE_URL=postgresql://sadep:sadep_local_dev@localhost:5432/sadep
 JWT_SECRET=sadep-local-jwt-secret-com-mais-de-32-caracteres-2026
 REFRESH_TOKEN_HMAC_SECRET=sadep-local-refresh-secret-com-mais-de-32-caracteres-2026
 DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
@@ -57,17 +65,16 @@ DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
 npm run backend:bootstrap
 ```
 
-Esse é o fluxo oficial de preparo local do backend nesta etapa. Ele executa, em ordem:
+Esse é o fluxo oficial de preparo local do backend. Ele executa, em ordem:
 
-- `prisma generate`
-- preparação mínima de compatibilidade do SQLite local legado
-- `prisma db push --schema prisma/schema.prisma --skip-generate`
-- seed de desenvolvimento
+- `prisma generate` — gera o Prisma Client a partir do schema
+- `prisma migrate deploy` — aplica todas as migrations pendentes no banco PostgreSQL local
+- seed de desenvolvimento — cria os usuários padrão com `DEV_SEED_PASSWORD`
 - checagem mínima do banco
 
-A configuração Prisma do backend agora fica em `apps/backend/prisma.config.ts`. Nela, o schema continua apontando para `prisma/schema.prisma` e o seed configurado no Prisma aponta para `prisma/seed.ts`, sem alterar o fluxo oficial do projeto.
+A configuração Prisma do backend fica em `apps/backend/prisma.config.ts`. O schema aponta para `prisma/schema.prisma` e o seed para `prisma/seed.ts`.
 
-O projeto usa `db push` como solução operacional local compatível com o estado atual do repositório. `migrate dev` não é o caminho principal local nesta etapa, pois há limitação conhecida em migration histórica no shadow database SQLite.
+O projeto usa `migrate deploy` para aplicar migrations históricas no banco local — o mesmo comando usado em produção. `migrate dev` não é o caminho recomendado localmente pois cria migrations novas interativamente; use apenas quando for desenvolver mudanças de schema.
 
 No Windows, o passo `prisma generate` executa uma guarda operacional antes de gerar o Prisma Client. Se houver processos Node relacionados ao backend, testes ou Prisma em execução, o comando falha cedo e lista os PIDs/command lines relevantes para evitar `EPERM` ao atualizar o engine `query_engine-windows.dll.node`. Feche esses processos e rode o bootstrap novamente.
 
@@ -214,9 +221,10 @@ Checklist mínimo para validar o ambiente:
 - `REFRESH_TOKEN_HMAC_SECRET` definido no ambiente local
 - `FRONTEND_ORIGIN` valido e sem path/query/fragmento
 - `apps/backend/prisma.config.ts` presente com schema e seed do backend
+- PostgreSQL acessível na porta `5432` (via `docker compose up -d` ou instância local)
 - `npm run backend:bootstrap` executado com sucesso
 - Prisma Client gerado
-- banco sincronizado com `db push`
+- migrations aplicadas via `prisma migrate deploy`
 - seed e `db:check` executados
 - backend respondendo em `3000`
 - frontend respondendo em `5000`
