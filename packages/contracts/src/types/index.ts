@@ -16,5 +16,6 @@ export * from './intern-server-workspace';
 export * from './process-ref';
 export * from './signature-metadata';
 
+export * from './homologation';
 export * from './self-evaluation';
 export * from './supervisor-evaluation';
