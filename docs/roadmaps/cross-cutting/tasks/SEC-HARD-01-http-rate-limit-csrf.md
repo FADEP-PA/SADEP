@@ -2,7 +2,7 @@
 
 ## Status
 
-Melhoria futura.
+**Encerrado** (2026-06-29).
 
 ## Area
 
@@ -50,6 +50,13 @@ Cross-cutting, seguranca, backend, deploy e operacao.
 - decisao de deploy/domínios;
 - politica institucional de seguranca.
 
-## Proxima acao
+## Validacao final (2026-06-29)
 
-Decidir o primeiro recorte: headers HTTP, rate limit de auth ou politica CSRF.
+Revisao completa confirmou que todos os criterios de aceite ja estavam atendidos:
+
+- **Helmet/headers HTTP**: CSP explicita em `main.ts` (defaultSrc, scriptSrc, objectSrc none, frameSrc none); `upgradeInsecureRequests` agora condicional a `NODE_ENV=production` para nao gerar ruido em desenvolvimento HTTP.
+- **Rate limit de auth**: `ThrottlerModule` global (120 req/min) com override por endpoint: login=10/min, refresh=30/min, logout=20/min — via `@Throttle` em `auth.controller.ts`.
+- **CSRF/cookie**: `validateCsrfOrigin()` nos endpoints `refresh` e `logout` (cookie-based). Cookie `sadep_refresh` com `HttpOnly`, `SameSite=Lax`, `Path=/auth` e `Secure` via variavel de ambiente.
+- **PII em logs**: `GlobalExceptionFilter` diferencia niveis por status HTTP (5xx → error + stack, 401/403 → debug, outros 4xx → warn). E-mails mascarados via `maskEmail()` em `auth.service.ts`. Encerrado como `SEC-LOG-PII-01`.
+- **Cookie renomeado**: `aep_pa_refresh` → `sadep_refresh`. Encerrado como `NOM-AEP-COOKIE-01`.
+- **Requisitos de producao**: HTTPS, dominio e `Secure=true` sao configurados por variaveis de ambiente (`COOKIE_SECURE`, `COOKIE_SAMESITE`, `COOKIE_DOMAIN`); documentados em `.env.example` e `ci.yml`.

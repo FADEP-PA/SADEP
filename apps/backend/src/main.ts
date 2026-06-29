@@ -19,6 +19,9 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter(logger));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
+  const appConfigService = app.get(AppConfigService);
+  const isProduction = appConfigService.nodeEnv === 'production';
+
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -31,14 +34,13 @@ async function bootstrap() {
           fontSrc: ["'self'"],
           objectSrc: ["'none'"],
           frameSrc: ["'none'"],
-          upgradeInsecureRequests: [],
+          ...(isProduction && { upgradeInsecureRequests: [] }),
         },
       },
       crossOriginEmbedderPolicy: false,
     }),
   );
 
-  const appConfigService = app.get(AppConfigService);
   app.enableCors({
     origin: appConfigService.frontendOrigin,
     credentials: true,
