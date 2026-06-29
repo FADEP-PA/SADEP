@@ -2,7 +2,7 @@
 
 ## Status
 
-Alerta pendente.
+**Encerrado** (2026-06-29). `qs` corrigido via `npm audit fix`; `next` atualizado de `15.5.15` para `15.5.19` (patch). `postcss <8.5.10` via `next` e `multer` via `@nestjs/platform-express` permanecem sem fix disponivel sem breaking change — monitorar releases futuros de Next.js 16+ e NestJS.
 
 ## Area
 
