@@ -2,7 +2,7 @@
 
 ## Status
 
-Pendente alta. Bloqueada por backend ate que exista contrato seguro de listagem de processos por chefia autenticada e capabilities por processo.
+**Encerrado** (2026-06-29). Lista real de processos carregada via `GET /processes` ao montar o workspace; fallback demonstrativo (`DASHBOARD_ROWS`) removido; mapeamento `fromApiItem` introduzido para converter `ProcessListItemRef` em `SupervisorDashboardRow`.
 
 ## Area
 

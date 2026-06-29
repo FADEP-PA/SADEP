@@ -2,7 +2,7 @@
 
 ## Status
 
-Aberta como guarda-chuva residual / integracao futura.
+**Encerrado** (2026-06-29). Revisao confirmou que endpoints de homologacao nao requerem autorizacao CESAD contextual adicional; guards de role existentes sao suficientes. Novas integracoes futuras devem nascer como tasks proprias.
 
 ## Area
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Pendente / subtarefa de hardening.
+**Encerrado** (2026-06-29). E-mails mascarados via `maskEmail()` em `auth.service.ts`; `GlobalExceptionFilter` corrigido para logar 5xx como `error` com stack, 401/403 como `debug` e demais 4xx como `warn` sem stack.
 
 ## Area
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Melhoria futura.
+**Encerrado** (2026-06-29). Cookie renomeado de `aep_pa_refresh` para `sadep_refresh` em `env.validation.ts`, `.env.example`, `ci.yml` e `auth.endpoint.spec.ts`.
 
 ## Area
 

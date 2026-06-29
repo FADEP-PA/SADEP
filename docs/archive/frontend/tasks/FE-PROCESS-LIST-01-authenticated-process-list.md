@@ -2,7 +2,7 @@
 
 ## Status
 
-Pendente / bloqueada por backend.
+**Encerrado** (2026-06-29). Endpoint `GET /processes` criado no backend com filtro por perfil (`INTERN_SERVER` → proprio, `IMMEDIATE_SUPERVISOR` → etapas atribuidas, demais → todos); workspace do servidor estagiario auto-carrega o unico processo ao montar.
 
 ## Prioridade
 

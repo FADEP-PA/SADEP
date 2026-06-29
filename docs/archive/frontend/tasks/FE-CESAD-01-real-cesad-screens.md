@@ -2,7 +2,7 @@
 
 ## Status
 
-Pendente alta.
+**Encerrado** (2026-06-29). Editor de parecer CESAD integrado (`CesadStageOpinionEditor`); API calls para draft e complete adicionadas; workspace auto-seleciona o primeiro processo `EM_ANALISE_CESAD` da lista; leitura consolidada existente preservada como fallback quando parecer ja esta concluido.
 
 ## Area
 
