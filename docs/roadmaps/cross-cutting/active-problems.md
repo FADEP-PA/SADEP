@@ -33,10 +33,10 @@ O proximo bloco de implementacao backend prioritario e `BE-HOMOLOG-01` (homologa
 
 ## DX / infra
 
-- [`DX-POSTCSS-01` — alerta de audit `postcss`/`next`](./tasks/DX-POSTCSS-01-audit-postcss-next.md): permanece como pendencia separada.
-- [`DX-DB-SEED-01` — seed minimo local e checagem de banco](./tasks/DX-DB-SEED-01-local-seed-bootstrap.md): alerta operacional; `db:check` pode falhar quando o banco local existe sem seed minimo; usar `npm run backend:bootstrap` para preparar o ambiente local.
-- `NOM-AEP-COOKIE-01` — **encerrado** (2026-06-29). Cookie renomeado de `aep_pa_refresh` para `sadep_refresh` em `env.validation.ts`, `.env.example`, `ci.yml` e `auth.endpoint.spec.ts`.
-- [`CI-GATES-01` — definir pipeline oficial de validacao](./tasks/CI-GATES-01-validation-pipeline.md): gates locais existem e passam, mas falta pipeline oficial evidente.
+- `DX-POSTCSS-01` — **encerrado** (2026-06-29). `qs` corrigido via `npm audit fix`; `next` atualizado para `15.5.19`. `postcss` via `next` e `multer` via `@nestjs/platform-express` nao tem fix sem breaking change — monitorar Next.js 16+ e NestJS.
+- `DX-DB-SEED-01` — **encerrado** (2026-06-29). `local-setup.md` atualizado: PostgreSQL via Docker documentado, referencias a SQLite removidas, `DATABASE_URL` explicitada, bootstrap atualizado para `prisma migrate deploy`.
+- `NOM-AEP-COOKIE-01` — **encerrado** (2026-06-29). Cookie renomeado de `aep_pa_refresh` para `sadep_refresh`.
+- `CI-GATES-01` — **encerrado** (2026-06-29). Gates de `git diff --check`, `prisma validate` e `frontend:copy-check` adicionados ao `ci.yml`.
 
 ## Qualidade
 
