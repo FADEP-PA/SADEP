@@ -1,140 +1,120 @@
 # BE-CESAD-REG-01E — Rollover de processos em andamento
 
-## Status
+**Dev:** Lucas
+**Status:** Pendente
+**Depende de:** BE-CESAD-REG-01A, 01B, 01C, 01D (todos merged e estáveis)
 
-Pendente / especificada / alta sensibilidade / executar apos estabilizar cadastro e encerramento.
+> Task de maior risco do épico. Não iniciar antes de 01B + 01C + 01D estabilizados.
 
-## Relacao com o epico
-
-Task filha de `BE-CESAD-REG-01`.
-
-Implementa a parte mais sensivel da `ADR-006`: substituicao explicita e auditavel de atos preparatorios quando a comissao vigente muda.
+---
 
 ## Objetivo
 
-Permitir que a comissao CESAD vigente assuma processos em andamento que ainda nao possuem parecer CESAD consolidado, preservando atos anteriores como referencia historica e impedindo que documentos parcialmente assinados pela comissao anterior produzam ato final.
+Permitir que a comissão CESAD vigente assuma processos em andamento que ainda não possuem parecer CESAD consolidado, preservando atos anteriores como referência histórica e impedindo que documentos parcialmente assinados pela comissão anterior produzam ato final.
 
-## Escopo
-
-- Detectar que a assignment atual pertence a comissao que perdeu vigencia.
-- Verificar se existe parecer/documento consolidado.
-- Preservar pareceres/documentos consolidados.
-- Superseder ou invalidar atos preparatorios nao consolidados.
-- Criar nova assignment para a comissao vigente quando aplicavel.
-- Recriar expected signers com base na nova comissao vigente.
-- Impedir assinaturas pendentes da comissao anterior de consolidarem documento antigo.
-- Auditar rollover.
+---
 
 ## Fora do escopo
 
-- Cadastro de comissao.
-- Edicao de comissao.
-- Encerramento administrativo de comissao.
-- Frontend.
-- Homologacao, notificacao e ciencia.
-- Mudanca em parecer final, salvo se a varredura identificar dependencia especifica.
+- Cadastro de comissão
+- Edição de comissão
+- Encerramento administrativo de comissão
+- Frontend
+- Homologação, notificação e ciência
+- Mudança em parecer final, salvo se a varredura identificar dependência específica
+
+---
 
 ## Regra central
 
-A mudanca de comissao afeta atos preparatorios, nao atos consolidados.
+A mudança de comissão afeta atos preparatórios, não atos consolidados.
 
-Um ato esta consolidado quando:
+Um ato está consolidado quando:
+- Documento correspondente está `SIGNED`
+- Todas as assinaturas esperadas estão `COMPLETED`
+- Ato colegiado está documentalmente completo
 
-- documento correspondente esta `SIGNED`;
-- todas as assinaturas esperadas estao `COMPLETED`;
-- ato colegiado esta documentalmente completo.
+---
 
 ## Casos de rollover
 
-| Situacao | Resultado esperado |
+| Situação | Resultado esperado |
 |---|---|
-| Sem parecer iniciado | Nova comissao vigente assume a etapa/processo. |
-| Parecer em draft | Draft anterior vira referencia historica ou e descartado conforme regra futura; nova comissao inicia parecer. |
-| Parecer funcional completo, mas documento nao assinado | Documento/parecer preparatorio deve ser supersedado. |
-| Documento `READY_FOR_SIGNATURE` | Documento deve ser supersedado antes de novo parecer valido. |
-| Documento parcialmente assinado | Assinaturas pendentes devem ser impedidas; documento anterior vira referencia. |
-| Documento `SIGNED` com todas assinaturas | Nao aplicar rollover; ato permanece valido. |
+| Sem parecer iniciado | Nova comissão vigente assume a etapa/processo |
+| Parecer em draft | Draft anterior vira referência histórica; nova comissão inicia parecer |
+| Parecer funcional completo, documento não assinado | Documento/parecer preparatório deve ser supersedado |
+| Documento `READY_FOR_SIGNATURE` | Documento deve ser supersedado antes de novo parecer válido |
+| Documento parcialmente assinado | Assinaturas pendentes devem ser impedidas; documento anterior vira referência |
+| Documento `SIGNED` com todas assinaturas | Não aplicar rollover; ato permanece válido |
 
-## Endpoints possiveis
-
-A definir na varredura tecnica. Opcoes:
-
-```http
-POST /processes/:id/stages/:sequence/cesad-stage-assignment/rollover
-```
-
-ou integrar a validacao nos fluxos existentes de parecer/assinatura, exigindo rollover antes de prosseguir.
-
-## Regras de autorizacao
-
-A confirmar na implementacao, mas a orientacao inicial e:
-
-Permitidos:
-
-- `ADMIN`;
-- `HOMOLOGATION_AUTHORITY`;
-- possivelmente `CESAD_MEMBER` da nova comissao, apenas para iniciar a atuacao quando o processo estiver sob sua competencia.
-
-Bloqueados:
-
-- comissao anterior fora de vigencia;
-- `COMMISSION_ASSISTANT` para mutacao;
-- chefia;
-- servidor.
-
-## Auditoria esperada
-
-Evento futuro esperado:
-
-- `CESAD_COMMISSION_ROLLOVER_APPLIED`.
-
-Metadata minima:
-
-- processo;
-- etapa;
-- assignment anterior;
-- comissao anterior;
-- nova comissao;
-- documentos supersedados;
-- expected signers cancelados/supersedados;
-- usuario executor;
-- motivo;
-- data de referencia.
-
-## Testes obrigatorios
-
-- Rollover sem parecer iniciado.
-- Rollover com draft.
-- Rollover com documento `READY_FOR_SIGNATURE`.
-- Rollover com documento parcialmente assinado.
-- Bloqueio de rollover quando documento ja esta `SIGNED`.
-- Bloqueio de assinatura pendente da comissao anterior apos rollover.
-- Nova assignment criada para comissao vigente.
-- Assignment anterior preservada.
-- Auditoria criada.
-- Idempotencia ou conflito claro em segunda tentativa.
+---
 
 ## Riscos
 
-- Afeta documentos, expected signers e assinaturas.
-- Pode conflitar com `BE-CESAD-ASSIGN-REPLACE-01` se nao houver separacao clara.
-- Pode exigir novo status ou metadata para expected signers supersedados.
-- Pode exigir ajustes em leitura consolidada para exibir referencias historicas.
+- Afeta documentos, expected signers e assinaturas
+- Pode conflitar com `BE-CESAD-ASSIGN-REPLACE-01` se não houver separação clara
+- Pode exigir novo status ou metadata para expected signers supersedados
+- Pode exigir ajustes em leitura consolidada para exibir referências históricas
 
-## Criterios de aceite
+---
 
-- Atos consolidados nao sao alterados.
-- Atos preparatorios da comissao anterior nao produzem efeito final.
-- Nova comissao vigente consegue emitir parecer valido.
-- Historico permanece consultavel.
-- Auditoria explica a transicao de competencia.
+## Endpoint
 
-## Dependencias
+- [ ] Definir endpoint na varredura (opção: `POST /processes/:id/stages/:sequence/cesad-stage-assignment/rollover`)
+- [ ] Confirmar autorizações: `ADMIN`, `HOMOLOGATION_AUTHORITY` e possivelmente `CESAD_MEMBER` da nova comissão
 
-- `BE-CESAD-REG-01A`.
-- Preferencialmente `BE-CESAD-REG-01B`, `01C` e `01D`.
-- `ADR-006`.
+---
 
-## Paralelizacao
+## Detecção e elegibilidade
 
-Nao deve ser implementada em paralelo com `01B`, `01C` ou `01D`. Pode ser estudada em paralelo em nivel de analise, mas a implementacao deve ocorrer depois da estabilizacao do cadastro/encerramento da comissao.
+- [ ] Detectar que a assignment ativa pertence a comissão que perdeu vigência
+- [ ] Verificar se existe parecer/documento consolidado na etapa
+- [ ] Bloquear rollover quando documento já está `SIGNED` com assinaturas completas
+
+---
+
+## Ações de rollover
+
+- [ ] Preservar pareceres/documentos consolidados (não tocar)
+- [ ] Superseder ou invalidar atos preparatórios não consolidados
+- [ ] Criar nova `CesadStageAssignment` para a comissão vigente
+- [ ] Manter assignment anterior como referência histórica (não sobrescrever)
+- [ ] Recriar `CesadStageOpinionExpectedSigner` com base na nova comissão vigente
+- [ ] Impedir que assinaturas pendentes da comissão anterior consolidem documento antigo
+
+---
+
+## Auditoria
+
+- [ ] Emitir `CESAD_COMMISSION_ROLLOVER_APPLIED` com processo, etapa, assignment anterior, nova comissão, documentos supersedados, expected signers cancelados, usuário executor e motivo
+
+---
+
+## Testes
+
+- [ ] Rollover sem parecer iniciado
+- [ ] Rollover com draft
+- [ ] Rollover com documento `READY_FOR_SIGNATURE`
+- [ ] Rollover com documento parcialmente assinado
+- [ ] Bloqueio de rollover quando documento já está `SIGNED`
+- [ ] Bloqueio de assinatura pendente da comissão anterior após rollover
+- [ ] Nova assignment criada para comissão vigente
+- [ ] Assignment anterior preservada
+- [ ] Auditoria criada com metadados completos
+- [ ] Idempotência ou conflito claro em segunda tentativa
+
+---
+
+## Critérios de aceite
+
+- [ ] Atos consolidados não são alterados
+- [ ] Atos preparatórios da comissão anterior não produzem efeito final
+- [ ] Nova comissão vigente consegue emitir parecer válido
+- [ ] Histórico permanece consultável
+- [ ] Auditoria explica a transição de competência
+
+---
+
+## Paralelização
+
+Não deve ser implementada em paralelo com 01B, 01C ou 01D. Pode ser estudada em paralelo em nível de análise, mas a implementação deve ocorrer depois da estabilização do cadastro/encerramento da comissão.

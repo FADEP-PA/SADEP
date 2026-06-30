@@ -1,147 +1,129 @@
-# BE-CESAD-REG-01C — Editar comissao ainda nao utilizada
+# BE-CESAD-REG-01C — Editar comissão ainda não utilizada
 
-## Status
+**Dev:** Pedro
+**Status:** Pendente
+**Depende de:** BE-CESAD-REG-01A, BE-CESAD-REG-01B (preferencialmente)
 
-Pendente / especificada / aguardando `BE-CESAD-REG-01A` e preferencialmente `01B`.
-
-## Relacao com o epico
-
-Task filha de `BE-CESAD-REG-01`.
+---
 
 ## Objetivo
 
-Permitir edicao controlada de comissao CESAD que ainda nao tenha sido usada em processo, preservando a seguranca historica da aplicacao.
+Permitir edição controlada de comissão CESAD que ainda não tenha sido usada em processo, preservando a segurança histórica da aplicação.
 
-## Escopo
-
-- Implementar endpoint de edicao de comissao.
-- Permitir ajuste de dados formais enquanto a comissao nao tiver `CesadStageAssignment` associado.
-- Permitir ajuste de ato/portaria e composicao inicial antes de uso processual.
-- Revalidar vigencia, composicao minima e membros compativeis.
-- Bloquear edicao estrutural quando a comissao ja tiver sido usada em processo.
-- Auditar alteracoes.
+---
 
 ## Fora do escopo
 
-- Retificacao formal de comissao ja usada.
-- Alteracao de atos consolidados.
-- Rollover de processos em andamento.
-- Encerramento/supersessao formal.
-- Frontend.
-- Seed.
+- Retificação formal de comissão já usada
+- Alteração de atos consolidados
+- Rollover de processos em andamento
+- Encerramento/supersessão formal
+- Frontend
+- Seed
 
-## Endpoint previsto
-
-Sugestao sujeita a confirmacao na `01A`:
-
-```http
-PUT /cesad/commissions/:id
-```
-
-ou
-
-```http
-PATCH /cesad/commissions/:id
-```
+---
 
 ## Regra principal
 
-Se a comissao ja tiver sido usada em `CesadStageAssignment`, bloquear alteracoes estruturais.
+Se a comissão já tiver sido usada em `CesadStageAssignment`, bloquear alterações estruturais.
 
-Alteracoes estruturais incluem:
+Alterações estruturais incluem:
+- Vigência
+- Status
+- Ato/portaria principal
+- Membros titulares e suplentes
+- Composição mínima
+- Dados que afetem competência ou validade de atos
 
-- vigencia;
-- status;
-- ato/portaria principal;
-- membros titulares e suplentes;
-- composicao minima;
-- dados que afetem competencia ou validade de atos.
+## Alterações permitidas (sem uso processual)
 
-## Alteracoes permitidas
+- Corrigir nome/descrição
+- Ajustar vigência, desde que sem conflito
+- Ajustar ato/portaria
+- Alterar composição
+- Trocar titulares/suplentes
+- Ajustar datas de membros dentro da vigência da comissão
 
-Enquanto a comissao nao tiver uso processual:
+## Alterações não permitidas nesta fatia
 
-- corrigir nome/descricao;
-- ajustar vigencia, desde que sem conflito;
-- ajustar ato/portaria;
-- alterar composicao;
-- trocar titulares/suplentes;
-- ajustar datas de membros dentro da vigencia da comissao.
+- Editar comissão já usada
+- Reabrir documento assinado
+- Alterar expected signers já congelados
+- Trocar comissão de processo
+- Corrigir erro material de comissão usada (task futura de retificação formal)
 
-## Alteracoes nao permitidas nesta fatia
+---
 
-- Editar comissao ja usada.
-- Reabrir documento assinado.
-- Alterar expected signers ja congelados.
-- Trocar comissao de processo.
-- Corrigir erro material de comissao usada; isso deve ser task futura de retificacao formal.
+## Perfis autorizados
 
-## Autorizacao
+Permitidos: `ADMIN`, `HOMOLOGATION_AUTHORITY`
 
-Permitidos:
+Bloqueados: `CESAD_MEMBER`, `COMMISSION_ASSISTANT`, `IMMEDIATE_SUPERVISOR`, `INTERN_SERVER`
 
-- `ADMIN`;
-- `HOMOLOGATION_AUTHORITY`.
+---
 
-Bloqueados:
+## Endpoint
 
-- `CESAD_MEMBER`;
-- `COMMISSION_ASSISTANT`;
-- `IMMEDIATE_SUPERVISOR`;
-- `INTERN_SERVER`.
+- [ ] Criar `PUT /cesad/commissions/:id` ou `PATCH /cesad/commissions/:id` (confirmar na 01A)
+- [ ] Proteger com guard de role (`ADMIN`, `HOMOLOGATION_AUTHORITY`)
+- [ ] Bloquear demais perfis
 
-## Validacoes obrigatorias
+---
 
-- Comissao existe.
-- Comissao nao possui `CesadStageAssignment`.
-- Nova vigencia nao conflita.
-- Composicao minima respeitada.
-- Membros existem e estao ativos.
-- `COMMISSION_ASSISTANT` bloqueado como membro formal.
-- Usuario duplicado bloqueado.
-- Datas dos membros dentro da vigencia.
+## Validação principal
 
-## Auditoria esperada
+- [ ] Verificar se a comissão existe
+- [ ] Verificar se a comissão **não possui** `CesadStageAssignment` associado
+- [ ] Bloquear qualquer edição estrutural se houver uso processual
 
-Evento futuro esperado:
+---
 
-- `CESAD_COMMISSION_UPDATED`.
+## Validações de edição
 
-Metadata minima:
+- [ ] Revalidar vigência — bloquear se nova vigência conflitar
+- [ ] Revalidar composição mínima (3 titulares, 2 suplentes)
+- [ ] Revalidar membros existentes e ativos
+- [ ] Bloquear `COMMISSION_ASSISTANT` como membro formal
+- [ ] Bloquear usuário duplicado
 
-- usuario executor;
-- perfil executor;
-- comissao alterada;
-- campos alterados;
-- valores anteriores e novos para dados estruturais;
-- contagem de titulares e suplentes;
-- indicador de ausencia de uso processual.
+---
 
-## Testes obrigatorios
+## Persistência
 
-- Edicao por `ADMIN`.
-- Edicao por `HOMOLOGATION_AUTHORITY`.
-- Bloqueio para demais perfis.
-- Bloqueio quando ha `CesadStageAssignment`.
-- Bloqueio de vigencia conflitante.
-- Bloqueio por composicao minima invalida.
-- Bloqueio de `COMMISSION_ASSISTANT` como membro.
-- Auditoria da alteracao.
-- Transacao atomica em caso de erro.
+- [ ] Operação transacional (tudo ou rollback)
 
-## Criterios de aceite
+---
 
-- Edicao permitida apenas antes de uso processual.
-- Nao ha reescrita historica.
-- Comissao usada permanece imutavel estruturalmente.
-- Leitura de comissao atual continua consistente.
-- Testes cobrem permissoes, bloqueios e auditoria.
+## Auditoria
 
-## Dependencias
+- [ ] Emitir `CESAD_COMMISSION_UPDATED` com campos alterados e valores anteriores/novos
 
-- `BE-CESAD-REG-01A`.
-- Preferencialmente `BE-CESAD-REG-01B`.
+---
 
-## Paralelizacao
+## Testes
 
-Pode ser preparada em paralelo com `01D` em nivel de documentacao/planejamento, mas a implementacao deve ser coordenada para evitar conflitos nos mesmos services de comissao.
+- [ ] Edição por `ADMIN`
+- [ ] Edição por `HOMOLOGATION_AUTHORITY`
+- [ ] Bloqueio para demais perfis
+- [ ] Bloqueio quando há `CesadStageAssignment`
+- [ ] Bloqueio de vigência conflitante
+- [ ] Bloqueio por composição mínima inválida
+- [ ] Bloqueio de `COMMISSION_ASSISTANT` como membro
+- [ ] Auditoria da alteração com valores anteriores e novos
+- [ ] Transação atômica em caso de erro
+
+---
+
+## Critérios de aceite
+
+- [ ] Edição permitida apenas antes de uso processual
+- [ ] Comissão já usada permanece imutável estruturalmente
+- [ ] Leitura de comissão atual continua consistente
+- [ ] Nenhuma reescrita histórica
+- [ ] Testes cobrem permissões, bloqueios e auditoria
+
+---
+
+## Paralelização
+
+Pode ser planejada em paralelo com 01D em nível de documentação, mas a implementação deve ser coordenada para evitar conflitos nos mesmos services de comissão.

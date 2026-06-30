@@ -1,116 +1,115 @@
-# BE-CESAD-REG-01D — Encerrar ou superseder comissao
+# BE-CESAD-REG-01D — Encerrar ou superseder comissão
 
-## Status
+**Dev:** Edgar
+**Status:** Pendente
+**Depende de:** BE-CESAD-REG-01A (coordenar vigência D-1 com Pedro/01B)
 
-Pendente / especificada / aguardando `BE-CESAD-REG-01A`.
-
-## Relacao com o epico
-
-Task filha de `BE-CESAD-REG-01`.
+---
 
 ## Objetivo
 
-Implementar o encerramento formal e a supersessao de comissoes CESAD, preservando historico e evitando reescrita de atos ja praticados.
+Implementar o encerramento formal e a supersessão de comissões CESAD, preservando histórico e evitando reescrita de atos já praticados.
 
-## Escopo
-
-- Encerrar comissao por data fim.
-- Superseder comissao por nova comissao.
-- Garantir que nao haja vigencia sobreposta.
-- Preservar assignments historicos.
-- Bloquear encerramento retroativo que invalide ato consolidado.
-- Auditar encerramento e supersessao.
+---
 
 ## Fora do escopo
 
-- Criar nova comissao com composicao inicial, ja tratado em `01B`.
-- Editar comissao ainda nao utilizada, tratado em `01C`.
-- Rollover de processos em andamento, tratado em `01E`.
-- Frontend.
-- Seed local.
+- Criar nova comissão com composição inicial (tratado em 01B)
+- Editar comissão ainda não utilizada (tratado em 01C)
+- Rollover de processos em andamento (tratado em 01E)
+- Frontend
+- Seed local
 
-## Endpoints previstos
-
-Sugestoes sujeitas a confirmacao na `01A`:
-
-```http
-POST /cesad/commissions/:id/close
-POST /cesad/commissions/:id/supersede
-```
-
-A supersessao pode ser implementada como parte do cadastro de nova comissao em `01B`, mas esta task deve consolidar o comportamento explicito de encerramento historico.
+---
 
 ## Regras de encerramento
 
-- Encerramento nao pode produzir sobreposicao ou lacuna incorreta sem decisao expressa.
-- Encerramento retroativo deve ser bloqueado se afetar ato consolidado.
-- Se comissao tiver atos preparatorios pendentes, a consequencia deve ser tratada pela frente de rollover.
-- Encerrar comissao nao deve apagar membros, atos ou assignments.
+- Encerramento não pode produzir sobreposição ou lacuna incorreta sem decisão expressa
+- Encerramento retroativo deve ser bloqueado se afetar ato consolidado
+- Se comissão tiver atos preparatórios pendentes, a consequência deve ser tratada pela frente de rollover (01E)
+- Encerrar comissão não deve apagar membros, atos ou assignments
 
-## Regras de supersessao
+## Regras de supersessão
 
-- Nova comissao posterior pode superseder a anterior.
-- Se a anterior estiver sem data fim, recebera fim em D-1.
-- Assignments antigos permanecem apontando para a comissao anterior.
-- Atos consolidados da anterior permanecem validos.
-- Atos preparatorios pendentes devem ser tratados por `01E`.
+- Nova comissão posterior pode superseder a anterior
+- Se a anterior estiver sem data fim, receberá fim em D-1
+- Assignments antigos permanecem apontando para a comissão anterior
+- Atos consolidados da anterior permanecem válidos
+- Atos preparatórios pendentes devem ser tratados por 01E
 
-## Autorizacao
+---
 
-Permitidos:
+## Perfis autorizados
 
-- `ADMIN`;
-- `HOMOLOGATION_AUTHORITY`.
+Permitidos: `ADMIN`, `HOMOLOGATION_AUTHORITY`
 
-Bloqueados:
+Bloqueados: `CESAD_MEMBER`, `COMMISSION_ASSISTANT`, `IMMEDIATE_SUPERVISOR`, `INTERN_SERVER`
 
-- `CESAD_MEMBER`;
-- `COMMISSION_ASSISTANT`;
-- `IMMEDIATE_SUPERVISOR`;
-- `INTERN_SERVER`.
+---
 
-## Auditoria esperada
+## Endpoints
 
-Eventos futuros esperados:
+- [ ] Criar `POST /cesad/commissions/:id/close`
+- [ ] Criar `POST /cesad/commissions/:id/supersede`
+- [ ] Proteger com guard de role (`ADMIN`, `HOMOLOGATION_AUTHORITY`)
+- [ ] Bloquear demais perfis
 
-- `CESAD_COMMISSION_CLOSED`;
-- `CESAD_COMMISSION_SUPERSEDED`.
+---
 
-Metadata minima:
+## Regras de encerramento
 
-- usuario executor;
-- perfil executor;
-- comissao encerrada;
-- nova data fim;
-- comissao sucessora, quando houver;
-- motivo informado;
-- indicador de assignments existentes;
-- indicador de atos consolidados e preparatorios.
+- [ ] Bloquear encerramento que produza sobreposição de vigência
+- [ ] Bloquear encerramento retroativo que afete ato consolidado
+- [ ] Encerrar comissão não apaga membros, atos ou assignments
+- [ ] Sinalizar atos preparatórios pendentes (tratamento de rollover é responsabilidade de 01E)
 
-## Testes obrigatorios
+---
 
-- Encerramento por `ADMIN`.
-- Encerramento por `HOMOLOGATION_AUTHORITY`.
-- Bloqueio para demais perfis.
-- Encerramento de comissao sem assignments.
-- Encerramento de comissao com assignments historicos sem apagar vinculos.
-- Bloqueio de encerramento retroativo que afete ato consolidado.
-- Supersessao com encerramento D-1.
-- Auditoria de encerramento/supersessao.
+## Regras de supersessão
 
-## Criterios de aceite
+- [ ] Comissão anterior sem data fim recebe fim em D-1 ao ser supersedida
+- [ ] Assignments históricos permanecem apontando para a comissão anterior
+- [ ] Atos consolidados da anterior permanecem válidos
+- [ ] Atos preparatórios pendentes apenas sinalizados — tratamento em 01E
 
-- Historico preservado.
-- Nenhuma assignment e sobrescrita.
-- Nenhum documento consolidado e invalidado.
-- Fluxos pendentes sao apenas sinalizados para `01E`.
-- Leitura da comissao atual continua consistente por data.
+---
 
-## Dependencias
+## Persistência
 
-- `BE-CESAD-REG-01A`.
-- Parcialmente relacionada a `BE-CESAD-REG-01B`.
+- [ ] Operação transacional (tudo ou rollback)
 
-## Paralelizacao
+---
 
-Pode ser planejada em paralelo com `01C`. A implementacao deve ser coordenada com `01B` se ambas alterarem regras de vigencia/encerramento D-1.
+## Auditoria
+
+- [ ] Emitir `CESAD_COMMISSION_CLOSED` com data fim, motivo e indicadores de assignments/atos
+- [ ] Emitir `CESAD_COMMISSION_SUPERSEDED` com comissão sucessora quando houver
+
+---
+
+## Testes
+
+- [ ] Encerramento por `ADMIN`
+- [ ] Encerramento por `HOMOLOGATION_AUTHORITY`
+- [ ] Bloqueio para demais perfis
+- [ ] Encerramento de comissão sem assignments
+- [ ] Encerramento de comissão com assignments históricos sem apagar vínculos
+- [ ] Bloqueio de encerramento retroativo que afete ato consolidado
+- [ ] Supersessão com encerramento D-1
+- [ ] Auditoria de encerramento e supersessão
+
+---
+
+## Critérios de aceite
+
+- [ ] Histórico preservado
+- [ ] Nenhuma assignment sobrescrita
+- [ ] Nenhum documento consolidado invalidado
+- [ ] Fluxos pendentes apenas sinalizados para 01E
+- [ ] Leitura da comissão atual continua consistente por data
+
+---
+
+## Paralelização
+
+Pode ser planejada em paralelo com 01C. A implementação deve ser coordenada com 01B se ambas alterarem regras de vigência/encerramento D-1.
