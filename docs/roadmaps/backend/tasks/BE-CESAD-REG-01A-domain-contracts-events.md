@@ -1,9 +1,10 @@
 # BE-CESAD-REG-01A — Contratos de domínio, payloads e eventos
 
 **Dev:** Lucas
-**Status:** Pendente
+**Status:** Concluída — varredura e desenho técnico entregues (2026-06-30)
 **Depende de:** BE-CESAD-REG-01, ADR-006
 **Desbloqueia:** 01B, 01C, 01D, 01E, 01F
+**Entregável de design:** [`BE-CESAD-REG-01A-design-output.md`](../BE-CESAD-REG-01A-design-output.md)
 
 ---
 
@@ -53,62 +54,70 @@ Esta task deve mapear o estado atual do schema, contracts, controllers, services
 
 ## Varredura técnica
 
-- [ ] Revisar modelo `CesadCommission` e enums relacionados
-- [ ] Revisar modelo `CesadCommissionAct`
-- [ ] Revisar modelo `CesadCommissionMember`
-- [ ] Revisar `CesadStageAssignment` e todos os pontos de uso da comissão vigente
-- [ ] Mapear `CesadCurrentCommissionService` — como resolve a comissão vigente hoje
-- [ ] Mapear como `SEND_TO_CESAD` cria ou reutiliza `CesadStageAssignment`
-- [ ] Mapear como expected signers são derivados da composição titular vigente
-- [ ] Levantar quais enums de auditoria já existem
-- [ ] Mapear como o projeto trata documentos `READY_FOR_SIGNATURE`, `SIGNED` e `INVALIDATED_OR_SUPERSEDED`
-- [ ] Verificar risco de colisão com `BE-CESAD-ASSIGN-REPLACE-01`
-- [ ] Mapear controllers/services read-only existentes de comissão
+- [x] Revisar modelo `CesadCommission` e enums relacionados
+- [x] Revisar modelo `CesadCommissionAct`
+- [x] Revisar modelo `CesadCommissionMember`
+- [x] Revisar `CesadStageAssignment` e todos os pontos de uso da comissão vigente
+- [x] Mapear `CesadCurrentCommissionService` — como resolve a comissão vigente hoje
+- [x] Mapear como `SEND_TO_CESAD` cria ou reutiliza `CesadStageAssignment`
+- [x] Mapear como expected signers são derivados da composição titular vigente
+- [x] Levantar quais enums de auditoria já existem
+- [x] Mapear como o projeto trata documentos `READY_FOR_SIGNATURE`, `SIGNED` e `INVALIDATED_OR_SUPERSEDED`
+- [x] Verificar risco de colisão com `BE-CESAD-ASSIGN-REPLACE-01`
+- [x] Mapear controllers/services read-only existentes de comissão
 
 ---
 
 ## Contratos
 
-- [ ] Listar contratos existentes a reutilizar
-- [ ] Definir DTO de criação de comissão (`create`)
-- [ ] Definir DTO de edição de comissão (`update`)
-- [ ] Definir DTO de encerramento/supersessão (`close/supersede`)
-- [ ] Definir DTO de leitura enriquecida de comissão
-- [ ] Confirmar ou ajustar payload mínimo previsto em 01B
+- [x] Listar contratos existentes a reutilizar
+- [x] Definir DTO de criação de comissão (`create`)
+- [x] Definir DTO de edição de comissão (`update`)
+- [x] Definir DTO de encerramento/supersessão (`close/supersede`)
+- [x] Definir DTO de leitura enriquecida de comissão
+- [x] Confirmar ou ajustar payload mínimo previsto em 01B
+
+> Detalhamento completo em [`BE-CESAD-REG-01A-design-output.md`](../BE-CESAD-REG-01A-design-output.md), seções 4 e 5.
 
 ---
 
 ## Eventos de auditoria
 
-- [ ] Definir evento `CESAD_COMMISSION_CREATED`
-- [ ] Definir evento `CESAD_COMMISSION_UPDATED`
-- [ ] Definir evento `CESAD_COMMISSION_CLOSED`
-- [ ] Definir evento `CESAD_COMMISSION_SUPERSEDED`
-- [ ] Definir evento `CESAD_COMMISSION_ACT_REGISTERED`
-- [ ] Definir evento `CESAD_COMMISSION_MEMBER_ADDED`
-- [ ] Definir evento `CESAD_COMMISSION_ROLLOVER_APPLIED`
-- [ ] Confirmar metadados mínimos de cada evento
+- [x] Definir evento `CESAD_COMMISSION_CREATED`
+- [x] Definir evento `CESAD_COMMISSION_UPDATED`
+- [x] Definir evento `CESAD_COMMISSION_CLOSED`
+- [x] Definir evento `CESAD_COMMISSION_SUPERSEDED`
+- [x] Definir evento `CESAD_COMMISSION_ACT_REGISTERED`
+- [x] Definir evento `CESAD_COMMISSION_MEMBER_ADDED`
+- [x] Definir evento `CESAD_COMMISSION_ROLLOVER_APPLIED`
+- [x] Confirmar metadados mínimos de cada evento
+
+> **Achado bloqueante:** `AuditEvent` exige `evaluationProcessId` (não-nulo). Os 6 primeiros eventos são administrativos e **não** têm processo. Decisão de design em [`BE-CESAD-REG-01A-design-output.md`](../BE-CESAD-REG-01A-design-output.md), seção 6.
 
 ---
 
 ## Erros padronizados
 
-- [ ] Definir erro para vigência conflitante
-- [ ] Definir erro para composição mínima inválida
-- [ ] Definir erro para membro incompatível (`COMMISSION_ASSISTANT`)
-- [ ] Definir erro para edição de comissão já usada em processo
+- [x] Definir erro para vigência conflitante
+- [x] Definir erro para composição mínima inválida
+- [x] Definir erro para membro incompatível (`COMMISSION_ASSISTANT`)
+- [x] Definir erro para edição de comissão já usada em processo
+
+> Catálogo de erros em [`BE-CESAD-REG-01A-design-output.md`](../BE-CESAD-REG-01A-design-output.md), seção 7.
 
 ---
 
 ## Plano de implementação
 
-- [ ] Definir dono do service de vigência (Pedro ou Edgar — evitar duplicação da regra D-1)
-- [ ] Documentar plano de testes obrigatório para 01B
-- [ ] Documentar plano de testes obrigatório para 01C
-- [ ] Documentar plano de testes obrigatório para 01D
-- [ ] Documentar plano de testes obrigatório para 01E
-- [ ] Confirmar se ADR-006 é suficiente ou precisa de complemento
-- [ ] Aprovar contratos com o time antes de liberar implementação
+- [x] Definir dono do service de vigência (Pedro ou Edgar — evitar duplicação da regra D-1)
+- [x] Documentar plano de testes obrigatório para 01B
+- [x] Documentar plano de testes obrigatório para 01C
+- [x] Documentar plano de testes obrigatório para 01D
+- [x] Documentar plano de testes obrigatório para 01E
+- [x] Confirmar se ADR-006 é suficiente ou precisa de complemento
+- [ ] Aprovar contratos com o time antes de liberar implementação *(pendente — handoff humano com Pedro e Edgar)*
+
+> Plano por fatia e dono do service de vigência em [`BE-CESAD-REG-01A-design-output.md`](../BE-CESAD-REG-01A-design-output.md), seções 8 e 9.
 
 ---
 
@@ -126,10 +135,10 @@ Esta task deve mapear o estado atual do schema, contracts, controllers, services
 
 ## Critérios de aceite
 
-- [ ] Nenhum código funcional alterado sem necessidade explícita
-- [ ] Contratos e eventos definidos antes da 01B iniciar
-- [ ] Riscos de schema e workflow mapeados
-- [ ] Próximas fatias podem ser executadas por pessoas diferentes sem ambiguidade
+- [x] Nenhum código funcional alterado sem necessidade explícita
+- [x] Contratos e eventos definidos antes da 01B iniciar
+- [x] Riscos de schema e workflow mapeados
+- [x] Próximas fatias podem ser executadas por pessoas diferentes sem ambiguidade
 
 ---
 

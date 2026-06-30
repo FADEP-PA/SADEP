@@ -3,6 +3,7 @@
 **Data:** 30/06/2026
 **Épico:** Cadastro e gerenciamento formal de Comissões CESAD
 **ADR de referência:** [ADR-006](../../architecture/adr/adr-006-cesad-commission-management-and-rollover.md)
+**Baseline de design (01A):** [`BE-CESAD-REG-01A-design-output.md`](./BE-CESAD-REG-01A-design-output.md)
 **Time:** Lucas · Pedro · Edgar
 
 ---
