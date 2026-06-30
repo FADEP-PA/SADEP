@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 import { CesadCommissionStatus } from '@sadep/contracts';
 
+import { CesadCommissionValidityService } from '../cesad-commission-validity.service';
 import { CesadCommissionsService } from '../cesad-commissions.service';
 import {
   createTestContext,
@@ -10,7 +11,8 @@ import {
 
 export async function runCesadCommissionsServiceTests() {
   const context = await createTestContext('cesad-commissions-service-test');
-  const service = new CesadCommissionsService(context.prisma as never);
+  const validityService = new CesadCommissionValidityService(context.prisma as never);
+  const service = new CesadCommissionsService(context.prisma as never, validityService);
 
   try {
     assert.deepEqual(Object.values(CesadCommissionStatus), [
