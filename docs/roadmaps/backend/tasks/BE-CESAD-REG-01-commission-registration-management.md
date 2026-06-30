@@ -18,6 +18,10 @@ A estrutura atual permanece essencialmente read-only para administracao da comis
 
 A administracao da comissao CESAD nao deve ser tratada como CRUD simples. O cadastro deve preservar competencia temporal, dados formais de portaria, composicao, impedimento de vigencia sobreposta, continuidade de processos em andamento, atos consolidados, substituicao de atos preparatorios e auditoria.
 
+## ADR relacionada
+
+- [`ADR-006 — Administracao formal da Comissao CESAD e rollover de competencia`](../../../architecture/adr/adr-006-cesad-commission-management-and-rollover.md)
+
 ## Status e vigencia
 
 A situacao operacional deve ser derivada principalmente das datas de vigencia.
@@ -89,7 +93,7 @@ Parecer funcional iniciado, rascunho, documento `READY_FOR_SIGNATURE` ou documen
 
 A substituicao da comissao vigente durante processo em andamento deve ser tratada em frente propria, pois impacta assignments, documentos e assinaturas.
 
-| Situacao | Comissao competente |
+| Situacao do processo/etapa | Comissao competente |
 |---|---|
 | Sem parecer iniciado | Comissao vigente na data da analise. |
 | Parecer iniciado, mas nao assinado integralmente | Nova comissao vigente pode substituir o ato preparatorio. |
@@ -112,15 +116,26 @@ Atos administrativos relevantes devem ser auditados: criacao, alteracao, encerra
 
 Metadata minima: usuario executor, perfil, data/hora, comissao, ato/portaria, membros afetados, vigencia anterior/nova, motivo e indicador de uso processual. Nao gravar textos longos ou dados pessoais desnecessarios.
 
-## Fatiamento tecnico
+## Tasks filhas
 
-- `BE-CESAD-REG-01A`: especificacao/ADR e contratos de dominio.
-- `BE-CESAD-REG-01B`: criar comissao com ato e composicao inicial.
-- `BE-CESAD-REG-01C`: alterar comissao ainda nao utilizada.
-- `BE-CESAD-REG-01D`: encerrar/superseder comissao.
-- `BE-CESAD-REG-01E`: rollover de processos em andamento.
-- `BE-CESAD-REG-01F`: seed local minimo.
-- `FE-CESAD-COMISSAO-01`: frontend administrativo apos contracts backend.
+| Task | Documento | Objetivo |
+|---|---|---|
+| `BE-CESAD-REG-01A` | [`BE-CESAD-REG-01A-domain-contracts-events.md`](./BE-CESAD-REG-01A-domain-contracts-events.md) | Contratos de dominio, payloads, eventos e varredura tecnica. |
+| `BE-CESAD-REG-01B` | [`BE-CESAD-REG-01B-create-commission-with-act-and-members.md`](./BE-CESAD-REG-01B-create-commission-with-act-and-members.md) | Criar comissao com ato/portaria e composicao inicial. |
+| `BE-CESAD-REG-01C` | [`BE-CESAD-REG-01C-edit-unused-commission.md`](./BE-CESAD-REG-01C-edit-unused-commission.md) | Editar comissao ainda nao utilizada em processo. |
+| `BE-CESAD-REG-01D` | [`BE-CESAD-REG-01D-close-supersede-commission.md`](./BE-CESAD-REG-01D-close-supersede-commission.md) | Encerrar ou superseder comissao. |
+| `BE-CESAD-REG-01E` | [`BE-CESAD-REG-01E-rollover-in-progress-processes.md`](./BE-CESAD-REG-01E-rollover-in-progress-processes.md) | Rollover de processos em andamento. |
+| `BE-CESAD-REG-01F` | [`BE-CESAD-REG-01F-local-seed-current-commission.md`](./BE-CESAD-REG-01F-local-seed-current-commission.md) | Seed local minimo de comissao vigente. |
+| `FE-CESAD-COMISSAO-01` | [`../../frontend/tasks/FE-CESAD-COMISSAO-01-admin-ui.md`](../../frontend/tasks/FE-CESAD-COMISSAO-01-admin-ui.md) | Interface administrativa apos contracts backend. |
+
+## Ordem recomendada
+
+1. `BE-CESAD-REG-01A`.
+2. `BE-CESAD-REG-01B`.
+3. `BE-CESAD-REG-01C` e `BE-CESAD-REG-01D`, coordenadas.
+4. `BE-CESAD-REG-01F`.
+5. `FE-CESAD-COMISSAO-01`, com backend minimo disponivel.
+6. `BE-CESAD-REG-01E`, por ser a fatia de maior risco.
 
 ## Fora do escopo desta task documental
 
@@ -132,4 +147,4 @@ A implementacao futura sera adequada se permitir cadastro formal de comissao com
 
 ## Proxima acao
 
-Executar varredura tecnica sobre schema Prisma, contracts, services/controllers read-only, uso de comissao vigente no workflow e impactos do rollover em documentos e assinaturas. Depois iniciar `BE-CESAD-REG-01A` ou ADR curta se a regra de rollover exigir decisao arquitetural formal.
+Executar `BE-CESAD-REG-01A` antes de iniciar implementacao funcional. Depois distribuir `01B`, `01C`, `01D`, `01F` e `FE-CESAD-COMISSAO-01` conforme dependencias e riscos.
