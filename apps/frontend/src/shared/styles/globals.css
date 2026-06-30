@@ -3887,6 +3887,154 @@ h3,
   font-size: 0.84rem;
 }
 
+.cesad-commission-admin {
+  display: grid;
+  gap: 1rem;
+}
+
+.cesad-commission-card-header,
+.cesad-commission-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cesad-commission-card-header {
+  justify-content: space-between;
+}
+
+.cesad-commission-card-header > div,
+.cesad-commission-current-card__title,
+.cesad-commission-form-card,
+.cesad-members-card,
+.cesad-permission-card {
+  min-width: 0;
+}
+
+.cesad-commission-card-header h3,
+.cesad-commission-current-card__title h3 {
+  margin-top: 0.35rem;
+}
+
+.cesad-commission-current-card__title {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.cesad-commission-current-card__title p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.cesad-commission-actions {
+  justify-content: flex-start;
+}
+
+.cesad-commission-actions button:disabled,
+.cesad-commission-actions .secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+  transform: none;
+  box-shadow: none;
+}
+
+.cesad-commission-warning-grid,
+.cesad-commission-state-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.cesad-commission-table,
+.cesad-member-table {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.cesad-commission-table__header,
+.cesad-commission-table__row {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.25fr)
+    minmax(140px, 0.75fr)
+    minmax(150px, 0.85fr)
+    minmax(160px, 1fr)
+    minmax(140px, 0.75fr)
+    minmax(110px, 0.65fr);
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.cesad-member-table__header,
+.cesad-member-table__row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(110px, 0.55fr) minmax(150px, 0.85fr) minmax(160px, 1fr);
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.cesad-commission-table__header,
+.cesad-member-table__header {
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.85rem;
+  background: rgba(0, 124, 192, 0.08);
+  color: #48617f;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cesad-commission-table__row,
+.cesad-member-table__row {
+  padding: 0.85rem 0.9rem;
+  border: 1px solid rgba(19, 51, 93, 0.08);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.cesad-commission-table__cell,
+.cesad-member-table__cell {
+  min-width: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.cesad-commission-table__cell--title,
+.cesad-member-table__cell--title {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.cesad-commission-table__cell--title span,
+.cesad-member-table__cell--title span {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.cesad-commission-table__cell small,
+.cesad-member-table__cell small {
+  color: #6f849e;
+  font-size: 0.78rem;
+}
+
+.cesad-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.cesad-form-grid textarea {
+  min-height: 6rem;
+}
+
+.cesad-form-grid input[readonly],
+.cesad-form-grid textarea[readonly] {
+  background: #f8fbfe;
+}
+
 .operations-muted {
   margin: 0;
   color: var(--text-secondary);
@@ -3910,6 +4058,34 @@ h3,
 
   .document-tile-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cesad-commission-table__header,
+  .cesad-member-table__header {
+    display: none;
+  }
+
+  .cesad-commission-table__row,
+  .cesad-member-table__row {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .cesad-commission-table__cell,
+  .cesad-member-table__cell {
+    display: grid;
+    grid-template-columns: minmax(8.5rem, 0.4fr) minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .cesad-commission-table__cell::before,
+  .cesad-member-table__cell::before {
+    content: attr(data-label);
+    color: #7b91ad;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 }
 
@@ -6762,6 +6938,7 @@ button,
 .operations-page,
 .process-workspace,
 .cesad-stage-read,
+.cesad-commission-admin,
 .workspace-overview,
 .workspace-overview > *,
 .workspace-panel-grid,
@@ -6770,6 +6947,10 @@ button,
 .workspace-service-card,
 .metrics-grid,
 .metrics-grid > *,
+.cesad-commission-warning-grid,
+.cesad-commission-state-grid,
+.cesad-commission-table,
+.cesad-member-table,
 .intern-layout-grid,
 .intern-layout-grid > *,
 .supervisor-dashboard,
@@ -6789,6 +6970,9 @@ button,
 .supervisor-dashboard__row,
 .previous-evaluations-modal__row,
 .cesad-stage-read__stack,
+.cesad-commission-table__row,
+.cesad-member-table__row,
+.cesad-form-grid,
 .content-state,
 .feedback-alert {
   overflow-wrap: anywhere;
@@ -6799,6 +6983,8 @@ button,
 .intern-hero__summary-card strong,
 .supervisor-dashboard__server strong,
 .previous-evaluations-modal__row strong,
+.cesad-commission-table__cell span,
+.cesad-member-table__cell span,
 .key-value-list dd {
   word-break: break-word;
 }
@@ -6813,6 +6999,12 @@ button,
 
   .workspace-service-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cesad-commission-warning-grid,
+  .cesad-commission-state-grid,
+  .cesad-form-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -6862,6 +7054,12 @@ button,
   .workspace-service-card strong,
   .workspace-stat strong {
     font-size: 1rem;
+  }
+
+  .cesad-commission-table__cell,
+  .cesad-member-table__cell {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
   }
 
   .previous-evaluations-modal {
