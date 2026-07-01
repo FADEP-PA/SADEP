@@ -15,10 +15,14 @@ export class CesadCommissionValidityService {
     effectiveStartDate: Date,
     effectiveEndDate: Date | null,
     exceptCommissionId?: string,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    const overlapping = await this.prismaService.cesadCommission.findFirst({
+    const client = tx ?? this.prismaService;
+    const overlapping = await client.cesadCommission.findFirst({
       where: {
-        status: { not: PrismaCesadCommissionStatus.INACTIVE },
+        // Apenas comissoes ACTIVE sao resolviveis como vigentes (mesmo criterio de
+        // CesadCurrentCommissionService); INACTIVE e SUPERSEDED nao geram conflito.
+        status: PrismaCesadCommissionStatus.ACTIVE,
         ...(exceptCommissionId ? { id: { not: exceptCommissionId } } : {}),
         // A < B_end AND B < A_end  (interseção de intervalos)
         // "A" = candidata (start/end); "B" = comissões existentes

@@ -70,11 +70,14 @@ export class CesadCommissionsService {
       ? new Date(dto.commission.effectiveEndDate)
       : null;
 
-    await this.validityService.assertNoOverlap(effectiveStartDate, effectiveEndDate);
     await this.validateMembers(dto, effectiveStartDate, effectiveEndDate);
 
     const result = await this.prismaService.$transaction(async (tx) => {
+      // A ordem importa: uma comissao anterior sem data fim precisa ser encerrada
+      // em D-1 ANTES da checagem de sobreposicao, senao ela mesma seria detectada
+      // como conflito e bloquearia o cadastro da nova comissao (regra D-1 da ADR-006).
       await this.validityService.closePreviousOpenEndedAtDMinus1(effectiveStartDate, tx);
+      await this.validityService.assertNoOverlap(effectiveStartDate, effectiveEndDate, undefined, tx);
 
       const commission = await tx.cesadCommission.create({
         data: {
