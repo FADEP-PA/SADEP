@@ -327,12 +327,25 @@ async function runCreateTests() {
       });
       assert.ok(previousAfter);
       assert.ok(previousAfter!.effectiveEndDate);
-      assert.equal(previousAfter!.status, 'ACTIVE');
+      // D-1 auto-close e uma supersessao implicita; status deve ser SUPERSEDED.
+      assert.equal(previousAfter!.status, 'SUPERSEDED');
       // D-1: exatamente um dia antes do inicio da nova comissao.
       assert.equal(
         new Date('2034-07-01T00:00:00.000Z').getTime() -
           previousAfter!.effectiveEndDate!.getTime(),
         24 * 60 * 60 * 1000,
+      );
+
+      const d1AuditEvent = await prisma.cesadCommissionAuditEvent.findFirst({
+        where: {
+          commissionId: previousCreated.commission.id,
+          eventType: 'CESAD_COMMISSION_SUPERSEDED',
+        },
+      });
+      assert.ok(d1AuditEvent, 'Deve existir audit event CESAD_COMMISSION_SUPERSEDED para o D-1');
+      assert.equal(
+        (d1AuditEvent!.afterState as { reason?: string }).reason,
+        'AUTO_SUPERSEDED_D_MINUS_1_ON_NEW_COMMISSION_CREATION',
       );
     }
   } finally {
