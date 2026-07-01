@@ -1,8 +1,8 @@
-import { KeyValueList } from '@/shared/ui/key-value-list';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
 import type { CesadCommissionAdminRecord } from '../data/cesad-commission-admin-demo';
 import {
+  formatCesadActType,
   formatCesadCommissionStatus,
   formatCesadDate,
   getCesadCommissionStatusTone,
@@ -14,39 +14,64 @@ type CesadCommissionCurrentCardProps = {
 };
 
 export function CesadCommissionCurrentCard({ record }: CesadCommissionCurrentCardProps) {
-  const { commission, memberSummary } = record;
+  const { acts, commission, memberSummary } = record;
+  const primaryAct = acts[0];
 
   return (
     <section className="surface-card cesad-commission-current-card">
       <div className="cesad-commission-card-header">
-        <span className="section-chip">Comissão atual</span>
+        <div>
+          <span className="section-chip">Comissão vigente</span>
+          <h3>{commission.name}</h3>
+        </div>
         <div className="workspace-badge-row">
           <StatusBadge
-            label={`Status cadastral: ${formatCesadCommissionStatus(commission.status)}`}
+            label={formatCesadCommissionStatus(commission.status)}
             tone={getCesadCommissionStatusTone(commission.status)}
           />
           <CesadCommissionTemporalBadge situation={record.temporalSituation} />
         </div>
       </div>
 
-      <div className="cesad-commission-current-card__title">
-        <h3>{commission.name}</h3>
-        <p>{commission.description}</p>
+      <div className="cesad-current-summary">
+        <article>
+          <span>Vigência</span>
+          <strong>
+            {formatCesadDate(commission.effectiveStartDate)} a{' '}
+            {formatCesadDate(commission.effectiveEndDate)}
+          </strong>
+        </article>
+        <article>
+          <span>Composição</span>
+          <strong>
+            {memberSummary.titulares} titulares / {memberSummary.suplentes} suplentes
+          </strong>
+        </article>
+        <article>
+          <span>Ato</span>
+          <strong>
+            {primaryAct
+              ? `${formatCesadActType(primaryAct.actType)} nº ${primaryAct.number}/${primaryAct.year}`
+              : 'Não informado'}
+          </strong>
+        </article>
+        <article>
+          <span>Uso</span>
+          <strong>{record.isUsedInProcess ? 'Já vinculada a processo' : 'Sem vínculo'}</strong>
+        </article>
       </div>
 
-      <KeyValueList
-        items={[
-          { label: 'início da vigência', value: formatCesadDate(commission.effectiveStartDate) },
-          { label: 'fim da vigência', value: formatCesadDate(commission.effectiveEndDate) },
-          { label: 'titulares', value: `${memberSummary.titulares} de 3 esperados` },
-          { label: 'suplentes', value: `${memberSummary.suplentes} de 2 esperados` },
-          {
-            label: 'uso processual',
-            value: record.isUsedInProcess ? 'Já vinculada a processo' : 'Sem vínculo processual',
-          },
-          { label: 'última revisão', value: record.lastReviewLabel },
-        ]}
-      />
+      <div className="cesad-commission-actions">
+        <button type="button" className="secondary-button" disabled>
+          Ver detalhes
+        </button>
+        <button type="button" className="secondary-button" disabled>
+          Encerrar
+        </button>
+        <button type="button" className="secondary-button" disabled>
+          Superseder
+        </button>
+      </div>
     </section>
   );
 }

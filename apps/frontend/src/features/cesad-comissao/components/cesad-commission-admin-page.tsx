@@ -10,7 +10,6 @@ import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { KeyValueList } from '@/shared/ui/key-value-list';
 import { EmptyState } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
-import { StatusBadge } from '@/shared/ui/status-badge';
 
 import {
   mockCesadCommissionReferenceDate,
@@ -39,191 +38,119 @@ function canManageCommissions(role: UserRole | undefined) {
 }
 
 function getProfileActionLabel(role: UserRole | undefined) {
-  if (role === UserRole.ADMIN) return 'Administração liberada visualmente';
-  if (role === UserRole.HOMOLOGATION_AUTHORITY) return 'Autoridade com ação visual';
-  return 'Sem ações administrativas';
+  if (role === UserRole.ADMIN) return 'ADMIN';
+  if (role === UserRole.HOMOLOGATION_AUTHORITY) return 'HOMOLOGATION_AUTHORITY';
+  return 'Leitura sem ações administrativas';
 }
 
 export function CesadCommissionAdminPage() {
   const { session } = useAuth();
   const activeRole = session?.user.role;
   const canManage = canManageCommissions(activeRole);
-  const currentSituationLabel = formatCesadTemporalSituation(
-    mockCurrentCesadCommission.temporalSituation,
-  );
-  const futureSituationLabel = formatCesadTemporalSituation(
-    mockFutureCesadCommission.temporalSituation,
-  );
+  const permissionLabel = getProfileActionLabel(activeRole);
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
       <section className="portal-dashboard cesad-commission-admin">
         <PageSection
-          eyebrow="CESAD"
           title="Administração da Comissão CESAD"
-          description="Organização inicial da gestão de comissões, atos, vigência e composição formal para validação visual segura."
+          description="Gerencie a comissão vigente, sua composição formal e os atos de nomeação."
         >
-          <div className="workspace-overview workspace-overview--lilac">
-            <div className="workspace-overview__copy">
-              <span className="section-chip">Gestão da comissão</span>
-              <h3>Cadastro formal por vigência, ato e composição</h3>
+          <div className="cesad-admin-toolbar surface-card">
+            <div>
+              <span className="section-chip">Gestão administrativa</span>
               <p>
-                A tela separa status cadastral e situação temporal. A comissão futura permanece
-                agendada até o início da vigência, sem substituir a comissão vigente.
+                Perfil autorizado: <strong>{permissionLabel}</strong>. Ações administrativas
+                seguem condicionadas à API.
               </p>
-
-              <div className="cesad-commission-actions">
-                <button type="button" disabled>
-                  Nova comissão
-                </button>
-                <button type="button" className="secondary-button" disabled>
-                  Encerrar vigência
-                </button>
-                <button type="button" className="secondary-button" disabled>
-                  Superseder comissão
-                </button>
-              </div>
             </div>
-
-            <aside className="workspace-overview__panel">
-              <KeyValueList
-                items={[
-                  { label: 'usuário', value: session?.user.name ?? 'Não informado' },
-                  { label: 'perfil ativo', value: activeRole ?? 'Não informado' },
-                  { label: 'permissão visual', value: getProfileActionLabel(activeRole) },
-                  {
-                    label: 'data de referência',
-                    value: formatCesadDate(mockCesadCommissionReferenceDate),
-                  },
-                  { label: 'situação vigente', value: currentSituationLabel },
-                ]}
-              />
-
-              <div className="workspace-stat-grid">
-                <div className="workspace-stat">
-                  <span>vigente</span>
-                  <strong>{currentSituationLabel}</strong>
-                </div>
-                <div className="workspace-stat">
-                  <span>agendada</span>
-                  <strong>{futureSituationLabel}</strong>
-                </div>
-                <div className="workspace-stat">
-                  <span>registros</span>
-                  <strong>{mockCesadCommissions.length}</strong>
-                </div>
-              </div>
-            </aside>
+            <button type="button" disabled>
+              Nova comissão
+            </button>
           </div>
 
-          <FeedbackAlert
-            title="Escopo visual"
-            tone="info"
-            description="Os dados desta área são demonstrativos e as ações sensíveis dependem de API própria."
-          />
+          <CesadCommissionCurrentCard record={mockCurrentCesadCommission} />
 
           <CesadCommissionWarnings warnings={mockCesadCommissionWarnings} />
 
-          <div className="workspace-service-strip">
-            <article className="workspace-service-card">
-              <span>Situação temporal</span>
-              <strong>Derivada</strong>
-              <p>Vigência e status cadastral aparecem lado a lado para evitar leitura ambígua.</p>
-            </article>
-            <article className="workspace-service-card">
-              <span>Composição mínima</span>
-              <strong>3 + 2</strong>
-              <p>Três titulares e dois suplentes são destacados como referência visual.</p>
-            </article>
-            <article className="workspace-service-card">
-              <span>Assistente</span>
-              <strong>Apoio</strong>
-              <p>COMMISSION_ASSISTANT não aparece como membro formal da comissão.</p>
-            </article>
-            <article className="workspace-service-card">
-              <span>Rollover</span>
-              <strong>Separado</strong>
-              <p>Processos em andamento seguem fluxo próprio, fora deste cadastro inicial.</p>
-            </article>
-          </div>
-
-          <div className="workspace-panel-grid workspace-panel-grid--lead">
-            <CesadCommissionCurrentCard record={mockCurrentCesadCommission} />
-
-            <section className="surface-card cesad-permission-card">
-              <div className="cesad-commission-card-header">
-                <div>
-                  <span className="section-chip">Permissões</span>
-                  <h3>Ações administrativas</h3>
-                </div>
-                <StatusBadge label={canManage ? 'Perfil autorizado' : 'Leitura'} tone="info" />
-              </div>
-
-              <KeyValueList
-                items={[
-                  { label: 'ADMIN', value: 'Ações visuais disponíveis após contrato de API' },
-                  {
-                    label: 'HOMOLOGATION_AUTHORITY',
-                    value: 'Ações visuais disponíveis após contrato de API',
-                  },
-                  {
-                    label: 'CESAD_MEMBER',
-                    value: 'Leitura operacional em rota própria',
-                  },
-                  {
-                    label: 'COMMISSION_ASSISTANT',
-                    value: 'Apoio operacional sem composição formal',
-                  },
-                ]}
-              />
-            </section>
-          </div>
-
           <CesadCommissionList records={mockCesadCommissions} />
 
-          <div className="metrics-grid">
-            <CesadCommissionFormScaffold
-              canManage={canManage}
-              draftComposition={mockDraftCompositionSummary}
-            />
-            <CesadCommissionActFormScaffold act={mockDraftAct} canManage={canManage} />
-          </div>
-
-          <div className="metrics-grid">
-            <CesadCommissionMembersTable
-              title="Titulares da comissão vigente"
-              members={mockCurrentCesadCommission.members}
-              roleType={CesadCommissionMemberRoleType.TITULAR}
-              expectedMinimum={3}
-            />
-            <CesadCommissionMembersTable
-              title="Suplentes da comissão vigente"
-              members={mockCurrentCesadCommission.members}
-              roleType={CesadCommissionMemberRoleType.SUPLENTE}
-              expectedMinimum={2}
-            />
-          </div>
-
-          <div className="cesad-commission-state-grid">
-            <InlineLoadingState
-              title="Carregando comissões"
-              description="Estado visual reservado para a futura consulta autenticada."
-            />
-            <EmptyState
-              title="Nenhuma comissão cadastrada"
-              description="Estado visual para quando não houver registros administrativos disponíveis."
-            />
+          <details className="cesad-secondary-panel">
+            <summary>Detalhes da comissão vigente</summary>
+            <div className="metrics-grid">
+              <CesadCommissionMembersTable
+                title="Titulares da comissão vigente"
+                members={mockCurrentCesadCommission.members}
+                roleType={CesadCommissionMemberRoleType.TITULAR}
+                expectedMinimum={3}
+              />
+              <CesadCommissionMembersTable
+                title="Suplentes da comissão vigente"
+                members={mockCurrentCesadCommission.members}
+                roleType={CesadCommissionMemberRoleType.SUPLENTE}
+                expectedMinimum={2}
+              />
+            </div>
             <FeedbackAlert
-              title="Falha ao carregar comissões"
-              tone="error"
-              description="Estado visual para erro de leitura da área administrativa."
+              title="Composição formal"
+              tone="info"
+              description="O perfil COMMISSION_ASSISTANT permanece como apoio operacional e não integra titulares ou suplentes."
             />
-            <ContentState
-              title="Composição incompleta"
-              description="Estado visual para rascunho abaixo de 3 titulares e 2 suplentes."
-              tone="warning"
+          </details>
+
+          <details className="cesad-secondary-panel">
+            <summary>Prévia de cadastro e ato</summary>
+            <div className="metrics-grid">
+              <CesadCommissionFormScaffold
+                canManage={canManage}
+                draftComposition={mockDraftCompositionSummary}
+              />
+              <CesadCommissionActFormScaffold act={mockDraftAct} canManage={canManage} />
+            </div>
+          </details>
+
+          <details className="cesad-secondary-panel">
+            <summary>Estados previstos e escopo</summary>
+            <div className="cesad-commission-state-grid">
+              <InlineLoadingState
+                title="Carregando comissões"
+                description="Estado visual reservado para a futura consulta autenticada."
+              />
+              <EmptyState
+                title="Nenhuma comissão cadastrada"
+                description="Estado visual para quando não houver registros administrativos disponíveis."
+              />
+              <FeedbackAlert
+                title="Falha ao carregar comissões"
+                tone="error"
+                description="Estado visual para erro de leitura da área administrativa."
+              />
+              <ContentState
+                title="Composição incompleta"
+                description="Estado visual para rascunho abaixo de 3 titulares e 2 suplentes."
+                tone="warning"
+              />
+            </div>
+            <KeyValueList
+              items={[
+                {
+                  label: 'data de referência',
+                  value: formatCesadDate(mockCesadCommissionReferenceDate),
+                },
+                { label: 'usuário', value: session?.user.name ?? 'Não informado' },
+                {
+                  label: 'rollover',
+                  value: 'Fluxo processual separado, fora deste scaffold administrativo.',
+                },
+                {
+                  label: 'comissão futura',
+                  value: `${mockFutureCesadCommission.commission.name}: ${formatCesadTemporalSituation(
+                    mockFutureCesadCommission.temporalSituation,
+                  )}`,
+                },
+              ]}
             />
-          </div>
+          </details>
         </PageSection>
       </section>
     </AuthGuard>

@@ -4,9 +4,9 @@ import type { CesadCommissionAdminRecord } from '../data/cesad-commission-admin-
 import {
   formatCesadCommissionStatus,
   formatCesadDate,
-  getCesadCommissionStatusTone,
+  formatCesadTemporalSituation,
+  getCesadTemporalSituationTone,
 } from './cesad-commission-formatters';
-import { CesadCommissionTemporalBadge } from './cesad-commission-temporal-badge';
 
 type CesadCommissionListProps = {
   records: CesadCommissionAdminRecord[];
@@ -26,11 +26,11 @@ export function CesadCommissionList({ records }: CesadCommissionListProps) {
       <div className="cesad-commission-table">
         <div className="cesad-commission-table__header" aria-hidden="true">
           <span>Comissão</span>
-          <span>Status cadastral</span>
-          <span>Situação temporal</span>
+          <span>Situação</span>
           <span>Vigência</span>
           <span>Composição</span>
           <span>Uso</span>
+          <span>Ações</span>
         </div>
 
         {records.map((record) => (
@@ -39,14 +39,13 @@ export function CesadCommissionList({ records }: CesadCommissionListProps) {
               <span data-label="Comissão">{record.commission.name}</span>
               <small>{record.lastReviewLabel}</small>
             </div>
-            <div className="cesad-commission-table__cell" data-label="Status cadastral">
+            <div className="cesad-commission-table__cell" data-label="Situação">
               <StatusBadge
-                label={formatCesadCommissionStatus(record.commission.status)}
-                tone={getCesadCommissionStatusTone(record.commission.status)}
+                label={`${formatCesadTemporalSituation(
+                  record.temporalSituation,
+                )} · ${formatCesadCommissionStatus(record.commission.status)}`}
+                tone={getCesadTemporalSituationTone(record.temporalSituation)}
               />
-            </div>
-            <div className="cesad-commission-table__cell" data-label="Situação temporal">
-              <CesadCommissionTemporalBadge situation={record.temporalSituation} />
             </div>
             <div className="cesad-commission-table__cell" data-label="Vigência">
               <span>
@@ -62,6 +61,11 @@ export function CesadCommissionList({ records }: CesadCommissionListProps) {
             </div>
             <div className="cesad-commission-table__cell" data-label="Uso">
               <span>{record.isUsedInProcess ? 'Com vínculo' : 'Sem vínculo'}</span>
+            </div>
+            <div className="cesad-commission-table__cell" data-label="Ações">
+              <button type="button" className="ghost-button" disabled>
+                Ver detalhes
+              </button>
             </div>
           </article>
         ))}

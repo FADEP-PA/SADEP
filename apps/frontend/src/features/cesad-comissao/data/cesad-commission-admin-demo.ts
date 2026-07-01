@@ -278,11 +278,11 @@ export const mockDraftCompositionSummary: CesadCommissionMemberSummary = {
 
 export const mockCesadCommissionWarnings: CesadCommissionWarning[] = [
   {
-    id: 'minimum-composition',
-    title: 'Composição mínima',
+    id: 'future-minimum-composition',
+    title: 'Comissão futura com composição incompleta',
     tone: 'warning',
     description:
-      'O rascunho visual destaca a regra institucional de 3 titulares e 2 suplentes antes da formalização.',
+      'A comissão agendada para 01/09/2026 ainda não alcança 3 titulares e 2 suplentes.',
     details: ['Titulares preenchidos: 2 de 3.', 'Suplentes preenchidos: 1 de 2.'],
   },
   {
@@ -291,26 +291,5 @@ export const mockCesadCommissionWarnings: CesadCommissionWarning[] = [
     tone: 'error',
     description:
       'Um início em 15/08/2026 conflitaria com a comissão vigente até 31/08/2026.',
-  },
-  {
-    id: 'assistant-not-member',
-    title: 'Assistente não integra a composição formal',
-    tone: 'warning',
-    description:
-      'O perfil COMMISSION_ASSISTANT apoia a comissão, mas não entra como titular ou suplente.',
-  },
-  {
-    id: 'future-commission',
-    title: 'Comissão futura agendada',
-    tone: 'info',
-    description:
-      'A comissão com início em 01/09/2026 aparece como agendada e não substitui a vigente em 30/06/2026.',
-  },
-  {
-    id: 'rollover-outside',
-    title: 'Rollover fora desta tela inicial',
-    tone: 'info',
-    description:
-      'A substituição de competência em processos em andamento permanece em fluxo processual próprio.',
   },
 ];
