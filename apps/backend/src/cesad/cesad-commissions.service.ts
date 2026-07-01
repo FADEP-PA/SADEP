@@ -183,6 +183,122 @@ export class CesadCommissionsService {
     };
   }
 
+  async closeCommission(id: string, actor: AuthenticatedUser): Promise<CesadCommissionActRef> {
+    this.ensureCanAdminister(actor);
+
+    const commission = await this.prismaService.cesadCommission.findUnique({
+      where: { id }
+    })
+  }
+
+  async closeCommission(id: string, actor: AuthenticatedUser): Promise<CesadCommissionRef> {
+    this.ensureCanAdminister(actor);
+
+    const commission = await this.prismaService.cesadCommission.findUnique({
+      where: { id },
+    });
+
+    if (!commission) {
+      throw new NotFoundException('Comissão CESAD não encontrada.');
+    }
+
+    if (commission.effectiveEndDate !== null) {
+      throw new BadRequestException('Esta comissão já possui data de encerramento e não pode ser encerrada novamente.');
+    }
+
+    // Regra: Bloquear encerramento se existir assignment ACTIVE vinculado à comissão.
+    // Esses processos em andamento devem ser tratados pela frente de rollover (01E).
+    const activeAssignmentsCount = await this.prismaService.cesadStageAssignment.count({
+      where: {
+        commissionId: id,
+        status: 'ACTIVE',
+      },
+    });
+
+    if (activeAssignmentsCount > 0) {
+      throw new BadRequestException(
+        `Não é possível encerrar esta comissão: existem ${activeAssignmentsCount} processo(s) em andamento vinculados a ela. Trate o rollover desses processos antes de encerrar.`,
+      );
+    }
+
+    const effectiveEndDate = new Date();
+
+    const updated = await this.prismaService.$transaction(async (tx) => {
+      const updatedCommission = await tx.cesadCommission.update({
+        where: { id },
+        data: {
+          effectiveEndDate,
+          status: PrismaCesadCommissionStatus.INACTIVE,
+        },
+      });
+
+      await tx.cesadCommissionAuditEvent.create({
+        data: {
+          eventType: PrismaCesadCommissionAuditEventType.CESAD_COMMISSION_CLOSED,
+          commissionId: id,
+          actorUserId: actor.sub,
+          actorRole: actor.role as PrismaUserRole,
+          afterState: {
+            status: PrismaCesadCommissionStatus.INACTIVE,
+            effectiveEndDate: effectiveEndDate.toISOString(),
+            activeAssignmentsCount,
+          },
+        },
+      });
+
+      return updatedCommission;
+    });
+
+    return this.toRef(updated);
+  }
+
+  async supersedeCommission(id: string, actor: AuthenticatedUser): Promise<CesadCommissionRef> {
+    this.ensureCanAdminister(actor);
+
+    const commission = await this.prismaService.cesadCommission.findUnique({
+      where: { id },
+    });
+
+    if (!commission) {
+      throw new NotFoundException('Comissão CESAD não encontrada.');
+    }
+
+    if (commission.effectiveEndDate !== null) {
+      throw new BadRequestException('Esta comissão já possui data de encerramento e não pode ser supersedida.');
+    }
+
+    // Regra D-1: comissão sem data fim recebe fim em D-1 (véspera do dia atual)
+    const effectiveEndDate = new Date();
+    effectiveEndDate.setDate(effectiveEndDate.getDate() - 1);
+
+    const updated = await this.prismaService.$transaction(async (tx) => {
+      const updatedCommission = await tx.cesadCommission.update({
+        where: { id },
+        data: {
+          effectiveEndDate,
+          status: PrismaCesadCommissionStatus.SUPERSEDED,
+        },
+      });
+
+      await tx.cesadCommissionAuditEvent.create({
+        data: {
+          eventType: PrismaCesadCommissionAuditEventType.CESAD_COMMISSION_SUPERSEDED,
+          commissionId: id,
+          actorUserId: actor.sub,
+          actorRole: actor.role as PrismaUserRole,
+          afterState: {
+            status: PrismaCesadCommissionStatus.SUPERSEDED,
+            effectiveEndDate: effectiveEndDate.toISOString(),
+          },
+        },
+      });
+
+      return updatedCommission;
+    });
+
+    return this.toRef(updated);
+  }
+
   private async validateMembers(
     dto: CreateCesadCommissionDto,
     commissionStart: Date,
