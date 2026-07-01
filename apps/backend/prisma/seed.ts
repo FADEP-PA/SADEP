@@ -17,7 +17,9 @@ const users = [
     name: 'Chefia Imediata SADEP',
     role: UserRole.IMMEDIATE_SUPERVISOR,
   },
-  { email: 'cesad@sadep.local', name: 'Membro CESAD SADEP', role: UserRole.CESAD_MEMBER },
+  { email: 'cesad1@sadep.local', name: 'Membro CESAD 1 SADEP', role: UserRole.CESAD_MEMBER },
+  { email: 'cesad2@sadep.local', name: 'Membro CESAD 2 SADEP', role: UserRole.CESAD_MEMBER },
+  { email: 'cesad3@sadep.local', name: 'Membro CESAD 3 SADEP', role: UserRole.CESAD_MEMBER },
   {
     email: 'assistant@sadep.local',
     name: 'Assistente da Comissao SADEP',

@@ -68,6 +68,16 @@ enum AuditEventType {
   NOTIFICATION_SENT
   ACKNOWLEDGEMENT_RECORDED
   PROCESS_CLOSED
+  CESAD_COMMISSION_ROLLOVER_APPLIED
+}
+
+enum CesadCommissionAuditEventType {
+  CESAD_COMMISSION_CREATED
+  CESAD_COMMISSION_UPDATED
+  CESAD_COMMISSION_CLOSED
+  CESAD_COMMISSION_SUPERSEDED
+  CESAD_COMMISSION_ACT_REGISTERED
+  CESAD_COMMISSION_MEMBER_ADDED
 }
 
 enum DocumentType {
@@ -184,6 +194,7 @@ model User {
   homologationRecordsAsHomologator HomologationRecord[]              @relation("HomologationRecordHomologatedBy")
   homologationRecordsAsNotifier    HomologationRecord[]              @relation("HomologationRecordNotifiedBy")
   authAuditEvents                  AuthAuditEvent[]
+  cesadCommissionAuditEvents       CesadCommissionAuditEvent[]
 }
 
 model UserSession {
@@ -227,6 +238,26 @@ model AuthAuditEvent {
   @@index([userId, occurredAt])
   @@index([sessionId])
   @@index([familyId])
+}
+
+model CesadCommissionAuditEvent {
+  id           String                        @id @default(cuid())
+  eventType    CesadCommissionAuditEventType
+  commissionId String?
+  actId        String?
+  actorUserId  String?
+  actorRole    UserRole?
+  beforeState  Json?
+  afterState   Json?
+  metadata     Json?
+  occurredAt   DateTime                      @default(now())
+  commission   CesadCommission?              @relation(fields: [commissionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  act          CesadCommissionAct?           @relation(fields: [actId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  actorUser    User?                         @relation(fields: [actorUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([eventType, occurredAt])
+  @@index([commissionId])
+  @@index([actorUserId])
 }
 
 model EvaluationProcess {
@@ -421,6 +452,7 @@ model CesadCommission {
   stageAssignments            CesadStageAssignment[]
   stageOpinionExpectedSigners CesadStageOpinionExpectedSigner[]
   finalOpinionExpectedSigners CesadFinalOpinionExpectedSigner[]
+  auditEvents                 CesadCommissionAuditEvent[]
   createdAt                   DateTime                          @default(now())
   updatedAt                   DateTime                          @updatedAt
 
@@ -429,7 +461,7 @@ model CesadCommission {
 }
 
 model CesadCommissionAct {
-  id                String                  @id @default(cuid())
+  id                String                      @id @default(cuid())
   commissionId      String
   actType           CesadCommissionActType
   number            String
@@ -440,10 +472,11 @@ model CesadCommissionAct {
   validityEndDate   DateTime?
   summary           String?
   referenceText     String?
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
-  commission        CesadCommission         @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+  commission        CesadCommission             @relation(fields: [commissionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   members           CesadCommissionMember[]
+  auditEvents       CesadCommissionAuditEvent[]
 
   @@index([commissionId])
   @@index([actType])
