@@ -1,7 +1,9 @@
 # BE-CESAD-REG-01F — Seed local mínimo de comissão CESAD
 
 **Dev:** Edgar
-**Status:** Pendente
+
+**Status:** Concluído
+
 **Depende de:** BE-CESAD-REG-01A, BE-CESAD-REG-01B (modelo de criação estável)
 
 ---
@@ -50,33 +52,33 @@ Criar seed local mínimo que permita testar fluxos CESAD com uma comissão vigen
 
 ## Implementação
 
-- [ ] Criar ou atualizar seed apenas para ambiente de desenvolvimento/local
-- [ ] Cadastrar comissão CESAD vigente com nome identificável
-- [ ] Cadastrar ato/portaria local de exemplo
-- [ ] Vincular 3 titulares `CESAD_MEMBER`
-- [ ] Vincular 2 suplentes `CESAD_MEMBER`
-- [ ] Criar usuário `COMMISSION_ASSISTANT` separado (sem vínculo como membro)
-- [ ] Garantir seed idempotente (rodar duas vezes sem duplicar dados)
-- [ ] Falhar explicitamente em `NODE_ENV=production`
+- [x] Criar ou atualizar seed apenas para ambiente de desenvolvimento/local
+- [x] Cadastrar comissão CESAD vigente com nome identificável
+- [x] Cadastrar ato/portaria local de exemplo
+- [x] Vincular 3 titulares `CESAD_MEMBER`
+- [x] Vincular 2 suplentes `CESAD_MEMBER`
+- [x] Criar usuário `COMMISSION_ASSISTANT` separado (sem vínculo como membro)
+- [x] Garantir seed idempotente (rodar duas vezes sem duplicar dados)
+- [x] Falhar explicitamente em `NODE_ENV=production`
 
 ---
 
 ## Validações após seed
 
-- [ ] Rodar seed duas vezes e confirmar ausência de duplicação
-- [ ] `GET /cesad/commissions/current` retorna a comissão local vigente
-- [ ] Composição contém 3 titulares e 2 suplentes
-- [ ] `COMMISSION_ASSISTANT` existe como usuário mas não como membro formal
-- [ ] Banco local passa em `db:check` (se aplicável)
+- [x] Rodar seed duas vezes e confirmar ausência de duplicação
+- [x] `GET /cesad/commissions/current` retorna a comissão local vigente
+- [x] Composição contém 3 titulares e 2 suplentes
+- [x] `COMMISSION_ASSISTANT` existe como usuário mas não como membro formal
+- [x] Banco local passa em `db:check` (se aplicável)
 
 ---
 
 ## Critérios de aceite
 
-- [ ] Ambiente local possui comissão CESAD funcional para testes manuais
-- [ ] Seed não usa dados reais
-- [ ] Seed não executa em produção
-- [ ] Fluxos de leitura CESAD continuam funcionando após seed
+- [x] Ambiente local possui comissão CESAD funcional para testes manuais
+- [x] Seed não usa dados reais
+- [x] Seed não executa em produção
+- [x] Fluxos de leitura CESAD continuam funcionando após seed
 
 ---
 
