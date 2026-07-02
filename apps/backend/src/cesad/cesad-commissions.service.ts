@@ -8,6 +8,11 @@ import {
   CesadCommissionAuditEventType as PrismaCesadCommissionAuditEventType,
   CesadCommissionMemberRoleType as PrismaCesadCommissionMemberRoleType,
   CesadCommissionStatus as PrismaCesadCommissionStatus,
+  CesadStageAssignmentStatus as PrismaCesadStageAssignmentStatus,
+  CesadStageOpinionStatus as PrismaCesadStageOpinionStatus,
+  DocumentStatus as PrismaDocumentStatus,
+  DocumentType as PrismaDocumentType,
+  Prisma,
   UserRole as PrismaUserRole,
 } from '@prisma/client';
 import {
@@ -70,13 +75,19 @@ export class CesadCommissionsService {
       ? new Date(dto.commission.effectiveEndDate)
       : null;
 
+    if (effectiveEndDate && effectiveStartDate >= effectiveEndDate) {
+      throw new BadRequestException(
+        'A data de início da comissão deve ser anterior à data de fim.',
+      );
+    }
+
     await this.validateMembers(dto, effectiveStartDate, effectiveEndDate);
 
     const result = await this.prismaService.$transaction(async (tx) => {
       // A ordem importa: uma comissao anterior sem data fim precisa ser encerrada
       // em D-1 ANTES da checagem de sobreposicao, senao ela mesma seria detectada
       // como conflito e bloquearia o cadastro da nova comissao (regra D-1 da ADR-006).
-      await this.validityService.closePreviousOpenEndedAtDMinus1(effectiveStartDate, tx);
+      await this.validityService.closePreviousOpenEndedAtDMinus1(effectiveStartDate, actor, tx);
       await this.validityService.assertNoOverlap(effectiveStartDate, effectiveEndDate, undefined, tx);
 
       const commission = await tx.cesadCommission.create({
@@ -183,6 +194,191 @@ export class CesadCommissionsService {
     };
   }
 
+  async closeCommission(id: string, actor: AuthenticatedUser): Promise<CesadCommissionRef> {
+    this.ensureCanAdminister(actor);
+
+    const commission = await this.prismaService.cesadCommission.findUnique({
+      where: { id },
+    });
+
+    if (!commission) {
+      throw new NotFoundException('Comissão CESAD não encontrada.');
+    }
+
+    if (commission.effectiveEndDate !== null) {
+      throw new BadRequestException('Esta comissão já possui data de encerramento e não pode ser encerrada novamente.');
+    }
+
+    const effectiveEndDate = new Date();
+
+    const updated = await this.prismaService.$transaction(async (tx) => {
+      // Regra: Bloquear encerramento se existir assignment ACTIVE vinculado à comissão.
+      // Esses processos em andamento devem ser tratados pela frente de rollover (01E).
+      // A checagem roda dentro da transacao para evitar que um assignment seja criado
+      // entre a validacao e a efetivacao do encerramento (race condition).
+      const activeAssignmentsCount = await tx.cesadStageAssignment.count({
+        where: {
+          commissionId: id,
+          status: PrismaCesadStageAssignmentStatus.ACTIVE,
+        },
+      });
+
+      // ADR-006 "Atos preparatorios": um parecer so e consolidado quando o
+      // documento esta SIGNED e todas as assinaturas COMPLETED. Rascunhos de
+      // parecer e documentos ainda nao assinados (READY_FOR_SIGNATURE, que
+      // cobre tambem o caso de assinatura parcial) sao sinalizados aqui; o
+      // tratamento efetivo do rollover permanece responsabilidade da 01E.
+      const preparatoryOpinionsCount = await this.countPreparatoryStageOpinions(tx, id);
+
+      if (activeAssignmentsCount > 0) {
+        throw new BadRequestException(
+          `Não é possível encerrar esta comissão: existem ${activeAssignmentsCount} processo(s) em andamento vinculados a ela` +
+            (preparatoryOpinionsCount > 0
+              ? ` e ${preparatoryOpinionsCount} ato(s) preparatório(s) pendente(s) (parecer em rascunho ou documento não assinado)`
+              : '') +
+            '. Trate o rollover desses processos antes de encerrar.',
+        );
+      }
+
+      const updatedCommission = await tx.cesadCommission.update({
+        where: { id },
+        data: {
+          effectiveEndDate,
+          status: PrismaCesadCommissionStatus.INACTIVE,
+        },
+      });
+
+      await tx.cesadCommissionAuditEvent.create({
+        data: {
+          eventType: PrismaCesadCommissionAuditEventType.CESAD_COMMISSION_CLOSED,
+          commissionId: id,
+          actorUserId: actor.sub,
+          actorRole: actor.role as PrismaUserRole,
+          afterState: {
+            status: PrismaCesadCommissionStatus.INACTIVE,
+            effectiveEndDate: effectiveEndDate.toISOString(),
+            activeAssignmentsCount,
+            preparatoryOpinionsCount,
+          },
+        },
+      });
+
+      return updatedCommission;
+    });
+
+    return this.toRef(updated);
+  }
+
+  async supersedeCommission(id: string, actor: AuthenticatedUser): Promise<CesadCommissionRef> {
+    this.ensureCanAdminister(actor);
+
+    const commission = await this.prismaService.cesadCommission.findUnique({
+      where: { id },
+    });
+
+    if (!commission) {
+      throw new NotFoundException('Comissão CESAD não encontrada.');
+    }
+
+    if (commission.effectiveEndDate !== null) {
+      throw new BadRequestException('Esta comissão já possui data de encerramento e não pode ser supersedida.');
+    }
+
+    // Regra D-1: comissão sem data fim recebe fim em D-1 (véspera do dia atual)
+    const effectiveEndDate = new Date();
+    effectiveEndDate.setDate(effectiveEndDate.getDate() - 1);
+
+    const updated = await this.prismaService.$transaction(async (tx) => {
+      // Mesma regra aplicada em closeCommission: supersessao com processos em
+      // andamento vinculados deve ser tratada pelo rollover (01E), nao silenciosamente
+      // deixada apontando para uma comissao que perdeu vigencia.
+      const activeAssignmentsCount = await tx.cesadStageAssignment.count({
+        where: {
+          commissionId: id,
+          status: PrismaCesadStageAssignmentStatus.ACTIVE,
+        },
+      });
+
+      // ADR-006 "Atos preparatorios": mesma sinalizacao aplicada em closeCommission.
+      const preparatoryOpinionsCount = await this.countPreparatoryStageOpinions(tx, id);
+
+      if (activeAssignmentsCount > 0) {
+        throw new BadRequestException(
+          `Não é possível superseder esta comissão: existem ${activeAssignmentsCount} processo(s) em andamento vinculados a ela` +
+            (preparatoryOpinionsCount > 0
+              ? ` e ${preparatoryOpinionsCount} ato(s) preparatório(s) pendente(s) (parecer em rascunho ou documento não assinado)`
+              : '') +
+            '. Trate o rollover desses processos antes de superseder.',
+        );
+      }
+
+      const updatedCommission = await tx.cesadCommission.update({
+        where: { id },
+        data: {
+          effectiveEndDate,
+          status: PrismaCesadCommissionStatus.SUPERSEDED,
+        },
+      });
+
+      await tx.cesadCommissionAuditEvent.create({
+        data: {
+          eventType: PrismaCesadCommissionAuditEventType.CESAD_COMMISSION_SUPERSEDED,
+          commissionId: id,
+          actorUserId: actor.sub,
+          actorRole: actor.role as PrismaUserRole,
+          afterState: {
+            status: PrismaCesadCommissionStatus.SUPERSEDED,
+            effectiveEndDate: effectiveEndDate.toISOString(),
+            activeAssignmentsCount,
+            preparatoryOpinionsCount,
+          },
+        },
+      });
+
+      return updatedCommission;
+    });
+
+    return this.toRef(updated);
+  }
+
+  // ADR-006 "Atos preparatorios e consolidados": um parecer CESAD e consolidado
+  // somente quando o documento esta SIGNED e todas as assinaturas COMPLETED.
+  // Parecer em DRAFT, ou documento CESAD_OPINION ainda em READY_FOR_SIGNATURE
+  // (inclui o caso de assinatura parcial, que permanece nesse status ate a
+  // ultima assinatura), sao atos preparatorios e devem ser sinalizados no
+  // encerramento/supersessao. O tratamento efetivo do rollover e da 01E.
+  private async countPreparatoryStageOpinions(
+    tx: Prisma.TransactionClient,
+    commissionId: string,
+  ): Promise<number> {
+    const activeStageFilter = {
+      cesadStageAssignments: {
+        some: {
+          commissionId,
+          status: PrismaCesadStageAssignmentStatus.ACTIVE,
+        },
+      },
+    };
+
+    const [draftOpinionsCount, unsignedDocumentsCount] = await Promise.all([
+      tx.cesadStageOpinion.count({
+        where: {
+          processStage: activeStageFilter,
+          status: PrismaCesadStageOpinionStatus.DRAFT,
+        },
+      }),
+      tx.processDocument.count({
+        where: {
+          processStage: activeStageFilter,
+          documentType: PrismaDocumentType.CESAD_OPINION,
+          documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
+        },
+      }),
+    ]);
+
+    return draftOpinionsCount + unsignedDocumentsCount;
+  }
+
   private async validateMembers(
     dto: CreateCesadCommissionDto,
     commissionStart: Date,
@@ -237,6 +433,12 @@ export class CesadCommissionsService {
 
       const memberStart = new Date(member.startDate);
       const memberEnd = member.endDate ? new Date(member.endDate) : null;
+
+      if (memberEnd && memberStart >= memberEnd) {
+        throw new BadRequestException(
+          'A data de início do membro deve ser anterior à data de fim.',
+        );
+      }
 
       if (memberStart < commissionStart) {
         throw new BadRequestException(

@@ -126,6 +126,114 @@ export async function runCesadCommissionsEndpointTests() {
     });
 
     assert.equal(missingResponse.status, 404);
+
+    // Close: bloquear para CESAD_MEMBER
+    const commissionToClose = await context.prisma.cesadCommission.create({
+      data: {
+        name: 'Comissão para encerramento',
+        description: null,
+        status: 'ACTIVE',
+        effectiveStartDate: new Date('2025-01-01T00:00:00.000Z'),
+      },
+    });
+
+    const forbiddenCloseResponse = await fetch(
+      `${baseUrl}/cesad/commissions/${commissionToClose.id}/close`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${cesadLoginPayload.accessToken}` },
+      },
+    );
+    assert.equal(forbiddenCloseResponse.status, 403);
+
+    // Close: sucesso por ADMIN
+    const closeResponse = await fetch(
+      `${baseUrl}/cesad/commissions/${commissionToClose.id}/close`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${adminLoginPayload.accessToken}` },
+      },
+    );
+    assert.equal(closeResponse.status, 200);
+    const closePayload = (await closeResponse.json()) as {
+      id: string;
+      status: CesadCommissionStatus;
+      effectiveEndDate: string | null;
+    };
+    assert.equal(closePayload.id, commissionToClose.id);
+    assert.equal(closePayload.status, CesadCommissionStatus.INACTIVE);
+    assert.ok(closePayload.effectiveEndDate !== null, 'effectiveEndDate deve ser preenchida após encerramento');
+
+    // Close: bloquear reencerramento de comissão já encerrada
+    const reCloseResponse = await fetch(
+      `${baseUrl}/cesad/commissions/${commissionToClose.id}/close`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${adminLoginPayload.accessToken}` },
+      },
+    );
+    assert.equal(reCloseResponse.status, 400);
+
+    // Supersede: login de HOMOLOGATION_AUTHORITY
+    const authorityUser = await createUser(
+      context.prisma,
+      UserRole.HOMOLOGATION_AUTHORITY,
+      'authority-endpoint@test.local',
+    );
+    const authorityLoginResponse = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: authorityUser.email, password: 'Test123456!' }),
+    });
+    assert.equal(authorityLoginResponse.status, 200);
+    const authorityLoginPayload = (await authorityLoginResponse.json()) as { accessToken: string };
+
+    const commissionToSupersede = await context.prisma.cesadCommission.create({
+      data: {
+        name: 'Comissão para supersessão',
+        description: null,
+        status: 'ACTIVE',
+        effectiveStartDate: new Date('2024-01-01T00:00:00.000Z'),
+      },
+    });
+
+    // Supersede: bloquear para CESAD_MEMBER
+    const forbiddenSupersedeResponse = await fetch(
+      `${baseUrl}/cesad/commissions/${commissionToSupersede.id}/supersede`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${cesadLoginPayload.accessToken}` },
+      },
+    );
+    assert.equal(forbiddenSupersedeResponse.status, 403);
+
+    // Supersede: sucesso por HOMOLOGATION_AUTHORITY
+    const supersedeResponse = await fetch(
+      `${baseUrl}/cesad/commissions/${commissionToSupersede.id}/supersede`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${authorityLoginPayload.accessToken}` },
+      },
+    );
+    assert.equal(supersedeResponse.status, 200);
+    const supersedePayload = (await supersedeResponse.json()) as {
+      id: string;
+      status: CesadCommissionStatus;
+      effectiveEndDate: string | null;
+    };
+    assert.equal(supersedePayload.id, commissionToSupersede.id);
+    assert.equal(supersedePayload.status, CesadCommissionStatus.SUPERSEDED);
+    assert.ok(supersedePayload.effectiveEndDate !== null, 'effectiveEndDate deve ser preenchida após supersessão');
+
+    // Supersede: bloquear supersessão de comissão já supersedida
+    const reSupersedeResponse = await fetch(
+      `${baseUrl}/cesad/commissions/${commissionToSupersede.id}/supersede`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${adminLoginPayload.accessToken}` },
+      },
+    );
+    assert.equal(reSupersedeResponse.status, 400);
   } finally {
     await app.close();
     await disposeTestContext(context);
