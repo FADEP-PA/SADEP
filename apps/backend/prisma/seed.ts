@@ -1,12 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import {
-  PrismaClient,
-  CesadCommissionStatus,
-  CesadCommissionActType,
-  CesadCommissionMemberRoleType,
-} from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { UserRole } from '@sadep/contracts';
 
 import { hashPassword } from '../src/common/security/password-hasher';
@@ -25,8 +20,6 @@ const users = [
   { email: 'cesad1@sadep.local', name: 'Membro CESAD 1 SADEP', role: UserRole.CESAD_MEMBER },
   { email: 'cesad2@sadep.local', name: 'Membro CESAD 2 SADEP', role: UserRole.CESAD_MEMBER },
   { email: 'cesad3@sadep.local', name: 'Membro CESAD 3 SADEP', role: UserRole.CESAD_MEMBER },
-  { email: 'cesad4@sadep.local', name: 'Membro CESAD 4 SADEP', role: UserRole.CESAD_MEMBER },
-  { email: 'cesad5@sadep.local', name: 'Membro CESAD 5 SADEP', role: UserRole.CESAD_MEMBER },
   {
     email: 'assistant@sadep.local',
     name: 'Assistente da Comissao SADEP',
@@ -121,74 +114,6 @@ async function main() {
       },
     });
   }
-
-  console.log('[seed] Syncing local CESAD commission...');
-
-  const commissionName = 'Comissão CESAD - Ambiente de Desenvolvimento Local';
-  let commission = await prisma.cesadCommission.findFirst({
-    where: { name: commissionName },
-  });
-
-  if (!commission) {
-    commission = await prisma.cesadCommission.create({
-      data: {
-        name: commissionName,
-        description: 'Comissão CESAD gerada automaticamente pelo seed local para testes de desenvolvimento.',
-        status: CesadCommissionStatus.ACTIVE,
-        effectiveStartDate: new Date('2024-01-01T00:00:00.000Z'),
-      },
-    });
-  }
-
-  let act = await prisma.cesadCommissionAct.findFirst({
-    where: { commissionId: commission.id, number: '999', year: 2024 },
-  });
-
-  if (!act) {
-    act = await prisma.cesadCommissionAct.create({
-      data: {
-        commissionId: commission.id,
-        actType: CesadCommissionActType.CONSTITUTION,
-        number: '999',
-        year: 2024,
-        signedAt: new Date('2024-01-01T00:00:00.000Z'),
-        publishedAt: new Date('2024-01-02T00:00:00.000Z'),
-        validityStartDate: new Date('2024-01-02T00:00:00.000Z'),
-        referenceText: 'Portaria fictícia de criação da comissão local para ambiente de desenvolvimento',
-      },
-    });
-  }
-
-  const cesadMembersData = [
-    { email: 'cesad1@sadep.local', roleType: CesadCommissionMemberRoleType.TITULAR },
-    { email: 'cesad2@sadep.local', roleType: CesadCommissionMemberRoleType.TITULAR },
-    { email: 'cesad3@sadep.local', roleType: CesadCommissionMemberRoleType.TITULAR },
-    { email: 'cesad4@sadep.local', roleType: CesadCommissionMemberRoleType.SUPLENTE },
-    { email: 'cesad5@sadep.local', roleType: CesadCommissionMemberRoleType.SUPLENTE },
-  ];
-
-  for (const memberData of cesadMembersData) {
-    const user = await prisma.user.findUnique({ where: { email: memberData.email } });
-    if (!user) continue;
-
-    const existingMember = await prisma.cesadCommissionMember.findFirst({
-      where: { commissionId: commission.id, userId: user.id },
-    });
-
-    if (!existingMember) {
-      await prisma.cesadCommissionMember.create({
-        data: {
-          commissionId: commission.id,
-          userId: user.id,
-          actId: act.id,
-          roleType: memberData.roleType,
-          startDate: new Date('2024-01-02T00:00:00.000Z'),
-        },
-      });
-    }
-  }
-
-  console.log('[seed] Seed completed successfully.');
 }
 
 main()
