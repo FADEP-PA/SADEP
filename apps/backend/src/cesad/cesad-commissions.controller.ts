@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   UnauthorizedException,
   UseGuards,
   UsePipes,
@@ -17,6 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { CesadCommissionsService } from './cesad-commissions.service';
 import { CreateCesadCommissionDto } from './dto/create-cesad-commission.dto';
+import { UpdateCesadCommissionDto } from './dto/update-cesad-commission.dto';
 
 @Controller('cesad/commissions')
 @UseGuards(JwtAuthGuard)
@@ -46,6 +48,20 @@ export class CesadCommissionsController {
     }
 
     return this.cesadCommissionsService.createCommission(dto, user);
+  }
+
+  @Put(':id')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async updateCommission(
+    @Param('id') id: string,
+    @Body() dto: UpdateCesadCommissionDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    if (!user) {
+      throw new UnauthorizedException('Authenticated user not found');
+    }
+
+    return this.cesadCommissionsService.updateCommission(id, dto, user);
   }
 
   private ensureAdmin(user?: AuthenticatedUser): asserts user is AuthenticatedUser {

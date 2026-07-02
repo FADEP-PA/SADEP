@@ -33,6 +33,7 @@ import type { CesadCommission } from '../domain/cesad-commissions/cesad-commissi
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { CesadCommissionValidityService } from './cesad-commission-validity.service';
 import type { CreateCesadCommissionDto } from './dto/create-cesad-commission.dto';
+import type { UpdateCesadCommissionDto } from './dto/update-cesad-commission.dto';
 
 @Injectable()
 export class CesadCommissionsService {
@@ -190,6 +191,134 @@ export class CesadCommissionsService {
       acts: [this.toActRef(result.act)],
       members: result.members.map((m) => this.toMemberRef(m)),
       isUsedInProcess,
+      temporalSituation: this.validityService.resolveTemporalSituation(result.commission),
+    };
+  }
+
+  async updateCommission(
+    id: string,
+    dto: UpdateCesadCommissionDto,
+    actor: AuthenticatedUser,
+  ): Promise<CesadCommissionDetailRef> {
+    this.ensureCanAdminister(actor);
+
+    const commission = await this.prismaService.cesadCommission.findUnique({
+      where: { id },
+    });
+
+    if (!commission) {
+      throw new NotFoundException('Comissão CESAD não encontrada.');
+    }
+
+    const isUsedInProcess =
+      (await this.prismaService.cesadStageAssignment.count({
+        where: { commissionId: id },
+      })) > 0;
+
+    if (isUsedInProcess) {
+      throw new BadRequestException(
+        'Não é possível editar estruturalmente uma comissão que já está em uso em processos.',
+      );
+    }
+
+    const effectiveStartDate = new Date(dto.commission.effectiveStartDate);
+    const effectiveEndDate = dto.commission.effectiveEndDate
+      ? new Date(dto.commission.effectiveEndDate)
+      : null;
+
+    if (effectiveEndDate && effectiveStartDate >= effectiveEndDate) {
+      throw new BadRequestException(
+        'A data de início da comissão deve ser anterior à data de fim.',
+      );
+    }
+
+    await this.validateMembers(dto, effectiveStartDate, effectiveEndDate);
+
+    const result = await this.prismaService.$transaction(async (tx) => {
+      // Ignora a própria comissão na checagem de sobreposição
+      await this.validityService.assertNoOverlap(effectiveStartDate, effectiveEndDate, id, tx);
+
+      const updatedCommission = await tx.cesadCommission.update({
+        where: { id },
+        data: {
+          name: dto.commission.name,
+          description: dto.commission.description ?? null,
+          effectiveStartDate,
+          effectiveEndDate,
+        },
+      });
+
+      // Remove membros e atos antigos (edição estrutural completa permitida por não ter uso)
+      await tx.cesadCommissionMember.deleteMany({
+        where: { commissionId: id },
+      });
+      await tx.cesadCommissionAct.deleteMany({
+        where: { commissionId: id },
+      });
+
+      const act = await tx.cesadCommissionAct.create({
+        data: {
+          commissionId: id,
+          actType: dto.act.actType,
+          number: dto.act.number,
+          year: dto.act.year,
+          signedAt: dto.act.signedAt ? new Date(dto.act.signedAt) : null,
+          publishedAt: dto.act.publishedAt ? new Date(dto.act.publishedAt) : null,
+          validityStartDate: dto.act.validityStartDate
+            ? new Date(dto.act.validityStartDate)
+            : null,
+          validityEndDate: dto.act.validityEndDate
+            ? new Date(dto.act.validityEndDate)
+            : null,
+          summary: dto.act.summary ?? null,
+          referenceText: dto.act.referenceText ?? null,
+        },
+      });
+
+      const members = await Promise.all(
+        dto.members.map((m) =>
+          tx.cesadCommissionMember.create({
+            data: {
+              commissionId: id,
+              userId: m.userId,
+              actId: act.id,
+              roleType: m.roleType,
+              startDate: new Date(m.startDate),
+              endDate: m.endDate ? new Date(m.endDate) : null,
+            },
+          }),
+        ),
+      );
+
+      await tx.cesadCommissionAuditEvent.create({
+        data: {
+          eventType: PrismaCesadCommissionAuditEventType.CESAD_COMMISSION_UPDATED,
+          commissionId: id,
+          actorUserId: actor.sub,
+          actorRole: actor.role as PrismaUserRole,
+          beforeState: {
+            name: commission.name,
+            effectiveStartDate: commission.effectiveStartDate.toISOString(),
+            effectiveEndDate: commission.effectiveEndDate?.toISOString() ?? null,
+          },
+          afterState: {
+            name: updatedCommission.name,
+            effectiveStartDate: updatedCommission.effectiveStartDate.toISOString(),
+            effectiveEndDate: updatedCommission.effectiveEndDate?.toISOString() ?? null,
+            membersReplaced: true,
+            actReplaced: true,
+          },
+        },
+      });
+
+      return { commission: updatedCommission, act, members };
+    });
+
+    return {
+      commission: this.toRef(result.commission),
+      acts: [this.toActRef(result.act)],
+      members: result.members.map((m) => this.toMemberRef(m)),
+      isUsedInProcess: false,
       temporalSituation: this.validityService.resolveTemporalSituation(result.commission),
     };
   }
