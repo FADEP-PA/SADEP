@@ -1,7 +1,7 @@
 # BE-CESAD-REG-01C — Editar comissão ainda não utilizada
 
 **Dev:** Pedro
-**Status:** Pendente
+**Status:** Concluída
 **Depende de:** BE-CESAD-REG-01A, BE-CESAD-REG-01B (preferencialmente)
 
 ---
@@ -64,63 +64,63 @@ Bloqueados: `CESAD_MEMBER`, `COMMISSION_ASSISTANT`, `IMMEDIATE_SUPERVISOR`, `INT
 
 ## Endpoint
 
-- [ ] Criar `PUT /cesad/commissions/:id` ou `PATCH /cesad/commissions/:id` (confirmar na 01A)
-- [ ] Proteger com guard de role (`ADMIN`, `HOMOLOGATION_AUTHORITY`)
-- [ ] Bloquear demais perfis
+- [x] Criar `PUT /cesad/commissions/:id` ou `PATCH /cesad/commissions/:id` (confirmar na 01A)
+- [x] Proteger com guard de role (`ADMIN`, `HOMOLOGATION_AUTHORITY`)
+- [x] Bloquear demais perfis
 
 ---
 
 ## Validação principal
 
-- [ ] Verificar se a comissão existe
-- [ ] Verificar se a comissão **não possui** `CesadStageAssignment` associado
-- [ ] Bloquear qualquer edição estrutural se houver uso processual
+- [x] Verificar se a comissão existe
+- [x] Verificar se a comissão **não possui** `CesadStageAssignment` associado
+- [x] Bloquear qualquer edição estrutural se houver uso processual
 
 ---
 
 ## Validações de edição
 
-- [ ] Revalidar vigência — bloquear se nova vigência conflitar
-- [ ] Revalidar composição mínima (3 titulares, 2 suplentes)
-- [ ] Revalidar membros existentes e ativos
-- [ ] Bloquear `COMMISSION_ASSISTANT` como membro formal
-- [ ] Bloquear usuário duplicado
+- [x] Revalidar vigência — bloquear se nova vigência conflitar
+- [x] Revalidar composição mínima (3 titulares, 2 suplentes)
+- [x] Revalidar membros existentes e ativos
+- [x] Bloquear `COMMISSION_ASSISTANT` como membro formal
+- [x] Bloquear usuário duplicado
 
 ---
 
 ## Persistência
 
-- [ ] Operação transacional (tudo ou rollback)
+- [x] Operação transacional (tudo ou rollback)
 
 ---
 
 ## Auditoria
 
-- [ ] Emitir `CESAD_COMMISSION_UPDATED` com campos alterados e valores anteriores/novos
+- [x] Emitir `CESAD_COMMISSION_UPDATED` com campos alterados e valores anteriores/novos
 
 ---
 
 ## Testes
 
-- [ ] Edição por `ADMIN`
-- [ ] Edição por `HOMOLOGATION_AUTHORITY`
-- [ ] Bloqueio para demais perfis
-- [ ] Bloqueio quando há `CesadStageAssignment`
-- [ ] Bloqueio de vigência conflitante
-- [ ] Bloqueio por composição mínima inválida
-- [ ] Bloqueio de `COMMISSION_ASSISTANT` como membro
-- [ ] Auditoria da alteração com valores anteriores e novos
-- [ ] Transação atômica em caso de erro
+- [x] Edição por `ADMIN`
+- [x] Edição por `HOMOLOGATION_AUTHORITY`
+- [x] Bloqueio para demais perfis
+- [x] Bloqueio quando há `CesadStageAssignment`
+- [x] Bloqueio de vigência conflitante
+- [x] Bloqueio por composição mínima inválida
+- [x] Bloqueio de `COMMISSION_ASSISTANT` como membro
+- [x] Auditoria da alteração com valores anteriores e novos
+- [x] Transação atômica em caso de erro
 
 ---
 
 ## Critérios de aceite
 
-- [ ] Edição permitida apenas antes de uso processual
-- [ ] Comissão já usada permanece imutável estruturalmente
-- [ ] Leitura de comissão atual continua consistente
-- [ ] Nenhuma reescrita histórica
-- [ ] Testes cobrem permissões, bloqueios e auditoria
+- [x] Edição permitida apenas antes de uso processual
+- [x] Comissão já usada permanece imutável estruturalmente
+- [x] Leitura de comissão atual continua consistente
+- [x] Nenhuma reescrita histórica
+- [x] Testes cobrem permissões, bloqueios e auditoria
 
 ---
 

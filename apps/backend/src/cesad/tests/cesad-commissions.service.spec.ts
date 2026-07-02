@@ -20,6 +20,7 @@ import {
 export async function runCesadCommissionsServiceTests() {
   await runReadTests();
   await runCreateTests();
+  await runUpdateTests();
   await runTemporalSituationTests();
 }
 
@@ -348,6 +349,143 @@ async function runCreateTests() {
         'AUTO_SUPERSEDED_D_MINUS_1_ON_NEW_COMMISSION_CREATION',
       );
     }
+  } finally {
+    await disposeTestContext(context);
+  }
+}
+
+async function runUpdateTests() {
+  const context = await createTestContext('cesad-commissions-update-test');
+  const prisma = context.prisma;
+  const validityService = new CesadCommissionValidityService(prisma as never);
+  const service = new CesadCommissionsService(prisma as never, validityService);
+
+  const adminUser = await createUser(prisma, UserRole.ADMIN, 'admin-update@writetest.local');
+  const adminActor = authenticatedUser(adminUser.id, UserRole.ADMIN);
+  const authorityUser = await createUser(
+    prisma,
+    UserRole.HOMOLOGATION_AUTHORITY,
+    'authority-update@writetest.local',
+  );
+  const authorityActor = authenticatedUser(authorityUser.id, UserRole.HOMOLOGATION_AUTHORITY);
+
+  let seq = 0;
+  async function makeMembers(titular: number, suplente: number) {
+    const tag = `u${seq++}`;
+    const titularIds: string[] = [];
+    for (let i = 0; i < titular; i += 1) {
+      const user = await createUser(prisma, UserRole.CESAD_MEMBER, `titular-${tag}-${i}@writetest.local`);
+      titularIds.push(user.id);
+    }
+    const suplenteIds: string[] = [];
+    for (let i = 0; i < suplente; i += 1) {
+      const user = await createUser(prisma, UserRole.CESAD_MEMBER, `suplente-${tag}-${i}@writetest.local`);
+      suplenteIds.push(user.id);
+    }
+    return { titularIds, suplenteIds };
+  }
+
+  function buildDto(
+    titularIds: string[],
+    suplenteIds: string[],
+    opts: {
+      name?: string;
+      start?: string;
+      end?: string | null;
+      memberStart?: string;
+    } = {},
+  ): CreateCesadCommissionDto {
+    const start = opts.start ?? '2031-01-01T00:00:00.000Z';
+    const memberStart = opts.memberStart ?? start;
+    return {
+      commission: {
+        name: opts.name ?? 'Comissao de teste',
+        description: null,
+        effectiveStartDate: start,
+        effectiveEndDate: opts.end ?? null,
+      },
+      act: {
+        actType: CesadCommissionActType.CONSTITUTION,
+        number: '001',
+        year: 2031,
+      },
+      members: [
+        ...titularIds.map((userId) => ({
+          userId,
+          roleType: CesadCommissionMemberRoleType.TITULAR,
+          startDate: memberStart,
+        })),
+        ...suplenteIds.map((userId) => ({
+          userId,
+          roleType: CesadCommissionMemberRoleType.SUPLENTE,
+          startDate: memberStart,
+        })),
+      ],
+    } as unknown as CreateCesadCommissionDto;
+  }
+
+  try {
+    // 1. Sucesso por ADMIN
+    {
+      const { titularIds, suplenteIds } = await makeMembers(3, 2);
+      const dto = buildDto(titularIds, suplenteIds, { name: 'Comissão a ser editada' });
+      const created = await service.createCommission(dto, adminActor);
+      
+      const { titularIds: newTitulares, suplenteIds: newSuplentes } = await makeMembers(3, 2);
+      const updateDto = buildDto(newTitulares, newSuplentes, { name: 'Comissão editada' });
+      // ignore TS error about unknown type
+      const updated = await service.updateCommission(created.commission.id, updateDto as any, adminActor);
+      assert.equal(updated.commission.name, 'Comissão editada');
+      assert.equal(updated.members.length, 5);
+      
+      const events = await prisma.cesadCommissionAuditEvent.findMany({
+        where: { commissionId: created.commission.id, eventType: 'CESAD_COMMISSION_UPDATED' },
+      });
+      assert.equal(events.length, 1);
+    }
+
+    // 2. Bloqueio por outro perfil
+    {
+      const { titularIds, suplenteIds } = await makeMembers(3, 2);
+      const dto = buildDto(titularIds, suplenteIds);
+      const created = await service.createCommission(dto, adminActor);
+
+      const memberActor = authenticatedUser('irrelevant', UserRole.CESAD_MEMBER);
+      await assert.rejects(
+        () => service.updateCommission(created.commission.id, dto as any, memberActor),
+        /Apenas ADMIN e HOMOLOGATION_AUTHORITY/,
+      );
+    }
+
+    // 3. Bloqueio com CesadStageAssignment
+    {
+      const { titularIds, suplenteIds } = await makeMembers(3, 2);
+      const dto = buildDto(titularIds, suplenteIds);
+      const created = await service.createCommission(dto, adminActor);
+
+      const evaluated = await createUser(prisma, UserRole.INTERN_SERVER, `evaluated-update-${seq}@writetest.local`);
+      const process = await prisma.evaluationProcess.create({
+        data: { evaluatedUserId: evaluated.id }
+      });
+      const stage = await prisma.processStage.create({
+        data: { evaluationProcessId: process.id, sequence: 1, stageCode: 'S1' }
+      });
+      await prisma.cesadStageAssignment.create({
+        data: {
+          processId: process.id,
+          processStageId: stage.id,
+          commissionId: created.commission.id,
+          assignedAt: new Date(),
+          referenceDate: new Date(),
+        }
+      });
+
+      await assert.rejects(
+        () => service.updateCommission(created.commission.id, dto as any, adminActor),
+        /Não é possível editar estruturalmente uma comissão que já está em uso em processos/,
+      );
+    }
+
   } finally {
     await disposeTestContext(context);
   }
