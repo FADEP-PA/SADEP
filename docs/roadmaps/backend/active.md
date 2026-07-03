@@ -1,6 +1,6 @@
 # Backend — Painel Ativo
 
-> Ultima atualizacao: 2026-06-29 (BE-SEC-03 — revisado e encerrado como guarda-chuva; homologacao nao requer autorizacao CESAD contextual).
+> Ultima atualizacao: 2026-07-03 (sincronizacao pos frente Comissao CESAD; `BE-CESAD-REG-01` concluida/estabilizada e removida dos pendentes ativos).
 > Os arquivos de task ja resolvidos foram movidos para [`../../../../docs/archive/backend/tasks/`](../../../archive/backend/tasks/).
 > Os indices de compatibilidade legados foram movidos para [`../../../../docs/archive/roadmaps-legados/`](../../../archive/roadmaps-legados/).
 
@@ -8,11 +8,22 @@
 
 **`SEC-HARD-01`** — Hardening adicional de seguranca HTTP: rate limiting refinado e protecao CSRF.
 
+A frente `BE-CESAD-REG-01` nao compoe mais o backlog ativo. Lacunas remanescentes de Comissao CESAD devem ser tratadas como novas tasks especificas, sem reabrir o guarda-chuva original.
+
 ---
 
 ## Concluido recente
 
 Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Quando aplicavel, os arquivos de task detalhados ja resolvidos foram movidos para [`docs/archive/backend/tasks/`](../../../archive/backend/tasks/); task files ainda usados como referencia de guarda-chuva permanecem em [`tasks/`](./tasks/). Permanecem aqui apenas como resumo de transicao; nao compoem o backlog ativo.
+
+### BE-CESAD-REG-01 — Cadastro e gerenciamento formal de comissoes CESAD
+
+- **Status operacional:** concluida / estabilizada / aprovada com ressalvas futuras.
+- **PRs relacionados:** `#68`, `#69`, `#70`, `#71`, `#72`, `#74`, `#78`.
+- **ADRs relacionadas:** [`ADR-006 — Gerenciamento formal da Comissao CESAD e rollover`](../../architecture/adr/adr-006-cesad-commission-management-and-rollover.md) e [`ADR-007 — Supersessao de parecer CESAD de etapa`](../../architecture/adr/adr-007-cesad-stage-opinion-supersession.md).
+- **Escopo entregue:** cadastro formal de comissoes CESAD, ato designativo, composicao minima de titulares/suplentes, edicao de comissao ainda nao utilizada, encerramento/supersessao, seed local minimo, auditoria administrativa propria e leitura administrativa alinhada para `ADMIN` e `HOMOLOGATION_AUTHORITY`.
+- **Rollover entregue:** rollover de processos em andamento sem parecer iniciado e supersessao de parecer CESAD preparatorio, preservando historico e bloqueando cenarios documentais/signers ainda fora do recorte.
+- **Ressalvas futuras:** formalizacao de DTO de encerramento/supersessao com motivo/data/metadados; exportacao de payloads de escrita pelo pacote contracts; CRUD funcional da interface administrativa.
 
 ### BE-FLOW-4STAGE-01A — Materializar quatro etapas e corrigir resolucao de etapa atual
 
@@ -139,7 +150,8 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Quand
 
 ## Pendentes relevantes
 
-- `BE-CESAD-REG-01` — Cadastro e gerenciamento de comissoes CESAD: implementar endpoints de mutacao (`POST`/`PUT`) para criacao de comissoes, registro de atos designativos (`CesadCommissionAct`) e gestao de membros (titulares/suplentes) com regras de vigencia e encerramento.
+- [`BE-CESAD-COMISSAO-CLOSE-DTO-01` — formalizar payload de encerramento/supersessao de comissao](./tasks/BE-CESAD-REG-01-commission-registration-management.md): melhoria futura; deve tratar motivo, data administrativa, metadados de auditoria e, quando aplicavel, referencia a comissao sucessora.
+- [`CONTRACT-CESAD-COMMISSION-WRITE-01` — exportar payloads de escrita de comissao CESAD pelo pacote contracts](../../frontend/tasks/FE-CESAD-COMISSAO-01-admin-ui.md): melhoria cross-cutting futura; nao reabre `BE-CESAD-REG-01`.
 - [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`.
 - [`BE-CONTRACT-CESAD-ASSIGN-01` — expor status de assignment CESAD em contracts](./tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md): condicional/futura; so deve ser executada se API publica ou frontend passarem a consumir diretamente o status de `CesadStageAssignment`.
 
@@ -166,4 +178,4 @@ O tracker legado foi movido para [`docs/archive/roadmaps-legados/backend-impleme
 - `BE-ARCH-01` esta concluida no recorte planejado de sessao/auth; isso nao encerra hardening HTTP amplo, CSRF, rate limit ou auditoria persistida formal.
 - `BE-ARCH-01E5` esta concluida no recorte de validacao operacional de env/CORS/cookies; hardening adicional fica em `SEC-HARD-01`.
 - `BE-ARCH-01F` esta concluida no recorte de logs estruturados e testes de autenticacao; auditoria persistida formal fica em `BE-AUDIT-AUTH-01`.
-- Homologacao, notificacao, ciencia e recursos nao devem ser tratados como implementados ate haver parecer conclusivo final, workflow e documentos correspondentes.
+- Homologacao, notificacao e ciencia estao implementadas no recorte de `BE-HOMOLOG-01`; recursos, frontend especifico de acompanhamento e fluxos externos permanecem fora do recorte atual.
