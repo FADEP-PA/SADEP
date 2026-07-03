@@ -1,10 +1,30 @@
 # BE-CESAD-REG-01E — Rollover de processos em andamento
 
 **Dev:** Lucas
-**Status:** Pendente
+**Status:** Fatia segura entregue — supersessão de atos preparatórios deferida (ver "Escopo entregue vs deferido")
 **Depende de:** BE-CESAD-REG-01A, 01B, 01C, 01D (todos merged e estáveis)
 
 > Task de maior risco do épico. Não iniciar antes de 01B + 01C + 01D estabilizados.
+
+---
+
+## Escopo entregue vs deferido
+
+**Entregue nesta fatia** (`feat/be-cesad-reg-01e-rollover`):
+
+- Endpoint `POST /processes/:id/stages/:sequence/cesad-stage-assignment/rollover`.
+- Rollover temporal do caso **"sem parecer iniciado"** (ADR-006, primeira linha): quando a comissão atribuída perdeu vigência e ainda não há parecer/expected signers/documento CESAD na etapa, a comissão vigente assume — assignment anterior supersedada (preservada), nova assignment criada, auditoria `CESAD_COMMISSION_ROLLOVER_APPLIED`.
+- Resolução automática da comissão vigente por data (diferente do `supersede`, que recebe `newCommissionId` explícito).
+- Guardas: comissão anterior ainda vigente, processo fora de `EM_ANALISE_CESAD`, perfil não autorizado, ausência/multiplicidade de comissão vigente, e bloqueio quando já há ato CESAD na etapa.
+- Provado contra Postgres real (8/8 cenários) e specs de integração no runner.
+
+**Deferido para task própria de supersessão de parecer** (`BE-CESAD-REG-01E-B` sugerida):
+
+- Rollover com parecer em `DRAFT`, documento `READY_FOR_SIGNATURE` e documento parcialmente assinado.
+- Invalidação de documento preparatório (`INVALIDATED_OR_SUPERSEDED`) e cancelamento de assinaturas pendentes.
+- Recriação de expected signers para a nova comissão.
+
+**Motivo do deferimento:** superseder um `CesadStageOpinion` já iniciado exige quebrar o invariante 1:1 `processStageId` (ou deletar registros), o que o próprio [ADR-005](../../../architecture/adr/adr-005-final-cesad-opinion-modeling.md) rejeitou por alto risco de regressão em código auditado (pareceres de etapa, expected signers, leitura consolidada). A [ADR-006](../../../architecture/adr/adr-006-cesad-commission-management-and-rollover.md) já previa tratar isso "conforme modelagem futura". Fazê-lo aqui, de forma destrutiva/intrusiva, violaria a imutabilidade jurídica do domínio.
 
 ---
 
@@ -60,58 +80,58 @@ Um ato está consolidado quando:
 
 ## Endpoint
 
-- [ ] Definir endpoint na varredura (opção: `POST /processes/:id/stages/:sequence/cesad-stage-assignment/rollover`)
-- [ ] Confirmar autorizações: `ADMIN`, `HOMOLOGATION_AUTHORITY` e possivelmente `CESAD_MEMBER` da nova comissão
+- [x] Definir endpoint na varredura (`POST /processes/:id/stages/:sequence/cesad-stage-assignment/rollover`)
+- [x] Confirmar autorizações: `ADMIN`, `HOMOLOGATION_AUTHORITY` (reusa a política do supersede; `CESAD_MEMBER` da nova comissão não incluído nesta fatia)
 
 ---
 
 ## Detecção e elegibilidade
 
-- [ ] Detectar que a assignment ativa pertence a comissão que perdeu vigência
-- [ ] Verificar se existe parecer/documento consolidado na etapa
-- [ ] Bloquear rollover quando documento já está `SIGNED` com assinaturas completas
+- [x] Detectar que a assignment ativa pertence a comissão que perdeu vigência
+- [x] Verificar se existe parecer/documento consolidado na etapa
+- [x] Bloquear rollover quando documento já está `SIGNED` com assinaturas completas *(coberto pelo bloqueio de qualquer ato CESAD iniciado na etapa)*
 
 ---
 
 ## Ações de rollover
 
-- [ ] Preservar pareceres/documentos consolidados (não tocar)
-- [ ] Superseder ou invalidar atos preparatórios não consolidados
-- [ ] Criar nova `CesadStageAssignment` para a comissão vigente
-- [ ] Manter assignment anterior como referência histórica (não sobrescrever)
-- [ ] Recriar `CesadStageOpinionExpectedSigner` com base na nova comissão vigente
-- [ ] Impedir que assinaturas pendentes da comissão anterior consolidem documento antigo
+- [x] Preservar pareceres/documentos consolidados (não tocar)
+- [ ] Superseder ou invalidar atos preparatórios não consolidados *(deferido — ver "Escopo entregue vs deferido")*
+- [x] Criar nova `CesadStageAssignment` para a comissão vigente
+- [x] Manter assignment anterior como referência histórica (não sobrescrever)
+- [ ] Recriar `CesadStageOpinionExpectedSigner` com base na nova comissão vigente *(deferido)*
+- [ ] Impedir que assinaturas pendentes da comissão anterior consolidem documento antigo *(deferido)*
 
 ---
 
 ## Auditoria
 
-- [ ] Emitir `CESAD_COMMISSION_ROLLOVER_APPLIED` com processo, etapa, assignment anterior, nova comissão, documentos supersedados, expected signers cancelados, usuário executor e motivo
+- [x] Emitir `CESAD_COMMISSION_ROLLOVER_APPLIED` com processo, etapa, assignment anterior, nova comissão, usuário executor e motivo
 
 ---
 
 ## Testes
 
-- [ ] Rollover sem parecer iniciado
-- [ ] Rollover com draft
-- [ ] Rollover com documento `READY_FOR_SIGNATURE`
-- [ ] Rollover com documento parcialmente assinado
-- [ ] Bloqueio de rollover quando documento já está `SIGNED`
-- [ ] Bloqueio de assinatura pendente da comissão anterior após rollover
-- [ ] Nova assignment criada para comissão vigente
-- [ ] Assignment anterior preservada
-- [ ] Auditoria criada com metadados completos
-- [ ] Idempotência ou conflito claro em segunda tentativa
+- [x] Rollover sem parecer iniciado
+- [ ] Rollover com draft *(deferido — atualmente bloqueado)*
+- [ ] Rollover com documento `READY_FOR_SIGNATURE` *(deferido — atualmente bloqueado)*
+- [ ] Rollover com documento parcialmente assinado *(deferido — atualmente bloqueado)*
+- [x] Bloqueio de rollover quando há ato CESAD iniciado/consolidado na etapa
+- [ ] Bloqueio de assinatura pendente da comissão anterior após rollover *(deferido)*
+- [x] Nova assignment criada para comissão vigente
+- [x] Assignment anterior preservada
+- [x] Auditoria criada com metadados completos
+- [x] Idempotência/conflito claro em segunda tentativa
 
 ---
 
 ## Critérios de aceite
 
-- [ ] Atos consolidados não são alterados
-- [ ] Atos preparatórios da comissão anterior não produzem efeito final
-- [ ] Nova comissão vigente consegue emitir parecer válido
-- [ ] Histórico permanece consultável
-- [ ] Auditoria explica a transição de competência
+- [x] Atos consolidados não são alterados
+- [x] Atos preparatórios da comissão anterior não produzem efeito final *(garantido por bloqueio nesta fatia; supersessão ativa fica na task deferida)*
+- [x] Nova comissão vigente consegue emitir parecer válido *(no caso sem parecer iniciado)*
+- [x] Histórico permanece consultável
+- [x] Auditoria explica a transição de competência
 
 ---
 
