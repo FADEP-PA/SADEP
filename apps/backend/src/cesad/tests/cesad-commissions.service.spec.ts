@@ -57,22 +57,22 @@ async function runReadTests() {
     const commissions = await service.listCommissions();
 
     assert.equal(commissions.length, 2);
-    assert.equal(commissions[0].id, currentCommission.id);
-    assert.equal(commissions[0].name, 'Comissão CESAD 2026');
-    assert.equal(commissions[0].description, null);
-    assert.equal(commissions[0].status, CesadCommissionStatus.ACTIVE);
-    assert.equal(commissions[0].effectiveStartDate, '2026-01-01T00:00:00.000Z');
-    assert.equal(commissions[0].effectiveEndDate, null);
-    assert.equal(commissions[1].id, previousCommission.id);
-    assert.equal(commissions[1].status, CesadCommissionStatus.SUPERSEDED);
-    assert.equal(commissions[1].effectiveEndDate, '2025-12-31T23:59:59.000Z');
+    assert.equal(commissions[0].commission.id, currentCommission.id);
+    assert.equal(commissions[0].commission.name, 'Comissão CESAD 2026');
+    assert.equal(commissions[0].commission.description, null);
+    assert.equal(commissions[0].commission.status, CesadCommissionStatus.ACTIVE);
+    assert.equal(commissions[0].commission.effectiveStartDate, '2026-01-01T00:00:00.000Z');
+    assert.equal(commissions[0].commission.effectiveEndDate, null);
+    assert.equal(commissions[1].commission.id, previousCommission.id);
+    assert.equal(commissions[1].commission.status, CesadCommissionStatus.SUPERSEDED);
+    assert.equal(commissions[1].commission.effectiveEndDate, '2025-12-31T23:59:59.000Z');
 
     const foundCommission = await service.getCommissionById(previousCommission.id);
 
-    assert.equal(foundCommission.id, previousCommission.id);
-    assert.equal(foundCommission.name, 'Comissão CESAD 2025');
-    assert.equal(foundCommission.description, 'Comissão histórica de exemplo para teste.');
-    assert.equal(foundCommission.status, CesadCommissionStatus.SUPERSEDED);
+    assert.equal(foundCommission.commission.id, previousCommission.id);
+    assert.equal(foundCommission.commission.name, 'Comissão CESAD 2025');
+    assert.equal(foundCommission.commission.description, 'Comissão histórica de exemplo para teste.');
+    assert.equal(foundCommission.commission.status, CesadCommissionStatus.SUPERSEDED);
 
     await assert.rejects(
       () => service.getCommissionById('missing-commission-id'),
