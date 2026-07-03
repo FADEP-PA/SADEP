@@ -2,91 +2,113 @@
 
 ## Status
 
-Pendente / especificada / aguardando contracts backend.
+Concluida no recorte de leitura real / aprovada com lacunas futuras.
 
-## Relacao com o epico
+## Atualizacao de fechamento
 
-Frente frontend vinculada a `BE-CESAD-REG-01`.
+- **Data de sincronizacao:** 2026-07-03.
+- **Issues relacionadas:** `#64` e `#66`.
+- **PRs relacionados:** `#67`, `#75`, `#76` e `#78`.
+- **Frente backend relacionada:** [`BE-CESAD-REG-01`](../../backend/tasks/BE-CESAD-REG-01-commission-registration-management.md).
 
-## Objetivo
+Esta task deixou de estar pendente. A interface administrativa da Comissao CESAD foi entregue no recorte de leitura real, com estrutura visual para evolucao de cadastro/manutencao.
 
-Implementar interface administrativa para cadastro, consulta e manutencao da Comissao CESAD, apos estabilizacao dos contratos backend.
+A task nao deve ser interpretada como CRUD funcional completo. Criacao, edicao, encerramento e supersessao pela interface ficam para task futura propria.
 
-## Escopo previsto
+## Objetivo consolidado
 
-- Listar comissoes cadastradas.
-- Exibir situacao temporal: futura/agendada, vigente, encerrada, inativa ou supersedida.
-- Consultar detalhes da comissao.
-- Exibir ato/portaria relacionado.
-- Exibir titulares e suplentes.
-- Permitir cadastro de nova comissao, se backend disponivel.
-- Exibir alertas de vigencia conflitante retornados pelo backend.
-- Impedir assistente como membro formal na interface.
-- Exibir warnings de composicao minima.
+Disponibilizar uma area administrativa para consulta e acompanhamento das comissoes CESAD, permitindo que perfis autorizados visualizem a comissao atual, lista historica/futura, ato designativo e composicao.
 
-## Fora do escopo
+## Escopo entregue
 
-- Implementar backend.
-- Criar regras client-side como fonte de verdade.
-- Implementar rollover.
+- Rota administrativa `/cesad-comissao/admin`.
+- Acesso visual para `ADMIN` e `HOMOLOGATION_AUTHORITY`.
+- Consumo real do service frontend de comissoes CESAD.
+- Listagem de comissoes cadastradas retornadas pela API.
+- Identificacao da comissao atual quando aplicavel.
+- Exibicao de situacao temporal, como vigente, futura/agendada, encerrada, inativa ou supersedida, conforme dados recebidos.
+- Consulta visual de detalhes da comissao selecionada.
+- Exibicao de ato/portaria quando retornado pela API.
+- Exibicao de titulares e suplentes quando retornados pela API.
+- Estados de carregamento, erro e lista vazia.
+- Scaffold visual para futura criacao/manutencao.
+- Alinhamento de leitura com backend: `ADMIN` e `HOMOLOGATION_AUTHORITY` podem consultar `GET /cesad/commissions` e `GET /cesad/commissions/:id`.
+- Ajuste de qualidade textual para o `copy-check` frontend.
+
+## Fora do escopo entregue
+
+- Criar comissao pela interface.
+- Editar comissao pela interface.
+- Encerrar comissao pela interface.
+- Superseder comissao pela interface.
+- Enviar formularios reais de ato/portaria.
+- Implementar validacao client-side como fonte de verdade.
+- Implementar rollover pela tela.
 - Alterar assinatura CESAD, parecer final, homologacao ou notificacao.
-- Usar dados reais de portarias.
+- Substituir regras backend por regras visuais.
 
-## Dependencias backend
+## Dependencias backend resolvidas
 
-- `BE-CESAD-REG-01A` para contracts.
-- `BE-CESAD-REG-01B` para criacao.
-- `BE-CESAD-REG-01C` para edicao.
-- `BE-CESAD-REG-01D` para encerramento/supersessao.
+| Dependencia | Estado |
+|---|---|
+| `BE-CESAD-REG-01A` | Concluida. |
+| `BE-CESAD-REG-01B` | Concluida. |
+| `BE-CESAD-REG-01C` | Concluida. |
+| `BE-CESAD-REG-01D` | Concluida com ressalva de DTO formal futuro. |
+| `BE-CESAD-REG-01E` | Concluida no recorte de rollover implementado. |
+| `BE-CESAD-REG-01F` | Concluida. |
+| `FIX-CESAD-ADMIN-01` / `#77` | Concluida; alinhou leitura para `ADMIN` e `HOMOLOGATION_AUTHORITY`. |
 
-A tela pode iniciar em modo read-only depois que a consulta enriquecida estiver disponivel.
-
-## Telas/componentes previstos
+## Componentes e tela entregues
 
 - Lista de comissoes.
 - Card de comissao atual.
-- Formulario de cadastro.
-- Formulario de ato/portaria.
-- Tabela de titulares.
-- Tabela de suplentes.
-- Alertas de vigencia e composicao.
-- Painel de auditoria/resumo de ultima alteracao, se backend expuser.
+- Painel de detalhes da comissao.
+- Bloco de ato/portaria.
+- Blocos de titulares e suplentes.
+- Estados operacionais de carregamento, erro e ausencia de dados.
+- Area visual de previsao de cadastro/manutencao ainda sem envio funcional.
 
-## Regras de UX
+## Regras de UX consolidadas
 
 - Diferenciar status cadastral de situacao temporal.
 - Mostrar claramente quando a comissao e futura/agendada.
-- Mostrar vigencia e data fim calculada.
-- Bloquear envio quando composicao minima nao estiver preenchida.
-- Exibir erro de vigencia conflitante em linguagem institucional.
-- Evitar prometer rollover automatico na interface inicial.
+- Mostrar vigencia e data fim quando disponiveis.
+- Nao prometer rollover automatico na interface.
+- Deixar claro que as acoes de manutencao dependem de evolucao futura.
+- Nao duplicar regra de negocio como fonte de verdade no frontend.
 
 ## Autorizacao visual
 
-Apenas perfis autorizados pelo backend devem ver acoes de cadastro/manutencao:
+Perfis com acesso a tela:
 
 - `ADMIN`;
 - `HOMOLOGATION_AUTHORITY`.
 
-Outros perfis podem ter leitura somente se backend permitir.
+Acoes sensiveis futuras devem continuar condicionadas ao backend e as regras de autorizacao correspondentes.
 
-## Testes esperados
+## Criterios de aceite consolidados
 
-- Renderizacao de lista vazia.
-- Renderizacao de comissao vigente.
-- Renderizacao de comissao futura/agendada.
-- Validacao visual de 3 titulares e 2 suplentes.
-- Bloqueio visual de assistente como membro.
-- Tratamento de erro de vigencia conflitante.
-- Permissoes visuais por perfil.
+- A tela administrativa existe e esta acessivel pelos perfis previstos.
+- A leitura de comissoes consome dados reais da API.
+- A leitura administrativa esta alinhada entre frontend e backend.
+- Comissoes, atos e membros sao exibidos quando retornados pela API.
+- A interface nao afirma CRUD completo.
+- Acoes sensiveis permanecem como evolucao futura.
+- O `copy-check` frontend passa.
 
-## Criterios de aceite
+## Lacunas futuras
 
-- Frontend consome contracts reais.
-- Nao duplica regra de negocio como fonte de verdade.
-- Acoes sensiveis dependem do backend.
-- Interface deixa claro que rollover e frente propria.
+As lacunas abaixo devem ser abertas como novas tasks, sem reabrir `FE-CESAD-COMISSAO-01`:
 
-## Paralelizacao
+| Task futura | Objetivo |
+|---|---|
+| `FE-CESAD-COMISSAO-CRUD-02` | Conectar criacao, edicao, encerramento e supersessao pela interface administrativa. |
+| `CONTRACT-CESAD-COMMISSION-WRITE-01` | Exportar payloads de escrita de comissao CESAD pelo pacote `@sadep/contracts`. |
+| `BE-CESAD-COMISSAO-CLOSE-DTO-01` | Formalizar payload de encerramento/supersessao com motivo, data administrativa e metadados. |
 
-Pode iniciar design/wireframe em paralelo com `BE-CESAD-REG-01B`, mas a implementacao funcional deve aguardar contracts da `01A` e endpoints minimos da `01B`.
+## Proxima acao
+
+Nao executar nova implementacao dentro de `FE-CESAD-COMISSAO-01`.
+
+A evolucao correta e abrir `FE-CESAD-COMISSAO-CRUD-02` quando houver decisao de UX e contrato de escrita consolidado.
