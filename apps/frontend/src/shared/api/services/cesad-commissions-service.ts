@@ -8,8 +8,7 @@ const AUTHENTICATED_REQUEST = {
   useStoredAccessToken: true,
 } as const;
 
-// We need the create and update DTOs. Since they are server-side validation DTOs in backend,
-// we can just define the payload types here.
+// Payloads de escrita serão consolidados no pacote de contratos em task própria.
 export type CreateCesadCommissionPayload = {
   commission: {
     name: string;

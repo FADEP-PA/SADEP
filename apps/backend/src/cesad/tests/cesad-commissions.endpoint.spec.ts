@@ -31,6 +31,11 @@ export async function runCesadCommissionsEndpointTests() {
       UserRole.CESAD_MEMBER,
       'cesad-member-commission@test.local',
     );
+    const authorityUser = await createUser(
+      context.prisma,
+      UserRole.HOMOLOGATION_AUTHORITY,
+      'authority-endpoint@test.local',
+    );
     const commission = await context.prisma.cesadCommission.create({
       data: {
         name: 'Comissão CESAD 2026',
@@ -62,6 +67,14 @@ export async function runCesadCommissionsEndpointTests() {
     assert.equal(cesadLoginResponse.status, 200);
     const cesadLoginPayload = (await cesadLoginResponse.json()) as { accessToken: string };
 
+    const authorityLoginResponse = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: authorityUser.email, password: 'Test123456!' }),
+    });
+    assert.equal(authorityLoginResponse.status, 200);
+    const authorityLoginPayload = (await authorityLoginResponse.json()) as { accessToken: string };
+
     const listResponse = await fetch(`${baseUrl}/cesad/commissions`, {
       method: 'GET',
       headers: {
@@ -86,6 +99,17 @@ export async function runCesadCommissionsEndpointTests() {
     assert.equal(listPayload[0].effectiveStartDate, '2026-01-01T00:00:00.000Z');
     assert.equal(listPayload[0].effectiveEndDate, null);
 
+    const authorityListResponse = await fetch(`${baseUrl}/cesad/commissions`, {
+      method: 'GET',
+      headers: {
+        authorization: `Bearer ${authorityLoginPayload.accessToken}`,
+      },
+    });
+
+    assert.equal(authorityListResponse.status, 200);
+    const authorityListPayload = (await authorityListResponse.json()) as Array<{ id: string }>;
+    assert.equal(authorityListPayload[0].id, commission.id);
+
     const getByIdResponse = await fetch(`${baseUrl}/cesad/commissions/${commission.id}`, {
       method: 'GET',
       headers: {
@@ -101,6 +125,17 @@ export async function runCesadCommissionsEndpointTests() {
     assert.equal(getByIdPayload.id, commission.id);
     assert.equal(getByIdPayload.status, CesadCommissionStatus.ACTIVE);
 
+    const authorityGetByIdResponse = await fetch(`${baseUrl}/cesad/commissions/${commission.id}`, {
+      method: 'GET',
+      headers: {
+        authorization: `Bearer ${authorityLoginPayload.accessToken}`,
+      },
+    });
+
+    assert.equal(authorityGetByIdResponse.status, 200);
+    const authorityGetByIdPayload = (await authorityGetByIdResponse.json()) as { id: string };
+    assert.equal(authorityGetByIdPayload.id, commission.id);
+
     const forbiddenListResponse = await fetch(`${baseUrl}/cesad/commissions`, {
       method: 'GET',
       headers: {
@@ -110,7 +145,10 @@ export async function runCesadCommissionsEndpointTests() {
 
     assert.equal(forbiddenListResponse.status, 403);
     const forbiddenPayload = (await forbiddenListResponse.json()) as { message: string };
-    assert.match(forbiddenPayload.message, /Only ADMIN can read CESAD commissions/);
+    assert.match(
+      forbiddenPayload.message,
+      /Only ADMIN or HOMOLOGATION_AUTHORITY can read CESAD commissions/,
+    );
 
     const unauthenticatedListResponse = await fetch(`${baseUrl}/cesad/commissions`, {
       method: 'GET',
@@ -173,20 +211,6 @@ export async function runCesadCommissionsEndpointTests() {
       },
     );
     assert.equal(reCloseResponse.status, 400);
-
-    // Supersede: login de HOMOLOGATION_AUTHORITY
-    const authorityUser = await createUser(
-      context.prisma,
-      UserRole.HOMOLOGATION_AUTHORITY,
-      'authority-endpoint@test.local',
-    );
-    const authorityLoginResponse = await fetch(`${baseUrl}/auth/login`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: authorityUser.email, password: 'Test123456!' }),
-    });
-    assert.equal(authorityLoginResponse.status, 200);
-    const authorityLoginPayload = (await authorityLoginResponse.json()) as { accessToken: string };
 
     const commissionToSupersede = await context.prisma.cesadCommission.create({
       data: {
