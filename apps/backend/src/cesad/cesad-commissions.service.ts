@@ -42,27 +42,49 @@ export class CesadCommissionsService {
     private readonly validityService: CesadCommissionValidityService,
   ) {}
 
-  async listCommissions(): Promise<CesadCommissionRef[]> {
+  async listCommissions(): Promise<CesadCommissionDetailRef[]> {
     const commissions = await this.prismaService.cesadCommission.findMany({
       orderBy: [
         { effectiveStartDate: 'desc' },
         { createdAt: 'desc' },
       ],
+      include: {
+        acts: true,
+        members: { include: { user: true } },
+        stageAssignments: { select: { id: true }, take: 1 },
+      },
     });
 
-    return commissions.map((commission) => this.toRef(commission));
+    return commissions.map((commission) => ({
+      commission: this.toRef(commission),
+      acts: commission.acts.map((act) => this.toActRef(act)),
+      members: commission.members.map((m) => this.toMemberRef(m)),
+      isUsedInProcess: commission.stageAssignments.length > 0,
+      temporalSituation: this.validityService.resolveTemporalSituation(commission),
+    }));
   }
 
-  async getCommissionById(id: string): Promise<CesadCommissionRef> {
+  async getCommissionById(id: string): Promise<CesadCommissionDetailRef> {
     const commission = await this.prismaService.cesadCommission.findUnique({
       where: { id },
+      include: {
+        acts: true,
+        members: { include: { user: true } },
+        stageAssignments: { select: { id: true }, take: 1 },
+      },
     });
 
     if (!commission) {
       throw new NotFoundException('CESAD commission not found');
     }
 
-    return this.toRef(commission);
+    return {
+      commission: this.toRef(commission),
+      acts: commission.acts.map((act) => this.toActRef(act)),
+      members: commission.members.map((m) => this.toMemberRef(m)),
+      isUsedInProcess: commission.stageAssignments.length > 0,
+      temporalSituation: this.validityService.resolveTemporalSituation(commission),
+    };
   }
 
   async createCommission(
@@ -668,6 +690,7 @@ export class CesadCommissionsService {
     endDate: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    user?: { name: string; role: string };
   }): CesadCommissionMemberRef {
     const domainMember: CesadCommissionMember = {
       ...member,
@@ -678,6 +701,8 @@ export class CesadCommissionsService {
       id: domainMember.id,
       commissionId: domainMember.commissionId,
       userId: domainMember.userId,
+      userName: member.user?.name,
+      userRole: member.user?.role as any,
       actId: domainMember.actId,
       roleType: domainMember.roleType,
       startDate: domainMember.startDate.toISOString(),
