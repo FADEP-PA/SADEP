@@ -100,6 +100,24 @@ type SupersedeCesadStageAssignmentResponse = {
   formalActReference: string | null;
 };
 
+type RolloverCesadStageAssignmentPayload = {
+  reason: string;
+  referenceDate?: Date;
+};
+
+type RolloverCesadStageAssignmentResponse = {
+  processId: string;
+  processStageId: string;
+  stageSequence: number;
+  previousAssignmentId: string;
+  newAssignmentId: string;
+  previousCommissionId: string;
+  newCommissionId: string;
+  rolledOverAt: string;
+  referenceDate: string;
+  reason: string;
+};
+
 @Injectable()
 export class ProcessesService {
   constructor(
@@ -411,6 +429,229 @@ export class ProcessesService {
         referenceDate: referenceDate.toISOString(),
         reason: normalizedReason,
         formalActReference: formalActReference ?? null,
+      };
+    });
+  }
+
+  /**
+   * Rollover temporal de competência CESAD por etapa (BE-CESAD-REG-01E).
+   *
+   * Diferente de `supersedeCesadStageAssignment` (BE-CESAD-ASSIGN-REPLACE-01), que é
+   * uma reatribuição administrativa manual (recebe `newCommissionId` explícito), o
+   * rollover é acionado pela PERDA de vigência da comissão atribuída e resolve
+   * automaticamente a comissão vigente na data de referência.
+   *
+   * Escopo desta fatia: apenas o caso "sem parecer iniciado" (ADR-006). Quando já
+   * existe parecer, expected signers ou documento CESAD da etapa, o rollover é
+   * bloqueado — a supersessão de atos preparatórios/consolidados exige modelagem
+   * própria de supersessão de parecer, deferida conforme ADR-006 ("modelagem
+   * futura") e a postura de risco da ADR-005 sobre o invariante 1:1 de
+   * `CesadStageOpinion`. Atos consolidados (`SIGNED` + assinaturas completas)
+   * permanecem intocáveis.
+   */
+  async rolloverCesadStageAssignment(
+    processId: string,
+    stageSequence: number,
+    user: AuthenticatedUser,
+    payload: RolloverCesadStageAssignmentPayload,
+  ): Promise<RolloverCesadStageAssignmentResponse> {
+    this.ensureCanSupersedeCesadStageAssignment(user);
+    const normalizedReason = this.normalizeRequiredText(payload.reason, 'CESAD stage assignment rollover reason');
+    const referenceDate = payload.referenceDate ?? new Date();
+
+    return this.prismaService.$transaction(async (transaction) => {
+      const process = await this.processStageService.findProcessOrThrow(transaction, processId);
+      const processStatus = toContractProcessStatus(process.status);
+
+      if (processStatus !== ProcessStatus.EM_ANALISE_CESAD) {
+        throw new BadRequestException(
+          `CESAD stage assignment rollover can only be applied while process is in ${ProcessStatus.EM_ANALISE_CESAD} status`,
+        );
+      }
+
+      const stage = await this.processStageService.findStageBySequenceOrThrow(transaction, processId, stageSequence);
+      this.processStageService.assertStageIsActiveForArtifactCreation(stage);
+
+      const activeAssignments = await transaction.cesadStageAssignment.findMany({
+        where: {
+          processId,
+          processStageId: stage.id,
+          status: PrismaCesadStageAssignmentStatus.ACTIVE,
+        },
+        select: { id: true, commissionId: true, status: true },
+        orderBy: { assignedAt: 'desc' },
+      });
+
+      if (activeAssignments.length === 0) {
+        throw new BadRequestException(
+          'Cannot roll over CESAD stage assignment because no active assignment was found for the stage',
+        );
+      }
+
+      if (activeAssignments.length > 1) {
+        throw new ConflictException(
+          'Cannot roll over CESAD stage assignment because the stage has more than one active assignment',
+        );
+      }
+
+      const previousAssignment = activeAssignments[0]!;
+
+      const previousCommission = await transaction.cesadCommission.findUnique({
+        where: { id: previousAssignment.commissionId },
+        select: {
+          id: true,
+          status: true,
+          effectiveStartDate: true,
+          effectiveEndDate: true,
+        },
+      });
+
+      if (!previousCommission) {
+        throw new NotFoundException('Previous CESAD commission was not found');
+      }
+
+      const previousStillCurrent =
+        previousCommission.status === PrismaCesadCommissionStatus.ACTIVE &&
+        previousCommission.effectiveStartDate <= referenceDate &&
+        (previousCommission.effectiveEndDate === null || previousCommission.effectiveEndDate >= referenceDate);
+
+      if (previousStillCurrent) {
+        throw new BadRequestException(
+          'Cannot roll over CESAD stage assignment because the assigned commission is still current for the reference date',
+        );
+      }
+
+      const currentCommissions = await transaction.cesadCommission.findMany({
+        where: {
+          status: PrismaCesadCommissionStatus.ACTIVE,
+          effectiveStartDate: { lte: referenceDate },
+          OR: [{ effectiveEndDate: null }, { effectiveEndDate: { gte: referenceDate } }],
+        },
+        select: { id: true },
+        orderBy: [{ effectiveStartDate: 'desc' }, { createdAt: 'desc' }],
+      });
+
+      if (currentCommissions.length === 0) {
+        throw new BadRequestException(
+          'Cannot roll over CESAD stage assignment because no active CESAD commission is current for the reference date',
+        );
+      }
+
+      if (currentCommissions.length > 1) {
+        throw new ConflictException(
+          'Cannot roll over CESAD stage assignment because more than one active CESAD commission is current for the reference date',
+        );
+      }
+
+      const currentCommission = currentCommissions[0]!;
+
+      if (currentCommission.id === previousAssignment.commissionId) {
+        throw new BadRequestException(
+          'Cannot roll over CESAD stage assignment because the current commission equals the assigned commission',
+        );
+      }
+
+      // Fronteira desta fatia: bloquear quando já houver ato CESAD iniciado ou
+      // consolidado na etapa. Superseder parecer/documento preparatório exige
+      // modelagem própria de supersessão de parecer (deferida).
+      const existingOpinion = await transaction.cesadStageOpinion.findUnique({
+        where: { processStageId: stage.id },
+        select: { id: true },
+      });
+      const expectedSignerCount = await transaction.cesadStageOpinionExpectedSigner.count({
+        where: { cesadStageOpinion: { processStageId: stage.id } },
+      });
+      const existingCesadOpinionDocument = await transaction.processDocument.findFirst({
+        where: {
+          evaluationProcessId: processId,
+          processStageId: stage.id,
+          documentType: PrismaDocumentType.CESAD_OPINION,
+        },
+        select: { id: true },
+      });
+
+      if (existingOpinion || expectedSignerCount > 0 || existingCesadOpinionDocument) {
+        throw new BadRequestException(
+          'Cannot roll over CESAD stage assignment after a CESAD stage opinion, expected signers or CESAD opinion document already exists for the stage; superseding started or consolidated CESAD acts requires a dedicated supersession flow',
+        );
+      }
+
+      const occurredAt = new Date();
+      const newAssignment = await transaction.cesadStageAssignment.create({
+        data: {
+          processId,
+          processStageId: stage.id,
+          commissionId: currentCommission.id,
+          status: PrismaCesadStageAssignmentStatus.ACTIVE,
+          assignedAt: occurredAt,
+          assignedByUserId: user.sub,
+          assignmentReason: normalizedReason,
+          referenceDate,
+        },
+        select: { id: true, commissionId: true, status: true },
+      });
+
+      await transaction.cesadStageAssignment.update({
+        where: { id: previousAssignment.id },
+        data: {
+          status: PrismaCesadStageAssignmentStatus.SUPERSEDED,
+          supersededAt: occurredAt,
+          supersededReason: normalizedReason,
+          supersededByAssignmentId: newAssignment.id,
+        },
+      });
+
+      await transaction.auditEvent.create({
+        data: {
+          evaluationProcessId: processId,
+          actorUserId: user.sub,
+          actorRole: toDatabaseRole(user.role),
+          eventType: toDatabaseAuditEventType(AuditEventType.CESAD_COMMISSION_ROLLOVER_APPLIED),
+          beforeState: {
+            cesadStageAssignmentId: previousAssignment.id,
+            cesadStageAssignmentStatus: previousAssignment.status,
+            cesadCommissionId: previousAssignment.commissionId,
+          },
+          afterState: {
+            previousAssignmentId: previousAssignment.id,
+            previousAssignmentStatus: PrismaCesadStageAssignmentStatus.SUPERSEDED,
+            newAssignmentId: newAssignment.id,
+            newAssignmentStatus: newAssignment.status,
+            newCommissionId: newAssignment.commissionId,
+          },
+          occurredAt,
+          metadata: {
+            eventType: AuditEventType.CESAD_COMMISSION_ROLLOVER_APPLIED,
+            action: ProcessAction.ROLLOVER_CESAD_STAGE_ASSIGNMENT,
+            processId,
+            processStageId: stage.id,
+            stageSequence: stage.sequence,
+            stageCode: stage.stageCode,
+            processStatus,
+            previousAssignmentId: previousAssignment.id,
+            newAssignmentId: newAssignment.id,
+            previousCommissionId: previousAssignment.commissionId,
+            newCommissionId: newAssignment.commissionId,
+            performedByUserId: user.sub,
+            performedByRole: user.role,
+            reason: normalizedReason,
+            referenceDate: referenceDate.toISOString(),
+            occurredAt: occurredAt.toISOString(),
+          },
+        },
+      });
+
+      return {
+        processId,
+        processStageId: stage.id,
+        stageSequence: stage.sequence,
+        previousAssignmentId: previousAssignment.id,
+        newAssignmentId: newAssignment.id,
+        previousCommissionId: previousAssignment.commissionId,
+        newCommissionId: newAssignment.commissionId,
+        rolledOverAt: occurredAt.toISOString(),
+        referenceDate: referenceDate.toISOString(),
+        reason: normalizedReason,
       };
     });
   }

@@ -12,6 +12,7 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { RolloverCesadStageAssignmentDto } from './dto/rollover-cesad-stage-assignment.dto';
 import { SupersedeCesadStageAssignmentDto } from './dto/supersede-cesad-stage-assignment.dto';
 import { WorkflowTransitionRequestDto } from './dto/workflow-transition.dto';
 import { InternWorkspaceService } from './intern-workspace/intern-workspace.service';
@@ -90,6 +91,23 @@ export class ProcessesController {
       reason: body.reason.trim(),
       ...(body.referenceDate ? { referenceDate: body.referenceDate } : {}),
       ...(body.formalActReference?.trim() ? { formalActReference: body.formalActReference.trim() } : {}),
+    });
+  }
+
+  @Post(':id/stages/:sequence/cesad-stage-assignment/rollover')
+  async rolloverCesadStageAssignment(
+    @Param('id') id: string,
+    @Param('sequence', ParseIntPipe) sequence: number,
+    @Body() body: RolloverCesadStageAssignmentDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    if (!user) {
+      throw new UnauthorizedException('Authenticated user not found');
+    }
+
+    return this.processesService.rolloverCesadStageAssignment(id, sequence, user, {
+      reason: body.reason.trim(),
+      ...(body.referenceDate ? { referenceDate: body.referenceDate } : {}),
     });
   }
 }
