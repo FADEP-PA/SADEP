@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState, useMemo } from 'react';
 
 import { CesadCommissionMemberRoleType, UserRole, CesadCommissionDetailRef } from '@sadep/contracts';
@@ -132,7 +134,7 @@ export function CesadCommissionAdminPage() {
               description="Aguarde enquanto os registros são carregados."
             />
           )}
-          
+
           {error && (
             <FeedbackAlert
               title="Falha ao carregar comissões"
@@ -153,7 +155,7 @@ export function CesadCommissionAdminPage() {
               {currentCommission && (
                 <CesadCommissionCurrentCard record={currentCommission} />
               )}
-              
+
               <CesadCommissionWarnings warnings={allWarnings} />
               <CesadCommissionList records={adminRecords} />
 
