@@ -29,6 +29,12 @@ export async function runCesadRolloverServiceTests() {
     const currentCommission = await createActiveCesadCommission(context.prisma, [], {
       name: 'Comissão CESAD vigente (rollover)',
     });
+    // Comissão auxiliar (encerrada) para vincular membro em cenário de expected signer.
+    const expiredForSigner = await createActiveCesadCommission(context.prisma, [], {
+      name: 'Comissão CESAD encerrada (signer)',
+      effectiveStartDate: new Date('2018-01-01T00:00:00.000Z'),
+      effectiveEndDate: new Date('2019-01-01T00:00:00.000Z'),
+    });
 
     async function makeExpiredAssignedProcess(status: ProcessStatus = ProcessStatus.EM_ANALISE_CESAD) {
       const expired = await createActiveCesadCommission(context.prisma, [], {
@@ -132,10 +138,10 @@ export async function runCesadRolloverServiceTests() {
       );
     }
 
-    // 5. Bloqueio: já existe parecer CESAD iniciado na etapa (fronteira desta fatia).
+    // 5. Rollover supersede um parecer preparatório em DRAFT e libera a nova comissão.
     {
       const { process } = await makeExpiredAssignedProcess();
-      await context.prisma.cesadStageOpinion.create({
+      const opinion = await context.prisma.cesadStageOpinion.create({
         data: {
           processId: process.id,
           processStageId: process.defaultStageId,
@@ -145,9 +151,82 @@ export async function runCesadRolloverServiceTests() {
           conclusion: 'pendente',
         },
       });
+      const result = await context.service.rolloverCesadStageAssignment(process.id, 1, adminActor, {
+        reason: 'comissão anterior encerrou a vigência com parecer em rascunho',
+      });
+      assert.equal(result.supersededOpinionId, opinion.id);
+
+      const superseded = await context.prisma.cesadStageOpinion.findUniqueOrThrow({ where: { id: opinion.id } });
+      assert.notEqual(superseded.supersededAt, null);
+
+      // O invariante 1:1 fica liberado: não há mais parecer ativo e um novo pode ser criado.
+      const active = await context.prisma.cesadStageOpinion.findFirst({
+        where: { processStageId: process.defaultStageId, supersededAt: null },
+      });
+      assert.equal(active, null);
+    }
+
+    // 6. Bloqueio (deferido): expected signers congelados exigem fluxo documental próprio.
+    {
+      const { process } = await makeExpiredAssignedProcess();
+      const opinion = await context.prisma.cesadStageOpinion.create({
+        data: {
+          processId: process.id,
+          processStageId: process.defaultStageId,
+          authorUserId: author.id,
+          status: 'COMPLETED',
+          reportText: 'r',
+          conclusion: 'c',
+        },
+      });
+      const member = await context.prisma.cesadCommissionMember.create({
+        data: { commissionId: expiredForSigner.id, userId: author.id, roleType: 'TITULAR', startDate: new Date('2020-01-01T00:00:00.000Z') },
+      });
+      await context.prisma.cesadStageOpinionExpectedSigner.create({
+        data: {
+          cesadStageOpinionId: opinion.id,
+          commissionId: expiredForSigner.id,
+          actingCommissionMemberId: member.id,
+          actingUserId: author.id,
+          derivationType: 'ACTIVE_TITULAR',
+          signingCapacity: 'EFFECTIVE_MEMBER',
+          nameSnapshot: 'N',
+          emailSnapshot: 'e',
+          roleTypeSnapshot: 'TITULAR',
+          sortOrder: 1,
+          frozenAt: new Date('2026-01-01T00:00:00.000Z'),
+        },
+      });
       await assert.rejects(
         () => context.service.rolloverCesadStageAssignment(process.id, 1, adminActor, { reason: 'x' }),
-        /already exists/,
+        /expected signers were frozen or a CESAD opinion document/,
+      );
+    }
+
+    // 7. Bloqueio (deferido/imutável): documento CESAD existente (inclui SIGNED consolidado).
+    {
+      const { process } = await makeExpiredAssignedProcess();
+      await context.prisma.cesadStageOpinion.create({
+        data: {
+          processId: process.id,
+          processStageId: process.defaultStageId,
+          authorUserId: author.id,
+          status: 'COMPLETED',
+          reportText: 'r',
+          conclusion: 'c',
+        },
+      });
+      await context.prisma.processDocument.create({
+        data: {
+          evaluationProcessId: process.id,
+          processStageId: process.defaultStageId,
+          documentType: 'CESAD_OPINION',
+          documentStatus: 'SIGNED',
+        },
+      });
+      await assert.rejects(
+        () => context.service.rolloverCesadStageAssignment(process.id, 1, adminActor, { reason: 'x' }),
+        /expected signers were frozen or a CESAD opinion document/,
       );
     }
   } finally {

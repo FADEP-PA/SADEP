@@ -78,8 +78,8 @@ export class StageClosureGuardService {
       );
     }
 
-    const opinion = await transaction.cesadStageOpinion.findUnique({
-      where: { processStageId: process.currentStage.id },
+    const opinion = await transaction.cesadStageOpinion.findFirst({
+      where: { processStageId: process.currentStage.id, supersededAt: null },
       select: {
         id: true,
         status: true,
@@ -153,8 +153,8 @@ export class StageClosureGuardService {
     processStageId: string,
     frozenAt: Date,
   ): Promise<void> {
-    const opinion = await transaction.cesadStageOpinion.findUnique({
-      where: { processStageId },
+    const opinion = await transaction.cesadStageOpinion.findFirst({
+      where: { processStageId, supersededAt: null },
       select: {
         id: true,
         status: true,
@@ -241,8 +241,8 @@ export class StageClosureGuardService {
     transaction: PrismaTransactionClient,
     process: ProcessAccessContext,
   ): Promise<void> {
-    const opinion = await transaction.cesadStageOpinion.findUnique({
-      where: { processStageId: process.currentStage.id },
+    const opinion = await transaction.cesadStageOpinion.findFirst({
+      where: { processStageId: process.currentStage.id, supersededAt: null },
       select: {
         id: true,
         expectedSigners: { select: { id: true, actingUserId: true } },

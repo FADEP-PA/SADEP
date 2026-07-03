@@ -296,7 +296,7 @@ model ProcessStage {
   documents                   ProcessDocument[]
   supervisorEvaluation        SupervisorEvaluation?
   selfEvaluation              SelfEvaluation?
-  cesadStageOpinion           CesadStageOpinion?
+  cesadStageOpinions          CesadStageOpinion[]
   cesadStageAssignments       CesadStageAssignment[]
 
   @@unique([evaluationProcessId, sequence])
@@ -390,27 +390,35 @@ model SelfEvaluation {
 }
 
 model CesadStageOpinion {
-  id                String                            @id @default(cuid())
-  processId         String
-  processStageId    String                            @unique
-  authorUserId      String
-  status            CesadStageOpinionStatus           @default(DRAFT)
-  reportText        String
-  legalBasis        String?
-  conclusion        String
-  stageConcept      String?
-  stageResult       String?
-  completedAt       DateTime?
-  createdAt         DateTime                          @default(now())
-  updatedAt         DateTime                          @updatedAt
-  evaluationProcess EvaluationProcess                 @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  processStage      ProcessStage                      @relation(fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  authorUser        User                              @relation("CesadStageOpinionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  expectedSigners   CesadStageOpinionExpectedSigner[]
+  id                   String                            @id @default(cuid())
+  processId            String
+  processStageId       String
+  authorUserId         String
+  status               CesadStageOpinionStatus           @default(DRAFT)
+  reportText           String
+  legalBasis           String?
+  conclusion           String
+  stageConcept         String?
+  stageResult          String?
+  completedAt          DateTime?
+  supersededAt         DateTime?
+  supersededByOpinionId String?
+  supersededReason     String?
+  createdAt            DateTime                          @default(now())
+  updatedAt            DateTime                          @updatedAt
+  evaluationProcess    EvaluationProcess                 @relation(fields: [processId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  processStage         ProcessStage                      @relation(fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  authorUser           User                              @relation("CesadStageOpinionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supersededByOpinion  CesadStageOpinion?                @relation("CesadStageOpinionSupersession", fields: [supersededByOpinionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supersedingOpinions  CesadStageOpinion[]               @relation("CesadStageOpinionSupersession")
+  expectedSigners      CesadStageOpinionExpectedSigner[]
 
   @@index([processId])
   @@index([authorUserId])
   @@index([status])
+  @@index([processStageId])
+  @@index([processStageId, supersededAt])
+  @@index([supersededByOpinionId])
 }
 
 model CesadFinalOpinion {

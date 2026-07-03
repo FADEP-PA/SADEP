@@ -284,7 +284,7 @@ describe('InternWorkspaceService', () => {
       responsibleSupervisorUserId: 'supervisor-123',
       supervisorEvaluation: params.supervisorEvaluation ?? null,
       selfEvaluation: null,
-      cesadStageOpinion: params.cesadStageOpinion ?? null,
+      cesadStageOpinions: params.cesadStageOpinion ? [params.cesadStageOpinion] : [],
     };
   }
 

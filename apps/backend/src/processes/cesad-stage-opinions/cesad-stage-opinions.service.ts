@@ -68,8 +68,8 @@ export class CesadStageOpinionsService {
       processStageId: stage.id,
     });
 
-    const opinion = await this.prismaService.cesadStageOpinion.findUnique({
-      where: { processStageId: stage.id },
+    const opinion = await this.prismaService.cesadStageOpinion.findFirst({
+      where: { processStageId: stage.id, supersededAt: null },
       include: {
         expectedSigners: {
           orderBy: { sortOrder: 'asc' },
@@ -104,8 +104,8 @@ export class CesadStageOpinionsService {
         processStageId: stage.id,
         transaction,
       });
-      const existingOpinion = await transaction.cesadStageOpinion.findUnique({
-        where: { processStageId: stage.id },
+      const existingOpinion = await transaction.cesadStageOpinion.findFirst({
+        where: { processStageId: stage.id, supersededAt: null },
       });
 
       if (existingOpinion?.status === PrismaCesadStageOpinionStatus.COMPLETED) {
@@ -115,7 +115,7 @@ export class CesadStageOpinionsService {
       const occurredAt = new Date().toISOString();
       const savedOpinion = existingOpinion
         ? await transaction.cesadStageOpinion.update({
-            where: { processStageId: stage.id },
+            where: { id: existingOpinion.id },
             data: {
               authorUserId: user.sub,
               status: PrismaCesadStageOpinionStatus.DRAFT,
@@ -211,8 +211,8 @@ export class CesadStageOpinionsService {
         processStageId: stage.id,
         transaction,
       });
-      const existingOpinion = await transaction.cesadStageOpinion.findUnique({
-        where: { processStageId: stage.id },
+      const existingOpinion = await transaction.cesadStageOpinion.findFirst({
+        where: { processStageId: stage.id, supersededAt: null },
       });
 
       if (existingOpinion?.status === PrismaCesadStageOpinionStatus.COMPLETED) {
@@ -222,7 +222,7 @@ export class CesadStageOpinionsService {
       const completedAt = new Date();
       const completedOpinion = existingOpinion
         ? await transaction.cesadStageOpinion.update({
-            where: { processStageId: stage.id },
+            where: { id: existingOpinion.id },
             data: {
               authorUserId: user.sub,
               status: PrismaCesadStageOpinionStatus.COMPLETED,

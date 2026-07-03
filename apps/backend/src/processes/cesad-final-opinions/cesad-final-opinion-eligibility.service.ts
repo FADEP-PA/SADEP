@@ -55,7 +55,8 @@ export class CesadFinalOpinionEligibilityService {
             selfEvaluation: {
               select: { id: true, status: true },
             },
-            cesadStageOpinion: {
+            cesadStageOpinions: {
+              where: { supersededAt: null },
               select: {
                 id: true,
                 status: true,
@@ -172,7 +173,7 @@ export class CesadFinalOpinionEligibilityService {
         reasons.push(`${stageLabel} self evaluation document is not SIGNED`);
       }
 
-      const opinion = stage.cesadStageOpinion;
+      const opinion = stage.cesadStageOpinions[0] ?? null;
       if (!opinion) {
         reasons.push(`${stageLabel} is missing the CESAD stage opinion`);
       } else if (opinion.status !== PrismaCesadStageOpinionStatus.COMPLETED) {

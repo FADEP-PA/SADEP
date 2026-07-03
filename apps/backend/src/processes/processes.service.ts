@@ -113,6 +113,7 @@ type RolloverCesadStageAssignmentResponse = {
   newAssignmentId: string;
   previousCommissionId: string;
   newCommissionId: string;
+  supersededOpinionId: string | null;
   rolledOverAt: string;
   referenceDate: string;
   reason: string;
@@ -325,8 +326,8 @@ export class ProcessesService {
         );
       }
 
-      const existingOpinion = await transaction.cesadStageOpinion.findUnique({
-        where: { processStageId: stage.id },
+      const existingOpinion = await transaction.cesadStageOpinion.findFirst({
+        where: { processStageId: stage.id, supersededAt: null },
         select: { id: true },
       });
 
@@ -551,15 +552,12 @@ export class ProcessesService {
         );
       }
 
-      // Fronteira desta fatia: bloquear quando já houver ato CESAD iniciado ou
-      // consolidado na etapa. Superseder parecer/documento preparatório exige
-      // modelagem própria de supersessão de parecer (deferida).
-      const existingOpinion = await transaction.cesadStageOpinion.findUnique({
-        where: { processStageId: stage.id },
-        select: { id: true },
-      });
+      // Documentos/assinaturas CESAD ainda nao sao supersedados por esta fatia:
+      // expected signers congelados ou documento CESAD existente exigem fluxo
+      // proprio de supersessao documental (task separada). Documento SIGNED (ato
+      // consolidado) fica coberto pelo mesmo bloqueio e permanece imutavel.
       const expectedSignerCount = await transaction.cesadStageOpinionExpectedSigner.count({
-        where: { cesadStageOpinion: { processStageId: stage.id } },
+        where: { cesadStageOpinion: { processStageId: stage.id, supersededAt: null } },
       });
       const existingCesadOpinionDocument = await transaction.processDocument.findFirst({
         where: {
@@ -570,11 +568,18 @@ export class ProcessesService {
         select: { id: true },
       });
 
-      if (existingOpinion || expectedSignerCount > 0 || existingCesadOpinionDocument) {
+      if (expectedSignerCount > 0 || existingCesadOpinionDocument) {
         throw new BadRequestException(
-          'Cannot roll over CESAD stage assignment after a CESAD stage opinion, expected signers or CESAD opinion document already exists for the stage; superseding started or consolidated CESAD acts requires a dedicated supersession flow',
+          'Cannot roll over CESAD stage assignment after expected signers were frozen or a CESAD opinion document exists for the stage; superseding CESAD documents or signatures requires a dedicated supersession flow',
         );
       }
+
+      // Parecer preparatorio (rascunho ou completo sem documento) e supersedado no
+      // rollover para liberar a nova comissao vigente a emitir parecer proprio.
+      const supersededOpinion = await transaction.cesadStageOpinion.findFirst({
+        where: { processStageId: stage.id, supersededAt: null },
+        select: { id: true, status: true },
+      });
 
       const occurredAt = new Date();
       const newAssignment = await transaction.cesadStageAssignment.create({
@@ -601,6 +606,16 @@ export class ProcessesService {
         },
       });
 
+      if (supersededOpinion) {
+        await transaction.cesadStageOpinion.update({
+          where: { id: supersededOpinion.id },
+          data: {
+            supersededAt: occurredAt,
+            supersededReason: normalizedReason,
+          },
+        });
+      }
+
       await transaction.auditEvent.create({
         data: {
           evaluationProcessId: processId,
@@ -611,6 +626,7 @@ export class ProcessesService {
             cesadStageAssignmentId: previousAssignment.id,
             cesadStageAssignmentStatus: previousAssignment.status,
             cesadCommissionId: previousAssignment.commissionId,
+            supersededCesadStageOpinionId: supersededOpinion?.id ?? null,
           },
           afterState: {
             previousAssignmentId: previousAssignment.id,
@@ -618,6 +634,7 @@ export class ProcessesService {
             newAssignmentId: newAssignment.id,
             newAssignmentStatus: newAssignment.status,
             newCommissionId: newAssignment.commissionId,
+            supersededCesadStageOpinionId: supersededOpinion?.id ?? null,
           },
           occurredAt,
           metadata: {
@@ -632,6 +649,7 @@ export class ProcessesService {
             newAssignmentId: newAssignment.id,
             previousCommissionId: previousAssignment.commissionId,
             newCommissionId: newAssignment.commissionId,
+            supersededCesadStageOpinionId: supersededOpinion?.id ?? null,
             performedByUserId: user.sub,
             performedByRole: user.role,
             reason: normalizedReason,
@@ -649,6 +667,7 @@ export class ProcessesService {
         newAssignmentId: newAssignment.id,
         previousCommissionId: previousAssignment.commissionId,
         newCommissionId: newAssignment.commissionId,
+        supersededOpinionId: supersededOpinion?.id ?? null,
         rolledOverAt: occurredAt.toISOString(),
         referenceDate: referenceDate.toISOString(),
         reason: normalizedReason,
