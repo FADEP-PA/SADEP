@@ -85,7 +85,12 @@ export async function createTestContext(databaseName: string): Promise<TestConte
   await prisma.$connect();
 
   const cesadContextAuthorizationService = new CesadContextAuthorizationService(prisma as never);
-  const processesService = new ProcessesService(prisma as never, cesadContextAuthorizationService);
+  const processesService = new ProcessesService(
+    prisma as never,
+    cesadContextAuthorizationService,
+    {} as never,
+    {} as never,
+  );
   const processDocumentsService = new ProcessDocumentsService(
     prisma as never,
     processesService,
