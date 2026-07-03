@@ -27,13 +27,13 @@ export class CesadCommissionsController {
 
   @Get()
   async listCommissions(@CurrentUser() user?: AuthenticatedUser) {
-    this.ensureAdmin(user);
+    this.ensureCanReadCommissions(user);
     return this.cesadCommissionsService.listCommissions();
   }
 
   @Get(':id')
   async getCommissionById(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
-    this.ensureAdmin(user);
+    this.ensureCanReadCommissions(user);
     return this.cesadCommissionsService.getCommissionById(id);
   }
 
@@ -64,13 +64,17 @@ export class CesadCommissionsController {
     return this.cesadCommissionsService.updateCommission(id, dto, user);
   }
 
-  private ensureAdmin(user?: AuthenticatedUser): asserts user is AuthenticatedUser {
+  private ensureCanReadCommissions(user?: AuthenticatedUser): asserts user is AuthenticatedUser {
     if (!user) {
       throw new UnauthorizedException('Authenticated user not found');
     }
 
-    if (user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Only ADMIN can read CESAD commissions');
+    const allowedRoles = [UserRole.ADMIN, UserRole.HOMOLOGATION_AUTHORITY];
+
+    if (!allowedRoles.includes(user.role)) {
+      throw new ForbiddenException(
+        'Only ADMIN or HOMOLOGATION_AUTHORITY can read CESAD commissions',
+      );
     }
   }
 
