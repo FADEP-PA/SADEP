@@ -3,7 +3,7 @@ import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 export class SupersedeCesadCommissionDto {
   @IsString()
   @IsNotEmpty()
-  reason: string;
+  reason!: string;
 
   @IsOptional()
   @IsDateString()
