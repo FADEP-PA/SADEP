@@ -34,6 +34,8 @@ import { PrismaService } from '../infrastructure/database/prisma.service';
 import { CesadCommissionValidityService } from './cesad-commission-validity.service';
 import type { CreateCesadCommissionDto } from './dto/create-cesad-commission.dto';
 import type { UpdateCesadCommissionDto } from './dto/update-cesad-commission.dto';
+import type { CloseCesadCommissionDto } from './dto/close-cesad-commission.dto';
+import type { SupersedeCesadCommissionDto } from './dto/supersede-cesad-commission.dto';
 
 @Injectable()
 export class CesadCommissionsService {
@@ -345,7 +347,7 @@ export class CesadCommissionsService {
     };
   }
 
-  async closeCommission(id: string, actor: AuthenticatedUser): Promise<CesadCommissionRef> {
+  async closeCommission(id: string, dto: CloseCesadCommissionDto, actor: AuthenticatedUser): Promise<CesadCommissionRef> {
     this.ensureCanAdminister(actor);
 
     const commission = await this.prismaService.cesadCommission.findUnique({
@@ -360,7 +362,7 @@ export class CesadCommissionsService {
       throw new BadRequestException('Esta comissão já possui data de encerramento e não pode ser encerrada novamente.');
     }
 
-    const effectiveEndDate = new Date();
+    const effectiveEndDate = dto.effectiveEndDate ? new Date(dto.effectiveEndDate) : new Date();
 
     const updated = await this.prismaService.$transaction(async (tx) => {
       // Regra: Bloquear encerramento se existir assignment ACTIVE vinculado à comissão.
@@ -408,6 +410,7 @@ export class CesadCommissionsService {
           afterState: {
             status: PrismaCesadCommissionStatus.INACTIVE,
             effectiveEndDate: effectiveEndDate.toISOString(),
+            reason: dto.reason,
             activeAssignmentsCount,
             preparatoryOpinionsCount,
           },
@@ -420,7 +423,7 @@ export class CesadCommissionsService {
     return this.toRef(updated);
   }
 
-  async supersedeCommission(id: string, actor: AuthenticatedUser): Promise<CesadCommissionRef> {
+  async supersedeCommission(id: string, dto: SupersedeCesadCommissionDto, actor: AuthenticatedUser): Promise<CesadCommissionRef> {
     this.ensureCanAdminister(actor);
 
     const commission = await this.prismaService.cesadCommission.findUnique({
@@ -435,9 +438,14 @@ export class CesadCommissionsService {
       throw new BadRequestException('Esta comissão já possui data de encerramento e não pode ser supersedida.');
     }
 
-    // Regra D-1: comissão sem data fim recebe fim em D-1 (véspera do dia atual)
-    const effectiveEndDate = new Date();
-    effectiveEndDate.setDate(effectiveEndDate.getDate() - 1);
+    let effectiveEndDate: Date;
+    if (dto.effectiveEndDate) {
+      effectiveEndDate = new Date(dto.effectiveEndDate);
+    } else {
+      // Regra D-1: comissão sem data fim recebe fim em D-1 (véspera do dia atual)
+      effectiveEndDate = new Date();
+      effectiveEndDate.setDate(effectiveEndDate.getDate() - 1);
+    }
 
     const updated = await this.prismaService.$transaction(async (tx) => {
       // Mesma regra aplicada em closeCommission: supersessao com processos em
@@ -480,6 +488,8 @@ export class CesadCommissionsService {
           afterState: {
             status: PrismaCesadCommissionStatus.SUPERSEDED,
             effectiveEndDate: effectiveEndDate.toISOString(),
+            reason: dto.reason,
+            successorCommissionId: dto.successorCommissionId,
             activeAssignmentsCount,
             preparatoryOpinionsCount,
           },

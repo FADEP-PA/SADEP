@@ -19,6 +19,8 @@ import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.in
 import { CesadCommissionsService } from './cesad-commissions.service';
 import { CreateCesadCommissionDto } from './dto/create-cesad-commission.dto';
 import { UpdateCesadCommissionDto } from './dto/update-cesad-commission.dto';
+import { CloseCesadCommissionDto } from './dto/close-cesad-commission.dto';
+import { SupersedeCesadCommissionDto } from './dto/supersede-cesad-commission.dto';
 
 @Controller('cesad/commissions')
 @UseGuards(JwtAuthGuard)
@@ -79,13 +81,15 @@ export class CesadCommissionsController {
   }
 
   @Post(':id/close')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async closeCommission(
     @Param('id') id: string,
+    @Body() dto: CloseCesadCommissionDto,
     @CurrentUser() user?: AuthenticatedUser
   ) {
     this.ensureCanManageCommissions(user);
 
-    return this.cesadCommissionsService.closeCommission(id, user);
+    return this.cesadCommissionsService.closeCommission(id, dto, user);
   }
 
   private ensureCanManageCommissions(user?: AuthenticatedUser): asserts user is AuthenticatedUser {
@@ -101,12 +105,13 @@ export class CesadCommissionsController {
   }
 
   @Post(':id/supersede')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async supersedeCommission(
     @Param('id') id: string,
-    @CurrentUser() user?: AuthenticatedUser,
-    // @Body() supersedeDto: SupersedeCommissionDto // (Caso precise enviar o ID da comissão sucessora)
+    @Body() dto: SupersedeCesadCommissionDto,
+    @CurrentUser() user?: AuthenticatedUser
   ) {
     this.ensureCanManageCommissions(user);
-    return this.cesadCommissionsService.supersedeCommission(id, user);
+    return this.cesadCommissionsService.supersedeCommission(id, dto, user);
   }
 }
