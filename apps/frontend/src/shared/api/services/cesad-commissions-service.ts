@@ -2,40 +2,15 @@ import { httpRequest } from '@/shared/api/http-client';
 import {
   CesadCommissionDetailRef,
   CesadCommissionRef,
+  CreateCesadCommissionRequest,
+  UpdateCesadCommissionRequest,
+  CloseCesadCommissionRequest,
+  SupersedeCesadCommissionRequest,
 } from '@sadep/contracts';
 
 const AUTHENTICATED_REQUEST = {
   useStoredAccessToken: true,
 } as const;
-
-// Payloads de escrita serão consolidados no pacote de contratos em task própria.
-export type CreateCesadCommissionPayload = {
-  commission: {
-    name: string;
-    description?: string | null;
-    effectiveStartDate: string;
-    effectiveEndDate?: string | null;
-  };
-  act: {
-    actType: 'CONSTITUTION' | 'AMENDMENT' | 'RENEWAL';
-    number: string;
-    year: number;
-    signedAt?: string | null;
-    publishedAt?: string | null;
-    validityStartDate?: string | null;
-    validityEndDate?: string | null;
-    summary?: string | null;
-    referenceText?: string | null;
-  };
-  members: Array<{
-    userId: string;
-    roleType: 'TITULAR' | 'SUPLENTE';
-    startDate: string;
-    endDate?: string | null;
-  }>;
-};
-
-export type UpdateCesadCommissionPayload = Partial<CreateCesadCommissionPayload>;
 
 export async function listCommissions() {
   return httpRequest<CesadCommissionDetailRef[]>('/cesad/commissions', {
@@ -51,7 +26,7 @@ export async function getCommissionById(id: string) {
   });
 }
 
-export async function createCommission(payload: CreateCesadCommissionPayload) {
+export async function createCommission(payload: CreateCesadCommissionRequest) {
   return httpRequest<CesadCommissionDetailRef>('/cesad/commissions', {
     ...AUTHENTICATED_REQUEST,
     method: 'POST',
@@ -59,7 +34,7 @@ export async function createCommission(payload: CreateCesadCommissionPayload) {
   });
 }
 
-export async function updateCommission(id: string, payload: UpdateCesadCommissionPayload) {
+export async function updateCommission(id: string, payload: UpdateCesadCommissionRequest) {
   return httpRequest<CesadCommissionDetailRef>(`/cesad/commissions/${id}`, {
     ...AUTHENTICATED_REQUEST,
     method: 'PUT',
@@ -67,16 +42,18 @@ export async function updateCommission(id: string, payload: UpdateCesadCommissio
   });
 }
 
-export async function closeCommission(id: string) {
+export async function closeCommission(id: string, payload: CloseCesadCommissionRequest) {
   return httpRequest<CesadCommissionRef>(`/cesad/commissions/${id}/close`, {
     ...AUTHENTICATED_REQUEST,
     method: 'POST',
+    body: payload,
   });
 }
 
-export async function supersedeCommission(id: string) {
+export async function supersedeCommission(id: string, payload: SupersedeCesadCommissionRequest) {
   return httpRequest<CesadCommissionRef>(`/cesad/commissions/${id}/supersede`, {
     ...AUTHENTICATED_REQUEST,
     method: 'POST',
+    body: payload,
   });
 }
