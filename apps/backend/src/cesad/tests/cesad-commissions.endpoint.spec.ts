@@ -141,17 +141,30 @@ export async function runCesadCommissionsEndpointTests() {
       `${baseUrl}/cesad/commissions/${commissionToClose.id}/close`,
       {
         method: 'POST',
-        headers: { authorization: `Bearer ${cesadLoginPayload.accessToken}` },
+        headers: { authorization: `Bearer ${cesadLoginPayload.accessToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: 'Encerrando comissão' }),
       },
     );
     assert.equal(forbiddenCloseResponse.status, 403);
+
+    // Close: erro se o motivo (reason) não for informado
+    const missingReasonCloseResponse = await fetch(
+      `${baseUrl}/cesad/commissions/${commissionToClose.id}/close`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${adminLoginPayload.accessToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      },
+    );
+    assert.equal(missingReasonCloseResponse.status, 400);
 
     // Close: sucesso por ADMIN
     const closeResponse = await fetch(
       `${baseUrl}/cesad/commissions/${commissionToClose.id}/close`,
       {
         method: 'POST',
-        headers: { authorization: `Bearer ${adminLoginPayload.accessToken}` },
+        headers: { authorization: `Bearer ${adminLoginPayload.accessToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: 'Encerrando comissão por motivo x' }),
       },
     );
     assert.equal(closeResponse.status, 200);
@@ -169,7 +182,8 @@ export async function runCesadCommissionsEndpointTests() {
       `${baseUrl}/cesad/commissions/${commissionToClose.id}/close`,
       {
         method: 'POST',
-        headers: { authorization: `Bearer ${adminLoginPayload.accessToken}` },
+        headers: { authorization: `Bearer ${adminLoginPayload.accessToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: 'Tentando encerrar novamente' }),
       },
     );
     assert.equal(reCloseResponse.status, 400);
@@ -197,22 +211,34 @@ export async function runCesadCommissionsEndpointTests() {
       },
     });
 
-    // Supersede: bloquear para CESAD_MEMBER
     const forbiddenSupersedeResponse = await fetch(
       `${baseUrl}/cesad/commissions/${commissionToSupersede.id}/supersede`,
       {
         method: 'POST',
-        headers: { authorization: `Bearer ${cesadLoginPayload.accessToken}` },
+        headers: { authorization: `Bearer ${cesadLoginPayload.accessToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: 'Supersedendo por motivo y' }),
       },
     );
     assert.equal(forbiddenSupersedeResponse.status, 403);
+
+    // Supersede: erro se o motivo (reason) não for informado
+    const missingReasonSupersedeResponse = await fetch(
+      `${baseUrl}/cesad/commissions/${commissionToSupersede.id}/supersede`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${authorityLoginPayload.accessToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      },
+    );
+    assert.equal(missingReasonSupersedeResponse.status, 400);
 
     // Supersede: sucesso por HOMOLOGATION_AUTHORITY
     const supersedeResponse = await fetch(
       `${baseUrl}/cesad/commissions/${commissionToSupersede.id}/supersede`,
       {
         method: 'POST',
-        headers: { authorization: `Bearer ${authorityLoginPayload.accessToken}` },
+        headers: { authorization: `Bearer ${authorityLoginPayload.accessToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: 'Supersedendo por motivo válido' }),
       },
     );
     assert.equal(supersedeResponse.status, 200);
@@ -230,7 +256,8 @@ export async function runCesadCommissionsEndpointTests() {
       `${baseUrl}/cesad/commissions/${commissionToSupersede.id}/supersede`,
       {
         method: 'POST',
-        headers: { authorization: `Bearer ${adminLoginPayload.accessToken}` },
+        headers: { authorization: `Bearer ${adminLoginPayload.accessToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: 'Tentando superseder novamente' }),
       },
     );
     assert.equal(reSupersedeResponse.status, 400);
