@@ -10,9 +10,11 @@ import {
 
 type CesadCommissionListProps = {
   records: CesadCommissionAdminRecord[];
+  onEdit?: (record: CesadCommissionAdminRecord) => void;
+  canManage?: boolean;
 };
 
-export function CesadCommissionList({ records }: CesadCommissionListProps) {
+export function CesadCommissionList({ records, onEdit, canManage }: CesadCommissionListProps) {
   return (
     <section className="surface-card cesad-commission-list" aria-labelledby="cesad-commission-list-title">
       <div className="cesad-commission-card-header">
@@ -63,8 +65,13 @@ export function CesadCommissionList({ records }: CesadCommissionListProps) {
               <span>{record.isUsedInProcess ? 'Com vínculo' : 'Sem vínculo'}</span>
             </div>
             <div className="cesad-commission-table__cell" data-label="Ações">
-              <button type="button" className="ghost-button" disabled>
-                Ver detalhes
+              <button 
+                type="button" 
+                className="ghost-button" 
+                onClick={() => onEdit?.(record)}
+                disabled={!canManage || record.isUsedInProcess}
+              >
+                Editar
               </button>
             </div>
           </article>

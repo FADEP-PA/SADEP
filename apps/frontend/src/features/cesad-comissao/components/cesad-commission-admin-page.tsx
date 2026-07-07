@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 
-import { CesadCommissionMemberRoleType, UserRole, CesadCommissionDetailRef } from '@sadep/contracts';
+import { CesadCommissionMemberRoleType, UserRole, CesadCommissionDetailRef, CreateCesadCommissionRequest, CloseCesadCommissionRequest, SupersedeCesadCommissionRequest } from '@sadep/contracts';
 
 import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
@@ -12,16 +12,11 @@ import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { KeyValueList } from '@/shared/ui/key-value-list';
 import { EmptyState } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
-import { listCommissions } from '@/shared/api/services/cesad-commissions-service';
+import { listCommissions, createCommission, updateCommission, closeCommission, supersedeCommission } from '@/shared/api/services/cesad-commissions-service';
 
 import {
-  mockCesadCommissionReferenceDate,
-  mockCesadCommissions,
-  mockCesadCommissionWarnings,
-  mockCurrentCesadCommission,
   mockDraftAct,
   mockDraftCompositionSummary,
-  mockFutureCesadCommission,
 } from '../data/cesad-commission-admin-demo';
 import { CesadCommissionActFormScaffold } from './cesad-commission-act-form-scaffold';
 import { CesadCommissionCurrentCard } from './cesad-commission-current-card';
@@ -33,6 +28,7 @@ import {
 import { CesadCommissionList } from './cesad-commission-list';
 import { CesadCommissionMembersTable } from './cesad-commission-members-table';
 import { CesadCommissionWarnings } from './cesad-commission-warnings';
+import { CesadCommissionFormDialog, CesadCommissionCloseDialog, CesadCommissionSupersedeDialog } from './cesad-commission-crud-dialogs';
 import type { CesadCommissionAdminRecord, CesadCommissionMemberDisplayRef } from '../data/cesad-commission-admin-demo';
 
 const ALLOWED_ROLES: UserRole[] = [UserRole.ADMIN, UserRole.HOMOLOGATION_AUTHORITY];
@@ -90,19 +86,72 @@ export function CesadCommissionAdminPage() {
   const [error, setError] = useState(false);
   const [details, setDetails] = useState<CesadCommissionDetailRef[]>([]);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await listCommissions();
-        setDetails(data);
-      } catch (err) {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
+  // Dialog states
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isCloseOpen, setIsCloseOpen] = useState(false);
+  const [isSupersedeOpen, setIsSupersedeOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<CesadCommissionAdminRecord | null>(null);
+  const [targetId, setTargetId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const data = await listCommissions();
+      setDetails(data);
+    } catch (err) {
+      setError(true);
+    } finally {
+      setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleCreate = async (payload: CreateCesadCommissionRequest) => {
+    await createCommission(payload);
+    await load();
+  };
+
+  const handleUpdate = async (payload: CreateCesadCommissionRequest) => {
+    if (!targetId) return;
+    await updateCommission(targetId, payload);
+    await load();
+  };
+
+  const handleCloseCommission = async (payload: CloseCesadCommissionRequest) => {
+    if (!targetId) return;
+    await closeCommission(targetId, payload);
+    await load();
+  };
+
+  const handleSupersedeCommission = async (payload: SupersedeCesadCommissionRequest) => {
+    if (!targetId) return;
+    await supersedeCommission(targetId, payload);
+    await load();
+  };
+
+  const openEdit = (record: CesadCommissionAdminRecord) => {
+    if (record.isUsedInProcess) {
+      alert("Comissão já utilizada em processo não pode ser editada.");
+      return;
+    }
+    setTargetId(record.commission.id);
+    setEditingRecord(record);
+    setIsFormOpen(true);
+  };
+
+  const openClose = (id: string) => {
+    setTargetId(id);
+    setIsCloseOpen(true);
+  };
+
+  const openSupersede = (id: string) => {
+    setTargetId(id);
+    setIsSupersedeOpen(true);
+  };
 
   const adminRecords = useMemo(() => details.map(mapToAdminRecord), [details]);
   const currentCommission = adminRecords.find(r => r.temporalSituation === 'CURRENT');
@@ -123,10 +172,34 @@ export function CesadCommissionAdminPage() {
                 seguem condicionadas à API.
               </p>
             </div>
-            <button type="button" disabled>
+            <button 
+              type="button" 
+              onClick={() => { setTargetId(null); setEditingRecord(null); setIsFormOpen(true); }}
+              disabled={!canManage}
+            >
               Nova comissão
             </button>
           </div>
+
+          <CesadCommissionFormDialog
+            isOpen={isFormOpen}
+            onClose={() => setIsFormOpen(false)}
+            onSubmit={targetId ? handleUpdate : handleCreate}
+            initialData={editingRecord}
+          />
+
+          <CesadCommissionCloseDialog
+            isOpen={isCloseOpen}
+            onClose={() => setIsCloseOpen(false)}
+            onSubmit={handleCloseCommission}
+          />
+
+          <CesadCommissionSupersedeDialog
+            isOpen={isSupersedeOpen}
+            onClose={() => setIsSupersedeOpen(false)}
+            onSubmit={handleSupersedeCommission}
+            commissions={adminRecords}
+          />
 
           {loading && (
             <InlineLoadingState
@@ -153,11 +226,21 @@ export function CesadCommissionAdminPage() {
           {!loading && !error && adminRecords.length > 0 && (
             <>
               {currentCommission && (
-                <CesadCommissionCurrentCard record={currentCommission} />
+                <CesadCommissionCurrentCard 
+                  record={currentCommission} 
+                  onEdit={() => openEdit(currentCommission)}
+                  onClose={() => openClose(currentCommission.commission.id)}
+                  onSupersede={() => openSupersede(currentCommission.commission.id)}
+                  canManage={canManage}
+                />
               )}
 
               <CesadCommissionWarnings warnings={allWarnings} />
-              <CesadCommissionList records={adminRecords} />
+              <CesadCommissionList 
+                records={adminRecords} 
+                onEdit={openEdit}
+                canManage={canManage}
+              />
 
               {currentCommission && (
                 <details className="cesad-secondary-panel">
