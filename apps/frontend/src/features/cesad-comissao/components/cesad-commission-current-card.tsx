@@ -11,9 +11,13 @@ import { CesadCommissionTemporalBadge } from './cesad-commission-temporal-badge'
 
 type CesadCommissionCurrentCardProps = {
   record: CesadCommissionAdminRecord;
+  onEdit?: () => void;
+  onClose?: () => void;
+  onSupersede?: () => void;
+  canManage?: boolean;
 };
 
-export function CesadCommissionCurrentCard({ record }: CesadCommissionCurrentCardProps) {
+export function CesadCommissionCurrentCard({ record, onEdit, onClose, onSupersede, canManage }: CesadCommissionCurrentCardProps) {
   const { acts, commission, memberSummary } = record;
   const primaryAct = acts[0];
 
@@ -62,13 +66,13 @@ export function CesadCommissionCurrentCard({ record }: CesadCommissionCurrentCar
       </div>
 
       <div className="cesad-commission-actions">
-        <button type="button" className="secondary-button" disabled>
-          Ver detalhes
+        <button type="button" className="secondary-button" onClick={onEdit} disabled={!canManage || record.isUsedInProcess}>
+          Editar
         </button>
-        <button type="button" className="secondary-button" disabled>
+        <button type="button" className="secondary-button" onClick={onClose} disabled={!canManage}>
           Encerrar
         </button>
-        <button type="button" className="secondary-button" disabled>
+        <button type="button" className="secondary-button" onClick={onSupersede} disabled={!canManage}>
           Superseder
         </button>
       </div>
