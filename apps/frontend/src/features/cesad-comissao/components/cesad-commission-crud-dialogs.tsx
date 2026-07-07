@@ -140,7 +140,8 @@ export function CesadCommissionFormDialog({
               <span>Tipo de Ato</span>
               <select value={actType} onChange={(e) => setActType(e.target.value as CesadCommissionActType)}>
                 <option value={CesadCommissionActType.CONSTITUTION}>Constituição</option>
-                <option value={CesadCommissionActType.MODIFICATION}>Modificação</option>
+                <option value={CesadCommissionActType.AMENDMENT}>Alteração (Amendment)</option>
+                <option value={CesadCommissionActType.RENEWAL}>Renovação</option>
               </select>
             </label>
             <label className="field-group">
