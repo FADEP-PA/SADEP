@@ -251,6 +251,9 @@ export class CesadCurrentCommissionService {
     userId: string;
     actId: string | null;
     roleType: PrismaCesadCommissionMemberRoleType;
+    registrationSnapshot: string | null;
+    bondSnapshot: string | null;
+    positionSnapshot: string | null;
     startDate: Date;
     endDate: Date | null;
     createdAt: Date;
@@ -268,6 +271,9 @@ export class CesadCurrentCommissionService {
       userId: member.userId,
       actId: member.actId,
       roleType: this.toContractMemberRoleType(member.roleType),
+      registrationSnapshot: member.registrationSnapshot,
+      bondSnapshot: member.bondSnapshot,
+      positionSnapshot: member.positionSnapshot,
       startDate: member.startDate,
       endDate: member.endDate,
       createdAt: member.createdAt,
@@ -280,6 +286,9 @@ export class CesadCurrentCommissionService {
       userId: domainMember.userId,
       actId: domainMember.actId,
       roleType: domainMember.roleType,
+      registrationSnapshot: domainMember.registrationSnapshot ?? null,
+      bondSnapshot: domainMember.bondSnapshot ?? null,
+      positionSnapshot: domainMember.positionSnapshot ?? null,
       startDate: domainMember.startDate.toISOString(),
       endDate: domainMember.endDate?.toISOString() ?? null,
       createdAt: domainMember.createdAt.toISOString(),

@@ -16,6 +16,9 @@ export type CesadCommissionActWriteRef = {
 export type CesadCommissionMemberWriteRef = {
   userId: string;
   roleType: CesadCommissionMemberRoleType;
+  registrationSnapshot?: string | null;
+  bondSnapshot?: string | null;
+  positionSnapshot?: string | null;
   startDate: string;
   endDate?: string | null;
 };

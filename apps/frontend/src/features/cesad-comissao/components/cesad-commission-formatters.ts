@@ -69,6 +69,7 @@ export function formatCesadActType(type: CesadCommissionActType) {
 
 export function formatCesadMemberRoleType(type: CesadCommissionMemberRoleType) {
   const labels: Record<CesadCommissionMemberRoleType, string> = {
+    [CesadCommissionMemberRoleType.PRESIDENTE]: 'Presidente',
     [CesadCommissionMemberRoleType.TITULAR]: 'Titular',
     [CesadCommissionMemberRoleType.SUPLENTE]: 'Suplente',
   };

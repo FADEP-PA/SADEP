@@ -155,6 +155,7 @@ enum CesadCommissionActType {
 }
 
 enum CesadCommissionMemberRoleType {
+  PRESIDENTE
   TITULAR
   SUPLENTE
 }
@@ -497,6 +498,9 @@ model CesadCommissionMember {
   userId                                     String
   actId                                      String?
   roleType                                   CesadCommissionMemberRoleType
+  registrationSnapshot                       String?
+  bondSnapshot                               String?
+  positionSnapshot                           String?
   startDate                                  DateTime
   endDate                                    DateTime?
   createdAt                                  DateTime                          @default(now())
