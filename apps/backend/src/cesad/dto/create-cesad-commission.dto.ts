@@ -42,15 +42,16 @@ class CreateCommissionActDto {
   @IsInt()
   @Min(1900)
   @Max(2100)
-  year!: number;
+  @IsOptional()
+  year?: number;
 
   @IsDateString()
   @IsOptional()
   signedAt?: string | null;
 
   @IsDateString()
-  @IsOptional()
-  publishedAt?: string | null;
+  @IsNotEmpty()
+  publishedAt!: string;
 
   @IsDateString()
   @IsOptional()

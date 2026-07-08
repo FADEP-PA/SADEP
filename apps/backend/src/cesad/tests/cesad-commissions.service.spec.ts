@@ -143,6 +143,7 @@ async function runCreateTests() {
         actType: CesadCommissionActType.CONSTITUTION,
         number: '001',
         year: 2031,
+        publishedAt: '2031-01-01T00:00:00.000Z',
       },
       members: [
         ...presidenteIds.map((userId) => ({
@@ -445,6 +446,7 @@ async function runUpdateTests() {
         actType: CesadCommissionActType.CONSTITUTION,
         number: '001',
         year: 2031,
+        publishedAt: '2031-01-01T00:00:00.000Z',
       },
       members: [
         ...presidenteIds.map((userId) => ({

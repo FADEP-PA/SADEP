@@ -285,6 +285,68 @@ export async function runCesadCommissionsEndpointTests() {
       },
     );
     assert.equal(reSupersedeResponse.status, 400);
+
+    // DTO Validation Tests
+    const u1 = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'v1@test.local');
+    const u2 = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'v2@test.local');
+    const u3 = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'v3@test.local');
+    const u4 = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'v4@test.local');
+    const u5 = await createUser(context.prisma, UserRole.CESAD_MEMBER, 'v5@test.local');
+    
+    const basePayload = {
+      commission: { effectiveStartDate: '2026-02-01T00:00:00.000Z' },
+      act: { actType: 'CONSTITUTION', number: '123', year: 2026, publishedAt: '2026-01-01T00:00:00.000Z' },
+      members: [
+        { userId: u1.id, roleType: 'PRESIDENTE', startDate: '2026-02-01T00:00:00.000Z', registrationSnapshot: '123', bondSnapshot: 'ativo', positionSnapshot: 'Analista' },
+        { userId: u2.id, roleType: 'TITULAR', startDate: '2026-02-01T00:00:00.000Z' },
+        { userId: u3.id, roleType: 'TITULAR', startDate: '2026-02-01T00:00:00.000Z' },
+        { userId: u4.id, roleType: 'SUPLENTE', startDate: '2026-02-01T00:00:00.000Z' },
+        { userId: u5.id, roleType: 'SUPLENTE', startDate: '2026-02-01T00:00:00.000Z' },
+      ]
+    };
+
+    // 1. Missing publishedAt
+    const payloadMissingPublishedAt = JSON.parse(JSON.stringify(basePayload));
+    delete payloadMissingPublishedAt.act.publishedAt;
+    
+    const resMissingPublishedAt = await fetch(`${baseUrl}/cesad/commissions`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${adminLoginPayload.accessToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify(payloadMissingPublishedAt),
+    });
+    assert.equal(resMissingPublishedAt.status, 400);
+
+    // 2. Missing PRESIDENTE
+    const payloadMissingPresidente = JSON.parse(JSON.stringify(basePayload));
+    payloadMissingPresidente.members[0].roleType = 'TITULAR';
+    
+    const resMissingPresidente = await fetch(`${baseUrl}/cesad/commissions`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${adminLoginPayload.accessToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify(payloadMissingPresidente),
+    });
+    assert.equal(resMissingPresidente.status, 400);
+
+    // 3. Multiple PRESIDENTES
+    const payloadMultiplePresidentes = JSON.parse(JSON.stringify(basePayload));
+    payloadMultiplePresidentes.members[1].roleType = 'PRESIDENTE';
+    
+    const resMultiplePresidentes = await fetch(`${baseUrl}/cesad/commissions`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${adminLoginPayload.accessToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify(payloadMultiplePresidentes),
+    });
+    assert.equal(resMultiplePresidentes.status, 400);
+
+    // 4. Valid payload
+    const payloadValid = JSON.parse(JSON.stringify(basePayload));
+    const resValid = await fetch(`${baseUrl}/cesad/commissions`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${adminLoginPayload.accessToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify(payloadValid),
+    });
+    assert.equal(resValid.status, 201);
+
   } finally {
     await app.close();
     await disposeTestContext(context);
