@@ -115,7 +115,7 @@ export class CesadCommissionsService {
       await this.validityService.closePreviousOpenEndedAtDMinus1(effectiveStartDate, actor, tx);
       await this.validityService.assertNoOverlap(effectiveStartDate, effectiveEndDate, undefined, tx);
 
-      const actYear = dto.act.publishedAt ? new Date(dto.act.publishedAt).getFullYear() : dto.act.year;
+      const actYear = dto.act.publishedAt ? new Date(dto.act.publishedAt).getFullYear() : (dto.act.year as number);
       const commissionName = `cesad-${dto.act.number}-${actYear}`;
 
       const commission = await tx.cesadCommission.create({
@@ -133,7 +133,7 @@ export class CesadCommissionsService {
           commissionId: commission.id,
           actType: dto.act.actType,
           number: dto.act.number,
-          year: dto.act.year,
+          year: actYear,
           signedAt: dto.act.signedAt ? new Date(dto.act.signedAt) : null,
           publishedAt: dto.act.publishedAt ? new Date(dto.act.publishedAt) : null,
           validityStartDate: dto.act.validityStartDate
@@ -271,7 +271,7 @@ export class CesadCommissionsService {
       // Ignora a própria comissão na checagem de sobreposição
       await this.validityService.assertNoOverlap(effectiveStartDate, effectiveEndDate, id, tx);
 
-      const actYear = dto.act.publishedAt ? new Date(dto.act.publishedAt).getFullYear() : dto.act.year;
+      const actYear = dto.act.publishedAt ? new Date(dto.act.publishedAt).getFullYear() : (dto.act.year as number);
       const commissionName = `cesad-${dto.act.number}-${actYear}`;
 
       const updatedCommission = await tx.cesadCommission.update({
@@ -297,7 +297,7 @@ export class CesadCommissionsService {
           commissionId: id,
           actType: dto.act.actType,
           number: dto.act.number,
-          year: dto.act.year,
+          year: actYear,
           signedAt: dto.act.signedAt ? new Date(dto.act.signedAt) : null,
           publishedAt: dto.act.publishedAt ? new Date(dto.act.publishedAt) : null,
           validityStartDate: dto.act.validityStartDate
