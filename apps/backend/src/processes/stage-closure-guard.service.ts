@@ -192,7 +192,12 @@ export class StageClosureGuardService {
         id: true,
         members: {
           where: {
-            roleType: PrismaCesadCommissionMemberRoleType.TITULAR,
+            roleType: {
+              in: [
+                PrismaCesadCommissionMemberRoleType.PRESIDENTE,
+                PrismaCesadCommissionMemberRoleType.TITULAR,
+              ],
+            },
             startDate: { lte: frozenAt },
             OR: [{ endDate: null }, { endDate: { gte: frozenAt } }],
             user: {

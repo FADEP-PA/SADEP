@@ -124,6 +124,9 @@ export class CesadCurrentCommissionService {
     const titularCount = commission.members.filter(
       (member) => member.roleType === PrismaCesadCommissionMemberRoleType.TITULAR,
     ).length;
+    const presidenteCount = commission.members.filter(
+      (member) => member.roleType === PrismaCesadCommissionMemberRoleType.PRESIDENTE,
+    ).length;
     const membersOutsideCommissionWindow = commission.members.filter((member) => {
       if (member.startDate < commission.effectiveStartDate) {
         return true;
@@ -142,6 +145,10 @@ export class CesadCurrentCommissionService {
 
     if (titularCount === 0 && commission.members.length > 0) {
       warnings.push('The active CESAD commission has no active titular member for the reference date');
+    }
+
+    if (presidenteCount === 0 && commission.members.length > 0) {
+      warnings.push('The active CESAD commission has no active presidente member for the reference date');
     }
 
     if (inactiveMemberCount > 0) {

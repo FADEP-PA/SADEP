@@ -16,8 +16,8 @@ import { CesadCommissionActType, CesadCommissionMemberRoleType } from '@sadep/co
 
 class CreateCommissionDto {
   @IsString()
-  @IsNotEmpty()
-  name!: string;
+  @IsOptional()
+  name?: string;
 
   @IsString()
   @IsOptional()
@@ -76,6 +76,18 @@ class CreateCommissionMemberDto {
 
   @IsEnum(CesadCommissionMemberRoleType)
   roleType!: CesadCommissionMemberRoleType;
+
+  @IsString()
+  @IsOptional()
+  registrationSnapshot?: string | null;
+
+  @IsString()
+  @IsOptional()
+  bondSnapshot?: string | null;
+
+  @IsString()
+  @IsOptional()
+  positionSnapshot?: string | null;
 
   @IsDateString()
   startDate!: string;

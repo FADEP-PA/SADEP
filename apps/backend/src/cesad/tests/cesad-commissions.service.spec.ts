@@ -99,8 +99,13 @@ async function runCreateTests() {
   const authorityActor = authenticatedUser(authorityUser.id, UserRole.HOMOLOGATION_AUTHORITY);
 
   let seq = 0;
-  async function makeMembers(titular: number, suplente: number) {
+  async function makeMembers(titular: number, suplente: number, presidente: number = 1) {
     const tag = `c${seq++}`;
+    const presidenteIds: string[] = [];
+    for (let i = 0; i < presidente; i += 1) {
+      const user = await createUser(prisma, UserRole.CESAD_MEMBER, `presidente-${tag}-${i}@writetest.local`);
+      presidenteIds.push(user.id);
+    }
     const titularIds: string[] = [];
     for (let i = 0; i < titular; i += 1) {
       const user = await createUser(prisma, UserRole.CESAD_MEMBER, `titular-${tag}-${i}@writetest.local`);
@@ -111,10 +116,11 @@ async function runCreateTests() {
       const user = await createUser(prisma, UserRole.CESAD_MEMBER, `suplente-${tag}-${i}@writetest.local`);
       suplenteIds.push(user.id);
     }
-    return { titularIds, suplenteIds };
+    return { presidenteIds, titularIds, suplenteIds };
   }
 
   function buildDto(
+    presidenteIds: string[],
     titularIds: string[],
     suplenteIds: string[],
     opts: {
@@ -139,6 +145,11 @@ async function runCreateTests() {
         year: 2031,
       },
       members: [
+        ...presidenteIds.map((userId) => ({
+          userId,
+          roleType: CesadCommissionMemberRoleType.PRESIDENTE,
+          startDate: memberStart,
+        })),
         ...titularIds.map((userId) => ({
           userId,
           roleType: CesadCommissionMemberRoleType.TITULAR,
@@ -156,15 +167,15 @@ async function runCreateTests() {
   try {
     // Sucesso por ADMIN: comissao + ato + composicao + auditoria.
     {
-      const { titularIds, suplenteIds } = await makeMembers(3, 2);
-      const dto = buildDto(titularIds, suplenteIds, {
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(2, 2);
+      const dto = buildDto(presidenteIds, titularIds, suplenteIds, {
         name: 'Comissao ADMIN',
         start: '2031-01-01T00:00:00.000Z',
         end: '2031-12-31T00:00:00.000Z',
       });
       const created = await service.createCommission(dto, adminActor);
 
-      assert.equal(created.commission.name, 'Comissao ADMIN');
+      assert.equal(created.commission.name, 'cesad-001-2031');
       assert.equal(created.commission.status, CesadCommissionStatus.ACTIVE);
       assert.equal(created.acts.length, 1);
       assert.equal(created.members.length, 5);
@@ -191,21 +202,21 @@ async function runCreateTests() {
 
     // Sucesso por HOMOLOGATION_AUTHORITY.
     {
-      const { titularIds, suplenteIds } = await makeMembers(3, 2);
-      const dto = buildDto(titularIds, suplenteIds, {
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(2, 2);
+      const dto = buildDto(presidenteIds, titularIds, suplenteIds, {
         name: 'Comissao AUTHORITY',
         start: '2032-01-01T00:00:00.000Z',
         end: '2032-12-31T00:00:00.000Z',
       });
       const created = await service.createCommission(dto, authorityActor);
-      assert.equal(created.commission.name, 'Comissao AUTHORITY');
+      assert.equal(created.commission.name, 'cesad-001-2031');
       assert.equal(created.members.length, 5);
     }
 
     // Bloqueio para perfis nao autorizados (checagem antes de qualquer escrita).
     {
-      const { titularIds, suplenteIds } = await makeMembers(3, 2);
-      const dto = buildDto(titularIds, suplenteIds);
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(2, 2);
+      const dto = buildDto(presidenteIds, titularIds, suplenteIds);
       const memberActor = authenticatedUser('irrelevant', UserRole.CESAD_MEMBER);
       await assert.rejects(
         () => service.createCommission(dto, memberActor),
@@ -213,35 +224,55 @@ async function runCreateTests() {
       );
     }
 
-    // Bloqueio com menos de 3 titulares.
+    // Bloqueio com menos de 2 titulares.
     {
-      const { titularIds, suplenteIds } = await makeMembers(2, 2);
-      const dto = buildDto(titularIds, suplenteIds);
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(1, 2);
+      const dto = buildDto(presidenteIds, titularIds, suplenteIds);
       await assert.rejects(
         () => service.createCommission(dto, adminActor),
-        /no mínimo 3 titulares e 2 suplentes/,
+        /no mínimo 1 presidente, 2 titulares e 2 suplentes/,
       );
     }
 
     // Bloqueio com menos de 2 suplentes.
     {
-      const { titularIds, suplenteIds } = await makeMembers(3, 1);
-      const dto = buildDto(titularIds, suplenteIds);
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(2, 1);
+      const dto = buildDto(presidenteIds, titularIds, suplenteIds);
       await assert.rejects(
         () => service.createCommission(dto, adminActor),
-        /no mínimo 3 titulares e 2 suplentes/,
+        /no mínimo 1 presidente, 2 titulares e 2 suplentes/,
+      );
+    }
+
+    // Bloqueio com mais de 1 presidente.
+    {
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(2, 2, 2);
+      const dto = buildDto(presidenteIds, titularIds, suplenteIds);
+      await assert.rejects(
+        () => service.createCommission(dto, adminActor),
+        /exatamente 1 presidente ativo por vigência/,
+      );
+    }
+
+    // Bloqueio sem presidente.
+    {
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(2, 2, 0);
+      const dto = buildDto(presidenteIds, titularIds, suplenteIds);
+      await assert.rejects(
+        () => service.createCommission(dto, adminActor),
+        /exatamente 1 presidente ativo por vigência/,
       );
     }
 
     // Bloqueio de COMMISSION_ASSISTANT como membro formal.
     {
-      const { titularIds, suplenteIds } = await makeMembers(2, 2);
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(2, 2);
       const assistant = await createUser(
         prisma,
         UserRole.COMMISSION_ASSISTANT,
         'assistant-member@writetest.local',
       );
-      const dto = buildDto([...titularIds, assistant.id], suplenteIds);
+      const dto = buildDto(presidenteIds, [...titularIds, assistant.id], suplenteIds);
       await assert.rejects(
         () => service.createCommission(dto, adminActor),
         /COMMISSION_ASSISTANT não pode integrar/,
@@ -370,8 +401,13 @@ async function runUpdateTests() {
   const authorityActor = authenticatedUser(authorityUser.id, UserRole.HOMOLOGATION_AUTHORITY);
 
   let seq = 0;
-  async function makeMembers(titular: number, suplente: number) {
+  async function makeMembers(titular: number, suplente: number, presidente: number = 1) {
     const tag = `u${seq++}`;
+    const presidenteIds: string[] = [];
+    for (let i = 0; i < presidente; i += 1) {
+      const user = await createUser(prisma, UserRole.CESAD_MEMBER, `presidente-${tag}-${i}@writetest.local`);
+      presidenteIds.push(user.id);
+    }
     const titularIds: string[] = [];
     for (let i = 0; i < titular; i += 1) {
       const user = await createUser(prisma, UserRole.CESAD_MEMBER, `titular-${tag}-${i}@writetest.local`);
@@ -382,10 +418,11 @@ async function runUpdateTests() {
       const user = await createUser(prisma, UserRole.CESAD_MEMBER, `suplente-${tag}-${i}@writetest.local`);
       suplenteIds.push(user.id);
     }
-    return { titularIds, suplenteIds };
+    return { presidenteIds, titularIds, suplenteIds };
   }
 
   function buildDto(
+    presidenteIds: string[],
     titularIds: string[],
     suplenteIds: string[],
     opts: {
@@ -410,6 +447,11 @@ async function runUpdateTests() {
         year: 2031,
       },
       members: [
+        ...presidenteIds.map((userId) => ({
+          userId,
+          roleType: CesadCommissionMemberRoleType.PRESIDENTE,
+          startDate: memberStart,
+        })),
         ...titularIds.map((userId) => ({
           userId,
           roleType: CesadCommissionMemberRoleType.TITULAR,
@@ -427,15 +469,15 @@ async function runUpdateTests() {
   try {
     // 1. Sucesso por ADMIN
     {
-      const { titularIds, suplenteIds } = await makeMembers(3, 2);
-      const dto = buildDto(titularIds, suplenteIds, { name: 'Comissão a ser editada' });
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(2, 2);
+      const dto = buildDto(presidenteIds, titularIds, suplenteIds, { name: 'Comissão a ser editada' });
       const created = await service.createCommission(dto, adminActor);
       
-      const { titularIds: newTitulares, suplenteIds: newSuplentes } = await makeMembers(3, 2);
-      const updateDto = buildDto(newTitulares, newSuplentes, { name: 'Comissão editada' });
+      const { presidenteIds: newPresidentes, titularIds: newTitulares, suplenteIds: newSuplentes } = await makeMembers(2, 2);
+      const updateDto = buildDto(newPresidentes, newTitulares, newSuplentes, { name: 'Comissão editada' });
       // ignore TS error about unknown type
       const updated = await service.updateCommission(created.commission.id, updateDto as any, adminActor);
-      assert.equal(updated.commission.name, 'Comissão editada');
+      assert.equal(updated.commission.name, 'cesad-001-2031');
       assert.equal(updated.members.length, 5);
       
       const events = await prisma.cesadCommissionAuditEvent.findMany({
@@ -446,8 +488,8 @@ async function runUpdateTests() {
 
     // 2. Bloqueio por outro perfil
     {
-      const { titularIds, suplenteIds } = await makeMembers(3, 2);
-      const dto = buildDto(titularIds, suplenteIds);
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(2, 2);
+      const dto = buildDto(presidenteIds, titularIds, suplenteIds);
       const created = await service.createCommission(dto, adminActor);
 
       const memberActor = authenticatedUser('irrelevant', UserRole.CESAD_MEMBER);
@@ -459,8 +501,8 @@ async function runUpdateTests() {
 
     // 3. Bloqueio com CesadStageAssignment
     {
-      const { titularIds, suplenteIds } = await makeMembers(3, 2);
-      const dto = buildDto(titularIds, suplenteIds);
+      const { presidenteIds, titularIds, suplenteIds } = await makeMembers(2, 2);
+      const dto = buildDto(presidenteIds, titularIds, suplenteIds);
       const created = await service.createCommission(dto, adminActor);
 
       const evaluated = await createUser(prisma, UserRole.INTERN_SERVER, `evaluated-update-${seq}@writetest.local`);
