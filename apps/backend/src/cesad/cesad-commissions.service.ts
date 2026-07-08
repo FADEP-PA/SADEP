@@ -115,9 +115,12 @@ export class CesadCommissionsService {
       await this.validityService.closePreviousOpenEndedAtDMinus1(effectiveStartDate, actor, tx);
       await this.validityService.assertNoOverlap(effectiveStartDate, effectiveEndDate, undefined, tx);
 
+      const actYear = dto.act.publishedAt ? new Date(dto.act.publishedAt).getFullYear() : dto.act.year;
+      const commissionName = `cesad-${dto.act.number}-${actYear}`;
+
       const commission = await tx.cesadCommission.create({
         data: {
-          name: dto.commission.name,
+          name: commissionName,
           description: dto.commission.description ?? null,
           effectiveStartDate,
           effectiveEndDate,
@@ -152,6 +155,9 @@ export class CesadCommissionsService {
               userId: m.userId,
               actId: act.id,
               roleType: m.roleType,
+              registrationSnapshot: m.registrationSnapshot ?? null,
+              bondSnapshot: m.bondSnapshot ?? null,
+              positionSnapshot: m.positionSnapshot ?? null,
               startDate: new Date(m.startDate),
               endDate: m.endDate ? new Date(m.endDate) : null,
             },
@@ -197,6 +203,9 @@ export class CesadCommissionsService {
           afterState: {
             userId: member.userId,
             roleType: member.roleType,
+            registrationSnapshot: member.registrationSnapshot,
+            bondSnapshot: member.bondSnapshot,
+            positionSnapshot: member.positionSnapshot,
             startDate: member.startDate.toISOString(),
           },
         })),
@@ -262,10 +271,13 @@ export class CesadCommissionsService {
       // Ignora a própria comissão na checagem de sobreposição
       await this.validityService.assertNoOverlap(effectiveStartDate, effectiveEndDate, id, tx);
 
+      const actYear = dto.act.publishedAt ? new Date(dto.act.publishedAt).getFullYear() : dto.act.year;
+      const commissionName = `cesad-${dto.act.number}-${actYear}`;
+
       const updatedCommission = await tx.cesadCommission.update({
         where: { id },
         data: {
-          name: dto.commission.name,
+          name: commissionName,
           description: dto.commission.description ?? null,
           effectiveStartDate,
           effectiveEndDate,
@@ -307,6 +319,9 @@ export class CesadCommissionsService {
               userId: m.userId,
               actId: act.id,
               roleType: m.roleType,
+              registrationSnapshot: m.registrationSnapshot ?? null,
+              bondSnapshot: m.bondSnapshot ?? null,
+              positionSnapshot: m.positionSnapshot ?? null,
               startDate: new Date(m.startDate),
               endDate: m.endDate ? new Date(m.endDate) : null,
             },
@@ -545,6 +560,9 @@ export class CesadCommissionsService {
     commissionStart: Date,
     commissionEnd: Date | null,
   ): Promise<void> {
+    const presidentes = dto.members.filter(
+      (m) => m.roleType === CesadCommissionMemberRoleType.PRESIDENTE,
+    );
     const titulares = dto.members.filter(
       (m) => m.roleType === CesadCommissionMemberRoleType.TITULAR,
     );
@@ -552,15 +570,21 @@ export class CesadCommissionsService {
       (m) => m.roleType === CesadCommissionMemberRoleType.SUPLENTE,
     );
 
-    if (titulares.length < 3) {
+    if (presidentes.length !== 1) {
       throw new BadRequestException(
-        'A comissão exige no mínimo 3 titulares e 2 suplentes.',
+        'A comissão exige exatamente 1 presidente ativo por vigência.',
+      );
+    }
+
+    if (titulares.length < 2) {
+      throw new BadRequestException(
+        'A comissão exige no mínimo 1 presidente, 2 titulares e 2 suplentes.',
       );
     }
 
     if (suplentes.length < 2) {
       throw new BadRequestException(
-        'A comissão exige no mínimo 3 titulares e 2 suplentes.',
+        'A comissão exige no mínimo 1 presidente, 2 titulares e 2 suplentes.',
       );
     }
 
@@ -696,6 +720,9 @@ export class CesadCommissionsService {
     userId: string;
     actId: string | null;
     roleType: PrismaCesadCommissionMemberRoleType;
+    registrationSnapshot: string | null;
+    bondSnapshot: string | null;
+    positionSnapshot: string | null;
     startDate: Date;
     endDate: Date | null;
     createdAt: Date;
@@ -715,6 +742,9 @@ export class CesadCommissionsService {
       userRole: member.user?.role as any,
       actId: domainMember.actId,
       roleType: domainMember.roleType,
+      registrationSnapshot: member.registrationSnapshot ?? null,
+      bondSnapshot: member.bondSnapshot ?? null,
+      positionSnapshot: member.positionSnapshot ?? null,
       startDate: domainMember.startDate.toISOString(),
       endDate: domainMember.endDate?.toISOString() ?? null,
       createdAt: domainMember.createdAt.toISOString(),
