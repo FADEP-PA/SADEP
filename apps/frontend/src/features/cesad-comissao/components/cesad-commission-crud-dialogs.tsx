@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CesadCommissionActType,
   CesadCommissionMemberRoleType,
@@ -54,7 +54,16 @@ export function CesadCommissionFormDialog({
 
   const [actType, setActType] = useState<CesadCommissionActType>(initialData?.acts?.[0]?.actType || CesadCommissionActType.CONSTITUTION);
   const [actNumber, setActNumber] = useState(initialData?.acts?.[0]?.number || '');
-  const [actYear, setActYear] = useState<number>(initialData?.acts?.[0]?.year || new Date().getFullYear());
+  const [publishedAt, setPublishedAt] = useState(initialData?.acts?.[0]?.publishedAt?.split('T')[0] || '');
+
+   useEffect(() => {
+   if (initialData?.commission?.name) return;
+
+   const year = publishedAt ? new Date(publishedAt).getFullYear() : new Date().getFullYear();
+   const number = actNumber || 'XXXXX';
+
+   setName(`cesad-${number}-${year}`);
+ }, [actNumber, publishedAt, initialData]);
 
   const [members, setMembers] = useState<any[]>(
     initialData?.members?.map((m: any) => ({
@@ -117,7 +126,7 @@ export function CesadCommissionFormDialog({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <label className="field-group">
             <span>Nome da Comissão</span>
-            <input required value={name} onChange={(e) => setName(e.target.value)} />
+            <input required value={name} readOnly placeholder="cesad-XXXXX-2026" />
           </label>
           <label className="field-group">
             <span>Descrição</span>
@@ -149,8 +158,8 @@ export function CesadCommissionFormDialog({
               <input required value={actNumber} onChange={(e) => setActNumber(e.target.value)} />
             </label>
             <label className="field-group">
-              <span>Ano</span>
-              <input type="number" required value={actYear} onChange={(e) => setActYear(Number(e.target.value))} />
+              <span>Data de Publicação</span>
+              <input type="date" required value={publishedAt} onChange={(e) => setPublishedAt((e.target.value))} />
             </label>
           </div>
         </fieldset>

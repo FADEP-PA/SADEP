@@ -39,8 +39,8 @@ export function CesadCommissionActFormScaffold({
         </label>
 
         <label className="field-group" htmlFor="cesad-act-year">
-          <span>Ano</span>
-          <input id="cesad-act-year" value={act.year} readOnly />
+          <span>Data da Publicação</span>
+          <input id="cesad-act-year" value={act.publishedAt ?? ""} readOnly />
         </label>
 
         <label className="field-group" htmlFor="cesad-act-summary">
