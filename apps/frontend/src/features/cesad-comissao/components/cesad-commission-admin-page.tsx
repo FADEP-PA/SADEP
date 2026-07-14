@@ -51,6 +51,7 @@ function mapToAdminRecord(detail: CesadCommissionDetailRef): CesadCommissionAdmi
     institutionalArea: m.roleType === 'TITULAR' ? 'Membro colegiado titular' : 'Membro colegiado suplente',
   } as CesadCommissionMemberDisplayRef));
 
+  const presidentes = members.filter((m) => m.roleType === 'PRESIDENTE').length;
   const titulares = members.filter((m) => m.roleType === 'TITULAR').length;
   const suplentes = members.filter((m) => m.roleType === 'SUPLENTE').length;
 
@@ -69,7 +70,7 @@ function mapToAdminRecord(detail: CesadCommissionDetailRef): CesadCommissionAdmi
     acts: detail.acts,
     members,
     temporalSituation: detail.temporalSituation as any,
-    memberSummary: { titulares, suplentes },
+    memberSummary: { presidentes, titulares, suplentes },
     isUsedInProcess: detail.isUsedInProcess,
     lastReviewLabel: detail.commission.updatedAt ? `Revisada em ${formatCesadDate(detail.commission.updatedAt)}` : 'Sem revisão',
     warnings,

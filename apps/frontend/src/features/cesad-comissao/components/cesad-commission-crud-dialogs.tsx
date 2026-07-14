@@ -57,13 +57,13 @@ export function CesadCommissionFormDialog({
   const [publishedAt, setPublishedAt] = useState(initialData?.acts?.[0]?.publishedAt?.split('T')[0] || '');
 
    useEffect(() => {
-   if (initialData?.commission?.name) return;
+      if (initialData?.commission?.name) return;
 
-   const year = publishedAt ? new Date(publishedAt).getFullYear() : new Date().getFullYear();
-   const number = actNumber || 'XXXXX';
+      const year = publishedAt ? new Date(publishedAt).getFullYear() : new Date().getFullYear();
+      const number = actNumber || 'XXXXX';
 
-   setName(`cesad-${number}-${year}`);
- }, [actNumber, publishedAt, initialData]);
+      setName(`cesad-${number}-${year}`);
+    }, [actNumber, publishedAt, initialData]);  
 
   const [members, setMembers] = useState<any[]>(
     initialData?.members?.map((m: any) => ({
@@ -75,13 +75,14 @@ export function CesadCommissionFormDialog({
 
   const titularesCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.TITULAR).length;
   const suplentesCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.SUPLENTE).length;
+  const presidentesCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.PRESIDENTE).length;
 
-  const isCompositionValid = titularesCount >= 3 && suplentesCount >= 2;
+  const isCompositionValid = presidentesCount === 1 && titularesCount >= 2 && suplentesCount >= 2;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isCompositionValid) {
-      setError('Composição mínima incompleta: 3 titulares e 2 suplentes são obrigatórios.');
+      setError('Composição mínima incompleta: 1 presidente, 2 titulares e 2 suplentes são obrigatórios.');
       return;
     }
     setError(null);
@@ -98,7 +99,7 @@ export function CesadCommissionFormDialog({
         act: {
           actType,
           number: actNumber,
-          year: actYear,
+          publishedAt: publishedAt,
         },
         members: members.map(m => ({
           userId: m.userId,
@@ -126,7 +127,11 @@ export function CesadCommissionFormDialog({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <label className="field-group">
             <span>Nome da Comissão</span>
-            <input required value={name} readOnly placeholder="cesad-XXXXX-2026" />
+            <input type="text" required readOnly disabled value={
+              initialData?.commission?.name
+              ? initialData.commission.name
+              : `cesad-XXXXX-${new Date().getFullYear()}`
+            } />
           </label>
           <label className="field-group">
             <span>Descrição</span>
@@ -155,7 +160,14 @@ export function CesadCommissionFormDialog({
             </label>
             <label className="field-group">
               <span>Número</span>
-              <input required value={actNumber} onChange={(e) => setActNumber(e.target.value)} />
+              <input type="text" inputMode="numeric" required value={actNumber} onChange={(e) => {
+                const apenasNumber = e.target.value.replace(/\D/g, '');
+
+                if (apenasNumber.length <= 8) {
+                  setActNumber(apenasNumber);
+                }
+
+              }}/>
             </label>
             <label className="field-group">
               <span>Data de Publicação</span>
@@ -165,7 +177,7 @@ export function CesadCommissionFormDialog({
         </fieldset>
 
         <fieldset style={{ padding: '16px', border: '1px solid #ccc', borderRadius: '4px' }}>
-          <legend>Composição ({titularesCount} titulares, {suplentesCount} suplentes)</legend>
+          <legend>Composição ({presidentesCount} presidentes, {titularesCount} titulares, {suplentesCount} suplentes)</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {members.map((m, idx) => (
               <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -181,6 +193,7 @@ export function CesadCommissionFormDialog({
                 }}>
                   <option value={CesadCommissionMemberRoleType.TITULAR}>Titular</option>
                   <option value={CesadCommissionMemberRoleType.SUPLENTE}>Suplente</option>
+                  <option value={CesadCommissionMemberRoleType.PRESIDENTE}>Presidente</option>
                 </select>
                 <button type="button" onClick={() => setMembers(members.filter((_, i) => i !== idx))}>Remover</button>
               </div>
@@ -190,7 +203,7 @@ export function CesadCommissionFormDialog({
         </fieldset>
         
         {!isCompositionValid && (
-          <FeedbackAlert title="Composição Incompleta" tone="warning" description="Mínimo de 3 titulares e 2 suplentes exigido." />
+          <FeedbackAlert title="Composição Incompleta" tone="warning" description="Mínimo de 1 presidente, 2 titulares e 2 suplentes exigido." />
         )}
 
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', marginTop: '16px' }}>

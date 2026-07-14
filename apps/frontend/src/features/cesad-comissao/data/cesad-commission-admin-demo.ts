@@ -32,6 +32,7 @@ export type CesadCommissionMemberDisplayRef = CesadCommissionMemberRef & {
 };
 
 export type CesadCommissionMemberSummary = {
+  presidentes: number;
   titulares: number;
   suplentes: number;
 };
@@ -149,6 +150,7 @@ function buildMember(
 }
 
 const currentMembers: CesadCommissionMemberDisplayRef[] = [
+  buildMember('presidente-01', CesadCommissionMemberRoleType.PRESIDENTE, 'Presidente demonstrativo 01'),
   buildMember('titular-01', CesadCommissionMemberRoleType.TITULAR, 'Titular demonstrativo 01'),
   buildMember('titular-02', CesadCommissionMemberRoleType.TITULAR, 'Titular demonstrativo 02'),
   buildMember('titular-03', CesadCommissionMemberRoleType.TITULAR, 'Titular demonstrativo 03'),
@@ -178,6 +180,8 @@ function resolveMockTemporalSituation(
 
 function countMembers(members: CesadCommissionMemberDisplayRef[]): CesadCommissionMemberSummary {
   return {
+    presidentes: members.filter((member) => member.roleType === CesadCommissionMemberRoleType.PRESIDENTE)
+      .length,
     titulares: members.filter((member) => member.roleType === CesadCommissionMemberRoleType.TITULAR)
       .length,
     suplentes: members.filter((member) => member.roleType === CesadCommissionMemberRoleType.SUPLENTE)
@@ -221,7 +225,7 @@ export const mockCurrentCesadCommission = buildRecord({
 
 export const mockFutureCesadCommission = buildRecord({
   commission: futureCommission,
-  memberSummary: { titulares: 2, suplentes: 1 },
+  memberSummary: { presidentes: 0, titulares: 2, suplentes: 1 },
   isUsedInProcess: false,
   lastReviewLabel: 'Agendada em 28/06/2026',
   warnings: [
@@ -230,7 +234,7 @@ export const mockFutureCesadCommission = buildRecord({
       title: 'Composição mínima incompleta',
       tone: 'warning',
       description:
-        'A composição visual da comissão futura ainda não alcança 3 titulares e 2 suplentes.',
+        'A estrutura regulamentar mínima de membros exige a indicação de 1 presidente, 2 titulares e 2 suplentes.',
     },
   ],
 });
@@ -240,19 +244,19 @@ export const mockCesadCommissions: CesadCommissionAdminRecord[] = [
   mockFutureCesadCommission,
   buildRecord({
     commission: closedCommission,
-    memberSummary: { titulares: 3, suplentes: 2 },
+    memberSummary: { presidentes: 1, titulares: 3, suplentes: 2 },
     isUsedInProcess: true,
     lastReviewLabel: 'Encerrada em 31/12/2025',
   }),
   buildRecord({
     commission: inactiveCommission,
-    memberSummary: { titulares: 0, suplentes: 0 },
+    memberSummary: { presidentes: 0, titulares: 0, suplentes: 0 },
     isUsedInProcess: false,
     lastReviewLabel: 'Inativada em 05/03/2026',
   }),
   buildRecord({
     commission: supersededCommission,
-    memberSummary: { titulares: 3, suplentes: 2 },
+    memberSummary: { presidentes: 1, titulares: 3, suplentes: 2 },
     isUsedInProcess: true,
     lastReviewLabel: 'Substituída em 20/09/2024',
   }),
@@ -275,6 +279,7 @@ export const mockDraftAct: CesadCommissionActRef = {
 };
 
 export const mockDraftCompositionSummary: CesadCommissionMemberSummary = {
+  presidentes: 0,
   titulares: 2,
   suplentes: 1,
 };
