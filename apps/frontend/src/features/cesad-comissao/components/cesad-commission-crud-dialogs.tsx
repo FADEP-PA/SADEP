@@ -62,13 +62,14 @@ export function CesadCommissionFormDialog({
   const [publishedAt, setPublishedAt] = useState(initialData?.acts?.[0]?.publishedAt?.split('T')[0] || '');
 
    useEffect(() => {
-      if (initialData?.commission?.name) return;
+      if (initialData?.commission?.name) {
+        setName(initialData.commission.name);
+        return;
+      }
 
       const year = publishedAt ? new Date(publishedAt).getFullYear() : new Date().getFullYear();
-      const number = actNumber || 'XXXXX';
-
-      setName(`cesad-${number}-${year}`);
-    }, [actNumber, publishedAt, initialData]);  
+      setName(`cesad-XXXXX-${year}`);
+    }, [publishedAt, initialData]);
 
   const [members, setMembers] = useState<any[]>(
     initialData?.members?.map((m: any) => ({
@@ -77,6 +78,37 @@ export function CesadCommissionFormDialog({
       startDate: m.startDate?.split('T')[0] || '',
     })) || []
   );
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setName(initialData.commission?.name || '');
+        setDescription(initialData.commission?.description || '');
+        setStartDate(initialData.commission?.effectiveStartDate?.split('T')[0] || '');
+        setEndDate(initialData.commission?.effectiveEndDate?.split('T')[0] || '');
+        setActType(initialData.acts?.[0]?.actType || CesadCommissionActType.CONSTITUTION);
+        setActNumber(initialData.acts?.[0]?.number || '');
+        setPublishedAt(initialData.acts?.[0]?.publishedAt?.split('T')[0] || '');
+        setMembers(
+          initialData.members?.map((m: any) => ({
+            userId: m.userId,
+            roleType: m.roleType,
+            startDate: m.startDate?.split('T')[0] || '',
+          })) || []
+        );
+      } else {
+        setName(`cesad-XXXXX-${new Date().getFullYear()}`);
+        setDescription('');
+        setStartDate('');
+        setEndDate('');
+        setActType(CesadCommissionActType.CONSTITUTION);
+        setActNumber('');
+        setPublishedAt('');
+        setMembers([]); 
+        setError(null);  
+      }
+    }
+  }, [isOpen, initialData]); 
 
   const titularesCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.TITULAR).length;
   const suplentesCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.SUPLENTE).length;
@@ -132,11 +164,13 @@ export function CesadCommissionFormDialog({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <label className="field-group">
             <span>Nome da Comissão</span>
-            <input type="text" required readOnly disabled value={
-              initialData?.commission?.name
-              ? initialData.commission.name
-              : `cesad-XXXXX-${new Date().getFullYear()}`
-            } />
+            <input 
+              type="text" 
+              required 
+              readOnly 
+              disabled 
+              value={name} 
+              style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}/>
           </label>
           <label className="field-group">
             <span>Descrição</span>
@@ -192,47 +226,62 @@ export function CesadCommissionFormDialog({
             </div>
           ) : (
             <div className="members-table-container">
-              <table className="members-table">
+              <table className="members-table" style={{ width: '100%', tableLayout: 'fixed' }}>
                 <thead>
                   <tr>
-                    <th style={{width: '250px'}}>Nome / ID</th>
-                    <th>Matrícula</th>
-                    <th>Vínculo</th>
+                    <th style={{ width: '130px' }}>Matrícula</th>
+                    <th style={{ width: '100px' }}>Vínculo</th>
+                    <th style={{ width: '220px' }}>Nome</th>
                     <th>Cargo</th>
-                    <th style={{ width: '120px' }}>Função</th>
-                    <th style={{ width: '80px', textAlign: 'center' }}>Ações</th>
+                    <th style={{ width: '140px' }}>Função</th>
+                    <th style={{ width: '100px', textAlign: 'center' }}>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {members.map((m, idx) => (
                     <tr key={idx}>
+                      {/* 1. MATRÍCULA */}
                       <td>
                         <input 
                           className="members-table-input"
-                          placeholder="ID ou Nome do Usuário" 
-                          required 
-                          value={m.userId} 
+                          placeholder="Ex: 123456" 
+                          required     
+                          value={m.registration || ''}
                           onChange={(e) => {
                             const newMembers = [...members];
-                            newMembers[idx].userId = e.target.value;
+                            newMembers[idx].registration = e.target.value;
                             setMembers(newMembers);
                           }}
                         />
                       </td>
 
-                      {/* Matrícula (Se disponível na API) */}
                       <td>
-                        {m.user?.registration || <span className="member-pending-field">Pendente</span>}
+                        <input 
+                          className="members-table-input"
+                          placeholder="Ex: 1" 
+                          required     
+                          value={m.bond || ''}
+                          onChange={(e) => {
+                            const apenasNumeros = e.target.value.replace(/\D/g, '');
+                            if (apenasNumeros.length <= 2) {
+                              const newMembers = [...members];
+                              newMembers[idx].bond = apenasNumeros;
+                              setMembers(newMembers);
+                            }
+                          }}
+                        />
                       </td>
 
-                      {/* Vínculo */}
                       <td>
-                        {m.user?.bond || <span className="member-pending-field">Pendente</span>}
+                        <div className="member-readonly-text" style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {m.user?.name || <span className="member-pending-field">Pendente</span>}
+                        </div>
                       </td>
 
-                      {/* Cargo */}
                       <td>
-                        {m.user?.position || <span className="member-pending-field">Pendente</span>}
+                        <div className="member-readonly-text" style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {m.user?.position || <span className="member-pending-field">Pendente</span>}
+                        </div>
                       </td>
 
                       <td>
@@ -244,20 +293,20 @@ export function CesadCommissionFormDialog({
                             newMembers[idx].roleType = e.target.value as CesadCommissionMemberRoleType;
                             setMembers(newMembers);
                           }}
-                          style={{ colorScheme: 'light' }} // Mantém a correção para o Firefox sem poluir
+                          style={{ colorScheme: 'light' }}
                         >
                           <option value={CesadCommissionMemberRoleType.TITULAR}>Titular</option>
                           <option value={CesadCommissionMemberRoleType.SUPLENTE}>Suplente</option>
                           <option value={CesadCommissionMemberRoleType.PRESIDENTE}>Presidente</option>
                         </select>
                       </td>
-
-                      {/* Ação de Remover */}
+                      
                       <td style={{ textAlign: 'center' }}>
                         <button 
                           type="button" 
                           className="btn-remove-member"
                           onClick={() => setMembers(members.filter((_, i) => i !== idx))}
+                          style={{ whiteSpace: 'nowrap' }}
                         >
                           Remover
                         </button>
@@ -271,38 +320,12 @@ export function CesadCommissionFormDialog({
 
           <button 
             type="button" 
-            className="btn-add-member" // Esta classe já deve herdar o estilo de botão primário do SADEP
+            className="btn-add-member" 
             onClick={addMember} 
           >
             + Adicionar Membro
           </button>
         </fieldset>
-
-        {/* <fieldset style={{ padding: '16px', border: '1px solid #ccc', borderRadius: '4px' }}>
-          <legend>Composição ({presidentesCount} presidentes, {titularesCount} titulares, {suplentesCount} suplentes)</legend>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {members.map((m, idx) => (
-              <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input placeholder="User ID" required value={m.userId} onChange={(e) => {
-                  const newMembers = [...members];
-                  newMembers[idx].userId = e.target.value;
-                  setMembers(newMembers);
-                }} />
-                <select value={m.roleType} onChange={(e) => {
-                  const newMembers = [...members];
-                  newMembers[idx].roleType = e.target.value as CesadCommissionMemberRoleType;
-                  setMembers(newMembers);
-                }}>
-                  <option value={CesadCommissionMemberRoleType.TITULAR}>Titular</option>
-                  <option value={CesadCommissionMemberRoleType.SUPLENTE}>Suplente</option>
-                  <option value={CesadCommissionMemberRoleType.PRESIDENTE}>Presidente</option>
-                </select>
-                <button type="button" onClick={() => setMembers(members.filter((_, i) => i !== idx))}>Remover</button>
-              </div>
-            ))}
-            <button type="button" onClick={addMember} style={{ alignSelf: 'flex-start' }}>+ Adicionar Membro</button>
-          </div>
-        </fieldset> */}
         
         {!isCompositionValid && (
           <FeedbackAlert title="Composição Incompleta" tone="warning" description="Mínimo de 1 presidente, 2 titulares e 2 suplentes exigido." />

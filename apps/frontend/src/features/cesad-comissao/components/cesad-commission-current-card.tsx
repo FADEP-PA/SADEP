@@ -48,7 +48,7 @@ export function CesadCommissionCurrentCard({ record, onEdit, onClose, onSupersed
         <article>
           <span>Composição</span>
           <strong>
-            {memberSummary.titulares} titulares / {memberSummary.suplentes} suplentes
+            {memberSummary.presidentes} presidentes / {memberSummary.titulares} titulares / {memberSummary.suplentes} suplentes
           </strong>
         </article>
         <article>
