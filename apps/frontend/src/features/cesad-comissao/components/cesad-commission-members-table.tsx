@@ -45,32 +45,37 @@ export function CesadCommissionMembersTable({
 
       <div className="cesad-member-table">
         <div className="cesad-member-table__header" aria-hidden="true">
-          <span>Integrante</span>
-          <span>Perfil</span>
-          <span>Área</span>
-          <span>Vínculo</span>
+          <span>Nome</span>
+          <span>Matrícula</span>
+          <span>Vinculo</span>
+          <span>Cargo</span>
+          <span>Função</span>
         </div>
 
         {filteredMembers.map((member) => (
           <article key={member.id} className="cesad-member-table__row">
             <div className="cesad-member-table__cell cesad-member-table__cell--title">
-              <span data-label="Integrante">{member.displayName}</span>
+              <span data-label="Nome">{member.displayName}</span>
               <small>{member.userId}</small>
             </div>
-            <div className="cesad-member-table__cell" data-label="Perfil">
-              <span>{formatUserRole(member.userRole)}</span>
+
+            <div className="cesad-member-table__cell" data-label="Matrícula">
+              <span>{member.registrationSnapshot || '-'}</span>
             </div>
-            <div className="cesad-member-table__cell" data-label="Área">
-              <span>{member.institutionalArea}</span>
-            </div>
+
             <div className="cesad-member-table__cell" data-label="Vínculo">
-              <span>
-                {formatCesadDate(member.startDate)} até {formatCesadDate(member.endDate)}
-              </span>
+              <span>{member.bondSnapshot || '-'}</span>
+            </div>
+
+            <div className="cesad-member-table__cell" data-label="Cargo">
+              <span>{member.positionSnapshot || '-'}</span>
+            </div>  
+
+            <div className="cesad-member-table__cell" data-label="Função">
+              <span>{formatCesadMemberRoleType(member.roleType)}</span>
             </div>
           </article>
         ))}
       </div>
     </section>
-  );
-}
+  );}

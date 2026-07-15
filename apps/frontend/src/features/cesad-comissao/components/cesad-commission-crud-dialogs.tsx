@@ -15,13 +15,18 @@ type BaseModalProps = {
   children: React.ReactNode;
 };
 
-export function CesadModal({ isOpen, onClose, title, children }: BaseModalProps) {
+export function CesadModal({ isOpen, onClose, title, children, maxWidth}: BaseModalProps & { maxWidth?: string }) {
   if (!isOpen) return null;
 
+  // Se 'maxWidth' for passado, injeta a classe 'modal-large' para alterar a largura no CSS
+  const contentClass = maxWidth 
+    ? "previous-evaluations-modal__content modal-large" 
+    : "previous-evaluations-modal__content";
+  
   return (
     <div className="previous-evaluations-modal">
       <div className="previous-evaluations-modal__backdrop" onClick={onClose} />
-      <div className="previous-evaluations-modal__content" style={{ maxWidth: '800px' }}>
+      <div className={contentClass} style={{ maxWidth: maxWidth}}>
         <header className="previous-evaluations-modal__header">
           <h2>{title.toUpperCase()}</h2>
         </header>
@@ -120,7 +125,7 @@ export function CesadCommissionFormDialog({
   };
 
   return (
-    <CesadModal isOpen={isOpen} onClose={onClose} title={initialData ? "Editar Comissão" : "Nova Comissão"}>
+    <CesadModal isOpen={isOpen} onClose={onClose} title={initialData ? "Editar Comissão" : "Nova Comissão"} maxWidth="2000px">
       <form onSubmit={handleSubmit} className="cesad-form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {error && <FeedbackAlert title="Erro" tone="error" description={error} />}
         
@@ -176,7 +181,104 @@ export function CesadCommissionFormDialog({
           </div>
         </fieldset>
 
-        <fieldset style={{ padding: '16px', border: '1px solid #ccc', borderRadius: '4px' }}>
+        <fieldset className="field-group-fieldset">
+          <legend>
+            Composição ({presidentesCount} presidentes, {titularesCount} titulares, {suplentesCount} suplentes)
+          </legend>
+
+          {members.length === 0 ? (
+            <div className="members-empty-state">
+              Nenhum membro adicionado à comissão ainda.
+            </div>
+          ) : (
+            <div className="members-table-container">
+              <table className="members-table">
+                <thead>
+                  <tr>
+                    <th style={{width: '250px'}}>Nome / ID</th>
+                    <th>Matrícula</th>
+                    <th>Vínculo</th>
+                    <th>Cargo</th>
+                    <th style={{ width: '120px' }}>Função</th>
+                    <th style={{ width: '80px', textAlign: 'center' }}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((m, idx) => (
+                    <tr key={idx}>
+                      <td>
+                        <input 
+                          className="members-table-input"
+                          placeholder="ID ou Nome do Usuário" 
+                          required 
+                          value={m.userId} 
+                          onChange={(e) => {
+                            const newMembers = [...members];
+                            newMembers[idx].userId = e.target.value;
+                            setMembers(newMembers);
+                          }}
+                        />
+                      </td>
+
+                      {/* Matrícula (Se disponível na API) */}
+                      <td>
+                        {m.user?.registration || <span className="member-pending-field">Pendente</span>}
+                      </td>
+
+                      {/* Vínculo */}
+                      <td>
+                        {m.user?.bond || <span className="member-pending-field">Pendente</span>}
+                      </td>
+
+                      {/* Cargo */}
+                      <td>
+                        {m.user?.position || <span className="member-pending-field">Pendente</span>}
+                      </td>
+
+                      <td>
+                        <select 
+                          className="members-table-input"
+                          value={m.roleType} 
+                          onChange={(e) => {
+                            const newMembers = [...members];
+                            newMembers[idx].roleType = e.target.value as CesadCommissionMemberRoleType;
+                            setMembers(newMembers);
+                          }}
+                          style={{ colorScheme: 'light' }} // Mantém a correção para o Firefox sem poluir
+                        >
+                          <option value={CesadCommissionMemberRoleType.TITULAR}>Titular</option>
+                          <option value={CesadCommissionMemberRoleType.SUPLENTE}>Suplente</option>
+                          <option value={CesadCommissionMemberRoleType.PRESIDENTE}>Presidente</option>
+                        </select>
+                      </td>
+
+                      {/* Ação de Remover */}
+                      <td style={{ textAlign: 'center' }}>
+                        <button 
+                          type="button" 
+                          className="btn-remove-member"
+                          onClick={() => setMembers(members.filter((_, i) => i !== idx))}
+                        >
+                          Remover
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <button 
+            type="button" 
+            className="btn-add-member" // Esta classe já deve herdar o estilo de botão primário do SADEP
+            onClick={addMember} 
+          >
+            + Adicionar Membro
+          </button>
+        </fieldset>
+
+        {/* <fieldset style={{ padding: '16px', border: '1px solid #ccc', borderRadius: '4px' }}>
           <legend>Composição ({presidentesCount} presidentes, {titularesCount} titulares, {suplentesCount} suplentes)</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {members.map((m, idx) => (
@@ -200,7 +302,7 @@ export function CesadCommissionFormDialog({
             ))}
             <button type="button" onClick={addMember} style={{ alignSelf: 'flex-start' }}>+ Adicionar Membro</button>
           </div>
-        </fieldset>
+        </fieldset> */}
         
         {!isCompositionValid && (
           <FeedbackAlert title="Composição Incompleta" tone="warning" description="Mínimo de 1 presidente, 2 titulares e 2 suplentes exigido." />
