@@ -451,7 +451,9 @@ model CesadFinalOpinion {
 
 model CesadCommission {
   id                          String                            @id @default(cuid())
-  name                        String
+  name                        String                            @unique
+  sequence                    Int
+  year                        Int
   description                 String?
   status                      CesadCommissionStatus             @default(ACTIVE)
   effectiveStartDate          DateTime
@@ -476,7 +478,7 @@ model CesadCommissionAct {
   number            String
   year              Int
   signedAt          DateTime?
-  publishedAt       DateTime?
+  publishedAt       DateTime
   validityStartDate DateTime?
   validityEndDate   DateTime?
   summary           String?
