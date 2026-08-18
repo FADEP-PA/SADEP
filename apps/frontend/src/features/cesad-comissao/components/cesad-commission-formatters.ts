@@ -2,11 +2,10 @@ import {
   CesadCommissionActType,
   CesadCommissionMemberRoleType,
   CesadCommissionStatus,
+  type CesadCommissionTemporalSituation,
 } from '@sadep/contracts';
 
 import type { StatusBadgeTone } from '@/shared/ui/status-badge';
-
-import type { CesadCommissionTemporalSituation } from '../data/cesad-commission-admin-demo';
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   day: '2-digit',
@@ -80,4 +79,17 @@ export function formatCesadMemberRoleType(type: CesadCommissionMemberRoleType) {
 export function formatCesadDate(value: string | null) {
   if (!value) return 'Sem data fim';
   return dateFormatter.format(new Date(value));
+}
+
+export function formatCesadSnapshot(value: string | null | undefined) {
+  if (!value || value.trim().length === 0) return 'Não informado';
+  return value;
+}
+
+export function getCivilYear(value: string): number {
+  return Number(value.slice(0, 4));
+}
+
+export function toUtcTimestamp(value: string): string {
+  return `${value}T00:00:00.000Z`;
 }

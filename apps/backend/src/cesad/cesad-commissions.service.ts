@@ -115,12 +115,24 @@ export class CesadCommissionsService {
       await this.validityService.closePreviousOpenEndedAtDMinus1(effectiveStartDate, actor, tx);
       await this.validityService.assertNoOverlap(effectiveStartDate, effectiveEndDate, undefined, tx);
 
-      const actYear = dto.act.publishedAt ? new Date(dto.act.publishedAt).getFullYear() : (dto.act.year as number);
-      const commissionName = `cesad-${dto.act.number}-${actYear}`;
+      const actYear = new Date(dto.act.publishedAt).getFullYear();
+
+      const lastCommission = await tx.cesadCommission.findFirst({
+        where: { year: actYear },
+        orderBy: { sequence: 'desc' },
+        select: { sequence: true },
+      });
+
+      const nextSequence = lastCommission ? lastCommission.sequence + 1 : 1;
+
+      const formattedSequence = String(nextSequence).padStart(5, '0');
+      const commissionName = `cesad-${formattedSequence}-${actYear}`;
 
       const commission = await tx.cesadCommission.create({
         data: {
           name: commissionName,
+          sequence: nextSequence,
+          year: actYear,
           description: dto.commission.description ?? null,
           effectiveStartDate,
           effectiveEndDate,
@@ -135,7 +147,8 @@ export class CesadCommissionsService {
           number: dto.act.number,
           year: actYear,
           signedAt: dto.act.signedAt ? new Date(dto.act.signedAt) : null,
-          publishedAt: dto.act.publishedAt ? new Date(dto.act.publishedAt) : null,
+
+          publishedAt: new Date(dto.act.publishedAt),
           validityStartDate: dto.act.validityStartDate
             ? new Date(dto.act.validityStartDate)
             : null,
@@ -299,7 +312,7 @@ export class CesadCommissionsService {
           number: dto.act.number,
           year: actYear,
           signedAt: dto.act.signedAt ? new Date(dto.act.signedAt) : null,
-          publishedAt: dto.act.publishedAt ? new Date(dto.act.publishedAt) : null,
+          publishedAt: new Date(dto.act.publishedAt),
           validityStartDate: dto.act.validityStartDate
             ? new Date(dto.act.validityStartDate)
             : null,

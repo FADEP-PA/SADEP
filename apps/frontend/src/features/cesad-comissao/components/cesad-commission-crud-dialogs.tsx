@@ -1,12 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
 import {
   CesadCommissionActType,
   CesadCommissionMemberRoleType,
-  CreateCesadCommissionRequest,
-  CloseCesadCommissionRequest,
-  SupersedeCesadCommissionRequest,
+  type CesadCommissionMemberWriteRef,
+  type CreateCesadCommissionRequest,
+  type CloseCesadCommissionRequest,
+  type SupersedeCesadCommissionRequest,
 } from '@sadep/contracts';
+
+import { getRequestErrorMessage } from '@/shared/api/http-error';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+
+import { getCivilYear, toUtcTimestamp } from './cesad-commission-formatters';
+
+import type { CesadCommissionAdminRecord } from '../data/cesad-commission-admin-types';
 
 type BaseModalProps = {
   isOpen: boolean;
@@ -33,6 +41,26 @@ export function CesadModal({ isOpen, onClose, title, children }: BaseModalProps)
   );
 }
 
+type DraftMember = {
+  userId: string;
+  roleType: CesadCommissionMemberRoleType;
+  registrationSnapshot: string;
+  bondSnapshot: string;
+  positionSnapshot: string;
+  startDate: string;
+};
+
+function toDraftMember(member: CesadCommissionMemberWriteRef): DraftMember {
+  return {
+    userId: member.userId,
+    roleType: member.roleType,
+    registrationSnapshot: member.registrationSnapshot ?? '',
+    bondSnapshot: member.bondSnapshot ?? '',
+    positionSnapshot: member.positionSnapshot ?? '',
+    startDate: member.startDate.split('T')[0] ?? '',
+  };
+}
+
 export function CesadCommissionFormDialog({
   isOpen,
   onClose,
@@ -42,83 +70,128 @@ export function CesadCommissionFormDialog({
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (payload: CreateCesadCommissionRequest) => Promise<void>;
-  initialData?: any;
+  initialData?: CesadCommissionAdminRecord | null;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [name, setName] = useState(initialData?.commission?.name || '');
   const [description, setDescription] = useState(initialData?.commission?.description || '');
   const [startDate, setStartDate] = useState(initialData?.commission?.effectiveStartDate?.split('T')[0] || '');
   const [endDate, setEndDate] = useState(initialData?.commission?.effectiveEndDate?.split('T')[0] || '');
 
   const [actType, setActType] = useState<CesadCommissionActType>(initialData?.acts?.[0]?.actType || CesadCommissionActType.CONSTITUTION);
   const [actNumber, setActNumber] = useState(initialData?.acts?.[0]?.number || '');
-  const [actYear, setActYear] = useState<number>(initialData?.acts?.[0]?.year || new Date().getFullYear());
+  const [publishedAt, setPublishedAt] = useState(initialData?.acts?.[0]?.publishedAt?.split('T')[0] || '');
 
-  const [members, setMembers] = useState<any[]>(
-    initialData?.members?.map((m: any) => ({
-      userId: m.userId,
-      roleType: m.roleType,
-      startDate: m.startDate?.split('T')[0] || '',
-    })) || []
+  const [members, setMembers] = useState<DraftMember[]>(
+    initialData?.members?.map(toDraftMember) || []
   );
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setDescription(initialData?.commission?.description || '');
+    setStartDate(initialData?.commission?.effectiveStartDate?.split('T')[0] || '');
+    setEndDate(initialData?.commission?.effectiveEndDate?.split('T')[0] || '');
+    setActType(initialData?.acts?.[0]?.actType || CesadCommissionActType.CONSTITUTION);
+    setActNumber(initialData?.acts?.[0]?.number || '');
+    setPublishedAt(initialData?.acts?.[0]?.publishedAt?.split('T')[0] || '');
+    setMembers(initialData?.members?.map(toDraftMember) || []);
+    setError(null);
+    setLoading(false);
+  }, [isOpen, initialData]);
+
+  const presidenteCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.PRESIDENTE).length;
   const titularesCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.TITULAR).length;
   const suplentesCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.SUPLENTE).length;
 
-  const isCompositionValid = titularesCount >= 3 && suplentesCount >= 2;
+  const isCompositionValid = presidenteCount === 1 && titularesCount >= 2 && suplentesCount >= 2;
+
+  const buildPayload = (): CreateCesadCommissionRequest => {
+    const actYear = publishedAt ? getCivilYear(publishedAt) : new Date().getFullYear();
+
+    return {
+      commission: {
+        name: initialData?.commission?.name ?? '',
+        description,
+        effectiveStartDate: toUtcTimestamp(startDate),
+        effectiveEndDate: endDate ? toUtcTimestamp(endDate) : null,
+      },
+      act: {
+        actType,
+        number: actNumber,
+        year: actYear,
+        publishedAt: toUtcTimestamp(publishedAt),
+      },
+      members: members.map((m) => ({
+        userId: m.userId,
+        roleType: m.roleType,
+        registrationSnapshot: m.registrationSnapshot.trim() || null,
+        bondSnapshot: m.bondSnapshot.trim() || null,
+        positionSnapshot: m.positionSnapshot.trim() || null,
+        startDate: m.startDate ? toUtcTimestamp(m.startDate) : toUtcTimestamp(startDate),
+      })),
+    };
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isCompositionValid) {
-      setError('Composição mínima incompleta: 3 titulares e 2 suplentes são obrigatórios.');
+      setError('Composição incompleta: a API exige exatamente 1 presidente e, no mínimo, 2 titulares e 2 suplentes.');
       return;
     }
     setError(null);
     setLoading(true);
 
     try {
-      await onSubmit({
-        commission: {
-          name,
-          description,
-          effectiveStartDate: new Date(startDate).toISOString(),
-          effectiveEndDate: endDate ? new Date(endDate).toISOString() : null,
-        },
-        act: {
-          actType,
-          number: actNumber,
-          year: actYear,
-        },
-        members: members.map(m => ({
-          userId: m.userId,
-          roleType: m.roleType as CesadCommissionMemberRoleType,
-          startDate: m.startDate ? new Date(m.startDate).toISOString() : new Date(startDate).toISOString(),
-        })),
-      });
+      await onSubmit(buildPayload());
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Erro ao salvar comissão.');
+    } catch (err: unknown) {
+      setError(getRequestErrorMessage(err, 'Não foi possível salvar a comissão.'));
     } finally {
       setLoading(false);
     }
   };
 
   const addMember = () => {
-    setMembers([...members, { userId: `user-demo-${Date.now()}`, roleType: CesadCommissionMemberRoleType.TITULAR, startDate }]);
+    setMembers([...members, {
+      userId: '',
+      roleType: CesadCommissionMemberRoleType.TITULAR,
+      registrationSnapshot: '',
+      bondSnapshot: '',
+      positionSnapshot: '',
+      startDate: startDate || '',
+    }]);
   };
+
+  const updateMember = (idx: number, patch: Partial<DraftMember>) => {
+    setMembers(members.map((m, i) => (i === idx ? { ...m, ...patch } : m)));
+  };
+
+  const removeMember = (idx: number) => {
+    setMembers(members.filter((_, i) => i !== idx));
+  };
+
+  const compositionHint = [
+    presidenteCount === 1 ? '1 presidente' : 'presidente obrigatório',
+    `${titularesCount} titulares (mínimo 2)`,
+    `${suplentesCount} suplentes (mínimo 2)`,
+  ].join(' · ');
 
   return (
     <CesadModal isOpen={isOpen} onClose={onClose} title={initialData ? "Editar Comissão" : "Nova Comissão"}>
       <form onSubmit={handleSubmit} className="cesad-form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {error && <FeedbackAlert title="Erro" tone="error" description={error} />}
-        
+        {error && <FeedbackAlert title="Validação" tone="error" description={error} />}
+
+        <label className="field-group">
+          <span>Nome da Comissão</span>
+          <input
+            readOnly
+            value={initialData?.commission?.name ?? 'Gerado automaticamente pela API'}
+          />
+        </label>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <label className="field-group">
-            <span>Nome da Comissão</span>
-            <input required value={name} onChange={(e) => setName(e.target.value)} />
-          </label>
           <label className="field-group">
             <span>Descrição</span>
             <input value={description} onChange={(e) => setDescription(e.target.value)} />
@@ -149,39 +222,86 @@ export function CesadCommissionFormDialog({
               <input required value={actNumber} onChange={(e) => setActNumber(e.target.value)} />
             </label>
             <label className="field-group">
-              <span>Ano</span>
-              <input type="number" required value={actYear} onChange={(e) => setActYear(Number(e.target.value))} />
+              <span>Data da Publicação</span>
+              <input
+                type="date"
+                required
+                value={publishedAt}
+                onChange={(e) => setPublishedAt(e.target.value)}
+              />
             </label>
           </div>
+          <FeedbackAlert
+            title="Ano do ato"
+            tone="info"
+            description="O ano do ato é derivado da data de publicação pela API."
+          />
         </fieldset>
 
         <fieldset style={{ padding: '16px', border: '1px solid #ccc', borderRadius: '4px' }}>
-          <legend>Composição ({titularesCount} titulares, {suplentesCount} suplentes)</legend>
+          <legend>Composição ({compositionHint})</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {members.map((m, idx) => (
-              <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input placeholder="User ID" required value={m.userId} onChange={(e) => {
-                  const newMembers = [...members];
-                  newMembers[idx].userId = e.target.value;
-                  setMembers(newMembers);
-                }} />
-                <select value={m.roleType} onChange={(e) => {
-                  const newMembers = [...members];
-                  newMembers[idx].roleType = e.target.value as CesadCommissionMemberRoleType;
-                  setMembers(newMembers);
-                }}>
+              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', alignItems: 'center' }}>
+                <input
+                  placeholder="ID do usuário"
+                  required
+                  value={m.userId}
+                  onChange={(e) => updateMember(idx, { userId: e.target.value })}
+                />
+                <select
+                  value={m.roleType}
+                  onChange={(e) => updateMember(idx, { roleType: e.target.value as CesadCommissionMemberRoleType })}
+                >
+                  <option value={CesadCommissionMemberRoleType.PRESIDENTE}>Presidente</option>
                   <option value={CesadCommissionMemberRoleType.TITULAR}>Titular</option>
                   <option value={CesadCommissionMemberRoleType.SUPLENTE}>Suplente</option>
                 </select>
-                <button type="button" onClick={() => setMembers(members.filter((_, i) => i !== idx))}>Remover</button>
+                <input
+                  type="date"
+                  value={m.startDate}
+                  onChange={(e) => updateMember(idx, { startDate: e.target.value })}
+                />
+                <button type="button" onClick={() => removeMember(idx)}>Remover</button>
               </div>
             ))}
             <button type="button" onClick={addMember} style={{ alignSelf: 'flex-start' }}>+ Adicionar Membro</button>
           </div>
         </fieldset>
-        
+
+        {members.length > 0 && (
+          <fieldset style={{ padding: '16px', border: '1px solid #ccc', borderRadius: '4px' }}>
+            <legend>Snapshots funcionais (opcionais)</legend>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {members.map((m, idx) => (
+                <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  <input
+                    placeholder="Matrícula"
+                    value={m.registrationSnapshot}
+                    onChange={(e) => updateMember(idx, { registrationSnapshot: e.target.value })}
+                  />
+                  <input
+                    placeholder="Vínculo"
+                    value={m.bondSnapshot}
+                    onChange={(e) => updateMember(idx, { bondSnapshot: e.target.value })}
+                  />
+                  <input
+                    placeholder="Cargo"
+                    value={m.positionSnapshot}
+                    onChange={(e) => updateMember(idx, { positionSnapshot: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+          </fieldset>
+        )}
+
         {!isCompositionValid && (
-          <FeedbackAlert title="Composição Incompleta" tone="warning" description="Mínimo de 3 titulares e 2 suplentes exigido." />
+          <FeedbackAlert
+            title="Composição incompleta"
+            tone="warning"
+            description="A API exige exatamente 1 presidente e, no mínimo, 2 titulares e 2 suplentes."
+          />
         )}
 
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', marginTop: '16px' }}>
@@ -207,6 +327,14 @@ export function CesadCommissionCloseDialog({
   const [reason, setReason] = useState('');
   const [effectiveEndDate, setEffectiveEndDate] = useState('');
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setReason('');
+    setEffectiveEndDate('');
+    setError(null);
+    setLoading(false);
+  }, [isOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -214,11 +342,11 @@ export function CesadCommissionCloseDialog({
     try {
       await onSubmit({
         reason,
-        effectiveEndDate: effectiveEndDate ? new Date(effectiveEndDate).toISOString() : undefined,
+        effectiveEndDate: effectiveEndDate ? toUtcTimestamp(effectiveEndDate) : undefined,
       });
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Erro ao encerrar comissão.');
+    } catch (err: unknown) {
+      setError(getRequestErrorMessage(err, 'Não foi possível encerrar a comissão.'));
     } finally {
       setLoading(false);
     }
@@ -254,13 +382,22 @@ export function CesadCommissionSupersedeDialog({
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (payload: SupersedeCesadCommissionRequest) => Promise<void>;
-  commissions?: any[];
+  commissions?: CesadCommissionAdminRecord[];
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [effectiveEndDate, setEffectiveEndDate] = useState('');
   const [successorCommissionId, setSuccessorCommissionId] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setReason('');
+    setEffectiveEndDate('');
+    setSuccessorCommissionId('');
+    setError(null);
+    setLoading(false);
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -269,12 +406,12 @@ export function CesadCommissionSupersedeDialog({
     try {
       await onSubmit({
         reason,
-        effectiveEndDate: effectiveEndDate ? new Date(effectiveEndDate).toISOString() : undefined,
+        effectiveEndDate: effectiveEndDate ? toUtcTimestamp(effectiveEndDate) : undefined,
         successorCommissionId: successorCommissionId || undefined,
       });
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Erro ao superseder comissão.');
+    } catch (err: unknown) {
+      setError(getRequestErrorMessage(err, 'Não foi possível superseder a comissão.'));
     } finally {
       setLoading(false);
     }

@@ -1,11 +1,11 @@
-import { CesadCommissionMemberRoleType, UserRole } from '@sadep/contracts';
+import { CesadCommissionMemberRoleType } from '@sadep/contracts';
 
 import { StatusBadge } from '@/shared/ui/status-badge';
 
-import type { CesadCommissionMemberDisplayRef } from '../data/cesad-commission-admin-demo';
+import type { CesadCommissionMemberDisplayRef } from '../data/cesad-commission-admin-types';
 import {
-  formatCesadDate,
   formatCesadMemberRoleType,
+  formatCesadSnapshot,
 } from './cesad-commission-formatters';
 
 type CesadCommissionMembersTableProps = {
@@ -14,12 +14,6 @@ type CesadCommissionMembersTableProps = {
   roleType: CesadCommissionMemberRoleType;
   expectedMinimum: number;
 };
-
-function formatUserRole(role: UserRole) {
-  if (role === UserRole.CESAD_MEMBER) return 'Membro CESAD';
-  if (role === UserRole.COMMISSION_ASSISTANT) return 'Assistente';
-  return role;
-}
 
 export function CesadCommissionMembersTable({
   title,
@@ -46,9 +40,10 @@ export function CesadCommissionMembersTable({
       <div className="cesad-member-table">
         <div className="cesad-member-table__header" aria-hidden="true">
           <span>Integrante</span>
-          <span>Perfil</span>
-          <span>Área</span>
+          <span>Matrícula</span>
           <span>Vínculo</span>
+          <span>Cargo</span>
+          <span>Função</span>
         </div>
 
         {filteredMembers.map((member) => (
@@ -57,16 +52,17 @@ export function CesadCommissionMembersTable({
               <span data-label="Integrante">{member.displayName}</span>
               <small>{member.userId}</small>
             </div>
-            <div className="cesad-member-table__cell" data-label="Perfil">
-              <span>{formatUserRole(member.userRole)}</span>
-            </div>
-            <div className="cesad-member-table__cell" data-label="Área">
-              <span>{member.institutionalArea}</span>
+            <div className="cesad-member-table__cell" data-label="Matrícula">
+              <span>{formatCesadSnapshot(member.registrationSnapshot)}</span>
             </div>
             <div className="cesad-member-table__cell" data-label="Vínculo">
-              <span>
-                {formatCesadDate(member.startDate)} até {formatCesadDate(member.endDate)}
-              </span>
+              <span>{formatCesadSnapshot(member.bondSnapshot)}</span>
+            </div>
+            <div className="cesad-member-table__cell" data-label="Cargo">
+              <span>{formatCesadSnapshot(member.positionSnapshot)}</span>
+            </div>
+            <div className="cesad-member-table__cell" data-label="Função">
+              <span>{formatCesadMemberRoleType(member.roleType)}</span>
             </div>
           </article>
         ))}

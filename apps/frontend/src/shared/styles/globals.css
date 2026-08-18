@@ -774,6 +774,7 @@ button:disabled,
 }
 
 .field-group input,
+.field-group select,
 textarea {
   width: 100%;
   padding: 0.95rem 1rem;
@@ -4039,7 +4040,7 @@ h3,
 .cesad-member-table__header,
 .cesad-member-table__row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(110px, 0.55fr) minmax(150px, 0.85fr) minmax(160px, 1fr);
+  grid-template-columns: minmax(180px, 1.2fr) minmax(110px, 0.7fr) minmax(130px, 0.8fr) minmax(150px, 0.9fr) minmax(110px, 0.6fr);
   gap: 0.8rem;
   align-items: center;
 }

@@ -1,6 +1,6 @@
-import { StatusBadge } from '@/shared/ui/status-badge';
+import { type CesadCommissionTemporalSituation } from '@sadep/contracts';
 
-import type { CesadCommissionTemporalSituation } from '../data/cesad-commission-admin-demo';
+import { StatusBadge } from '@/shared/ui/status-badge';
 import {
   formatCesadTemporalSituation,
   getCesadTemporalSituationTone,
