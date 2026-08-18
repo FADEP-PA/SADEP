@@ -1,6 +1,6 @@
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 
-import type { CesadCommissionWarning } from '../data/cesad-commission-admin-demo';
+import type { CesadCommissionWarning } from '../data/cesad-commission-admin-types';
 
 type CesadCommissionWarningsProps = {
   warnings: CesadCommissionWarning[];

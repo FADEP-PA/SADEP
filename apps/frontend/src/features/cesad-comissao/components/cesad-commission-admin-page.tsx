@@ -2,34 +2,32 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 
-import { CesadCommissionMemberRoleType, UserRole, CesadCommissionDetailRef, CreateCesadCommissionRequest, CloseCesadCommissionRequest, SupersedeCesadCommissionRequest } from '@sadep/contracts';
+import {
+  CesadCommissionMemberRoleType,
+  UserRole,
+  type CesadCommissionDetailRef,
+  type CreateCesadCommissionRequest,
+  type CloseCesadCommissionRequest,
+  type SupersedeCesadCommissionRequest,
+} from '@sadep/contracts';
 
 import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
-import { ContentState } from '@/shared/ui/content-state';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
-import { KeyValueList } from '@/shared/ui/key-value-list';
 import { EmptyState } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
 import { listCommissions, createCommission, updateCommission, closeCommission, supersedeCommission } from '@/shared/api/services/cesad-commissions-service';
 
 import {
-  mockDraftAct,
-  mockDraftCompositionSummary,
-} from '../data/cesad-commission-admin-demo';
-import { CesadCommissionActFormScaffold } from './cesad-commission-act-form-scaffold';
-import { CesadCommissionCurrentCard } from './cesad-commission-current-card';
-import { CesadCommissionFormScaffold } from './cesad-commission-form-scaffold';
-import {
   formatCesadDate,
-  formatCesadTemporalSituation,
 } from './cesad-commission-formatters';
+import { CesadCommissionCurrentCard } from './cesad-commission-current-card';
 import { CesadCommissionList } from './cesad-commission-list';
 import { CesadCommissionMembersTable } from './cesad-commission-members-table';
 import { CesadCommissionWarnings } from './cesad-commission-warnings';
 import { CesadCommissionFormDialog, CesadCommissionCloseDialog, CesadCommissionSupersedeDialog } from './cesad-commission-crud-dialogs';
-import type { CesadCommissionAdminRecord, CesadCommissionMemberDisplayRef } from '../data/cesad-commission-admin-demo';
+import type { CesadCommissionAdminRecord, CesadCommissionMemberDisplayRef } from '../data/cesad-commission-admin-types';
 
 const ALLOWED_ROLES: UserRole[] = [UserRole.ADMIN, UserRole.HOMOLOGATION_AUTHORITY];
 
@@ -43,25 +41,30 @@ function getProfileActionLabel(role: UserRole | undefined) {
   return 'Leitura sem ações administrativas';
 }
 
+function countByRole(members: CesadCommissionMemberDisplayRef[], roleType: CesadCommissionMemberRoleType) {
+  return members.filter((m) => m.roleType === roleType).length;
+}
+
 function mapToAdminRecord(detail: CesadCommissionDetailRef): CesadCommissionAdminRecord {
   const members = detail.members.map((m) => ({
     ...m,
     displayName: m.userName ?? 'Usuário desconhecido',
-    userRole: m.userRole ?? UserRole.CESAD_MEMBER,
-    institutionalArea: m.roleType === 'TITULAR' ? 'Membro colegiado titular' : 'Membro colegiado suplente',
   } as CesadCommissionMemberDisplayRef));
 
-  const presidentes = members.filter((m) => m.roleType === 'PRESIDENTE').length;
-  const titulares = members.filter((m) => m.roleType === 'TITULAR').length;
-  const suplentes = members.filter((m) => m.roleType === 'SUPLENTE').length;
+  const presidente = countByRole(members, CesadCommissionMemberRoleType.PRESIDENTE);
+  const titulares = countByRole(members, CesadCommissionMemberRoleType.TITULAR);
+  const suplentes = countByRole(members, CesadCommissionMemberRoleType.SUPLENTE);
+
+  const hasMinimumComposition = presidente === 1 && titulares >= 2 && suplentes >= 2;
 
   const warnings = [];
-  if (detail.temporalSituation === 'FUTURE' && (titulares < 3 || suplentes < 2)) {
+  if (!hasMinimumComposition) {
     warnings.push({
       id: `warn-comp-${detail.commission.id}`,
       title: 'Composição mínima incompleta',
       tone: 'warning' as const,
-      description: 'A comissão ainda não alcança 3 titulares e 2 suplentes.',
+      description:
+        'A comissão exige exatamente 1 presidente e, no mínimo, 2 titulares e 2 suplentes.',
     });
   }
 
@@ -69,8 +72,8 @@ function mapToAdminRecord(detail: CesadCommissionDetailRef): CesadCommissionAdmi
     commission: detail.commission,
     acts: detail.acts,
     members,
-    temporalSituation: detail.temporalSituation as any,
-    memberSummary: { presidentes, titulares, suplentes },
+    temporalSituation: detail.temporalSituation,
+    memberSummary: { presidente, titulares, suplentes },
     isUsedInProcess: detail.isUsedInProcess,
     lastReviewLabel: detail.commission.updatedAt ? `Revisada em ${formatCesadDate(detail.commission.updatedAt)}` : 'Sem revisão',
     warnings,
@@ -248,10 +251,16 @@ export function CesadCommissionAdminPage() {
                   <summary>Detalhes da comissão vigente</summary>
                   <div className="metrics-grid">
                     <CesadCommissionMembersTable
+                      title="Presidente da comissão vigente"
+                      members={currentCommission.members}
+                      roleType={CesadCommissionMemberRoleType.PRESIDENTE}
+                      expectedMinimum={1}
+                    />
+                    <CesadCommissionMembersTable
                       title="Titulares da comissão vigente"
                       members={currentCommission.members}
                       roleType={CesadCommissionMemberRoleType.TITULAR}
-                      expectedMinimum={3}
+                      expectedMinimum={2}
                     />
                     <CesadCommissionMembersTable
                       title="Suplentes da comissão vigente"
@@ -263,56 +272,12 @@ export function CesadCommissionAdminPage() {
                   <FeedbackAlert
                     title="Composição formal"
                     tone="info"
-                    description="O perfil COMMISSION_ASSISTANT permanece como apoio operacional e não integra titulares ou suplentes."
+                    description="A composição exige exatamente 1 presidente e, no mínimo, 2 titulares e 2 suplentes. O perfil COMMISSION_ASSISTANT permanece como apoio operacional e não integra a composição formal."
                   />
                 </details>
               )}
             </>
           )}
-
-          <details className="cesad-secondary-panel">
-            <summary>Prévia de cadastro e ato</summary>
-            <div className="metrics-grid">
-              <CesadCommissionFormScaffold
-                canManage={canManage}
-                draftComposition={mockDraftCompositionSummary}
-              />
-              <CesadCommissionActFormScaffold act={mockDraftAct} canManage={canManage} />
-            </div>
-          </details>
-
-          <details className="cesad-secondary-panel">
-            <summary>Estados previstos e escopo</summary>
-            <div className="cesad-commission-state-grid">
-              <InlineLoadingState
-                title="Carregando comissões"
-                description="Estado visual reservado para a futura consulta autenticada."
-              />
-              <EmptyState
-                title="Nenhuma comissão cadastrada"
-                description="Estado visual para quando não houver registros administrativos disponíveis."
-              />
-              <FeedbackAlert
-                title="Falha ao carregar comissões"
-                tone="error"
-                description="Estado visual para erro de leitura da área administrativa."
-              />
-              <ContentState
-                title="Composição incompleta"
-                description="Estado visual para rascunho abaixo de 3 titulares e 2 suplentes."
-                tone="warning"
-              />
-            </div>
-            <KeyValueList
-              items={[
-                { label: 'usuário', value: session?.user.name ?? 'Não informado' },
-                {
-                  label: 'rollover',
-                  value: 'Fluxo processual separado, fora deste scaffold administrativo.',
-                },
-              ]}
-            />
-          </details>
         </PageSection>
       </section>
     </AuthGuard>

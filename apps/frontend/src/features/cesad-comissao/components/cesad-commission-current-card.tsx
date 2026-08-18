@@ -1,6 +1,6 @@
 import { StatusBadge } from '@/shared/ui/status-badge';
 
-import type { CesadCommissionAdminRecord } from '../data/cesad-commission-admin-demo';
+import type { CesadCommissionAdminRecord } from '../data/cesad-commission-admin-types';
 import {
   formatCesadActType,
   formatCesadCommissionStatus,
@@ -48,7 +48,7 @@ export function CesadCommissionCurrentCard({ record, onEdit, onClose, onSupersed
         <article>
           <span>Composição</span>
           <strong>
-            {memberSummary.presidentes} presidentes / {memberSummary.titulares} titulares / {memberSummary.suplentes} suplentes
+            {memberSummary.presidente} presidente / {memberSummary.titulares} titulares / {memberSummary.suplentes} suplentes
           </strong>
         </article>
         <article>

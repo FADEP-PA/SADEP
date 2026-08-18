@@ -773,80 +773,6 @@ button:disabled,
   color: var(--ink);
 }
 
-/* Tabela de Membros da Comissão */
-.members-table-container {
-  overflow-x: auto;
-  margin-bottom: 1rem;
-}
-
-.members-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: 0.9rem;
-}
-
-.members-table th {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 2px solid #e2e8f0;
-  color: #475569;
-  font-weight: 700;
-}
-
-.members-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #f1f5f9;
-  vertical-align: middle;
-}
-
-/* Input e Select específicos dentro da tabela */
-.members-table-input {
-  width: 100%;
-  padding: 0.375rem 0.5rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.25rem;
-  font-size: 0.9rem;
-  background-color: #ffffff;
-  color: #1e293b;
-}
-
-.members-table-input:focus {
-  border-color: rgba(0, 124, 192, 0.42);
-  outline: none;
-}
-
-/* Status Pendente para campos sem dados da API */
-.member-pending-field {
-  color: #94a3b8;
-  font-size: 0.8rem;
-  font-style: italic;
-}
-
-/* Botão de remoção minimalista */
-.btn-remove-member {
-  padding: 0.375rem 0.75rem;
-  background-color: #ef4444;
-  color: #ffffff;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: background-color 0.2s;
-}
-
-.btn-remove-member:hover {
-  background-color: #dc2626;
-}
-
-/* Mensagem de lista vazia */
-.members-empty-state {
-  text-align: center;
-  padding: 1.5rem;
-  color: #64748b;
-  font-size: 0.9rem;
-}
-
 .field-group input,
 .field-group select,
 textarea {
@@ -4114,7 +4040,7 @@ h3,
 .cesad-member-table__header,
 .cesad-member-table__row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(110px, 0.55fr) minmax(150px, 0.85fr) minmax(160px, 1fr);
+  grid-template-columns: minmax(180px, 1.2fr) minmax(110px, 0.7fr) minmax(130px, 0.8fr) minmax(150px, 0.9fr) minmax(110px, 0.6fr);
   gap: 0.8rem;
   align-items: center;
 }
@@ -7396,9 +7322,4 @@ button,
   .supervisor-dashboard__table-card {
     border-radius: 1rem;
   }
-}
-
-/* Sobrescreve a largura padrão de 760px para 1000px quando a classe estiver presente */
-.previous-evaluations-modal__content.modal-large {
-  width: min(94vw, 1000px) !important;
 }
