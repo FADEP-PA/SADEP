@@ -59,6 +59,8 @@ export async function runCesadCurrentCommissionEndpointTests() {
     const currentCommission = await context.prisma.cesadCommission.create({
       data: {
         name: 'Comissão CESAD permanente',
+        sequence: 1,
+        year: 2020,
         description: 'Janela ampla para testes do endpoint.',
         status: 'ACTIVE',
         effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
@@ -189,6 +191,8 @@ export async function runCesadCurrentCommissionEndpointTests() {
     await context.prisma.cesadCommission.create({
       data: {
         name: 'Comissão CESAD concorrente',
+        sequence: 2,
+        year: 2026,
         description: 'Conflito proposital.',
         status: 'ACTIVE',
         effectiveStartDate: new Date('2026-01-10T00:00:00.000Z'),

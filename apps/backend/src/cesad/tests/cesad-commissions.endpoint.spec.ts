@@ -39,6 +39,8 @@ export async function runCesadCommissionsEndpointTests() {
     const commission = await context.prisma.cesadCommission.create({
       data: {
         name: 'Comissão CESAD 2026',
+        sequence: 1,
+        year: 2026,
         description: 'Comissão institucional para leitura administrativa.',
         status: 'ACTIVE',
         effectiveStartDate: new Date('2026-01-01T00:00:00.000Z'),
@@ -169,6 +171,8 @@ export async function runCesadCommissionsEndpointTests() {
     const commissionToClose = await context.prisma.cesadCommission.create({
       data: {
         name: 'Comissão para encerramento',
+        sequence: 1,
+        year: 2025,
         description: null,
         status: 'ACTIVE',
         effectiveStartDate: new Date('2025-01-01T00:00:00.000Z'),
@@ -229,6 +233,8 @@ export async function runCesadCommissionsEndpointTests() {
     const commissionToSupersede = await context.prisma.cesadCommission.create({
       data: {
         name: 'Comissão para supersessão',
+        sequence: 1,
+        year: 2024,
         description: null,
         status: 'ACTIVE',
         effectiveStartDate: new Date('2024-01-01T00:00:00.000Z'),
