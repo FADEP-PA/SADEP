@@ -1529,6 +1529,8 @@ export async function runProcessesServiceTests() {
     const conflictingCommission = await context.prisma.cesadCommission.create({
       data: {
         name: 'Comissão CESAD conflitante',
+        sequence: 2,
+        year: 2020,
         status: 'ACTIVE',
         effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
       },
@@ -1636,6 +1638,8 @@ export async function runProcessesServiceTests() {
     await context.prisma.cesadCommission.create({
       data: {
         name: 'Comissão CESAD superada',
+        sequence: 3,
+        year: 2020,
         status: 'SUPERSEDED',
         effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
       },
@@ -1655,11 +1659,15 @@ export async function runProcessesServiceTests() {
       data: [
         {
           name: 'Comissão CESAD ativa concorrente A',
+          sequence: 4,
+          year: 2020,
           status: 'ACTIVE',
           effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
         },
         {
           name: 'Comissão CESAD ativa concorrente B',
+          sequence: 5,
+          year: 2020,
           status: 'ACTIVE',
           effectiveStartDate: new Date('2020-01-01T00:00:00.000Z'),
         },

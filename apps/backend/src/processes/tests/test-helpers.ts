@@ -226,20 +226,26 @@ export async function createActiveCesadCommission(
   prisma: PrismaClient,
   members: Array<{
     userId: string;
-    roleType?: 'TITULAR' | 'SUPLENTE';
+    roleType?: 'TITULAR' | 'SUPLENTE' | 'PRESIDENTE';
     startDate?: Date;
     endDate?: Date;
   }> = [],
   overrides: Partial<{
     name: string;
+    sequence: number;
+    year: number;
     effectiveStartDate: Date;
     effectiveEndDate: Date | null;
     status: 'ACTIVE' | 'INACTIVE' | 'SUPERSEDED';
   }> = {},
 ) {
+  const sequence = overrides.sequence ?? 1;
+  const year = overrides.year ?? 2020;
   const commission = await prisma.cesadCommission.create({
     data: {
       name: overrides.name ?? 'Comissao CESAD vigente para testes',
+      sequence,
+      year,
       status: overrides.status ?? 'ACTIVE',
       effectiveStartDate: overrides.effectiveStartDate ?? new Date('2020-01-01T00:00:00.000Z'),
       ...(overrides.effectiveEndDate !== undefined
