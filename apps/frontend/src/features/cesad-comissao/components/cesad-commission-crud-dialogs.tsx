@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   CesadCommissionActType,
@@ -11,6 +11,8 @@ import {
 
 import { getRequestErrorMessage } from '@/shared/api/http-error';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+
+import { getCivilYear, toUtcTimestamp } from './cesad-commission-formatters';
 
 import type { CesadCommissionAdminRecord } from '../data/cesad-commission-admin-types';
 
@@ -85,6 +87,20 @@ export function CesadCommissionFormDialog({
     initialData?.members?.map(toDraftMember) || []
   );
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setDescription(initialData?.commission?.description || '');
+    setStartDate(initialData?.commission?.effectiveStartDate?.split('T')[0] || '');
+    setEndDate(initialData?.commission?.effectiveEndDate?.split('T')[0] || '');
+    setActType(initialData?.acts?.[0]?.actType || CesadCommissionActType.CONSTITUTION);
+    setActNumber(initialData?.acts?.[0]?.number || '');
+    setPublishedAt(initialData?.acts?.[0]?.publishedAt?.split('T')[0] || '');
+    setMembers(initialData?.members?.map(toDraftMember) || []);
+    setError(null);
+    setLoading(false);
+  }, [isOpen, initialData]);
+
   const presidenteCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.PRESIDENTE).length;
   const titularesCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.TITULAR).length;
   const suplentesCount = members.filter((m) => m.roleType === CesadCommissionMemberRoleType.SUPLENTE).length;
@@ -92,20 +108,20 @@ export function CesadCommissionFormDialog({
   const isCompositionValid = presidenteCount === 1 && titularesCount >= 2 && suplentesCount >= 2;
 
   const buildPayload = (): CreateCesadCommissionRequest => {
-    const actYear = publishedAt ? new Date(publishedAt).getFullYear() : new Date().getFullYear();
+    const actYear = publishedAt ? getCivilYear(publishedAt) : new Date().getFullYear();
 
     return {
       commission: {
         name: initialData?.commission?.name ?? '',
         description,
-        effectiveStartDate: new Date(startDate).toISOString(),
-        effectiveEndDate: endDate ? new Date(endDate).toISOString() : null,
+        effectiveStartDate: toUtcTimestamp(startDate),
+        effectiveEndDate: endDate ? toUtcTimestamp(endDate) : null,
       },
       act: {
         actType,
         number: actNumber,
         year: actYear,
-        publishedAt: new Date(publishedAt).toISOString(),
+        publishedAt: toUtcTimestamp(publishedAt),
       },
       members: members.map((m) => ({
         userId: m.userId,
@@ -113,7 +129,7 @@ export function CesadCommissionFormDialog({
         registrationSnapshot: m.registrationSnapshot.trim() || null,
         bondSnapshot: m.bondSnapshot.trim() || null,
         positionSnapshot: m.positionSnapshot.trim() || null,
-        startDate: m.startDate ? new Date(m.startDate).toISOString() : new Date(startDate).toISOString(),
+        startDate: m.startDate ? toUtcTimestamp(m.startDate) : toUtcTimestamp(startDate),
       })),
     };
   };
@@ -311,6 +327,14 @@ export function CesadCommissionCloseDialog({
   const [reason, setReason] = useState('');
   const [effectiveEndDate, setEffectiveEndDate] = useState('');
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setReason('');
+    setEffectiveEndDate('');
+    setError(null);
+    setLoading(false);
+  }, [isOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -318,7 +342,7 @@ export function CesadCommissionCloseDialog({
     try {
       await onSubmit({
         reason,
-        effectiveEndDate: effectiveEndDate ? new Date(effectiveEndDate).toISOString() : undefined,
+        effectiveEndDate: effectiveEndDate ? toUtcTimestamp(effectiveEndDate) : undefined,
       });
       onClose();
     } catch (err: unknown) {
@@ -366,6 +390,15 @@ export function CesadCommissionSupersedeDialog({
   const [effectiveEndDate, setEffectiveEndDate] = useState('');
   const [successorCommissionId, setSuccessorCommissionId] = useState('');
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setReason('');
+    setEffectiveEndDate('');
+    setSuccessorCommissionId('');
+    setError(null);
+    setLoading(false);
+  }, [isOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -373,7 +406,7 @@ export function CesadCommissionSupersedeDialog({
     try {
       await onSubmit({
         reason,
-        effectiveEndDate: effectiveEndDate ? new Date(effectiveEndDate).toISOString() : undefined,
+        effectiveEndDate: effectiveEndDate ? toUtcTimestamp(effectiveEndDate) : undefined,
         successorCommissionId: successorCommissionId || undefined,
       });
       onClose();

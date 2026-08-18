@@ -85,3 +85,11 @@ export function formatCesadSnapshot(value: string | null | undefined) {
   if (!value || value.trim().length === 0) return 'Não informado';
   return value;
 }
+
+export function getCivilYear(value: string): number {
+  return Number(value.slice(0, 4));
+}
+
+export function toUtcTimestamp(value: string): string {
+  return `${value}T00:00:00.000Z`;
+}
