@@ -136,6 +136,8 @@ async function main() {
         description: 'Comissão CESAD gerada automaticamente pelo seed local para testes de desenvolvimento.',
         status: CesadCommissionStatus.ACTIVE,
         effectiveStartDate: new Date('2024-01-01T00:00:00.000Z'),
+        sequence: 1,
+        year: 2024,
       },
     });
   }
