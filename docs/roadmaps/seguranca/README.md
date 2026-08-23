@@ -17,6 +17,7 @@ A pasta nasce como recorte específico do roadmap operacional. Ela complementa, 
 
 As tarefas abaixo permanecem ativas no painel transversal e devem ser consultadas antes de qualquer ação derivada do relatório:
 
+- [`SEC-HARD-02` — próximo recorte de hardening de backend (headers, rate limit, CSRF, erros e testes)](./tasks/SEC-HARD-02-backend-hardening.md).
 - [`SEC-HARD-01` — hardening adicional de segurança HTTP, rate limit e CSRF](../cross-cutting/tasks/SEC-HARD-01-http-rate-limit-csrf.md).
 - [`SEC-LOG-PII-01` — reduzir PII e ruído em logs](../cross-cutting/tasks/SEC-LOG-PII-01-auth-logs-pii-noise.md).
 - [`BE-SEC-03` — guarda-chuva residual de autorização contextual CESAD](../backend/tasks/BE-SEC-03-cesad-contextual-authorization.md).
