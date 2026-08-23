@@ -18,9 +18,24 @@ type HttpResponseLike = {
   json(body: unknown): void;
 };
 
+export type GlobalExceptionFilterOptions = {
+  /**
+   * When enabled, error responses with status >= 500 return a generic body,
+   * never exposing internal messages or details. Full information remains
+   * available in server-side logs.
+   */
+  maskInternalErrors?: boolean;
+};
+
+const INTERNAL_ERROR_MESSAGE = 'Internal server error';
+const INTERNAL_ERROR_NAME = 'Internal Server Error';
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  constructor(private readonly logger: AppLogger) {}
+  constructor(
+    private readonly logger: AppLogger,
+    private readonly options: GlobalExceptionFilterOptions = {},
+  ) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const httpContext = host.switchToHttp();
@@ -38,25 +53,32 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             details?: Record<string, string | string[] | undefined>;
           })
         : undefined;
-    const message =
-      normalizedResponse?.message ?? (isHttpException ? exception.message : 'Internal server error');
+    const shouldMask = this.options.maskInternalErrors === true && status >= 500;
+    const resolvedMessage =
+      normalizedResponse?.message ??
+      (isHttpException ? exception.message : INTERNAL_ERROR_MESSAGE);
+    const message = shouldMask ? INTERNAL_ERROR_MESSAGE : resolvedMessage;
 
     const context = `${request.method ?? 'UNKNOWN'} ${request.url}`;
-    const flatMessage = Array.isArray(message) ? message.join(' | ') : message;
+    const flatLogMessage = Array.isArray(resolvedMessage)
+      ? resolvedMessage.join(' | ')
+      : resolvedMessage;
 
     if (status >= 500) {
-      this.logger.error(flatMessage, exception instanceof Error ? exception.stack : undefined, context);
+      this.logger.error(flatLogMessage, exception instanceof Error ? exception.stack : undefined, context);
     } else if (status === 401 || status === 403) {
-      this.logger.debug(`[${status}] ${flatMessage}`, context);
+      this.logger.debug(`[${status}] ${flatLogMessage}`, context);
     } else {
-      this.logger.warn(`[${status}] ${flatMessage}`, context);
+      this.logger.warn(`[${status}] ${flatLogMessage}`, context);
     }
 
     response.status(status).json({
       statusCode: status,
       message,
-      error: normalizedResponse?.error ?? (isHttpException ? exception.name : 'Internal Server Error'),
-      details: normalizedResponse?.details,
+      error: shouldMask
+        ? INTERNAL_ERROR_NAME
+        : (normalizedResponse?.error ?? (isHttpException ? exception.name : INTERNAL_ERROR_NAME)),
+      details: shouldMask ? undefined : normalizedResponse?.details,
       timestamp: new Date().toISOString(),
     });
   }
