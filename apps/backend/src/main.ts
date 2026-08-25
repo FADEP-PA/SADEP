@@ -17,11 +17,16 @@ async function bootstrap() {
   });
 
   const logger = app.get(AppLogger);
+  const appConfigService = app.get(AppConfigService);
+
   app.useLogger(logger);
-  app.useGlobalFilters(new GlobalExceptionFilter(logger));
+  app.useGlobalFilters(
+    new GlobalExceptionFilter(logger, {
+      maskInternalErrors: appConfigService.nodeEnv === 'production',
+    }),
+  );
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  const appConfigService = app.get(AppConfigService);
   applySecurityMiddleware(app, appConfigService);
 
   await app.listen(appConfigService.port);

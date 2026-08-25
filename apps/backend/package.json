@@ -9,6 +9,7 @@
     "start:dev": "npm run build --workspace @sadep/contracts && ts-node --transpile-only -r tsconfig-paths/register src/main.ts",
     "test": "npm run build --workspace @sadep/contracts && npm run test:integration && npm run test:unit",
     "test:integration": "npm run build --workspace @sadep/contracts && node -r ts-node/register/transpile-only -r tsconfig-paths/register src/processes/tests/run.ts",
+    "test:security-hardening": "npm run build --workspace @sadep/contracts && node -r ts-node/register/transpile-only -r tsconfig-paths/register -e \"require('./src/auth/security-hardening.endpoint.spec').runSecurityHardeningEndpointTests().catch((error) => { console.error(error); process.exit(1); })\"",
     "test:unit": "npm run build --workspace @sadep/contracts && jest --config jest.config.js --runInBand",
     "test:runner": "npm run test:integration",
     "test:jest": "npm run test:unit",

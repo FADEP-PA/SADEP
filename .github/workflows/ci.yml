@@ -45,10 +45,25 @@ jobs:
   test:
     name: Tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       NODE_ENV: test
       PORT: '3000'
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      SADEP_TEST_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
       FRONTEND_ORIGIN: http://localhost:5000
       JWT_SECRET: ci-jwt-secret-placeholder-min-32-chars-ok
       REFRESH_TOKEN_HMAC_SECRET: ci-refresh-secret-placeholder-32-chars
@@ -76,6 +91,9 @@ jobs:
 
       - name: Backend unit tests
         run: npm run test:unit --workspace @sadep/backend
+
+      - name: Backend security hardening integration tests
+        run: npm run test:security-hardening --workspace @sadep/backend
 
       - name: Frontend tests
         run: npm run test:run --workspace @sadep/frontend

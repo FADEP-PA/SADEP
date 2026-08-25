@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -42,7 +42,6 @@ export type TestContext = {
 };
 
 const POSTGRES_URL_PATTERN = /^postgres(ql)?:\/\//;
-const DEFAULT_ADMIN_DATABASE_URL = 'postgresql://sadep:sadep_local_dev@localhost:5432/sadep';
 
 let cachedAdminDatabaseUrl: string | null = null;
 
@@ -51,25 +50,19 @@ function resolveAdminDatabaseUrl(): string {
     return cachedAdminDatabaseUrl;
   }
 
-  const backendRoot = path.resolve(__dirname, '../../..');
+  const configuredUrl = process.env.SADEP_TEST_DATABASE_URL?.trim();
 
-  const fromEnvironment = process.env.SADEP_TEST_DATABASE_URL?.trim();
-  if (fromEnvironment && POSTGRES_URL_PATTERN.test(fromEnvironment)) {
-    cachedAdminDatabaseUrl = fromEnvironment;
-    return cachedAdminDatabaseUrl;
+  if (!configuredUrl) {
+    throw new Error(
+      'SADEP_TEST_DATABASE_URL is required for integration tests that create and drop isolated databases.',
+    );
   }
 
-  const envFilePath = path.join(backendRoot, '.env');
-  if (existsSync(envFilePath)) {
-    const match = readFileSync(envFilePath, 'utf-8').match(/^DATABASE_URL\s*=\s*"?([^"\r\n]+)"?\s*$/m);
-    const candidate = match?.[1]?.trim();
-    if (candidate && POSTGRES_URL_PATTERN.test(candidate)) {
-      cachedAdminDatabaseUrl = candidate;
-      return cachedAdminDatabaseUrl;
-    }
+  if (!POSTGRES_URL_PATTERN.test(configuredUrl)) {
+    throw new Error('SADEP_TEST_DATABASE_URL must be a valid PostgreSQL connection URL.');
   }
 
-  cachedAdminDatabaseUrl = DEFAULT_ADMIN_DATABASE_URL;
+  cachedAdminDatabaseUrl = configuredUrl;
   return cachedAdminDatabaseUrl;
 }
 
