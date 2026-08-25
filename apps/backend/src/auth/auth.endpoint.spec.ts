@@ -6,6 +6,7 @@ import { UserRole } from '@sadep/contracts';
 import { AppModule } from '../app/app.module';
 import { GlobalExceptionFilter } from '../common/filters/global-exception.filter';
 import { AppLogger } from '../common/logging/app-logger.service';
+import { AppConfigService } from '../config/app-config.service';
 import {
   createTestContext,
   createUser,
@@ -24,6 +25,7 @@ export async function runAuthEndpointTests() {
     const address = app.getHttpServer().address();
     const port = typeof address === 'string' ? 80 : address.port;
     const baseUrl = `http://127.0.0.1:${port}`;
+    const frontendOrigin = app.get(AppConfigService).frontendOrigin;
 
     const adminUser = await createUser(context.prisma, UserRole.ADMIN, 'auth-admin@test.local');
     const inactiveUser = await createUser(
@@ -106,6 +108,7 @@ export async function runAuthEndpointTests() {
       method: 'POST',
       headers: {
         cookie: adminLoginPayload.refreshCookie,
+        origin: frontendOrigin,
       },
     });
 
@@ -149,6 +152,7 @@ export async function runAuthEndpointTests() {
       method: 'POST',
       headers: {
         cookie: adminLoginPayload.refreshCookie,
+        origin: frontendOrigin,
       },
     });
 
@@ -165,6 +169,9 @@ export async function runAuthEndpointTests() {
 
     const missingRefreshHttpResponse = await fetch(`${baseUrl}/auth/refresh`, {
       method: 'POST',
+      headers: {
+        origin: frontendOrigin,
+      },
     });
 
     assert.equal(missingRefreshHttpResponse.status, 401);
@@ -189,6 +196,7 @@ export async function runAuthEndpointTests() {
       method: 'POST',
       headers: {
         cookie: inactiveLoginPayload.refreshCookie,
+        origin: frontendOrigin,
       },
     });
 
@@ -230,6 +238,7 @@ export async function runAuthEndpointTests() {
       method: 'POST',
       headers: {
         cookie: roleChangedLoginPayload.refreshCookie,
+        origin: frontendOrigin,
       },
     });
 
@@ -261,6 +270,7 @@ export async function runAuthEndpointTests() {
       method: 'POST',
       headers: {
         cookie: expiredLoginPayload.refreshCookie,
+        origin: frontendOrigin,
       },
     });
 
@@ -281,6 +291,7 @@ export async function runAuthEndpointTests() {
       method: 'POST',
       headers: {
         cookie: revokedLoginPayload.refreshCookie,
+        origin: frontendOrigin,
       },
     });
 
@@ -293,6 +304,7 @@ export async function runAuthEndpointTests() {
       method: 'POST',
       headers: {
         cookie: logoutLoginPayload.refreshCookie,
+        origin: frontendOrigin,
       },
     });
 
@@ -306,12 +318,15 @@ export async function runAuthEndpointTests() {
     assert.equal(logoutSession.revokedReason, 'LOGOUT');
     assert.ok(logoutSession.revokedAt);
 
-    const idempotentLogoutHttpResponse = await fetch(`${baseUrl}/auth/logout`, {
+    const logoutWithoutOriginResponse = await fetch(`${baseUrl}/auth/logout`, {
       method: 'POST',
     });
 
-    assert.equal(idempotentLogoutHttpResponse.status, 200);
-    assert.deepEqual(await idempotentLogoutHttpResponse.json(), { ok: true });
+    assert.equal(logoutWithoutOriginResponse.status, 403);
+    const logoutWithoutOriginPayload = (await logoutWithoutOriginResponse.json()) as {
+      message: string;
+    };
+    assert.equal(logoutWithoutOriginPayload.message, 'Invalid request origin');
   } finally {
     await app.close();
     await disposeTestContext(context);

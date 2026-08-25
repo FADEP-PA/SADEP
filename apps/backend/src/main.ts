@@ -1,52 +1,33 @@
 import 'reflect-metadata';
 
-import helmet from 'helmet';
-import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 
+import { applySecurityMiddleware } from './app/security-bootstrap';
 import { AppModule } from './app/app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { AppLogger } from './common/logging/app-logger.service';
 import { AppConfigService } from './config/app-config.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
+    bodyParser: false,
   });
 
   const logger = app.get(AppLogger);
-  app.useLogger(logger);
-  app.useGlobalFilters(new GlobalExceptionFilter(logger));
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-
   const appConfigService = app.get(AppConfigService);
-  const isProduction = appConfigService.nodeEnv === 'production';
 
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
-          styleSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:'],
-          connectSrc: ["'self'"],
-          fontSrc: ["'self'"],
-          objectSrc: ["'none'"],
-          frameSrc: ["'none'"],
-          ...(isProduction && { upgradeInsecureRequests: [] }),
-        },
-      },
-      crossOriginEmbedderPolicy: false,
+  app.useLogger(logger);
+  app.useGlobalFilters(
+    new GlobalExceptionFilter(logger, {
+      maskInternalErrors: appConfigService.nodeEnv === 'production',
     }),
   );
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  app.enableCors({
-    origin: appConfigService.frontendOrigin,
-    credentials: true,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
+  applySecurityMiddleware(app, appConfigService);
 
   await app.listen(appConfigService.port);
 

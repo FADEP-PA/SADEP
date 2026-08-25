@@ -35,6 +35,7 @@ type AuthHttpRequest = {
     cookie?: string | string[];
     'user-agent'?: string | string[];
     origin?: string | string[];
+    referer?: string | string[];
   };
   ip?: string;
   socket?: {
@@ -162,11 +163,32 @@ export class AuthController {
   }
 
   private validateCsrfOrigin(request: AuthHttpRequest): void {
-    const originHeader = request.headers['origin'];
-    const origin = Array.isArray(originHeader) ? originHeader[0] : originHeader;
+    const originHeader = extractHeaderValue(request.headers.origin);
+    const refererOrigin = extractOriginFromReferer(extractHeaderValue(request.headers.referer));
+    const requestOrigin = originHeader ?? refererOrigin;
 
-    if (origin && origin !== this.appConfigService.frontendOrigin) {
+    if (!requestOrigin || requestOrigin !== this.appConfigService.frontendOrigin) {
       throw new ForbiddenException('Invalid request origin');
     }
+  }
+}
+
+function extractHeaderValue(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
+}
+
+function extractOriginFromReferer(referer: string | undefined): string | undefined {
+  if (!referer) {
+    return undefined;
+  }
+
+  try {
+    return new URL(referer).origin;
+  } catch {
+    return undefined;
   }
 }

@@ -6,6 +6,7 @@ process.env.REFRESH_TOKEN_HMAC_SECRET = 'test-refresh-secret-with-at-least-32-ch
 async function main() {
   const [
     { runAuthEndpointTests },
+    { runSecurityHardeningEndpointTests },
     { runCesadCommissionActsEndpointTests },
     { runCesadCommissionActsServiceTests },
     { runCesadCommissionMembersEndpointTests },
@@ -27,6 +28,7 @@ async function main() {
     { runSupervisorEvaluationsServiceTests },
   ] = await Promise.all([
     import('../../auth/auth.endpoint.spec'),
+    import('../../auth/security-hardening.endpoint.spec'),
     import('../../cesad/tests/cesad-commission-acts.endpoint.spec'),
     import('../../cesad/tests/cesad-commission-acts.service.spec'),
     import('../../cesad/tests/cesad-commission-members.endpoint.spec'),
@@ -50,6 +52,7 @@ async function main() {
 
   runWorkflowCatalogTests();
   await runAuthEndpointTests();
+  await runSecurityHardeningEndpointTests();
   await runProcessesServiceTests();
   await runCesadCommissionActsServiceTests();
   await runCesadCommissionActsEndpointTests();

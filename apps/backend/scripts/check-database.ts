@@ -5,7 +5,11 @@ const prisma = new PrismaClient();
 const EXPECTED_SEED_EMAILS = [
   'admin@sadep.local',
   'supervisor@sadep.local',
-  'cesad@sadep.local',
+  'cesad1@sadep.local',
+  'cesad2@sadep.local',
+  'cesad3@sadep.local',
+  'cesad4@sadep.local',
+  'cesad5@sadep.local',
   'assistant@sadep.local',
   'authority@sadep.local',
   'server@sadep.local',

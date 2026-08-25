@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -19,6 +19,8 @@ import { ProcessDocumentsService } from '../../application/documents/process-doc
 import { CesadContextAuthorizationService } from '../../cesad/authorization/cesad-context-authorization.service';
 import { CesadStageOpinionsService } from '../cesad-stage-opinions/cesad-stage-opinions.service';
 import { CesadStageReadService } from '../cesad-stage-read.service';
+import { ProcessStageService } from '../process-stage.service';
+import { StageClosureGuardService } from '../stage-closure-guard.service';
 import {
   CASE_2_PROCESS_STAGE_SEQUENCES,
   getCase2ProcessStageCode,
@@ -36,23 +38,72 @@ export type TestContext = {
   supervisorEvaluationsService: SupervisorEvaluationsService;
   selfEvaluationsService: SelfEvaluationsService;
   cesadContextAuthorizationService: CesadContextAuthorizationService;
-  databaseFile: string;
+  databaseName: string;
 };
+
+const POSTGRES_URL_PATTERN = /^postgres(ql)?:\/\//;
+
+let cachedAdminDatabaseUrl: string | null = null;
+
+function resolveAdminDatabaseUrl(): string {
+  if (cachedAdminDatabaseUrl) {
+    return cachedAdminDatabaseUrl;
+  }
+
+  const configuredUrl = process.env.SADEP_TEST_DATABASE_URL?.trim();
+
+  if (!configuredUrl) {
+    throw new Error(
+      'SADEP_TEST_DATABASE_URL is required for integration tests that create and drop isolated databases.',
+    );
+  }
+
+  if (!POSTGRES_URL_PATTERN.test(configuredUrl)) {
+    throw new Error('SADEP_TEST_DATABASE_URL must be a valid PostgreSQL connection URL.');
+  }
+
+  cachedAdminDatabaseUrl = configuredUrl;
+  return cachedAdminDatabaseUrl;
+}
+
+function executeRawSql(adminDatabaseUrl: string, sql: string): void {
+  execFileSync(
+    process.execPath,
+    [
+      require.resolve('prisma/build/index.js'),
+      'db',
+      'execute',
+      '--url',
+      adminDatabaseUrl,
+      '--stdin',
+    ],
+    { cwd: path.resolve(__dirname, '../../..'), env: process.env, input: sql },
+  );
+}
+
+function buildIsolatedDatabaseName(name: string): string {
+  return `sadep_test_${name.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
+}
 
 export async function createTestContext(databaseName: string): Promise<TestContext> {
   const backendRoot = path.resolve(__dirname, '../../..');
-  const databaseFile = path.join(backendRoot, 'prisma', `${databaseName}.sqlite`);
-  const databaseUrl = `file:${databaseFile.replace(/\\/g, '/')}`;
-
-  if (existsSync(databaseFile)) {
-    rmSync(databaseFile);
-  }
+  const isolatedDatabaseName = buildIsolatedDatabaseName(databaseName);
+  const adminDatabaseUrl = resolveAdminDatabaseUrl();
 
   process.env.NODE_ENV = 'test';
   process.env.PORT = '0';
   process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters';
   process.env.REFRESH_TOKEN_HMAC_SECRET = 'test-refresh-secret-with-at-least-32-characters';
-  process.env.DATABASE_URL = databaseUrl;
+
+  executeRawSql(
+    adminDatabaseUrl,
+    `DROP DATABASE IF EXISTS "${isolatedDatabaseName}" WITH (FORCE);`,
+  );
+  executeRawSql(adminDatabaseUrl, `CREATE DATABASE "${isolatedDatabaseName}";`);
+
+  const adminUrl = new URL(adminDatabaseUrl);
+  adminUrl.pathname = `/${isolatedDatabaseName}`;
+  process.env.DATABASE_URL = adminUrl.toString();
 
   const schemaScript = execFileSync(
     process.execPath,
@@ -85,11 +136,12 @@ export async function createTestContext(databaseName: string): Promise<TestConte
   await prisma.$connect();
 
   const cesadContextAuthorizationService = new CesadContextAuthorizationService(prisma as never);
+  const processStageService = new ProcessStageService(prisma as never);
   const processesService = new ProcessesService(
     prisma as never,
     cesadContextAuthorizationService,
-    {} as never,
-    {} as never,
+    processStageService,
+    new StageClosureGuardService(),
   );
   const processDocumentsService = new ProcessDocumentsService(
     prisma as never,
@@ -125,16 +177,17 @@ export async function createTestContext(databaseName: string): Promise<TestConte
       processDocumentsService,
     ),
     selfEvaluationsService,
-    databaseFile,
+    databaseName: isolatedDatabaseName,
   };
 }
 
 export async function disposeTestContext(context: TestContext): Promise<void> {
   await context.prisma.$disconnect();
 
-  if (existsSync(context.databaseFile)) {
-    rmSync(context.databaseFile);
-  }
+  executeRawSql(
+    resolveAdminDatabaseUrl(),
+    `DROP DATABASE IF EXISTS "${context.databaseName}" WITH (FORCE);`,
+  );
 }
 
 export function applyCesadCommissionMemberDatabaseConstraints(): void {
@@ -222,6 +275,8 @@ export async function createUser(
   });
 }
 
+let cesadCommissionNameCounter = 0;
+
 export async function createActiveCesadCommission(
   prisma: PrismaClient,
   members: Array<{
@@ -243,7 +298,9 @@ export async function createActiveCesadCommission(
   const year = overrides.year ?? 2020;
   const commission = await prisma.cesadCommission.create({
     data: {
-      name: overrides.name ?? 'Comissao CESAD vigente para testes',
+      name:
+        overrides.name ??
+        `Comissao CESAD vigente para testes ${++cesadCommissionNameCounter}`,
       sequence,
       year,
       status: overrides.status ?? 'ACTIVE',
