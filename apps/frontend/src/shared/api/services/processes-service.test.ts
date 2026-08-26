@@ -138,6 +138,18 @@ describe('processes-service', () => {
       expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
       expect(result).toMatchObject({ id: 'op-1' });
     });
+
+    it('lanca HttpError quando API retorna 403', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(403, { error: 'Forbidden' }));
+
+      await expect(getCesadStageOpinion(PROCESS_ID, 2)).rejects.toThrow();
+    });
+
+    it('lanca HttpError quando API retorna 404', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(404, { error: 'Not Found' }));
+
+      await expect(getCesadStageOpinion(PROCESS_ID, 2)).rejects.toThrow();
+    });
   });
 
   describe('saveCesadStageOpinionDraft', () => {
@@ -154,6 +166,22 @@ describe('processes-service', () => {
       expect(init.body).toBe(JSON.stringify(body));
       expect(result).toMatchObject({ id: 'op-2', status: 'DRAFT' });
     });
+
+    it('lanca HttpError quando API retorna 422 (validacao)', async () => {
+      const body = { reportText: '', conclusion: '' };
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(422, { error: 'Validation', details: { reportText: 'obrigatorio' } }),
+      );
+
+      await expect(saveCesadStageOpinionDraft(PROCESS_ID, 2, body)).rejects.toThrow();
+    });
+
+    it('lanca HttpError quando API retorna 409 (conflito)', async () => {
+      const body = { reportText: 'Rascunho', conclusion: 'Favoravel' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(409, { error: 'Conflict' }));
+
+      await expect(saveCesadStageOpinionDraft(PROCESS_ID, 2, body)).rejects.toThrow();
+    });
   });
 
   describe('completeCesadStageOpinion', () => {
@@ -169,6 +197,20 @@ describe('processes-service', () => {
       expect(init.method).toBe('POST');
       expect(init.body).toBe(JSON.stringify(body));
       expect(result).toMatchObject({ id: 'op-3', status: 'COMPLETED' });
+    });
+
+    it('lanca HttpError quando API retorna 403 (acao bloqueada)', async () => {
+      const body = { reportText: 'Relatorio final', conclusion: 'Desfavoravel' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(403, { error: 'Acao bloqueada' }));
+
+      await expect(completeCesadStageOpinion(PROCESS_ID, 3, body)).rejects.toThrow();
+    });
+
+    it('lanca HttpError quando API retorna 409', async () => {
+      const body = { reportText: 'Relatorio final', conclusion: 'Desfavoravel' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(409, { error: 'Conflict' }));
+
+      await expect(completeCesadStageOpinion(PROCESS_ID, 3, body)).rejects.toThrow();
     });
   });
 
@@ -192,6 +234,12 @@ describe('processes-service', () => {
       expect(init.method).toBe('POST');
       expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
       expect(result).toMatchObject({ processId: PROCESS_ID, allExpectedSignersSigned: false });
+    });
+
+    it('lanca HttpError quando API retorna 409 (parecer ja preparado)', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(409, { error: 'Conflict' }));
+
+      await expect(prepareCesadStageOpinionSignatures(PROCESS_ID, 2)).rejects.toThrow();
     });
   });
 
@@ -239,6 +287,12 @@ describe('processes-service', () => {
       expect(init.method).toBe('POST');
       expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
       expect(result).toMatchObject({ allExpectedSignersSigned: true });
+    });
+
+    it('lanca HttpError quando API retorna 409 (assinatura ja realizada)', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(409, { error: 'Assinatura ja realizada' }));
+
+      await expect(signCesadStageOpinion(PROCESS_ID, 2)).rejects.toThrow();
     });
   });
 });
