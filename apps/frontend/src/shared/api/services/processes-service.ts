@@ -9,6 +9,7 @@ import type {
 import {
   CesadStageOpinionInput,
   CesadStageOpinionRef,
+  CesadStageOpinionSignatureStatusRef,
   CesadStageReadSnapshotRef,
   InternServerWorkspaceSnapshotRef,
   ProcessStatus,
@@ -168,6 +169,33 @@ export async function completeCesadStageOpinion(
   return httpRequest<CesadStageOpinionRef>(
     `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/complete`,
     { ...AUTHENTICATED_REQUEST, method: 'POST', body },
+  );
+}
+
+export async function prepareCesadStageOpinionSignatures(
+  processId: string,
+  stageSequence: number,
+) {
+  return httpRequest<CesadStageOpinionSignatureStatusRef>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/signatures/prepare`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST' },
+  );
+}
+
+export async function getCesadStageOpinionSignatureStatus(
+  processId: string,
+  stageSequence: number,
+) {
+  return httpRequest<CesadStageOpinionSignatureStatusRef>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/signatures`,
+    { ...AUTHENTICATED_REQUEST, method: 'GET' },
+  );
+}
+
+export async function signCesadStageOpinion(processId: string, stageSequence: number) {
+  return httpRequest<CesadStageOpinionSignatureStatusRef>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/sign`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST' },
   );
 }
 

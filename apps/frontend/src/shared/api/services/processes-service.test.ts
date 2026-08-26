@@ -5,11 +5,14 @@ import { ProcessAction } from '@sadep/contracts';
 import {
   completeCesadStageOpinion,
   getCesadStageOpinion,
+  getCesadStageOpinionSignatureStatus,
   getInternWorkspaceSnapshot,
   getProcessList,
   getWorkflow,
   getWorkflowHistory,
+  prepareCesadStageOpinionSignatures,
   saveCesadStageOpinionDraft,
+  signCesadStageOpinion,
   transitionWorkflow,
 } from './processes-service';
 
@@ -166,6 +169,76 @@ describe('processes-service', () => {
       expect(init.method).toBe('POST');
       expect(init.body).toBe(JSON.stringify(body));
       expect(result).toMatchObject({ id: 'op-3', status: 'COMPLETED' });
+    });
+  });
+
+  describe('prepareCesadStageOpinionSignatures', () => {
+    it('faz POST /processes/:id/stages/:seq/cesad-stage-opinion/signatures/prepare com Authorization Bearer', async () => {
+      const payload = {
+        processId: PROCESS_ID,
+        processStageId: 'ps-1',
+        stageSequence: 2,
+        stageCode: 'ETAPA_1',
+        document: { documentId: 'doc-1', documentStatus: 'READY_FOR_SIGNATURE' },
+        expectedSigners: [],
+        allExpectedSignersSigned: false,
+      };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await prepareCesadStageOpinionSignatures(PROCESS_ID, 2);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/stages/2/cesad-stage-opinion/signatures/prepare`);
+      expect(init.method).toBe('POST');
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result).toMatchObject({ processId: PROCESS_ID, allExpectedSignersSigned: false });
+    });
+  });
+
+  describe('getCesadStageOpinionSignatureStatus', () => {
+    it('faz GET /processes/:id/stages/:seq/cesad-stage-opinion/signatures com Authorization Bearer', async () => {
+      const payload = {
+        processId: PROCESS_ID,
+        processStageId: 'ps-1',
+        stageSequence: 2,
+        stageCode: 'ETAPA_1',
+        document: { documentId: 'doc-1', documentStatus: 'READY_FOR_SIGNATURE' },
+        expectedSigners: [{ expectedSignerId: 'es-1', signatureStatus: 'PENDING' }],
+        allExpectedSignersSigned: false,
+      };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await getCesadStageOpinionSignatureStatus(PROCESS_ID, 2);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/stages/2/cesad-stage-opinion/signatures`);
+      expect(init.method).toBe('GET');
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result).toMatchObject({ allExpectedSignersSigned: false });
+      expect(result.expectedSigners).toHaveLength(1);
+    });
+  });
+
+  describe('signCesadStageOpinion', () => {
+    it('faz POST /processes/:id/stages/:seq/cesad-stage-opinion/sign com Authorization Bearer', async () => {
+      const payload = {
+        processId: PROCESS_ID,
+        processStageId: 'ps-1',
+        stageSequence: 2,
+        stageCode: 'ETAPA_1',
+        document: { documentId: 'doc-1', documentStatus: 'SIGNED' },
+        expectedSigners: [{ expectedSignerId: 'es-1', signatureStatus: 'COMPLETED', signedAt: '2025-01-01T00:00:00Z' }],
+        allExpectedSignersSigned: true,
+      };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await signCesadStageOpinion(PROCESS_ID, 2);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/stages/2/cesad-stage-opinion/sign`);
+      expect(init.method).toBe('POST');
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result).toMatchObject({ allExpectedSignersSigned: true });
     });
   });
 });
