@@ -4,23 +4,52 @@ Este arquivo resume itens frontend ja concluidos ou resolvidos. O antigo roadmap
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
-> Ultima atualizacao: 2026-07-03 — sincronizacao pos entrega/estabilizacao da administracao de Comissao CESAD.
+> Ultima atualizacao: 2026-08-26 — sincronizacao da administracao CESAD apos CRUD funcional, Presidente/snapshots e alinhamento da API.
 
 ---
 
 ## FE-CESAD-COMISSAO-01 — Interface administrativa da Comissao CESAD
 
-- **Status documental:** concluida no recorte de leitura real / aprovada com lacunas futuras.
+- **Status documental:** concluida no recorte inicial de leitura real; evoluida posteriormente pelo CRUD funcional.
 - **Issues relacionadas:** `#64` e `#66`.
 - **PRs relacionados:** `#67`, `#75`, `#76` e `#78`.
 - **Task file de referencia:** [`FE-CESAD-COMISSAO-01-admin-ui.md`](./tasks/FE-CESAD-COMISSAO-01-admin-ui.md).
 - A rota `/cesad-comissao/admin` foi criada como area administrativa para `ADMIN` e `HOMOLOGATION_AUTHORITY`.
-- A tela passou a consumir dados reais de comissoes CESAD por meio do service frontend de comissoes.
-- O backend foi ajustado para permitir leitura administrativa por `ADMIN` e `HOMOLOGATION_AUTHORITY`, evitando divergencia entre menu/tela e API.
-- A interface exibe comissao atual, lista de comissoes, detalhes de ato designativo e composicao de titulares/suplentes quando retornados pela API.
-- O recorte entregue e leitura real + estrutura visual para evolucao administrativa.
-- Acoes de criacao, edicao, encerramento e supersessao permanecem como evolucao futura e nao devem ser tratadas como concluidas por esta task.
-- **Lacunas futuras relacionadas:** `FE-CESAD-COMISSAO-CRUD-02`, `CONTRACT-CESAD-COMMISSION-WRITE-01` e `BE-CESAD-COMISSAO-CLOSE-DTO-01`.
+- A primeira fatia passou a consumir leitura real de comissoes CESAD e estabeleceu lista, card de comissao atual, ato e composicao.
+- Este item permanece como registro historico da primeira fatia; as acoes administrativas que eram futuras aqui foram entregues posteriormente em `FE-CESAD-COMISSAO-CRUD-02`.
+
+## CONTRACT-CESAD-COMMISSION-WRITE-01 — Payloads compartilhados de escrita
+
+- **Status documental:** concluida no recorte planejado.
+- **Issue relacionada:** `#83`.
+- **PR relacionado:** `#87`.
+- Exportou pelo `@sadep/contracts` os payloads de create/update/close/supersede e refs de ato/membro.
+- Removeu a necessidade de manter tipos locais equivalentes no service frontend.
+- **Ressalva posterior:** a evolucao do backend tornou `publishedAt` a fonte de verdade obrigatoria e `year` derivado; o write contract ainda precisa de alinhamento de tipagem porque hoje declara `year` obrigatorio e `publishedAt` opcional. Isso nao reabre a #83 como feature ausente; e uma divida de contrato posterior.
+
+## FE-CESAD-COMISSAO-CRUD-02 — CRUD administrativo funcional
+
+- **Status documental:** concluida / integrada / alinhada ao dominio atual.
+- **Issue principal:** `#85`.
+- **PRs relacionados:** `#88` e ajuste posterior `#98`.
+- Conectou criacao, edicao, encerramento e supersessao a API real.
+- Preservou as restricoes e bloqueios definidos no backend em vez de recriar regra juridica no cliente.
+- Encerramento e supersessao consomem payload formal com motivo administrativo.
+- A composicao visual corresponde a exatamente `1 PRESIDENTE` e, no minimo, `2 TITULARES + 2 SUPLENTES`.
+- Exibe `registrationSnapshot`, `bondSnapshot` e `positionSnapshot` quando retornados pela API.
+- O nome da comissao e retornado/gerado pelo backend e tratado como somente leitura.
+- O formulario usa data de publicacao como referencia temporal e evita deslocamento de datas civis.
+- Removeu IDs e dados demonstrativos do fluxo administrativo funcional.
+- Incluiu tratamento institucional de falhas e testes de regressao no recorte frontend.
+- **Estado correto:** o CRUD administrativo esta funcional. O produto CESAD permanece parcialmente integrado porque parecer de etapa, parecer final e outras jornadas processuais ainda possuem fatias frontend proprias.
+
+## Politica temporal registrada para o frontend
+
+- `publishedAt` e a entrada temporal de negocio para o ato CESAD.
+- O backend deriva `year` a partir de `publishedAt` e persiste o valor materializado.
+- O frontend nao deve apresentar `year` nem `commission.name` como entradas independentes editaveis.
+- Enquanto o `@sadep/contracts` continuar com a assinatura antiga, o frontend pode enviar `year` apenas por compatibilidade de tipo; esse valor nao deve ser tratado como fonte de verdade.
+- A correcao definitiva do write contract deve ocorrer em task de contracts propria.
 
 ## FE-DOC-AUTH-README-01 — Atualizar documentacao de autenticacao frontend
 
@@ -67,7 +96,7 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 - **Status documental:** concluida no recorte frontend.
 - O painel ativo frontend passou a separar pendencias reais de itens ja resolvidos.
 - `FE-CHEFIA-01` deixou de aparecer como item ativo; a continuidade correta permanece em `FE-CHEFIA-02`.
-- `FE-PROCESS-LIST-01`, `FE-CHEFIA-02` e `FE-CESAD-01` continuam pendentes, mas nao devem ser implementadas isoladamente sem contrato correspondente.
+- A sincronizacao da #96 removeu do backlog CESAD os itens administrativos que ja foram entregues e passou a apontar #101/#103 como fatias funcionais atuais.
 
 ## FE-A11Y-01 — Acessibilidade basica do shell autenticado
 
@@ -143,8 +172,8 @@ Esta separacao nao altera status de tasks, nao move documentos legados e nao arq
 
 - **Status documental:** concluida no recorte frontend.
 - `/cesad-comissao` recebeu shell institucional para o futuro parecer CESAD por etapa.
-- O componente `ReadOnlyOpinionShell` permanece sem emissao, assinatura, homologacao ou persistencia.
 - A consulta real de leitura consolidada da etapa foi preservada.
+- A continuidade funcional nao deve reabrir FT-16: esta em `#103 — FE-CESAD-STAGE-OPINION-01`.
 
 ## FT-26 — Limpeza de scaffolds e placeholders legados
 
