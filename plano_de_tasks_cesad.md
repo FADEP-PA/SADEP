@@ -1,51 +1,135 @@
-# Plano de Ação: Alterações na Comissão CESAD
+# Plano de tasks CESAD — historico e estado consolidado
 
-Para garantirmos estabilidade e seguirmos a arquitetura do projeto (como ditam os princípios do SADEP), o ideal é quebrarmos essas mudanças em **várias tasks menores e sequenciais**. Fazer tudo em uma única task (ou Pull Request) tornaria o código difícil de revisar e aumentaria o risco de quebrar o sistema.
+> Estado consolidado em 2026-08-26 para a issue #96.
 
-Abaixo está a sugestão de como podemos dividir o trabalho em **4 tasks principais**:
+Este documento deixou de ser um plano pre-implementacao. Ele registra o que foi decidido, implementado e o que permanece como continuidade real da frente de Comissao CESAD.
 
-## Task 1: Banco de Dados e Contratos (Fundação)
+## 1. Resultado das frentes planejadas
 
-Esta é a base para o restante do trabalho. Vamos alterar a infraestrutura de dados e as definições de tipagem.
+| Frente original | Entrega consolidada | Evidencia principal | Status |
+|---|---|---|---|
+| Fundacao de banco e contracts | Papel `PRESIDENTE`, snapshots funcionais e tipos de escrita compartilhados | PRs #87 e #94 | Concluida |
+| Backend de dominio | Composicao formal, snapshots, nome automatico e signatarios com presidente | PR #94 | Concluida |
+| Backend/API | `publishedAt` obrigatorio, ano derivado, campos de presidente/snapshots expostos | PR #95 e evolucao posterior no PR #98 | Concluida |
+| DTO de encerramento/supersessao | `reason`, `effectiveEndDate` e `successorCommissionId` quando aplicavel | PR #86 | Concluida |
+| Frontend administrativo | CRUD real de create/update/close/supersede | PR #88 | Concluida |
+| Alinhamento final da UI administrativa | Presidente/Titular/Suplente, snapshots, nome somente leitura, datas civis e remocao de mocks/IDs funcionais | PR #98 | Concluida |
 
-- **Prisma Schema (`schema.prisma`):**
-  - Adicionar a opção `PRESIDENTE` no enum `CesadCommissionMemberRoleType`.
-  - Adicionar os campos `registration` (matrícula), `bond` (vínculo) e `position` (cargo) na tabela `User` (ou criar os campos de snapshot na tabela `CesadCommissionMember` para garantir a segurança jurídica em caso de mudança de cargo no futuro).
-  - Remover o campo `year` isolado de `CesadCommissionAct` e tornar `publishedAt` obrigatório (ou usar uma lógica de extração temporal).
-- **Gerar Migration:** Rodar os comandos para criar a migration no banco de dados.
-- **Contratos (`packages/contracts`):**
-  - Atualizar as tipagens dos DTOs (`CesadCommissionWrite`, `CesadCommissionMember`, `CesadCommissionAct`, etc.) para refletirem as novas propriedades.
+Os PRs funcionais relevantes no intervalo historico citado pela #96 sao #86, #87, #88, #89, #94 e #95. Os numeros #90 a #93 correspondem a issues/tasks e nao a PRs nesse repositorio.
 
-## Task 2: Backend (Domínio e Serviços)
+## 2. Decisoes consolidadas
 
-Aqui vamos implementar a lógica de negócio seguindo a camada de aplicação/domínio.
+### 2.1 Composicao formal
 
-- **Geração Automática do Nome:** Modificar o serviço de criação da comissão (`cesad-commissions.service.ts`) para gerar o `name` automaticamente no formato `cesad-nº-ano`, extraindo o ano da data de publicação.
-- **Atualização das Entidades:** Mapear as novas propriedades de matrícula, vínculo, cargo e função nas entidades de domínio (`CesadCommissionMember.entity.ts`, etc.).
-- **Regras de Negócio e Auditoria:** Garantir que as validações continuem funcionando e que os eventos de auditoria salvem os novos estados corretamente.
-- **Testes Unitários:** Atualizar os testes dos serviços impactados.
+A regra vigente e:
 
-## Task 3: Backend (Endpoints da API)
+```txt
+1 PRESIDENTE + no minimo 2 TITULARES + 2 SUPLENTES
+```
 
-Esta task expõe as novas lógicas para o frontend consumir.
+- deve existir exatamente um presidente ativo por vigencia;
+- `PRESIDENTE` integra a composicao efetiva e participa da derivacao de signatarios quando a regra usa membros efetivos;
+- `COMMISSION_ASSISTANT` continua fora da composicao formal.
 
-- **Controllers:** Atualizar os endpoints de `cesad-commission-acts` e `cesad-commission-members` para aceitarem os novos campos e removerem campos obsoletos (como o `year` no ato).
-- **Validações:** Atualizar as classes de DTOs do NestJS (`create-cesad-commission.dto.ts`, etc.) e os decorators de validação (ex: `@IsString()`, `@IsDate()`).
+### 2.2 Snapshots funcionais
 
-## Task 4: Frontend (Interface do Usuário)
+A decisao implementada foi preservar os dados funcionais na composicao da comissao, e nao depender apenas do cadastro mutavel do usuario:
 
-Por fim, atualizamos a interface visual para refletir todas as mudanças consumindo os novos endpoints.
+- `registrationSnapshot`;
+- `bondSnapshot`;
+- `positionSnapshot`.
 
-- **Formulário de Comissão/Ato:** Remover o campo "Ano", substituindo-o pelo uso da "Data da Publicação" (`cesad-commission-act-form-scaffold.tsx`).
-- **Tabela de Membros:** Atualizar o arquivo `cesad-commission-members-table.tsx` para renderizar as colunas: Nome, Matrícula, Vínculo, Cargo e Função.
-- **Formulário de Composição:** Adicionar as novas opções de seleção (dropdown contendo Titular, Presidente e Suplente).
-- **Visualização do Nome:** Ajustar a exibição do nome da comissão para consumir o valor gerado pelo backend.
+Isso preserva o contexto historico de matricula, vinculo e cargo usado no ato/composicao.
 
----
+### 2.3 Nome e sequencia da comissao
 
-### Por que várias tasks?
+O nome nao e entrada de negocio editavel. O backend gera o identificador usando sequencia anual e ano derivado da publicacao:
 
-- **Segurança Jurídica:** O sistema é fortemente baseado em auditoria e máquina de estados. Mexer no backend em pedaços isolados garante que as regras vitais do SADEP não sejam violadas.
-- **Testabilidade:** Podemos validar que o banco e a API respondem perfeitamente antes de nos preocuparmos com bugs visuais do React.
+```txt
+cesad-{sequencia com 5 digitos}-{ano de publishedAt}
+```
 
-Podemos seguir com a **Task 1**? Se sim, me confirme apenas se você prefere salvar Matrícula/Vínculo/Cargo apenas no **Usuário** ou se fazemos um **Snapshot na Comissão** (para manter o histórico imutável).
+O frontend deve apenas exibir o valor retornado pela API.
+
+## 3. Politica definitiva de `publishedAt` e `year`
+
+### Fonte de verdade
+
+`publishedAt` e a fonte de verdade temporal de escrita do ato CESAD.
+
+O comportamento esperado e:
+
+1. o cliente informa `publishedAt`;
+2. o backend valida `publishedAt` como obrigatorio;
+3. o backend deriva `year` a partir de `publishedAt`;
+4. `year` pode continuar persistido no Prisma/read model por compatibilidade, indexacao e leitura, mas nao representa uma segunda fonte de verdade;
+5. o nome/ano/sequencia da comissao tambem devem seguir o ano derivado de `publishedAt`.
+
+### Estado real das camadas
+
+| Camada | `publishedAt` | `year` | Observacao |
+|---|---|---|---|
+| Prisma `CesadCommissionAct` | Obrigatorio | Obrigatorio/persistido | `year` e materializado; `publishedAt` nao aceita `null`. |
+| DTO backend | Obrigatorio | Opcional | Backend deriva o valor efetivo a partir de `publishedAt`. |
+| Service backend | Fonte de verdade | Derivado | Persistencia usa o ano derivado da publicacao. |
+| `@sadep/contracts` | Ainda opcional | Ainda obrigatorio | **Divergencia conhecida de tipagem**. |
+| Frontend administrativo | Campo de publicacao editavel | Enviado apenas por compatibilidade com o tipo atual | A UI nao deve pedir ano como entrada independente. |
+
+### Divida tecnica registrada
+
+O pacote `@sadep/contracts` ainda precisa ser alinhado em task funcional propria para refletir a politica ja praticada pelo backend. A direcao esperada e:
+
+- `publishedAt: string` obrigatorio no payload de escrita;
+- `year` removido, opcional ou explicitamente depreciado no payload de escrita;
+- `commission.name` removido ou opcional no payload de escrita, pois o backend gera o nome;
+- manter `year` nos tipos de leitura quando ele representar o valor materializado retornado pela API.
+
+A #96 **nao altera contracts, Prisma, DTOs ou frontend funcional**; apenas documenta a regra e a divergencia atual.
+
+## 4. Estado atual do CRUD administrativo
+
+O CRUD da Comissao CESAD nao deve mais ser listado como futuro.
+
+Entregue:
+
+- listagem e detalhe reais;
+- criacao real;
+- edicao de comissao ainda permitida pelo backend;
+- encerramento com motivo;
+- supersessao com motivo e metadados suportados;
+- Presidente/Titular/Suplente;
+- snapshots de matricula, vinculo e cargo;
+- nome automatico somente leitura;
+- tratamento institucional de erros;
+- remocao de IDs/dados demonstrativos do fluxo funcional administrativo;
+- testes de regressao no frontend e backend nos recortes entregues.
+
+O estado correto da frente e **integrado parcialmente no produto**: a administracao da comissao esta funcional, enquanto os fluxos processuais CESAD ainda possuem integracoes frontend pendentes.
+
+## 5. Proximas entregas reais
+
+### Em paralelo agora
+
+- `#103 — FE-CESAD-STAGE-OPINION-01`: integrar o parecer CESAD de etapa ao backend real e retirar dados demonstrativos da jornada autenticada.
+- `#101 — FE-CESAD-02`: integrar o parecer conclusivo final ao workspace processual, incluindo elegibilidade, rascunho, conclusao, assinatura/status e envio a homologacao conforme capacidades do backend.
+
+A #101 permanece o proximo recorte funcional de **parecer final** apontado pela #96. A #103 cobre exclusivamente o **parecer de etapa**, portanto pode andar em paralelo sem duplicar escopo.
+
+### Depois dessas integracoes
+
+Permanecem como evolucoes separadas, quando priorizadas:
+
+- caixa/listagem segura de processos CESAD sem ID manual;
+- frontend completo de homologacao/notificacao/ciencia;
+- documentos oficiais/PDF;
+- visualizacao/download documental dedicada;
+- assinatura GOV.BR real;
+- supersessao documental ampla para cenarios ainda bloqueados.
+
+## 6. Regra de manutencao do roadmap
+
+- nao reabrir tasks concluidas apenas porque a documentacao antiga ainda as citava como futuro;
+- novas lacunas devem nascer como issues pequenas e auditaveis;
+- backend/API e contracts sao fonte de verdade para capacidades e formatos;
+- nenhuma regra juridica deve ser duplicada no frontend;
+- atos e documentos consolidados devem preservar historico e auditoria.
