@@ -1,6 +1,6 @@
 # Backend — Painel Ativo
 
-> Ultima atualizacao: 2026-07-03 (sincronizacao pos frente Comissao CESAD; `BE-CESAD-REG-01` concluida/estabilizada e removida dos pendentes ativos).
+> Ultima atualizacao: 2026-08-26 (sincronizacao documental CESAD pos PRs #86, #87, #88, #94, #95 e #98).
 > Os arquivos de task ja resolvidos foram movidos para [`../../../../docs/archive/backend/tasks/`](../../../archive/backend/tasks/).
 > Os indices de compatibilidade legados foram movidos para [`../../../../docs/archive/roadmaps-legados/`](../../../archive/roadmaps-legados/).
 
@@ -8,7 +8,7 @@
 
 **`SEC-HARD-01`** — Hardening adicional de seguranca HTTP: rate limiting refinado e protecao CSRF.
 
-A frente `BE-CESAD-REG-01` nao compoe mais o backlog ativo. Lacunas remanescentes de Comissao CESAD devem ser tratadas como novas tasks especificas, sem reabrir o guarda-chuva original.
+A frente `BE-CESAD-REG-01` nao compoe mais o backlog ativo. As expansoes administrativas de DTOs, contracts, Presidente/snapshots e CRUD tambem ja foram entregues. Novas lacunas CESAD devem nascer como tasks especificas, sem reabrir o guarda-chuva original.
 
 ---
 
@@ -18,12 +18,14 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Quand
 
 ### BE-CESAD-REG-01 — Cadastro e gerenciamento formal de comissoes CESAD
 
-- **Status operacional:** concluida / estabilizada / aprovada com ressalvas futuras.
-- **PRs relacionados:** `#68`, `#69`, `#70`, `#71`, `#72`, `#74`, `#78`.
+- **Status operacional:** concluida / estabilizada / expandida pelos recortes administrativos posteriores.
+- **PRs relacionados:** `#68`, `#69`, `#70`, `#71`, `#72`, `#74`, `#78`, `#86`, `#87`, `#88`, `#94`, `#95`, `#98`.
 - **ADRs relacionadas:** [`ADR-006 — Gerenciamento formal da Comissao CESAD e rollover`](../../architecture/adr/adr-006-cesad-commission-management-and-rollover.md) e [`ADR-007 — Supersessao de parecer CESAD de etapa`](../../architecture/adr/adr-007-cesad-stage-opinion-supersession.md).
-- **Escopo entregue:** cadastro formal de comissoes CESAD, ato designativo, composicao minima de titulares/suplentes, edicao de comissao ainda nao utilizada, encerramento/supersessao, seed local minimo, auditoria administrativa propria e leitura administrativa alinhada para `ADMIN` e `HOMOLOGATION_AUTHORITY`.
-- **Rollover entregue:** rollover de processos em andamento sem parecer iniciado e supersessao de parecer CESAD preparatorio, preservando historico e bloqueando cenarios documentais/signers ainda fora do recorte.
-- **Ressalvas futuras:** formalizacao de DTO de encerramento/supersessao com motivo/data/metadados; exportacao de payloads de escrita pelo pacote contracts; CRUD funcional da interface administrativa.
+- **Escopo entregue:** cadastro formal, ato designativo, composicao com exatamente `1 PRESIDENTE` e no minimo `2 TITULARES + 2 SUPLENTES`, snapshots de matricula/vinculo/cargo, nome automatico, edicao controlada, encerramento/supersessao com DTO formal, seed, auditoria administrativa e leitura administrativa para `ADMIN` e `HOMOLOGATION_AUTHORITY`.
+- **Contracts/CRUD entregues:** payloads de escrita compartilhados foram exportados no PR #87; create/update/close/supersede foram conectados na UI no PR #88 e alinhados ao dominio/API no PR #98.
+- **Rollover entregue:** rollover de processos em andamento sem parecer iniciado e supersessao de parecer CESAD preparatorio, preservando historico e bloqueando cenarios documentais/signers fora do recorte.
+- **Politica temporal:** `publishedAt` e a fonte de verdade de escrita; o backend deriva o ano efetivo e persiste `year` como valor materializado. O DTO backend exige `publishedAt`, enquanto o write contract compartilhado ainda declara `year` obrigatorio e `publishedAt` opcional. Esse desalinhamento de tipagem deve ser corrigido em task propria de contracts, sem reabrir a frente funcional de comissoes.
+- **Ressalvas futuras reais:** alinhamento de types de escrita `publishedAt/year/name`, versionamento/supersessao documental ampla e integracoes externas como PDF/GOVBR; nao listar novamente DTO close/supersede, payloads de escrita ou CRUD administrativo como pendentes.
 
 ### BE-FLOW-4STAGE-01A — Materializar quatro etapas e corrigir resolucao de etapa atual
 
@@ -124,7 +126,7 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Quand
 - **Status operacional:** concluida / auditada / aprovada com ressalvas.
 - **Commit funcional aprovado:** `211a4d4 feat(backend): apply contextual CESAD authorization`.
 - **Escopo entregue:** `CesadContextAuthorizationService` protege fluxos sensiveis de workflow, historico, transicoes CESAD, leitura consolidada e parecer CESAD de etapa.
-- **Ressalvas:** a politica foi fortalecida por `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01` e `BE-DOC-CESAD-SIGN-01`. `BE-SEC-03` permanece ativo como guarda-chuva.
+- **Ressalvas:** a politica foi fortalecida por `BE-CESAD-AUTH-02`, `BE-CESAD-ASSIGN-REPLACE-01` e `BE-DOC-CESAD-SIGN-01`. O antigo guarda-chuva `BE-SEC-03` foi encerrado e nao deve ser tratado como pendencia ativa.
 
 ### BE-ARCH-01E3 — Implementar refresh, rotacao e logout server-side
 
@@ -150,8 +152,7 @@ Os itens desta secao estao consolidados em [`resolved.md`](./resolved.md). Quand
 
 ## Pendentes relevantes
 
-- [`BE-CESAD-COMISSAO-CLOSE-DTO-01` — formalizar payload de encerramento/supersessao de comissao](./tasks/BE-CESAD-REG-01-commission-registration-management.md): melhoria futura; deve tratar motivo, data administrativa, metadados de auditoria e, quando aplicavel, referencia a comissao sucessora.
-- [`CONTRACT-CESAD-COMMISSION-WRITE-01` — exportar payloads de escrita de comissao CESAD pelo pacote contracts](../../frontend/tasks/FE-CESAD-COMISSAO-01-admin-ui.md): melhoria cross-cutting futura; nao reabre `BE-CESAD-REG-01`.
+- **Alinhamento futuro do write contract CESAD:** `@sadep/contracts` ainda modela `year` como obrigatorio e `publishedAt` como opcional, enquanto DTO/service/backend usam `publishedAt` como fonte de verdade e derivam `year`. Deve nascer como task propria de contracts; nao reabre #83 nem `BE-CESAD-REG-01`.
 - [`BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao](./tasks/BE-AUDIT-AUTH-01-persisted-auth-audit.md): melhoria futura; nao reabre `BE-ARCH-01F`.
 - [`BE-CONTRACT-CESAD-ASSIGN-01` — expor status de assignment CESAD em contracts](./tasks/BE-CONTRACT-CESAD-ASSIGN-01-cesad-assignment-contract-status.md): condicional/futura; so deve ser executada se API publica ou frontend passarem a consumir diretamente o status de `CesadStageAssignment`.
 
