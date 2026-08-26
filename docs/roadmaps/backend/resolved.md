@@ -4,30 +4,35 @@ Este arquivo resume itens backend ja concluidos ou resolvidos. O antigo tracker 
 
 Esta separacao nao altera status de tasks, nao move documentos legados e nao arquiva historico. Ela apenas prepara a futura reducao dos roadmaps legados.
 
-> Ultima atualizacao: 2026-07-03 — sincronizacao pos entrega/estabilizacao da frente Comissao CESAD.
+> Ultima atualizacao: 2026-08-26 — sincronizacao CESAD apos os recortes administrativos e de Presidente/snapshots.
 
 ---
 
 ## BE-CESAD-REG-01 — Cadastro e gerenciamento formal de comissoes CESAD
 
-- **Status documental:** concluida / estabilizada / aprovada com ressalvas futuras.
+- **Status documental:** concluida / estabilizada / expandida pelos recortes posteriores.
 - **Epic/task:** `#58 — BE-CESAD-REG-01 — Cadastro e gerenciamento formal de comissoes CESAD`.
-- **PRs relacionados:** `#68`, `#69`, `#70`, `#71`, `#72`, `#74`, `#78`.
+- **PRs relacionados:** `#68`, `#69`, `#70`, `#71`, `#72`, `#74`, `#78`, `#86`, `#87`, `#88`, `#94`, `#95`, `#98`.
 - **ADRs relacionadas:** [`ADR-006 — Gerenciamento formal da Comissao CESAD e rollover`](../../architecture/adr/adr-006-cesad-commission-management-and-rollover.md) e [`ADR-007 — Supersessao de parecer CESAD de etapa`](../../architecture/adr/adr-007-cesad-stage-opinion-supersession.md).
 - **Task file de referencia:** [`BE-CESAD-REG-01-commission-registration-management.md`](./tasks/BE-CESAD-REG-01-commission-registration-management.md).
 - Implementou administracao formal de Comissao CESAD por vigencia, ato designativo e composicao.
-- Adicionou criacao de comissao com ato e membros, validando composicao minima de 3 titulares e 2 suplentes.
-- Bloqueou `COMMISSION_ASSISTANT` como membro formal e preservou regras de usuario ativo/compatibilidade de papel.
+- A composicao vigente exige exatamente `1 PRESIDENTE`, no minimo `2 TITULARES` e `2 SUPLENTES`; `COMMISSION_ASSISTANT` permanece fora da composicao formal.
+- Adicionou `registrationSnapshot`, `bondSnapshot` e `positionSnapshot` em `CesadCommissionMember`, preservando contexto funcional historico.
+- `PRESIDENTE` passou a integrar a composicao efetiva e a derivacao de signatarios quando aplicavel.
 - Implementou edicao de comissao ainda nao utilizada, preservando historico quando ja houver uso em processo.
-- Implementou encerramento e supersessao de comissao, com preservacao historica e bloqueios quando houver assignments/processos em andamento que exigem rollover.
+- Implementou encerramento e supersessao com DTO formal, motivo administrativo, data efetiva opcional e referencia de sucessora quando suportada, mantendo bloqueios de rollover/historico.
+- Exportou payloads de escrita compartilhados por `@sadep/contracts` no PR #87.
+- Conectou create/update/close/supersede no frontend administrativo no PR #88 e consolidou o alinhamento final de Presidente/snapshots/nome automatico no PR #98.
+- O backend gera o nome da comissao; o frontend nao deve tratar `name` como entrada de negocio.
 - Adicionou auditoria administrativa propria de comissoes CESAD por `CesadCommissionAuditEvent`.
 - Adicionou seed local minimo de comissao CESAD para testes e validacao de fluxo.
 - Implementou rollover temporal de competencia CESAD por etapa para processos sem parecer iniciado.
 - Implementou supersessao de parecer CESAD preparatorio, preservando historico e impedindo consolidacao indevida de atos de comissao anterior.
 - Corrigiu o alinhamento de autorizacao de leitura administrativa: `GET /cesad/commissions` e `GET /cesad/commissions/:id` permitem `ADMIN` e `HOMOLOGATION_AUTHORITY`.
-- **Validacoes registradas no ciclo final:** build de `@sadep/contracts`, typecheck backend, typecheck specs, testes unitarios backend, build backend, copy-check frontend, typecheck frontend, build frontend, Prisma validate e `git diff --check`.
-- **Fora do recorte preservado:** CRUD funcional completo na interface, payloads de escrita exportados pelo pacote contracts, DTO formal de encerramento/supersessao com motivo/data/metadados e versionamento documental amplo de documentos/signers ja abertos.
-- **Lacunas futuras relacionadas:** `FE-CESAD-COMISSAO-CRUD-02`, `CONTRACT-CESAD-COMMISSION-WRITE-01` e `BE-CESAD-COMISSAO-CLOSE-DTO-01`.
+- **Politica temporal consolidada:** `publishedAt` e obrigatorio no DTO/schema e e a fonte de verdade para derivar o ano; `year` permanece materializado/persistido para compatibilidade e leitura.
+- **Divergencia conhecida:** o write contract compartilhado ainda declara `year` obrigatorio e `publishedAt` opcional. Isso e divida de tipagem futura, nao evidencia de que a feature administrativa esteja incompleta.
+- **Validacoes registradas nos ciclos funcionais:** build de `@sadep/contracts`, typecheck backend, typecheck specs, testes unitarios/backend aplicaveis, build backend, copy-check frontend, typecheck frontend, testes frontend, build frontend, Prisma validate e `git diff --check` conforme cada PR.
+- **Fora do recorte preservado:** alinhamento futuro do write contract temporal, versionamento/supersessao documental amplo, PDF oficial e GOVBR real.
 
 ## BE-SEC-03 — Guarda-chuva residual de autorizacao contextual CESAD
 
