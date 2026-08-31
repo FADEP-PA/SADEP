@@ -7,31 +7,13 @@ import {
 } from '@/features/process/components/process-formatters';
 import { ContentState } from '@/shared/ui/content-state';
 import { KeyValueList } from '@/shared/ui/key-value-list';
-import { StatusBadge, type StatusBadgeTone } from '@/shared/ui/status-badge';
-
-import {
-  DEMO_CESAD_STAGE_OPINIONS,
-  type DemoCesadStageOpinion,
-} from '../data/cesad-stage-opinion-demo';
+import { StatusBadge } from '@/shared/ui/status-badge';
 
 type ReadOnlyOpinionShellProps = {
   opinion?: CesadStageReadSnapshotRef['cesadStageOpinion'] | null;
   stageLabel?: string;
   processLabel?: string;
-  isDemo?: boolean;
 };
-
-function getDemoTone(state: DemoCesadStageOpinion['state']): StatusBadgeTone {
-  if (state === 'CONSOLIDATED') {
-    return 'success';
-  }
-
-  if (state === 'DRAFT') {
-    return 'info';
-  }
-
-  return 'warning';
-}
 
 function getOpinionStateLabel(opinion?: CesadStageReadSnapshotRef['cesadStageOpinion'] | null) {
   if (!opinion) {
@@ -45,71 +27,29 @@ function getOpinionStateLabel(opinion?: CesadStageReadSnapshotRef['cesadStageOpi
   return 'Parecer em elaboracao';
 }
 
-function DemoOpinionCard({ opinion }: { opinion: DemoCesadStageOpinion }) {
-  return (
-    <article className="cesad-opinion-shell__state-card">
-      <div className="cesad-opinion-shell__state-header">
-        <div>
-          <span>{opinion.stageLabel}</span>
-          <strong>{opinion.title}</strong>
-        </div>
-        <StatusBadge label={opinion.statusLabel} tone={getDemoTone(opinion.state)} />
-      </div>
-
-      <KeyValueList
-        items={[
-          { label: 'Processo', value: opinion.processLabel },
-          { label: 'Relato previsto', value: opinion.summary },
-          { label: 'Fundamentacao', value: opinion.legalBasis },
-          { label: 'Conclusao', value: opinion.conclusion },
-        ]}
-      />
-
-      <div className="cesad-opinion-shell__pending">
-        <strong>Dependencias futuras</strong>
-        <ul className="content-list">
-          {opinion.pendingItems.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </div>
-    </article>
-  );
-}
-
 export function ReadOnlyOpinionShell({
   opinion,
   stageLabel = 'Etapa nao carregada',
   processLabel = 'Processo nao carregado',
-  isDemo = false,
 }: ReadOnlyOpinionShellProps) {
   return (
     <section className="cesad-opinion-shell" aria-labelledby="cesad-stage-opinion-shell-title">
       <div className="cesad-opinion-shell__header">
         <div>
-          <span className="section-chip">
-            {isDemo ? 'Modo demonstrativo' : 'Layout base do parecer'}
-          </span>
+          <span className="section-chip">Leitura do parecer</span>
           <h3 id="cesad-stage-opinion-shell-title">Parecer CESAD da etapa</h3>
           <p>
-            Estrutura visual preparada para o parecer de etapa, sem emissao,
-            assinatura, homologacao ou persistencia enquanto a API nao
-            expuser contrato proprio.
+            Estrutura visual do parecer de etapa, com leitura dos campos
+            retornados pela integracao.
           </p>
         </div>
         <StatusBadge
-          label={isDemo ? 'Dados ficticios' : getOpinionStateLabel(opinion)}
-          tone={isDemo ? 'info' : getCesadStageOpinionStatusTone(opinion?.status)}
+          label={getOpinionStateLabel(opinion)}
+          tone={getCesadStageOpinionStatusTone(opinion?.status)}
         />
       </div>
 
-      {isDemo ? (
-        <div className="cesad-opinion-shell__demo-grid">
-          {DEMO_CESAD_STAGE_OPINIONS.map((demoOpinion) => (
-            <DemoOpinionCard key={demoOpinion.id} opinion={demoOpinion} />
-          ))}
-        </div>
-      ) : opinion ? (
+      {opinion ? (
         <div className="cesad-opinion-shell__document">
           <div className="cesad-opinion-shell__document-status">
             <StatusBadge
@@ -130,17 +70,11 @@ export function ReadOnlyOpinionShell({
               { label: 'Concluido em', value: formatDateTime(opinion.completedAt) },
             ]}
           />
-
-          <ContentState
-            title="Acoes formais indisponiveis nesta tela"
-            description="A interface exibe apenas a estrutura de leitura. Emissao, assinatura e conclusao dependem de contrato e capacidades da integracao."
-            tone="info"
-          />
         </div>
       ) : (
         <ContentState
           title="Parecer da etapa ausente"
-          description="A etapa carregada ainda nao possui parecer CESAD retornado pela integracao. O espaco permanece reservado para a integracao futura."
+          description="A etapa carregada ainda nao possui parecer CESAD retornado pela integracao."
           tone="warning"
         />
       )}

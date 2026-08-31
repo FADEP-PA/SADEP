@@ -10,6 +10,7 @@ export * from './cesad-current-commission';
 export * from './cesad-final-opinion-expected-signer';
 export * from './cesad-final-opinion-signature';
 export * from './cesad-stage-opinion-expected-signer';
+export * from './cesad-stage-opinion-signature-status';
 export * from './cesad-stage-read';
 export * from './cesad-stage-opinion';
 export * from './cesad-final-opinion';
