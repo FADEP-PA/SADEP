@@ -108,7 +108,7 @@ export class ProcessStageService {
   async ensureFourProcessStages(
     transaction: PrismaTransactionClient,
     processId: string,
-    options: { referenceDate?: Date } = {},
+    options: { referenceDate?: Date; responsibleSupervisorUserId?: string } = {},
   ): Promise<StageRow[]> {
     const process = await transaction.evaluationProcess.findUnique({
       where: { id: processId },
@@ -134,6 +134,7 @@ export class ProcessStageService {
     }
 
     const supervisorUserId =
+      options.responsibleSupervisorUserId ??
       activeStages[0]?.responsibleSupervisorUserId ??
       existingStages.find((s) => s.sequence === 1)?.responsibleSupervisorUserId ??
       existingStages.find((s) => s.responsibleSupervisorUserId)?.responsibleSupervisorUserId ??
@@ -175,6 +176,16 @@ export class ProcessStageService {
           startedAt: sequence === 1 && !hasAnyStage && !hasActiveStage ? referenceDate : null,
           endedAt: null,
         },
+      });
+    }
+
+    if (options.responsibleSupervisorUserId) {
+      await transaction.processStage.updateMany({
+        where: {
+          evaluationProcessId: processId,
+          responsibleSupervisorUserId: null,
+        },
+        data: { responsibleSupervisorUserId: options.responsibleSupervisorUserId },
       });
     }
 
