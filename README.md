@@ -78,10 +78,23 @@ Os usuarios seed continuam disponiveis com e-mails previsiveis para testes locai
 | ----------------------- | ------------------------ | ---------------------------- |
 | Admin                   | `admin@sadep.local`      | valor de `DEV_SEED_PASSWORD` |
 | Chefia                  | `supervisor@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| CESAD                   | `cesad@sadep.local`      | valor de `DEV_SEED_PASSWORD` |
+| CESAD (presidente)      | `cesad1@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
+| CESAD (titular)         | `cesad2@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
+| CESAD (titular)         | `cesad3@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
 | Assistente da Comissao  | `assistant@sadep.local`  | valor de `DEV_SEED_PASSWORD` |
 | Autoridade Homologadora | `authority@sadep.local`  | valor de `DEV_SEED_PASSWORD` |
 | Servidor                | `server@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
+
+### Cenário de demonstração
+
+O bootstrap cria de forma idempotente o processo real `demo-evaluation-process-case-2` em
+`EM_AVALIACAO`, vinculado ao servidor `server@sadep.local`. A etapa 1 fica ativa sob
+responsabilidade de `supervisor@sadep.local`; as etapas 2, 3 e 4 são materializadas como futuras.
+
+A comissão local possui a composição mínima válida: `cesad1@sadep.local` como presidente,
+`cesad2@sadep.local` e `cesad3@sadep.local` como titulares, além de dois suplentes. Assim, os
+pareceres da demonstração possuem três signatários esperados, sem alterar as regras de assinatura
+colegiada da aplicação.
 
 ## Build e start de produção do backend
 

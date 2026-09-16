@@ -21,6 +21,7 @@ async function main() {
     { runCesadStageOpinionsServiceTests },
     { runCesadStageReadServiceTests },
     { runCompleteCurrentStageServiceTests },
+    { runDemoSeedTests },
     { runWorkflowCatalogTests },
     { runProcessesServiceTests },
     { runProcessesEndpointTests },
@@ -43,6 +44,7 @@ async function main() {
     import('./cesad-stage-opinions.service.spec'),
     import('./cesad-stage-read.service.spec'),
     import('./complete-current-stage.service.spec'),
+    import('./demo-seed.spec'),
     import('./workflow-catalog.spec'),
     import('./processes.service.spec'),
     import('./processes.endpoint.spec'),
@@ -68,6 +70,7 @@ async function main() {
   await runCesadStageOpinionsServiceTests();
   await runCesadFinalOpinionsServiceTests();
   await runCompleteCurrentStageServiceTests();
+  await runDemoSeedTests();
   await runProcessesEndpointTests();
   await runSupervisorEvaluationsServiceTests();
   await runSelfEvaluationsTests();
