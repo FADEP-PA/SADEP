@@ -94,10 +94,17 @@ Após o seed, os usuários abaixo ficam disponíveis:
 | ----------------------- | ------------------------ | ---------------------------- |
 | Admin                   | `admin@sadep.local`      | valor de `DEV_SEED_PASSWORD` |
 | Chefia                  | `supervisor@sadep.local` | valor de `DEV_SEED_PASSWORD` |
-| CESAD                   | `cesad@sadep.local`      | valor de `DEV_SEED_PASSWORD` |
+| CESAD (presidente)      | `cesad1@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
+| CESAD (titular)         | `cesad2@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
+| CESAD (titular)         | `cesad3@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
 | Assistente da Comissao  | `assistant@sadep.local`  | valor de `DEV_SEED_PASSWORD` |
 | Autoridade Homologadora | `authority@sadep.local`  | valor de `DEV_SEED_PASSWORD` |
 | Servidor                | `server@sadep.local`     | valor de `DEV_SEED_PASSWORD` |
+
+O bootstrap também cria o processo real de demonstração `demo-evaluation-process-case-2`. Chefia
+e Servidor localizam o mesmo processo em `GET /processes`; a etapa 1 está ativa e as etapas 2 a 4
+estão materializadas como futuras. A composição CESAD local mantém uma comissão válida com três
+signatários esperados (presidente e dois titulares).
 
 ## Execução do backend
 

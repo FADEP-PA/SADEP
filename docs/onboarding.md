@@ -49,7 +49,9 @@ Credenciais de desenvolvimento (senha = valor de `DEV_SEED_PASSWORD`):
 |---|---|
 | Admin | `admin@sadep.local` |
 | Chefia | `supervisor@sadep.local` |
-| CESAD | `cesad@sadep.local` |
+| CESAD (presidente) | `cesad1@sadep.local` |
+| CESAD (titular) | `cesad2@sadep.local` |
+| CESAD (titular) | `cesad3@sadep.local` |
 | Assistente da Comissão | `assistant@sadep.local` |
 | Autoridade Homologadora | `authority@sadep.local` |
 | Servidor | `server@sadep.local` |
