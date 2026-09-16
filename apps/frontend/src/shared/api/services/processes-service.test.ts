@@ -8,11 +8,14 @@ import {
   getCesadStageOpinionSignatureStatus,
   getInternWorkspaceSnapshot,
   getProcessList,
+  getSelfEvaluation,
   getWorkflow,
   getWorkflowHistory,
   prepareCesadStageOpinionSignatures,
   saveCesadStageOpinionDraft,
   signCesadStageOpinion,
+  signSelfEvaluation,
+  submitSupervisorEvaluation,
   transitionWorkflow,
 } from './processes-service';
 
@@ -293,6 +296,91 @@ describe('processes-service', () => {
       fetchMock.mockResolvedValueOnce(jsonResponse(409, { error: 'Assinatura ja realizada' }));
 
       await expect(signCesadStageOpinion(PROCESS_ID, 2)).rejects.toThrow();
+    });
+  });
+
+  describe('getSelfEvaluation', () => {
+    it('faz GET /processes/:id/self-evaluation com Authorization Bearer', async () => {
+      const payload = { id: 'se-1', processId: PROCESS_ID, status: 'SUBMITTED', selfReflection: 'Reflexao' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await getSelfEvaluation(PROCESS_ID);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/self-evaluation`);
+      expect(init.method).toBe('GET');
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result).toMatchObject({ id: 'se-1', status: 'SUBMITTED' });
+    });
+
+    it('lanca HttpError quando API retorna 403', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(403, { error: 'Forbidden' }));
+
+      await expect(getSelfEvaluation(PROCESS_ID)).rejects.toThrow();
+    });
+  });
+
+  describe('submitSupervisorEvaluation', () => {
+    it('faz POST /processes/:id/supervisor-evaluation/submit com body serializado', async () => {
+      const body = {
+        summary: 'Competencias da unidade',
+        generalComments: 'Comentarios gerais',
+        content: { criteria: [{ code: '1.1', label: 'Item 1', rating: 3 }] },
+        comment: 'Avaliacao submetida',
+      };
+      const payload = { id: 'ev-1', processId: PROCESS_ID, status: 'SUBMITTED' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await submitSupervisorEvaluation(PROCESS_ID, body);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/supervisor-evaluation/submit`);
+      expect(init.method).toBe('POST');
+      expect(init.body).toBe(JSON.stringify(body));
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result).toMatchObject({ id: 'ev-1', status: 'SUBMITTED' });
+    });
+
+    it('lanca HttpError quando API retorna 400 (validacao)', async () => {
+      const body = {
+        summary: '',
+        generalComments: '',
+        content: { criteria: [] },
+      };
+      fetchMock.mockResolvedValueOnce(jsonResponse(400, { error: 'Bad Request' }));
+
+      await expect(submitSupervisorEvaluation(PROCESS_ID, body)).rejects.toThrow();
+    });
+  });
+
+  describe('signSelfEvaluation', () => {
+    it('faz POST /processes/:id/self-evaluation/sign com Authorization Bearer', async () => {
+      const payload = { id: 'se-1', processId: PROCESS_ID, status: 'SUBMITTED' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await signSelfEvaluation(PROCESS_ID);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/self-evaluation/sign`);
+      expect(init.method).toBe('POST');
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result).toMatchObject({ id: 'se-1' });
+    });
+
+    it('envia comment opcional quando fornecido', async () => {
+      const payload = { id: 'se-1', processId: PROCESS_ID, status: 'SUBMITTED' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      await signSelfEvaluation(PROCESS_ID, { comment: 'Confirmado' });
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(init.body).toBe(JSON.stringify({ comment: 'Confirmado' }));
+    });
+
+    it('lanca HttpError quando API retorna 409 (ja assinado)', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(409, { error: 'Conflict' }));
+
+      await expect(signSelfEvaluation(PROCESS_ID)).rejects.toThrow();
     });
   });
 });
