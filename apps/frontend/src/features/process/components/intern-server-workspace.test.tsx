@@ -59,6 +59,7 @@ const processList: ProcessListRef = {
       evaluatedUserEmail: 'server@sadep.local',
       currentStageSequence: 1,
       responsibleSupervisorName: 'Chefia Demo',
+      selfEvaluationStatus: null,
       createdAt: '2026-09-16T12:00:00.000Z',
     },
   ],

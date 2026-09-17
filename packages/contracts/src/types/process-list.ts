@@ -1,4 +1,4 @@
-import type { ProcessStatus } from '../enums';
+import type { ProcessStatus, SelfEvaluationStatus } from '../enums';
 
 export interface ProcessListItemRef {
   id: string;
@@ -7,6 +7,7 @@ export interface ProcessListItemRef {
   evaluatedUserEmail: string;
   currentStageSequence: number;
   responsibleSupervisorName: string | null;
+  selfEvaluationStatus: SelfEvaluationStatus | null;
   createdAt: string;
 }
 

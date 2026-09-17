@@ -9,6 +9,7 @@ import {
   getInternWorkspaceSnapshot,
   getProcessList,
   getSelfEvaluation,
+  getSupervisorEvaluationWorkspaceSnapshot,
   getWorkflow,
   getWorkflowHistory,
   prepareCesadStageOpinionSignatures,
@@ -112,7 +113,7 @@ describe('processes-service', () => {
   describe('getProcessList', () => {
     it('faz GET /processes com Authorization Bearer e retorna items e total', async () => {
       const payload = {
-        items: [{ id: PROCESS_ID, status: 'EM_AVALIACAO', evaluatedUserName: 'Joao' }],
+        items: [{ id: PROCESS_ID, status: 'EM_AVALIACAO', evaluatedUserName: 'Joao', selfEvaluationStatus: null }],
         total: 1,
       };
       fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
@@ -317,6 +318,45 @@ describe('processes-service', () => {
       fetchMock.mockResolvedValueOnce(jsonResponse(403, { error: 'Forbidden' }));
 
       await expect(getSelfEvaluation(PROCESS_ID)).rejects.toThrow();
+    });
+  });
+
+  describe('getSupervisorEvaluationWorkspaceSnapshot', () => {
+    it('faz GET /processes/:id/supervisor-evaluation/workspace com Authorization Bearer', async () => {
+      const payload = {
+        process: { id: PROCESS_ID, status: 'EM_AVALIACAO' },
+        supervisorEvaluation: null,
+        documentContext: null,
+        canEditDraft: true,
+        canSubmit: true,
+        canRectify: false,
+      };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await getSupervisorEvaluationWorkspaceSnapshot(PROCESS_ID);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(
+        `${API_BASE}/processes/${PROCESS_ID}/supervisor-evaluation/workspace`,
+      );
+      expect(init.method).toBe('GET');
+      expect((init.headers as Record<string, string>).Authorization).toBe(
+        `Bearer ${TOKEN}`,
+      );
+      expect(result).toMatchObject({
+        process: { id: PROCESS_ID, status: 'EM_AVALIACAO' },
+        canEditDraft: true,
+        canSubmit: true,
+        canRectify: false,
+      });
+    });
+
+    it('lanca HttpError quando API retorna 403', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(403, { error: 'Forbidden' }));
+
+      await expect(
+        getSupervisorEvaluationWorkspaceSnapshot(PROCESS_ID),
+      ).rejects.toThrow();
     });
   });
 
