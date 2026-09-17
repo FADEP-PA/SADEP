@@ -29,7 +29,7 @@ const auth = vi.hoisted(() => ({
       sub: 'cesad-user-1',
       email: 'cesad1@sadep.local',
       name: 'Membro CESAD 1',
-      role: UserRole.CESAD_MEMBER,
+      role: 'CESAD_MEMBER',
     },
   },
 }));
