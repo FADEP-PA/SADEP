@@ -1,11 +1,16 @@
-import type { CesadCommissionMemberRoleType } from '../enums';
+import type { CesadCommissionMemberRoleType, UserRole } from '../enums';
 
 export interface CesadCommissionMemberRef {
   id: string;
   commissionId: string;
   userId: string;
+  userName?: string;
+  userRole?: UserRole;
   actId: string | null;
   roleType: CesadCommissionMemberRoleType;
+  registrationSnapshot: string | null;
+  bondSnapshot: string | null;
+  positionSnapshot: string | null;
   startDate: string;
   endDate: string | null;
   createdAt: string;

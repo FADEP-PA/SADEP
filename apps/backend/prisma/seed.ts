@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import { UserRole } from '@sadep/contracts';
 
 import { hashPassword } from '../src/common/security/password-hasher';
+import { seedDevelopmentDemoScenario } from '../src/infrastructure/development/demo-seed';
 
 loadLocalEnvFile();
 
@@ -17,7 +18,11 @@ const users = [
     name: 'Chefia Imediata SADEP',
     role: UserRole.IMMEDIATE_SUPERVISOR,
   },
-  { email: 'cesad@sadep.local', name: 'Membro CESAD SADEP', role: UserRole.CESAD_MEMBER },
+  { email: 'cesad1@sadep.local', name: 'Membro CESAD 1 SADEP', role: UserRole.CESAD_MEMBER },
+  { email: 'cesad2@sadep.local', name: 'Membro CESAD 2 SADEP', role: UserRole.CESAD_MEMBER },
+  { email: 'cesad3@sadep.local', name: 'Membro CESAD 3 SADEP', role: UserRole.CESAD_MEMBER },
+  { email: 'cesad4@sadep.local', name: 'Membro CESAD 4 SADEP', role: UserRole.CESAD_MEMBER },
+  { email: 'cesad5@sadep.local', name: 'Membro CESAD 5 SADEP', role: UserRole.CESAD_MEMBER },
   {
     email: 'assistant@sadep.local',
     name: 'Assistente da Comissao SADEP',
@@ -113,60 +118,11 @@ async function main() {
     });
   }
 
-  const serverUser = await prisma.user.findUnique({ where: { email: 'server@sadep.local' } });
-  const supervisorUser = await prisma.user.findUnique({ where: { email: 'supervisor@sadep.local' } });
+  console.log('[seed] Syncing demonstrable process and local CESAD commission...');
+  const demo = await seedDevelopmentDemoScenario(prisma);
+  console.log(`[seed] Demo process ready: ${demo.processId}`);
 
-  if (serverUser && supervisorUser) {
-    const existingProcess = await prisma.evaluationProcess.findFirst({
-      where: { evaluatedUserId: serverUser.id },
-    });
-
-    if (!existingProcess) {
-      const process = await prisma.evaluationProcess.create({
-        data: {
-          evaluatedUserId: serverUser.id,
-          status: 'EM_AVALIACAO',
-        },
-      });
-
-      await prisma.processStage.createMany({
-        data: [
-          {
-            evaluationProcessId: process.id,
-            sequence: 1,
-            stageCode: 'ETAPA_1',
-            responsibleSupervisorUserId: supervisorUser.id,
-            startedAt: new Date(),
-            endedAt: null,
-          },
-          {
-            evaluationProcessId: process.id,
-            sequence: 2,
-            stageCode: 'ETAPA_2',
-            responsibleSupervisorUserId: supervisorUser.id,
-            startedAt: null,
-            endedAt: null,
-          },
-          {
-            evaluationProcessId: process.id,
-            sequence: 3,
-            stageCode: 'ETAPA_3',
-            responsibleSupervisorUserId: supervisorUser.id,
-            startedAt: null,
-            endedAt: null,
-          },
-          {
-            evaluationProcessId: process.id,
-            sequence: 4,
-            stageCode: 'ETAPA_4',
-            responsibleSupervisorUserId: supervisorUser.id,
-            startedAt: null,
-            endedAt: null,
-          },
-        ],
-      });
-    }
-  }
+  console.log('[seed] Seed completed successfully.');
 }
 
 main()

@@ -7,6 +7,7 @@ import { CesadCommissionActsController } from './cesad-commission-acts.controlle
 import { CesadCommissionActsService } from './cesad-commission-acts.service';
 import { CesadCommissionMembersController } from './cesad-commission-members.controller';
 import { CesadCommissionMembersService } from './cesad-commission-members.service';
+import { CesadCommissionValidityService } from './cesad-commission-validity.service';
 import { CesadCommissionsController } from './cesad-commissions.controller';
 import { CesadCommissionsService } from './cesad-commissions.service';
 import { CesadCurrentCommissionController } from './cesad-current-commission.controller';
@@ -23,11 +24,12 @@ import { CesadCurrentCommissionService } from './cesad-current-commission.servic
   providers: [
     CesadCurrentCommissionService,
     CesadCommissionsService,
+    CesadCommissionValidityService,
     CesadCommissionActsService,
     CesadCommissionMembersService,
     CesadContextAuthorizationService,
     PrismaService,
   ],
-  exports: [CesadContextAuthorizationService],
+  exports: [CesadContextAuthorizationService, CesadCommissionValidityService],
 })
 export class CesadModule {}

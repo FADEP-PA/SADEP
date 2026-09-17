@@ -376,6 +376,64 @@ async function ensureFinalDocumentAfterP2002ForTest(
   };
 }
 
+async function buildCompletedFinalOpinionProcess(
+  context: TestContext,
+  services: ReturnType<typeof buildFinalServices>,
+  options: {
+    supervisorUserId: string;
+    evaluatedUserId: string;
+    cesadMemberUserId: string;
+    cesadMemberName: string;
+    cesadMemberEmail: string;
+  },
+) {
+  const ready = await buildFullyCompletedProcess(context, options);
+  await services.service.start(
+    ready.processId,
+    authenticatedUser(options.cesadMemberUserId, UserRole.CESAD_MEMBER),
+  );
+  const completed = await services.service.complete(
+    ready.processId,
+    authenticatedUser(options.cesadMemberUserId, UserRole.CESAD_MEMBER),
+    buildPayload(),
+  );
+
+  return { ready, completed };
+}
+
+async function buildSignedFinalOpinionProcess(
+  context: TestContext,
+  services: ReturnType<typeof buildFinalServices>,
+  options: {
+    supervisorUserId: string;
+    evaluatedUserId: string;
+    cesadMemberUserId: string;
+    cesadMemberName: string;
+    cesadMemberEmail: string;
+  },
+) {
+  const { ready, completed } = await buildCompletedFinalOpinionProcess(
+    context,
+    services,
+    options,
+  );
+  const prepared = await context.processDocumentsService.prepareCesadFinalOpinionSignatures(
+    ready.processId,
+    authenticatedUser(options.cesadMemberUserId, UserRole.CESAD_MEMBER),
+  );
+  const signed = await context.processDocumentsService.signCesadFinalOpinionDocument(
+    ready.processId,
+    authenticatedUser(options.cesadMemberUserId, UserRole.CESAD_MEMBER),
+  );
+
+  return {
+    ready,
+    completed,
+    documentId: prepared.document!.documentId,
+    signed,
+  };
+}
+
 export async function runCesadFinalOpinionsServiceTests() {
   const context = await createTestContext('cesad-final-opinions-service-test');
   applyProcessDocumentFinalCesadOpinionDatabaseConstraints();
@@ -926,6 +984,64 @@ export async function runCesadFinalOpinionsServiceTests() {
     });
     assert.equal(processAfterFinalSignatures.status, PrismaProcessStatus.PARECER_EMITIDO);
 
+    const sentToHomologation = await services.service.sendToHomologation(
+      ready.processId,
+      authenticatedUser(cesadMember.id, cesadMember.role),
+      { comment: 'Encaminhamento formal à homologação.' },
+    );
+    assert.equal(sentToHomologation.processId, ready.processId);
+    assert.equal(sentToHomologation.cesadFinalOpinionId, completed.id);
+    assert.equal(sentToHomologation.sentToHomologationByUserId, cesadMember.id);
+    assert.equal(sentToHomologation.processStatus, ProcessStatus.PARECER_EMITIDO);
+    assert.equal(typeof sentToHomologation.sentToHomologationAt, 'string');
+
+    const finalOpinionAfterSend = await context.prisma.cesadFinalOpinion.findUniqueOrThrow({
+      where: { processId: ready.processId },
+    });
+    assert.notEqual(finalOpinionAfterSend.sentToHomologationAt, null);
+    assert.equal(finalOpinionAfterSend.sentToHomologationByUserId, cesadMember.id);
+    assert.equal(finalOpinionAfterSend.status, 'COMPLETED');
+    assert.equal(finalOpinionAfterSend.reportText, completed.reportText);
+    assert.equal(finalOpinionAfterSend.finalConclusion, completed.finalConclusion);
+
+    const processAfterSend = await context.prisma.evaluationProcess.findUniqueOrThrow({
+      where: { id: ready.processId },
+    });
+    assert.equal(processAfterSend.status, PrismaProcessStatus.PARECER_EMITIDO);
+
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          ready.processId,
+          authenticatedUser(cesadMember.id, cesadMember.role),
+        ),
+      /already been sent to homologation/,
+    );
+
+    const formalPostFinalDocuments = await context.prisma.processDocument.findMany({
+      where: {
+        evaluationProcessId: ready.processId,
+        documentType: {
+          in: ['HOMOLOGATION_RECORD', 'RESULT_NOTIFICATION', 'ACKNOWLEDGEMENT_RECORD'],
+        },
+      },
+    });
+    assert.equal(formalPostFinalDocuments.length, 0);
+
+    const postFinalAuditEvents = await context.prisma.auditEvent.findMany({
+      where: {
+        evaluationProcessId: ready.processId,
+        eventType: {
+          in: [
+            PrismaAuditEventType.RESULT_HOMOLOGATED,
+            PrismaAuditEventType.NOTIFICATION_SENT,
+            PrismaAuditEventType.ACKNOWLEDGEMENT_RECORDED,
+          ],
+        },
+      },
+    });
+    assert.equal(postFinalAuditEvents.length, 0);
+
     const supervisorAndSelfDocuments = await context.prisma.processDocument.findMany({
       where: {
         evaluationProcessId: ready.processId,
@@ -1044,6 +1160,209 @@ export async function runCesadFinalOpinionsServiceTests() {
       /CESAD contextual authorization denied/,
     );
 
+    // === SEND TO HOMOLOGATION BLOCKING TESTS ===
+    const noFinalOpinionReady = await buildFullyCompletedProcess(context, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+    });
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          noFinalOpinionReady.processId,
+          authenticatedUser(cesadMember.id, cesadMember.role),
+        ),
+      /CESAD final opinion not found/,
+    );
+
+    const draftSendReady = await buildFullyCompletedProcess(context, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+    });
+    await services.service.start(
+      draftSendReady.processId,
+      authenticatedUser(cesadMember.id, cesadMember.role),
+    );
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          draftSendReady.processId,
+          authenticatedUser(cesadMember.id, cesadMember.role),
+        ),
+      /Only a COMPLETED CESAD final opinion/,
+    );
+
+    const noDocumentSend = await buildCompletedFinalOpinionProcess(context, services, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+    });
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          noDocumentSend.ready.processId,
+          authenticatedUser(cesadMember.id, cesadMember.role),
+        ),
+      /CESAD final opinion document not found/,
+    );
+
+    const unsignedDocumentSend = await buildCompletedFinalOpinionProcess(context, services, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+    });
+    await context.processDocumentsService.prepareCesadFinalOpinionSignatures(
+      unsignedDocumentSend.ready.processId,
+      authenticatedUser(cesadMember.id, cesadMember.role),
+    );
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          unsignedDocumentSend.ready.processId,
+          authenticatedUser(cesadMember.id, cesadMember.role),
+        ),
+      /document must be SIGNED/,
+    );
+
+    const wrongOpinionKindSend = await buildCompletedFinalOpinionProcess(context, services, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+    });
+    await context.prisma.processDocument.create({
+      data: {
+        evaluationProcessId: wrongOpinionKindSend.ready.processId,
+        processStageId: null,
+        documentType: 'CESAD_OPINION',
+        opinionKind: 'STAGE',
+        documentStatus: 'SIGNED',
+      },
+    });
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          wrongOpinionKindSend.ready.processId,
+          authenticatedUser(cesadMember.id, cesadMember.role),
+        ),
+      /opinionKind FINAL_CONCLUSIVE/,
+    );
+
+    const pendingSignatureSend = await buildCompletedFinalOpinionProcess(context, services, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+    });
+    const pendingPrepared = await context.processDocumentsService.prepareCesadFinalOpinionSignatures(
+      pendingSignatureSend.ready.processId,
+      authenticatedUser(cesadMember.id, cesadMember.role),
+    );
+    await context.prisma.processDocument.update({
+      where: { id: pendingPrepared.document!.documentId },
+      data: { documentStatus: 'SIGNED' },
+    });
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          pendingSignatureSend.ready.processId,
+          authenticatedUser(cesadMember.id, cesadMember.role),
+        ),
+      /all expected signatures completed/,
+    );
+
+    const wrongStatusSend = await buildSignedFinalOpinionProcess(context, services, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+    });
+    await context.prisma.evaluationProcess.update({
+      where: { id: wrongStatusSend.ready.processId },
+      data: { status: 'EM_AVALIACAO' },
+    });
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          wrongStatusSend.ready.processId,
+          authenticatedUser(cesadMember.id, cesadMember.role),
+        ),
+      /can only be manipulated while process is in PARECER_EMITIDO/,
+    );
+
+    const unauthorizedSend = await buildSignedFinalOpinionProcess(context, services, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+    });
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          unauthorizedSend.ready.processId,
+          authenticatedUser(assistant.id, assistant.role),
+        ),
+      /CESAD contextual authorization denied/,
+    );
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          unauthorizedSend.ready.processId,
+          authenticatedUser(supervisor.id, supervisor.role),
+        ),
+      /CESAD contextual authorization denied/,
+    );
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          unauthorizedSend.ready.processId,
+          authenticatedUser(evaluatedUser.id, evaluatedUser.role),
+        ),
+      /CESAD contextual authorization denied/,
+    );
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          unauthorizedSend.ready.processId,
+          authenticatedUser(homologationAuthority.id, homologationAuthority.role),
+        ),
+      /CESAD contextual authorization denied/,
+    );
+    await assert.rejects(
+      () =>
+        services.service.sendToHomologation(
+          unauthorizedSend.ready.processId,
+          authenticatedUser(unrelatedCesad.id, unrelatedCesad.role),
+        ),
+      /CESAD contextual authorization denied/,
+    );
+
+    const adminSend = await buildSignedFinalOpinionProcess(context, services, {
+      supervisorUserId: supervisor.id,
+      evaluatedUserId: evaluatedUser.id,
+      cesadMemberUserId: cesadMember.id,
+      cesadMemberName: cesadMember.name,
+      cesadMemberEmail: cesadMember.email,
+    });
+    const adminSendResult = await services.service.sendToHomologation(
+      adminSend.ready.processId,
+      authenticatedUser(admin.id, admin.role),
+    );
+    assert.equal(adminSendResult.sentToHomologationByUserId, admin.id);
+
     // === AUDIT TESTS ===
     const auditEvents = await context.prisma.auditEvent.findMany({
       where: { evaluationProcessId: ready.processId },
@@ -1157,6 +1476,25 @@ export async function runCesadFinalOpinionsServiceTests() {
       }),
       true,
     );
+
+    const sentToHomologationEvents = auditEvents.filter(
+      (event) => event.eventType === PrismaAuditEventType.SENT_TO_HOMOLOGATION,
+    );
+    assert.equal(sentToHomologationEvents.length, 1);
+    const sentMetadata = sentToHomologationEvents[0]!.metadata as Record<string, unknown>;
+    assert.equal(sentMetadata.action, ProcessAction.SEND_TO_HOMOLOGATION);
+    assert.equal(sentMetadata.processId, ready.processId);
+    assert.equal(sentMetadata.cesadFinalOpinionId, completed.id);
+    assert.equal(sentMetadata.finalOpinionDocumentId, prepared.document?.documentId);
+    assert.equal(sentMetadata.opinionKind, CesadOpinionKind.FINAL_CONCLUSIVE);
+    assert.equal(sentMetadata.processStatus, ProcessStatus.PARECER_EMITIDO);
+    assert.equal(sentMetadata.performedByUserId, cesadMember.id);
+    assert.equal(sentMetadata.performedByRole, UserRole.CESAD_MEMBER);
+    assert.equal(sentMetadata.documentStatus, DocumentStatus.SIGNED);
+    assert.equal(sentMetadata.expectedSignerCount, 2);
+    assert.equal(sentMetadata.completedSignatureCount, 2);
+    assert.equal(sentMetadata.comment, 'Encaminhamento formal à homologação.');
+    assert.equal(typeof sentMetadata.sentToHomologationAt, 'string');
 
     // === EXTRA CHECK: completion blocked if process status is not PARECER_EMITIDO ===
     const noPareceProcess = await createProcess(

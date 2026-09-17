@@ -1,10 +1,32 @@
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import {
   CesadStageOpinionStatus,
-  type CesadStageOpinionInput,
   type CesadStageOpinionRef,
 } from '@sadep/contracts';
 
-export interface UpsertCesadStageOpinionDto extends CesadStageOpinionInput {
+export class UpsertCesadStageOpinionDto {
+  @IsString()
+  @IsNotEmpty()
+  reportText!: string;
+
+  @IsOptional()
+  @IsString()
+  legalBasis?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  conclusion!: string;
+
+  @IsOptional()
+  @IsString()
+  stageConcept?: string;
+
+  @IsOptional()
+  @IsString()
+  stageResult?: string;
+
+  @IsOptional()
+  @IsString()
   comment?: string;
 }
 

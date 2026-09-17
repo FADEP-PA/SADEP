@@ -106,7 +106,8 @@ export class InternWorkspaceService {
                 updatedAt: true,
               },
             },
-            cesadStageOpinion: {
+            cesadStageOpinions: {
+              where: { supersededAt: null },
               select: {
                 id: true,
                 processId: true,
@@ -297,12 +298,13 @@ export class InternWorkspaceService {
     stage: {
       id: string;
       sequence: number;
-      cesadStageOpinion: Parameters<InternWorkspaceService['toCesadStageOpinionRef']>[0] | null;
+      cesadStageOpinions: Array<Parameters<InternWorkspaceService['toCesadStageOpinionRef']>[0]>;
     },
   ): Promise<InternServerWorkspaceSnapshotRef['cesadOpinionAccess']> {
     const requiresFormalNotification = stage.sequence === 4;
+    const cesadStageOpinion = stage.cesadStageOpinions[0] ?? null;
 
-    if (!stage.cesadStageOpinion) {
+    if (!cesadStageOpinion) {
       return {
         canView: false,
         blockedReason: 'Parecer CESAD ainda não foi registrado para esta etapa.',
@@ -311,7 +313,7 @@ export class InternWorkspaceService {
       };
     }
 
-    if (stage.cesadStageOpinion.status !== PrismaCesadStageOpinionStatus.COMPLETED) {
+    if (cesadStageOpinion.status !== PrismaCesadStageOpinionStatus.COMPLETED) {
       return {
         canView: false,
         blockedReason: 'Parecer CESAD ainda não foi concluído.',
@@ -342,7 +344,7 @@ export class InternWorkspaceService {
       canView: true,
       blockedReason: null,
       requiresFormalNotification,
-      opinion: this.toCesadStageOpinionRef(stage.cesadStageOpinion),
+      opinion: this.toCesadStageOpinionRef(cesadStageOpinion),
     };
   }
 

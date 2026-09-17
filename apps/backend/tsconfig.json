@@ -4,5 +4,9 @@
     "outDir": "./dist",
     "rootDir": "../../",
     "types": ["node"]
-  }
+  },
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.spec.js"
+  ]
 }

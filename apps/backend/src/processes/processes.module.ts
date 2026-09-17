@@ -9,15 +9,19 @@ import { CesadFinalOpinionConsolidationService } from './cesad-final-opinions/ce
 import { CesadFinalOpinionEligibilityService } from './cesad-final-opinions/cesad-final-opinion-eligibility.service';
 import { CesadFinalOpinionsController } from './cesad-final-opinions/cesad-final-opinions.controller';
 import { CesadFinalOpinionsService } from './cesad-final-opinions/cesad-final-opinions.service';
+import { HomologationController } from './homologation/homologation.controller';
+import { HomologationService } from './homologation/homologation.service';
 import { CesadStageOpinionsController } from './cesad-stage-opinions/cesad-stage-opinions.controller';
 import { CesadStageOpinionsService } from './cesad-stage-opinions/cesad-stage-opinions.service';
 import { CesadStageReadController } from './cesad-stage-read.controller';
 import { CesadStageReadService } from './cesad-stage-read.service';
 import { InternWorkspaceService } from './intern-workspace/intern-workspace.service';
+import { ProcessStageService } from './process-stage.service';
 import { ProcessesController } from './processes.controller';
 import { ProcessesService } from './processes.service';
 import { SelfEvaluationsController } from './self-evaluations/self-evaluations.controller';
 import { SelfEvaluationsService } from './self-evaluations/self-evaluations.service';
+import { StageClosureGuardService } from './stage-closure-guard.service';
 import { SupervisorEvaluationsController } from './supervisor-evaluations/supervisor-evaluations.controller';
 import { SupervisorEvaluationsService } from './supervisor-evaluations/supervisor-evaluations.service';
 
@@ -28,15 +32,19 @@ import { SupervisorEvaluationsService } from './supervisor-evaluations/superviso
     CesadStageOpinionsController,
     CesadStageReadController,
     CesadFinalOpinionsController,
+    HomologationController,
     SupervisorEvaluationsController,
     SelfEvaluationsController,
   ],
   providers: [
     ProcessesService,
+    ProcessStageService,
+    StageClosureGuardService,
     CesadStageOpinionsService,
     CesadStageReadService,
     CesadFinalOpinionsService,
     CesadFinalOpinionEligibilityService,
+    HomologationService,
     CesadFinalOpinionConsolidationService,
     InternWorkspaceService,
     SupervisorEvaluationsService,

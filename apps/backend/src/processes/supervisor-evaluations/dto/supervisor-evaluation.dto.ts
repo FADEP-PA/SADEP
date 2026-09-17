@@ -1,7 +1,7 @@
+import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import {
   SupervisorEvaluationStatus,
-  type SupervisorEvaluationContentInput,
-  type SupervisorEvaluationCriterionInput,
   type SupervisorEvaluationRef,
   ProcessStatus,
   DocumentType,
@@ -10,13 +10,47 @@ import {
   UserRole,
 } from '@sadep/contracts';
 
-export type SupervisorEvaluationCriterionDto = SupervisorEvaluationCriterionInput;
-export type SupervisorEvaluationContentDto = SupervisorEvaluationContentInput;
+export class SupervisorEvaluationCriterionDto {
+  @IsString()
+  @IsNotEmpty()
+  code!: string;
 
-export interface UpsertSupervisorEvaluationDto {
-  summary: string;
-  generalComments: string;
-  content: SupervisorEvaluationContentDto;
+  @IsString()
+  @IsNotEmpty()
+  label!: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  rating!: number;
+
+  @IsOptional()
+  @IsString()
+  comment?: string;
+}
+
+export class SupervisorEvaluationContentDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SupervisorEvaluationCriterionDto)
+  criteria!: SupervisorEvaluationCriterionDto[];
+}
+
+export class UpsertSupervisorEvaluationDto {
+  @IsString()
+  @IsNotEmpty()
+  summary!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  generalComments!: string;
+
+  @ValidateNested()
+  @Type(() => SupervisorEvaluationContentDto)
+  content!: SupervisorEvaluationContentDto;
+
+  @IsOptional()
+  @IsString()
   comment?: string;
 }
 
@@ -61,7 +95,7 @@ export function isSupervisorEvaluationCriterionDto(
     return false;
   }
 
-  const candidate = value as Partial<SupervisorEvaluationCriterionInput>;
+  const candidate = value as Partial<SupervisorEvaluationCriterionDto>;
   return (
     typeof candidate.code === 'string' &&
     candidate.code.trim().length > 0 &&
@@ -82,6 +116,6 @@ export function isSupervisorEvaluationContentDto(
     return false;
   }
 
-  const candidate = value as Partial<SupervisorEvaluationContentInput>;
+  const candidate = value as Partial<SupervisorEvaluationContentDto>;
   return Array.isArray(candidate.criteria) && candidate.criteria.every(isSupervisorEvaluationCriterionDto);
 }

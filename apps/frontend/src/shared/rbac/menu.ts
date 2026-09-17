@@ -99,6 +99,11 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
           href: '/homologacao-autoridade',
           description: 'Conferir o processo e acompanhar os atos finais vinculados à homologação.',
         },
+        {
+          label: 'Comissão CESAD',
+          href: '/cesad-comissao/admin',
+          description: 'Acompanhar vigência, ato e composição administrativa da comissão.',
+        },
       ],
     },
     accountGroup,
@@ -116,6 +121,11 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
           label: getRolePresentation(UserRole.HOMOLOGATION_AUTHORITY).label,
           href: '/homologacao-autoridade',
           description: 'Consultar a área de homologação e os marcos finais do processo administrativo.',
+        },
+        {
+          label: 'Comissão CESAD',
+          href: '/cesad-comissao/admin',
+          description: 'Acompanhar vigência, ato e composição administrativa da comissão.',
         },
       ],
     },

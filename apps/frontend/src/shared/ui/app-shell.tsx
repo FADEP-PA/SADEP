@@ -266,12 +266,6 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
               </div>
             </div>
 
-            {headerTitle || headerSubtitle ? (
-              <div className="app-shell__header-context">
-                {headerTitle ? <strong>{headerTitle}</strong> : null}
-                {headerSubtitle ? <span>{headerSubtitle}</span> : null}
-              </div>
-            ) : null}
           </div>
 
           <div className="app-shell__header-right">

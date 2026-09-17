@@ -13,8 +13,7 @@ O documento legado foi arquivado em [`docs/archive/roadmaps-legados/backend-impl
 ## Itens ativos ou retomaveis
 
 - `BE-SEC-03` — guarda-chuva residual / integracao futura de autorizacao contextual CESAD por processo.
-- `BE-CESAD-FINAL-01` — guarda-chuva/fase principal do parecer conclusivo final da CESAD; 01A concluida, 01B/01C pendentes.
-- `BE-CESAD-FINAL-01B` — documento e assinaturas colegiadas do parecer final.
+- `BE-CESAD-FINAL-01` — guarda-chuva/fase principal do parecer conclusivo final da CESAD; 01A e 01B concluidas, 01C pendente.
 - `BE-CESAD-FINAL-01C` — envio formal a homologacao.
 - `BE-HOMOLOG-01` — modelar fluxo de homologacao, notificacao e ciencia.
 - `BE-AUDIT-AUTH-01` — auditoria persistida de eventos de autenticacao.
@@ -27,6 +26,7 @@ O documento legado foi arquivado em [`docs/archive/roadmaps-legados/backend-impl
 - `BE-FLOW-4STAGE-01B` — `COMPLETE_CURRENT_STAGE` implementado com `STAGE_COMPLETED`, guarda documental forte, encerramento das etapas 1 a 3 com abertura sequencial da proxima etapa, fechamento da etapa 4 sem etapa 5, sem parecer final e sem homologacao; concluida/auditada/aprovada.
 - `BE-FLOW-4STAGE-01` — concluida no recorte de progressao formal das quatro etapas por meio das fatias 01A + 01B; parecer conclusivo final, homologacao/notificacao/ciencia e recursos permanecem em tasks proprias.
 - `BE-CESAD-FINAL-01A` — modelo funcional, elegibilidade e consolidacao historica do parecer conclusivo final; `CesadFinalOpinion`, fluxo `start`/`saveDraft`/`complete`, auditoria e testes concluidos/auditados/corrigidos/aprovados.
+- `BE-CESAD-FINAL-01B` — documento processual e assinatura colegiada final; `ProcessDocument.opinionKind`, `CesadFinalOpinionExpectedSigner`, preparacao/status/assinatura final, unicidade documental e correcoes pos-auditoria concluidas/auditadas/corrigidas/aprovadas.
 - `BE-CESAD-AUTH-01` — autorizacao contextual CESAD aplicada aos endpoints sensiveis atuais, com ressalvas estruturais preservadas em `BE-SEC-03`.
 - `BE-CESAD-AUTH-02` — `CesadStageAssignment` implementada como vinculo persistido comissao-processo-etapa.
 - `BE-CESAD-ASSIGN-REPLACE-01` — reatribuicao/supersessao formal de assignment CESAD por etapa implementada em recorte seguro.

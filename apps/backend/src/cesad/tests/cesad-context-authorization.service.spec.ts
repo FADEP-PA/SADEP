@@ -64,6 +64,8 @@ export async function runCesadContextAuthorizationServiceTests() {
     const activeCommission = await context.prisma.cesadCommission.create({
       data: {
         name: 'Comissao CESAD vigente para autorizacao contextual',
+        sequence: 1,
+        year: 2026,
         status: 'ACTIVE',
         effectiveStartDate: new Date('2026-01-01T00:00:00.000Z'),
       },
@@ -112,6 +114,8 @@ export async function runCesadContextAuthorizationServiceTests() {
     const inactiveCommission = await context.prisma.cesadCommission.create({
       data: {
         name: 'Comissao CESAD inativa para autorizacao contextual',
+        sequence: 1,
+        year: 2027,
         status: 'INACTIVE',
         effectiveStartDate: new Date('2027-01-01T00:00:00.000Z'),
       },

@@ -1,99 +1,131 @@
 # Backend (NestJS)
 
-Fundação técnica mínima do backend do SADEP para os próximos incrementos.
+## Stack
 
-## Implementado neste incremento
+- NestJS 11, TypeScript 5.8, Prisma 6.8
+- Banco: **PostgreSQL 17** (dev via Docker, produção via instância dedicada)
+- Auth: JWT HS256 + refresh token HMAC-SHA256 com rotação e revogação de família
 
-- bootstrap funcional com NestJS
-- configuração centralizada mínima via ambiente
-- logger básico
-- filtro global básico para erros inesperados
-- endpoint de healthcheck operacional
-- persistência mínima de usuários via Prisma
-- autenticação mínima real com senha hasheada e JWT simples
-- endpoints técnicos de autenticação e leitura do usuário autenticado
+## Fluxo local de desenvolvimento
 
-## Limitação de validação
+### Pré-requisitos
 
-No ambiente auditado anteriormente, a validação de instalação e compilação ficou prejudicada por bloqueio externo ao registry de dependências. A validação operacional final deste incremento deve ser confirmada localmente em ambiente com acesso adequado ao registry.
+- Node.js 22+
+- Docker (para subir o PostgreSQL local)
 
-## Fluxo local de validação
+### 1. Iniciar o banco local
 
-1. instalar dependências:
-   - `npm install`
-2. preparar ambiente:
-   - `cp apps/backend/.env.example apps/backend/.env`
-   - definir `JWT_SECRET` com 32+ caracteres e `DEV_SEED_PASSWORD` em `apps/backend/.env`
-3. preparar banco local e seed de desenvolvimento:
-   - `npm run backend:bootstrap`
-4. subir o backend:
-   - `npm run backend:start:dev`
+```bash
+# Na raiz do monorepo
+docker-compose up -d
+```
 
-Esse fluxo é de desenvolvimento local. Ele usa `ts-node` no `start:dev` e pode usar o bootstrap para preparar o SQLite local e o seed de desenvolvimento.
+Isso sobe um PostgreSQL 17 em `localhost:5432` com credenciais de desenvolvimento:
+- usuário: `sadep`
+- senha: `sadep_local_dev`
+- banco: `sadep`
 
-Exemplo de valores locais para `apps/backend/.env`:
+### 2. Configurar o ambiente
+
+```bash
+cp apps/backend/.env.example apps/backend/.env
+```
+
+Preencha os valores obrigatórios em `apps/backend/.env`:
 
 ```env
 JWT_SECRET=sadep-local-jwt-secret-com-mais-de-32-caracteres-2026
+REFRESH_TOKEN_HMAC_SECRET=sadep-local-refresh-secret-com-mais-de-32-caracteres-2026
 DEV_SEED_PASSWORD=AepLocalDev@2026#Teste
 ```
 
-`JWT_SECRET` e obrigatorio para iniciar o backend e deve ter pelo menos 32 caracteres. `DEV_SEED_PASSWORD` e obrigatorio para o seed local; todos os usuarios seed usam essa senha, preservando os e-mails previsiveis de desenvolvimento.
+`JWT_SECRET` e `REFRESH_TOKEN_HMAC_SECRET` exigem mínimo de 32 caracteres.
+`DEV_SEED_PASSWORD` é a senha usada para todos os usuários do seed de desenvolvimento.
 
-O bootstrap local executa `prisma generate`, preparação mínima de compatibilidade do SQLite local legado, `prisma db push --schema prisma/schema.prisma --skip-generate`, `prisma:seed` e `db:check`. Nesta etapa, `db push` é o fluxo local oficial por compatibilidade com o estado atual das migrations do repositório; `migrate dev` não deve ser tratado como caminho principal de desenvolvimento local até saneamento posterior da limitação histórica conhecida.
+### 3. Bootstrap
 
-A configuração Prisma do backend agora fica em `apps/backend/prisma.config.ts`. O arquivo registra o schema `prisma/schema.prisma` e o seed `prisma/seed.ts`, preservando os scripts atuais e o bootstrap oficial.
+```bash
+npm run backend:bootstrap
+```
 
-No Windows, o `prisma generate` passa por uma guarda antes de atualizar o Prisma Client. Se houver processos Node relacionados ao backend, testes ou Prisma em execução, o comando bloqueia a geração, lista PIDs/command lines relevantes e orienta fechar esses processos para evitar `EPERM` no `query_engine-windows.dll.node`. A guarda não encerra processos automaticamente e não remove arquivos temporários; se o erro persistir sem processos relacionados, verifique OneDrive, antivírus ou indexação.
+Executa em sequência: build de `@sadep/contracts`, `prisma generate`, `prisma migrate deploy` (aplica as migrations no banco), seed e verificação mínima do banco.
 
-Para validar apenas as precondições mínimas do banco local sem subir o Nest:
+### 4. Subir o backend
 
-- `npm run db:check --workspace @sadep/backend`
+```bash
+npm run backend:start:dev
+```
 
-> Observação: para integração local com o frontend em `http://localhost:5000`, o backend agora usa `FRONTEND_ORIGIN` para responder corretamente ao preflight CORS (`OPTIONS`) em endpoints como `/auth/login`.
+## Banco de dados
+
+### Desenvolvimento local
+
+A `DATABASE_URL` padrão no `.env.example` aponta para o PostgreSQL do docker-compose:
+
+```
+DATABASE_URL="postgresql://sadep:sadep_local_dev@localhost:5432/sadep"
+```
+
+### Produção
+
+Use uma connection string com usuário dedicado e SSL habilitado:
+
+```
+DATABASE_URL="postgresql://sadep_prod:SENHA@host:5432/sadep?sslmode=require"
+```
+
+Em produção o Prisma Client é gerado no build e as migrations são aplicadas antes do primeiro start:
+
+```bash
+npx prisma migrate deploy --schema apps/backend/prisma/schema.prisma
+```
+
+Nunca use `migrate dev` em produção. `migrate deploy` aplica apenas migrations já aprovadas no repositório, sem gerar novas.
+
+### Migrations
+
+As migrations ficam em `apps/backend/prisma/migrations/`. Cada alteração de schema gera uma nova migration via:
+
+```bash
+npm run prisma:migrate:dev --workspace @sadep/backend
+```
+
+O arquivo gerado deve ser revisado, testado localmente e commitado junto com a alteração do `schema.prisma`.
+
+### Validação do schema
+
+```bash
+npx prisma validate --schema apps/backend/prisma/schema.prisma
+```
 
 ## Estratégia de testes e typecheck
 
-- `npm run test --workspace @sadep/backend` é o agregador oficial e executa a suíte integrada seguida da suíte unitária.
-- `npm run test:integration --workspace @sadep/backend` executa o runner customizado de processos em `src/processes/tests/run.ts`, usado para cenários funcionais/integrados de workflow, CESAD e avaliações.
-- `npm run test:unit --workspace @sadep/backend` executa o Jest, usado para specs unitárias e com mocks.
-- `npm run typecheck --workspace @sadep/backend` valida o código de aplicação pelo `tsconfig.app.json`.
-- `npm run typecheck:spec --workspace @sadep/backend` valida specs e helpers de teste pelo `tsconfig.spec.json`.
+- `npm run test --workspace @sadep/backend` — agregador oficial (integration + unit)
+- `npm run test:integration --workspace @sadep/backend` — runner customizado de processos em `src/processes/tests/run.ts`
+- `npm run test:unit --workspace @sadep/backend` — Jest (specs unitárias com mocks)
+- `npm run typecheck --workspace @sadep/backend` — valida código de aplicação via `tsconfig.app.json`
+- `npm run typecheck:spec --workspace @sadep/backend` — valida specs via `tsconfig.spec.json`
 
-Os aliases `test:runner` e `test:jest` foram preservados por compatibilidade, apontando respectivamente para `test:integration` e `test:unit`.
+Os testes de integração precisam de um banco PostgreSQL rodando com o schema aplicado. O banco do docker-compose serve para isso.
 
 ## Build e start de produção
 
-O fluxo oficial de produção do backend usa artefato JavaScript compilado, executado diretamente com Node:
-
-```powershell
+```bash
 npm run backend:build
 npm run backend:start:prod
 ```
 
-No workspace do backend, os comandos equivalentes são:
+O build executa o build de `@sadep/contracts`, `prisma generate` e `tsc -p tsconfig.app.json`. O entrypoint compilado fica em `apps/backend/dist/apps/backend/src/main.js`.
 
-```powershell
-npm run build --workspace @sadep/backend
-npm run start:prod --workspace @sadep/backend
-```
+`start:prod` não executa bootstrap, seed nem migrate. O banco deve estar preparado antes do start.
 
-O build do backend executa o build mínimo de `@sadep/contracts`, roda `prisma generate` e compila a aplicação com `tsc -p tsconfig.app.json`. Como o `rootDir` do backend aponta para a raiz do monorepo, o entrypoint compilado fica em `apps/backend/dist/apps/backend/src/main.js`; por isso `start` e `start:prod` executam esse caminho com `node`.
-
-O `start:prod` não executa bootstrap local, seed, `db push`, `db:check` nem `prisma generate`. Antes de iniciar em produção, as variáveis de ambiente devem estar definidas, o Prisma Client deve ter sido gerado no build e o banco de dados deve estar previamente preparado pelo processo operacional do ambiente.
-
-## Endpoints técnicos para validação
+## Endpoints técnicos
 
 - `GET /health`
 - `POST /auth/login`
 - `GET /auth/me`
 - `GET /auth/admin-check`
 
-## Deliberadamente fora do escopo
+## Windows — geração do Prisma Client
 
-- workflow-engine
-- domínio processual
-- autenticação institucional, SSO ou GOV.BR
-- RBAC contextual ou autorização por processo
-- banco, Prisma de domínio e migrations de negócio além de identidade e acesso
-- documentos, assinaturas, notificações e integrações externas
+No Windows, o `prisma generate` passa por uma guarda antes de atualizar o Prisma Client. Se houver processos Node relacionados ao backend, testes ou Prisma em execução, o comando lista os PIDs e orienta encerrar esses processos para evitar `EPERM` no `query_engine-windows.dll.node`. Se o erro persistir sem processos relacionados, verifique OneDrive, antivírus ou indexação de arquivos.

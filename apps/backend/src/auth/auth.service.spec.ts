@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 
 import { UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@sadep/contracts';
 
 import { hashPassword } from '../common/security/password-hasher';
@@ -8,10 +9,12 @@ import { AppLogger } from '../common/logging/app-logger.service';
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { RefreshTokenService } from './refresh-token.service';
+import { AuthAuditService } from './auth-audit.service';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   let service: AuthService;
+  let jwtService: JwtService;
   let prismaService: {
     $transaction: jest.Mock;
     user: {
@@ -51,11 +54,18 @@ describe('AuthService', () => {
       refreshTokenTtlSeconds: 7 * 24 * 60 * 60,
     } as AppConfigService;
 
+    jwtService = new JwtService({
+      secret: 'unit-test-secret-with-at-least-32-characters',
+      signOptions: { expiresIn: 60 * 60 },
+    });
+
     service = new AuthService(
       prismaService as unknown as PrismaService,
       appConfigService,
       new RefreshTokenService(appConfigService),
       logger as unknown as AppLogger,
+      jwtService,
+      { persistAsync: jest.fn() } as unknown as AuthAuditService,
     );
   });
 
@@ -94,7 +104,7 @@ describe('AuthService', () => {
     expect(result.refreshExpiresAt).toEqual(expect.any(Date));
     expect(logger.log).toHaveBeenCalledWith(
       expectAuthAuditEvent('AUTH_LOGIN_SUCCEEDED', {
-        email: 'maria.silva@test.local',
+        email: 'ma***@test.local',
         role: UserRole.CESAD_MEMBER,
         userId: 'user-123',
       }),
@@ -110,7 +120,7 @@ describe('AuthService', () => {
 
     expect(logger.warn).toHaveBeenCalledWith(
       expectAuthAuditEvent('AUTH_LOGIN_FAILED', {
-        email: 'maria.silva@test.local',
+        email: 'ma***@test.local',
         reason: 'invalid_credentials',
       }),
     );

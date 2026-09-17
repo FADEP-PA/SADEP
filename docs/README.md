@@ -18,6 +18,14 @@ Este índice é a referência oficial para localizar documentos, entender sua fu
 
 ---
 
+## Novo desenvolvedor?
+
+Leia primeiro: **[onboarding.md](./onboarding.md)**
+
+Cobre o que o SADEP faz, o domínio, a arquitetura, o fluxo processual, o que está implementado e como contribuir.
+
+---
+
 ## Documento obrigatório para agentes
 
 Antes de qualquer implementação, auditoria ou atualização documental relevante, leia obrigatoriamente:

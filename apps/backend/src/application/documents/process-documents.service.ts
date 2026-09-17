@@ -1495,7 +1495,12 @@ export class ProcessDocumentsService {
         id: true,
         members: {
           where: {
-            roleType: PrismaCesadCommissionMemberRoleType.TITULAR,
+            roleType: {
+              in: [
+                PrismaCesadCommissionMemberRoleType.PRESIDENTE,
+                PrismaCesadCommissionMemberRoleType.TITULAR,
+              ],
+            },
             startDate: { lte: frozenAt },
             OR: [{ endDate: null }, { endDate: { gte: frozenAt } }],
             user: {
@@ -1663,8 +1668,8 @@ export class ProcessDocumentsService {
     processStageId: string,
   ): Promise<CesadOpinionSignatureStatus> {
     const stageMetadata = await this.getStageMetadataOrThrow(transaction, processStageId);
-    const opinion = await transaction.cesadStageOpinion.findUnique({
-      where: { processStageId },
+    const opinion = await transaction.cesadStageOpinion.findFirst({
+      where: { processStageId, supersededAt: null },
       include: {
         expectedSigners: {
           orderBy: { sortOrder: 'asc' },
@@ -1867,8 +1872,8 @@ export class ProcessDocumentsService {
       actingCommissionMemberId: string;
     }>;
   }> {
-    const opinion = await transaction.cesadStageOpinion.findUnique({
-      where: { processStageId },
+    const opinion = await transaction.cesadStageOpinion.findFirst({
+      where: { processStageId, supersededAt: null },
       select: {
         id: true,
         status: true,
@@ -1977,7 +1982,7 @@ export class ProcessDocumentsService {
             endedAt: true,
             supervisorEvaluation: { select: { status: true } },
             selfEvaluation: { select: { status: true } },
-            cesadStageOpinion: { select: { status: true } },
+            cesadStageOpinions: { where: { supersededAt: null }, select: { status: true } },
             documents: {
               select: {
                 documentType: true,
@@ -2017,7 +2022,7 @@ export class ProcessDocumentsService {
         stage.endedAt !== null &&
         stage.supervisorEvaluation?.status === 'SUBMITTED' &&
         stage.selfEvaluation?.status === 'SUBMITTED' &&
-        stage.cesadStageOpinion?.status === 'COMPLETED' &&
+        stage.cesadStageOpinions[0]?.status === 'COMPLETED' &&
         supervisorDocument?.documentStatus === PrismaDocumentStatus.SIGNED &&
         selfDocument?.documentStatus === PrismaDocumentStatus.SIGNED &&
         cesadDocument?.documentStatus === PrismaDocumentStatus.SIGNED

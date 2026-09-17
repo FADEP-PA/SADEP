@@ -4,6 +4,15 @@ Este arquivo resume problemas transversais resolvidos ou mitigados. O antigo pai
 
 Esta separacao nao altera status, nao move documentos legados e nao arquiva historico. Problemas ativos continuam em [`./active-problems.md`](./active-problems.md).
 
+## BE-CESAD-FINAL-01C — Envio formal a homologacao concluido
+
+- **Status documental:** resolvido em 2026-06-24.
+- **Commit funcional:** `a0e5b2d feat(backend): send final CESAD opinion to homologation`.
+- A ponte formal `SEND_TO_HOMOLOGATION` foi implementada no backend com endpoint, guardas, auditoria e migration proprias.
+- `BE-CESAD-FINAL-01` esta encerrada no recorte planejado das tres fatias.
+- O proximo passo e `BE-HOMOLOG-01`.
+- Documentacao do painel ativo atualizada para refletir `BE-HOMOLOG-01` como proxima prioridade.
+
 ## DX-FE-ENV-EXAMPLE-01 e FE-ENV-01 — Configuração e Documentação de Variáveis de Ambiente do Frontend
 
 - **Status documental:** resolvidas.

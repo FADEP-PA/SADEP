@@ -6,6 +6,9 @@ export interface CesadCommissionMember {
   userId: string;
   actId: string | null;
   roleType: CesadCommissionMemberRoleType;
+  registrationSnapshot: string | null;
+  bondSnapshot: string | null;
+  positionSnapshot: string | null;
   startDate: Date;
   endDate: Date | null;
   createdAt: Date;

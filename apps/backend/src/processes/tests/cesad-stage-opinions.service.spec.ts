@@ -123,8 +123,8 @@ export async function runCesadStageOpinionsServiceTests() {
     assert.equal(draft.stageResult, 'Aguardando consolidação');
     assert.equal(draft.completedAt, null);
 
-    const opinionAfterDraft = await context.prisma.cesadStageOpinion.findUniqueOrThrow({
-      where: { processStageId: stageOne.id },
+    const opinionAfterDraft = await context.prisma.cesadStageOpinion.findFirstOrThrow({
+      where: { processStageId: stageOne.id, supersededAt: null },
     });
     assert.equal(opinionAfterDraft.status, 'DRAFT');
 

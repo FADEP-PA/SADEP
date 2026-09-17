@@ -7,16 +7,22 @@ import type {
   WorkflowResponse,
 } from '@/features/dashboard/types/process-dashboard-types';
 import {
+  CesadStageOpinionInput,
+  CesadStageOpinionRef,
+  CesadStageOpinionSignatureStatusRef,
   CesadStageReadSnapshotRef,
   InternServerWorkspaceSnapshotRef,
   ProcessStatus,
   ProcessAction,
+  ProcessListRef,
   SupervisorEvaluationDocumentContextRef,
   SupervisorEvaluationContentInput,
   SupervisorEvaluationWithDocumentContextRef,
   SelfEvaluationWithDocumentContextRef,
   UserRole,
 } from '@sadep/contracts';
+
+export type { ProcessListRef };
 
 export type UpsertSupervisorEvaluationInput = {
   summary: string;
@@ -59,29 +65,8 @@ const AUTHENTICATED_REQUEST = {
   useStoredAccessToken: true,
 } as const;
 
-export type ProcessListItem = {
-  id: string;
-  status: ProcessStatus;
-  createdAt: string;
-  updatedAt: string;
-  evaluatedUser: {
-    id: string;
-    name: string;
-    email: string;
-    role: UserRole;
-  };
-  currentStage: {
-    id: string;
-    sequence: number;
-    stageCode: string;
-    responsibleSupervisorUserId: string | null;
-    responsibleSupervisorName: string | null;
-    startedAt: string | null;
-  } | null;
-};
-
-export async function listProcesses() {
-  return httpRequest<ProcessListItem[]>('/processes', {
+export async function getProcessList() {
+  return httpRequest<ProcessListRef>('/processes', {
     ...AUTHENTICATED_REQUEST,
     method: 'GET',
   });
@@ -155,6 +140,62 @@ export async function getCesadStageReadSnapshot(
       ...AUTHENTICATED_REQUEST,
       method: 'GET',
     },
+  );
+}
+
+export async function getCesadStageOpinion(processId: string, stageSequence: number) {
+  return httpRequest<CesadStageOpinionRef | null>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion`,
+    { ...AUTHENTICATED_REQUEST, method: 'GET' },
+  );
+}
+
+export async function saveCesadStageOpinionDraft(
+  processId: string,
+  stageSequence: number,
+  body: CesadStageOpinionInput,
+) {
+  return httpRequest<CesadStageOpinionRef>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/draft`,
+    { ...AUTHENTICATED_REQUEST, method: 'PUT', body },
+  );
+}
+
+export async function completeCesadStageOpinion(
+  processId: string,
+  stageSequence: number,
+  body: CesadStageOpinionInput,
+) {
+  return httpRequest<CesadStageOpinionRef>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/complete`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST', body },
+  );
+}
+
+export async function prepareCesadStageOpinionSignatures(
+  processId: string,
+  stageSequence: number,
+) {
+  return httpRequest<CesadStageOpinionSignatureStatusRef>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/signatures/prepare`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST' },
+  );
+}
+
+export async function getCesadStageOpinionSignatureStatus(
+  processId: string,
+  stageSequence: number,
+) {
+  return httpRequest<CesadStageOpinionSignatureStatusRef>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/signatures`,
+    { ...AUTHENTICATED_REQUEST, method: 'GET' },
+  );
+}
+
+export async function signCesadStageOpinion(processId: string, stageSequence: number) {
+  return httpRequest<CesadStageOpinionSignatureStatusRef>(
+    `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion/sign`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST' },
   );
 }
 

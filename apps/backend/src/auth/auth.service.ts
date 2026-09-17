@@ -1,27 +1,19 @@
-import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@sadep/contracts';
 import type { LoginResponse } from '@sadep/contracts';
-import { Prisma } from '@prisma/client';
+import { AuthAuditEventType, Prisma } from '@prisma/client';
 
 import { AppLogger } from '../common/logging/app-logger.service';
 import { AppConfigService } from '../config/app-config.service';
-import { verifyPassword } from '../common/security/password-hasher';
+import { hashPassword, verifyPassword } from '../common/security/password-hasher';
 import { PrismaService } from '../infrastructure/database/prisma.service';
+import { AuthAuditService } from './auth-audit.service';
 import { RefreshTokenService } from './refresh-token.service';
 import { REFRESH_TOKEN_REVOKED_REASON } from './session.constants';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
-
-type JwtHeader = {
-  alg: 'HS256';
-  typ: 'JWT';
-};
-
-type JwtPayload = AuthenticatedUser & {
-  exp: number;
-  iat: number;
-};
 
 type PersistedAuthenticatedUser = {
   id: string;
@@ -66,13 +58,21 @@ type PersistedUserSessionWithUser = {
 };
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
+  private timingSentinelHash: string = '';
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly appConfigService: AppConfigService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly logger: AppLogger,
+    private readonly jwtService: JwtService,
+    private readonly authAuditService: AuthAuditService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    this.timingSentinelHash = await hashPassword('timing-sentinel-for-user-not-found');
+  }
 
   async login(
     email: string,
@@ -83,9 +83,16 @@ export class AuthService {
     const user = await this.prismaService.user.findUnique({ where: { email: normalizedEmail } });
 
     if (!user || !user.isActive) {
+      await verifyPassword(password, this.timingSentinelHash);
       this.logAuthWarning('AUTH_LOGIN_FAILED', {
-        email: normalizedEmail,
+        email: maskEmail(normalizedEmail),
         reason: 'invalid_credentials',
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.LOGIN_FAILURE,
+        failureReason: 'invalid_credentials',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
       });
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -94,8 +101,15 @@ export class AuthService {
 
     if (!isValidPassword) {
       this.logAuthWarning('AUTH_LOGIN_FAILED', {
-        email: normalizedEmail,
+        email: maskEmail(normalizedEmail),
         reason: 'invalid_credentials',
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.LOGIN_FAILURE,
+        userId: user.id,
+        failureReason: 'invalid_credentials',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
       });
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -110,10 +124,17 @@ export class AuthService {
     const refreshSession = await this.createRefreshSession(user.id, authenticatedUser, context);
 
     this.logAuthInfo('AUTH_LOGIN_SUCCEEDED', {
-      email: user.email,
+      email: maskEmail(user.email),
       role: authenticatedUser.role,
       sessionFamilyId: refreshSession.familyId,
       userId: user.id,
+    });
+    this.authAuditService.persistAsync({
+      eventType: AuthAuditEventType.LOGIN_SUCCESS,
+      userId: user.id,
+      familyId: refreshSession.familyId,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
     });
 
     return {
@@ -131,6 +152,12 @@ export class AuthService {
     if (!refreshToken) {
       this.logAuthWarning('AUTH_REFRESH_REJECTED', {
         reason: 'missing_token',
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        failureReason: 'missing_token',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
       });
       throw new UnauthorizedException('Invalid refresh session');
     }
@@ -155,6 +182,12 @@ export class AuthService {
       this.logAuthWarning('AUTH_REFRESH_REJECTED', {
         reason: 'session_not_found',
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        failureReason: 'session_not_found',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -166,6 +199,15 @@ export class AuthService {
         sessionId: session.id,
         userId: session.userId,
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REUSE_DETECTED,
+        userId: session.userId,
+        sessionId: session.id,
+        familyId: session.familyId,
+        failureReason: 'rotated_or_reused_session',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -176,6 +218,15 @@ export class AuthService {
         sessionId: session.id,
         userId: session.userId,
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        userId: session.userId,
+        sessionId: session.id,
+        familyId: session.familyId,
+        failureReason: 'revoked_session',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -185,6 +236,15 @@ export class AuthService {
         reason: 'expired_session',
         sessionId: session.id,
         userId: session.userId,
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        userId: session.userId,
+        sessionId: session.id,
+        familyId: session.familyId,
+        failureReason: 'expired_session',
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
       });
       throw new UnauthorizedException('Invalid refresh session');
     }
@@ -230,6 +290,15 @@ export class AuthService {
             sessionId: session.id,
             userId: session.userId,
           });
+          this.authAuditService.persistAsync({
+            eventType: AuthAuditEventType.REUSE_DETECTED,
+            userId: session.userId,
+            sessionId: session.id,
+            familyId: session.familyId,
+            failureReason: 'rotation_conflict',
+            ipAddress: context.ipAddress,
+            userAgent: context.userAgent,
+          });
           throw new UnauthorizedException('Invalid refresh session');
         }
 
@@ -270,6 +339,14 @@ export class AuthService {
       nextSessionId,
       userId: session.userId,
     });
+    this.authAuditService.persistAsync({
+      eventType: AuthAuditEventType.REFRESH_ACCEPTED,
+      userId: session.userId,
+      sessionId: nextSessionId,
+      familyId: session.familyId,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    });
 
     return {
       accessToken: this.signToken(authenticatedUser),
@@ -284,18 +361,26 @@ export class AuthService {
       this.logAuthInfo('AUTH_LOGOUT_SKIPPED', {
         reason: 'missing_token',
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.LOGOUT_IDEMPOTENT,
+        failureReason: 'missing_token',
+      });
       return;
     }
 
     const refreshTokenHash = this.refreshTokenService.hashToken(refreshToken);
     const session = await this.prismaService.userSession.findUnique({
       where: { refreshTokenHash },
-      select: { id: true },
+      select: { id: true, userId: true, familyId: true },
     });
 
     if (!session) {
       this.logAuthInfo('AUTH_LOGOUT_SKIPPED', {
         reason: 'session_not_found',
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.LOGOUT_IDEMPOTENT,
+        failureReason: 'session_not_found',
       });
       return;
     }
@@ -315,39 +400,28 @@ export class AuthService {
       changed: logoutResult.count,
       sessionId: session.id,
     });
+    this.authAuditService.persistAsync({
+      eventType: AuthAuditEventType.LOGOUT,
+      userId: session.userId,
+      sessionId: session.id,
+      familyId: session.familyId,
+    });
   }
 
   verifyToken(token: string): AuthenticatedUser {
-    const [encodedHeader, encodedPayload, encodedSignature, ...extraParts] = token.split('.');
+    let payload: unknown;
 
-    if (!encodedHeader || !encodedPayload || !encodedSignature || extraParts.length > 0) {
+    try {
+      payload = this.jwtService.verify(token);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Token expired');
+      }
       throw new UnauthorizedException('Invalid token');
     }
 
-    const header = this.parseHeader(encodedHeader);
-
-    if (header.alg !== 'HS256' || header.typ !== 'JWT') {
+    if (!this.isValidJwtPayload(payload)) {
       throw new UnauthorizedException('Invalid token');
-    }
-
-    const expectedSignature = this.sign(`${encodedHeader}.${encodedPayload}`);
-    const providedSignatureBuffer = Buffer.from(encodedSignature, 'base64url');
-    const expectedSignatureBuffer = Buffer.from(expectedSignature, 'base64url');
-
-    if (providedSignatureBuffer.length === 0 || providedSignatureBuffer.length !== expectedSignatureBuffer.length) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    const isValidSignature = timingSafeEqual(providedSignatureBuffer, expectedSignatureBuffer);
-
-    if (!isValidSignature) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    const payload = this.parsePayload(encodedPayload);
-
-    if (payload.exp <= Math.floor(Date.now() / 1000)) {
-      throw new UnauthorizedException('Token expired');
     }
 
     return {
@@ -408,80 +482,21 @@ export class AuthService {
   }
 
   private signToken(user: AuthenticatedUser): string {
-    const nowInSeconds = Math.floor(Date.now() / 1000);
-    const header: JwtHeader = { alg: 'HS256', typ: 'JWT' };
-    const payload: JwtPayload = {
-      ...user,
-      iat: nowInSeconds,
-      exp: nowInSeconds + this.appConfigService.accessTokenTtlSeconds,
-    };
-
-    const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
-    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
-    const signature = this.sign(`${encodedHeader}.${encodedPayload}`);
-
-    return `${encodedHeader}.${encodedPayload}.${signature}`;
+    return this.jwtService.sign({ ...user });
   }
 
-  private sign(value: string): string {
-    return createHmac('sha256', this.appConfigService.jwtSecret).update(value).digest('base64url');
-  }
-
-  private parseHeader(encodedHeader: string): JwtHeader {
-    let parsedHeader: unknown;
-
-    try {
-      parsedHeader = JSON.parse(Buffer.from(encodedHeader, 'base64url').toString('utf-8'));
-    } catch {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    if (!this.isJwtHeader(parsedHeader)) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    return parsedHeader;
-  }
-
-  private parsePayload(encodedPayload: string): JwtPayload {
-    let parsedPayload: unknown;
-
-    try {
-      parsedPayload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf-8'));
-    } catch {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    if (!this.isJwtPayload(parsedPayload)) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    return parsedPayload;
-  }
-
-  private isJwtHeader(value: unknown): value is JwtHeader {
+  private isValidJwtPayload(value: unknown): value is AuthenticatedUser {
     if (!value || typeof value !== 'object') {
       return false;
     }
 
-    const candidate = value as Partial<JwtHeader>;
-    return candidate.alg === 'HS256' && candidate.typ === 'JWT';
-  }
-
-  private isJwtPayload(value: unknown): value is JwtPayload {
-    if (!value || typeof value !== 'object') {
-      return false;
-    }
-
-    const candidate = value as Partial<JwtPayload>;
+    const candidate = value as Record<string, unknown>;
 
     return (
       typeof candidate.sub === 'string' &&
       typeof candidate.email === 'string' &&
       typeof candidate.name === 'string' &&
-      typeof candidate.role === 'string' &&
-      typeof candidate.iat === 'number' &&
-      typeof candidate.exp === 'number'
+      typeof candidate.role === 'string'
     );
   }
 
@@ -539,6 +554,13 @@ export class AuthService {
         sessionId: session.id,
         userId: session.userId,
       });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        userId: session.userId,
+        sessionId: session.id,
+        familyId: session.familyId,
+        failureReason: 'inactive_user',
+      });
       throw new UnauthorizedException('Invalid refresh session');
     }
 
@@ -553,6 +575,13 @@ export class AuthService {
         reason: 'role_changed',
         sessionId: session.id,
         userId: session.userId,
+      });
+      this.authAuditService.persistAsync({
+        eventType: AuthAuditEventType.REFRESH_REJECTED,
+        userId: session.userId,
+        sessionId: session.id,
+        familyId: session.familyId,
+        failureReason: 'role_changed',
       });
       throw new UnauthorizedException('Invalid refresh session');
     }
@@ -624,4 +653,15 @@ export class AuthService {
 function normalizeNullableString(value: string | null | undefined): string | null {
   const normalizedValue = value?.trim();
   return normalizedValue ? normalizedValue : null;
+}
+
+function maskEmail(email: string): string {
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0) {
+    return '***';
+  }
+  const local = email.slice(0, atIndex);
+  const domain = email.slice(atIndex);
+  const visiblePrefix = local.slice(0, Math.min(2, local.length));
+  return `${visiblePrefix}***${domain}`;
 }

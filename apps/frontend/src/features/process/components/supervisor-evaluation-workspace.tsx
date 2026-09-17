@@ -5,13 +5,18 @@ import {
   SelfEvaluationStatus,
   SignatureStatus,
   UserRole,
+  type ProcessListItemRef,
   type SupervisorEvaluationWithDocumentContextRef,
 } from '@sadep/contracts';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import {
+<<<<<<< HEAD
   getSelfEvaluation,
+=======
+  getProcessList,
+>>>>>>> origin/develop
   getSupervisorEvaluationWorkspaceSnapshot,
   listProcesses,
   rectifySupervisorEvaluation,
@@ -27,200 +32,42 @@ import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
-import { DemonstrationModeState, EmptyState } from '@/shared/ui/operational-states';
 import { PageSection } from '@/shared/ui/page-section';
+
+import { SupervisorDashboardTable } from './supervisor-dashboard-table';
+import { EvaluationDetailView } from './supervisor-evaluation-form';
+import type {
+  EvaluationDraft,
+  PreviousEvaluationItem,
+  SupervisorDashboardRow,
+  SupervisorDashboardStatus,
+} from './supervisor-evaluation-types';
 
 const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
 
-type SupervisorDashboardStatus =
-  | 'EM_AVALIACAO'
-  | 'AGUARDANDO_ASSINATURA'
-  | 'EM_ANALISE_CESAD'
-  | 'CONCLUIDO';
-
-type SupervisorDashboardRow = {
-  id: string;
-  serverName: string;
-  registration: string;
-  role: string;
-  exerciseStart: string;
-  status: SupervisorDashboardStatus;
-  stageLabel: string;
-  deadline: string;
-  canReviewPrevious: boolean;
-  actionLabel: string;
-  actionDisabled?: boolean;
-  supervisorName: string;
-  supervisorRole: string;
-  trackingPeriod: string;
-  source?: 'demo' | 'real';
-};
-
-type EvaluationFactorItemDraft = {
-  id: string;
-  label: string;
-  score: number;
-};
-
-type EvaluationFactorDraft = {
-  id: string;
-  title: string;
-  items: EvaluationFactorItemDraft[];
-};
-
-type MonthlyObservation = {
-  id: string;
-  monthLabel: string;
-  description: string;
-  attachmentName: string;
-};
-
-type EvaluationDraft = {
-  row: SupervisorDashboardRow;
-  unitCompetencies: string;
-  serverAssignments: string;
-  generalComments: string;
-  totalStageScore: string;
-  stageAverage: string;
-  administrativeConcept: string;
-  monthlyObservations: MonthlyObservation[];
-  factors: EvaluationFactorDraft[];
-  expandedFactorIds: string[];
-};
-
 type OperationMode = 'draft' | 'submit';
 
-type PreviousEvaluationItem = {
-  stageLabel: string;
-  conclusionDate: string;
-  statusLabel: string;
-  actionLabel: string;
-};
-
-const PREVIOUS_EVALUATION_HISTORY: Record<string, PreviousEvaluationItem[]> = {
-  'SUP-001': [
-    {
-      stageLabel: '1ª etapa',
-      conclusionDate: '15/02/2024',
-      statusLabel: 'Concluída',
-      actionLabel: 'Visualizar PDF',
-    },
-    {
-      stageLabel: '2ª etapa',
-      conclusionDate: '20/08/2024',
-      statusLabel: 'Concluída',
-      actionLabel: 'Visualizar PDF',
-    },
-    {
-      stageLabel: '3ª etapa',
-      conclusionDate: '10/02/2025',
-      statusLabel: 'Concluída',
-      actionLabel: 'Visualizar PDF',
-    },
-  ],
-  'SUP-002': [
-    {
-      stageLabel: '2ª etapa',
-      conclusionDate: '21/04/2024',
-      statusLabel: 'Concluída',
-      actionLabel: 'Visualizar PDF',
-    },
-    {
-      stageLabel: '3ª etapa',
-      conclusionDate: '09/09/2024',
-      statusLabel: 'Concluída',
-      actionLabel: 'Visualizar PDF',
-    },
-  ],
-};
-
-const DASHBOARD_ROWS: SupervisorDashboardRow[] = [
-  {
-    id: 'SUP-001',
-    serverName: 'João da Silva',
-    registration: '459134-1',
-    role: 'Professor Nivel II',
-    exerciseStart: '10/02/2022',
-    status: 'EM_AVALIACAO',
-    stageLabel: '3ª etapa',
-    deadline: '15/10/2024',
-    canReviewPrevious: true,
-    actionLabel: 'Avaliar',
-    supervisorName: 'Maria Oliveira',
-    supervisorRole: 'Diretora',
-    trackingPeriod: 'JAN/2024 a JUN/2024',
-  },
-  {
-    id: 'SUP-002',
-    serverName: 'Maria Santos',
-    registration: '857358-2',
-    role: 'Professor Nivel II',
-    exerciseStart: '15/05/2021',
-    status: 'EM_AVALIACAO',
-    stageLabel: '4ª etapa',
-    deadline: '20/11/2024',
-    canReviewPrevious: true,
-    actionLabel: 'Avaliar',
-    supervisorName: 'Maria Oliveira',
-    supervisorRole: 'Diretora',
-    trackingPeriod: 'JUL/2024 a DEZ/2024',
-  },
-  {
-    id: 'SUP-003',
-    serverName: 'Carlos Lima',
-    registration: '631842-1',
-    role: 'Analista',
-    exerciseStart: '01/03/2020',
-    status: 'CONCLUIDO',
-    stageLabel: 'Todas concluidas',
+function fromApiItem(item: ProcessListItemRef): SupervisorDashboardRow {
+  const dashboardStatus = toDashboardStatus(item.status as ProcessStatus);
+  const isActive = dashboardStatus === 'EM_AVALIACAO' || dashboardStatus === 'AGUARDANDO_ASSINATURA';
+  return {
+    id: item.id,
+    serverName: item.evaluatedUserName,
+    registration: item.evaluatedUserEmail,
+    role: 'Servidor em avaliação',
+    exerciseStart: new Date(item.createdAt).toLocaleDateString('pt-BR'),
+    status: dashboardStatus,
+    stageLabel: `${item.currentStageSequence}ª etapa`,
     deadline: '-',
-    canReviewPrevious: true,
-    actionLabel: 'Visualizar',
-    actionDisabled: true,
-    supervisorName: 'Paulo Cardoso',
-    supervisorRole: 'Coordenador',
-    trackingPeriod: 'JAN/2024 a JUN/2024',
-  },
-  {
-    id: 'SUP-004',
-    serverName: 'Ana Pereira',
-    registration: '274916-2',
-    role: 'Professor',
-    exerciseStart: '12/08/2021',
-    status: 'EM_ANALISE_CESAD',
-    stageLabel: '4ª etapa',
-    deadline: '05/09/2024',
     canReviewPrevious: false,
-    actionLabel: 'Visualizar',
-    actionDisabled: true,
-    supervisorName: 'Maria Oliveira',
-    supervisorRole: 'Diretora',
-    trackingPeriod: 'JUL/2024 a DEZ/2024',
-  },
-];
-
-const STATUS_FILTERS: Array<{ id: SupervisorDashboardStatus; label: string }> = [
-  { id: 'EM_AVALIACAO', label: 'Em avaliação' },
-  { id: 'AGUARDANDO_ASSINATURA', label: 'Aguardando assinatura' },
-  { id: 'EM_ANALISE_CESAD', label: 'Em análise CESAD' },
-  { id: 'CONCLUIDO', label: 'Concluídos' },
-];
-
-const MONTHLY_OBSERVATION_OPTIONS = [
-  '1º mês',
-  '2º mês',
-  '3º mês',
-  '4º mês',
-  '5º mês',
-  '6º mês',
-  '7º mês',
-  '8º mês',
-  '9º mês',
-  '10º mês',
-  '11º mês',
-  '12º mês',
-] as const;
-const ADMINISTRATIVE_CONCEPT_OPTIONS = ['Insuficiente', 'Regular', 'Bom', 'Excelente'] as const;
+    actionLabel: isActive ? 'Avaliar' : 'Visualizar',
+    actionDisabled: !isActive,
+    supervisorName: item.responsibleSupervisorName ?? 'Chefia imediata',
+    supervisorRole: 'Chefia imediata',
+    trackingPeriod: 'Período institucional',
+    source: 'real',
+  };
+}
 
 const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: string; label: string }> }> = [
   {
@@ -276,18 +123,13 @@ const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: st
 ];
 
 function toDashboardStatus(status: ProcessStatus): SupervisorDashboardStatus {
-  if (status === ProcessStatus.EM_AVALIACAO) {
-    return 'EM_AVALIACAO';
-  }
-
+  if (status === ProcessStatus.EM_AVALIACAO) return 'EM_AVALIACAO';
   if (status === ProcessStatus.AGUARDANDO_ASSINATURA || status === ProcessStatus.ASSINADO) {
     return 'AGUARDANDO_ASSINATURA';
   }
-
   if (status === ProcessStatus.EM_ANALISE_CESAD || status === ProcessStatus.PARECER_EMITIDO) {
     return 'EM_ANALISE_CESAD';
   }
-
   return 'CONCLUIDO';
 }
 
@@ -364,25 +206,34 @@ function createEvaluationDraft(
   evaluation?: SupervisorEvaluationWithDocumentContextRef | null,
 ): EvaluationDraft {
   const storedCriteria = evaluation?.content.criteria ?? [];
+  const factors = FACTOR_TEMPLATES.map((factor) => ({
+    id: factor.id,
+    title: factor.title,
+    items: factor.items.map((item) => ({
+      id: item.id,
+      label: item.label,
+      score: storedCriteria.find((criterion) => criterion.code === item.id)?.rating ?? 1,
+    })),
+  }));
+
+  const total = factors.reduce((sum, factor) => {
+    const avg = factor.items.length > 0
+      ? factor.items.reduce((s, item) => s + item.score, 0) / factor.items.length
+      : 0;
+    return sum + avg;
+  }, 0);
+  const average = factors.length > 0 ? total / factors.length : 0;
 
   return {
     row,
     unitCompetencies: evaluation?.summary ?? '',
     serverAssignments: '',
     generalComments: evaluation?.generalComments ?? '',
-    totalStageScore: '0.0',
-    stageAverage: '0.0',
-    administrativeConcept: 'Insuficiente',
+    totalStageScore: total.toFixed(1),
+    stageAverage: average.toFixed(1),
+    administrativeConcept: average < 50 ? 'Insuficiente' : average < 70 ? 'Regular' : average < 90 ? 'Bom' : 'Excelente',
     monthlyObservations: [],
-    factors: FACTOR_TEMPLATES.map((factor) => ({
-      id: factor.id,
-      title: factor.title,
-      items: factor.items.map((item) => ({
-        id: item.id,
-        label: item.label,
-        score: storedCriteria.find((criterion) => criterion.code === item.id)?.rating ?? 1,
-      })),
-    })),
+    factors,
     expandedFactorIds: [],
   };
 }
@@ -423,6 +274,7 @@ function buildSupervisorEvaluationPayload(
   };
 }
 
+<<<<<<< HEAD
 function getStatusLabel(status: SupervisorDashboardStatus) {
   if (status === 'EM_AVALIACAO') {
     return 'Em avaliação';
@@ -543,18 +395,26 @@ function EvaluationFactorCard({
   );
 }
 
+=======
+>>>>>>> origin/develop
 export function SupervisorEvaluationWorkspace() {
   const { session } = useAuth();
   const [selectedFilters, setSelectedFilters] = useState<SupervisorDashboardStatus[]>(
-    STATUS_FILTERS.map((item) => item.id),
+    ['EM_AVALIACAO', 'AGUARDANDO_ASSINATURA', 'EM_ANALISE_CESAD', 'CONCLUIDO'],
   );
   const [activeEvaluation, setActiveEvaluation] = useState<EvaluationDraft | null>(null);
   const [previousReviewRow, setPreviousReviewRow] = useState<SupervisorDashboardRow | null>(null);
   const [workspaceSnapshot, setWorkspaceSnapshot] = useState<SupervisorEvaluationWorkspaceSnapshot | null>(null);
+<<<<<<< HEAD
   const [selfEvaluation, setSelfEvaluation] = useState<SelfEvaluationResponse | null>(null);
 
   const [realProcesses, setRealProcesses] = useState<ProcessListItem[]>([]);
   const [isLoadingProcesses, setIsLoadingProcesses] = useState(false);
+=======
+  const [apiRows, setApiRows] = useState<SupervisorDashboardRow[] | null>(null);
+  const [isLoadingList, setIsLoadingList] = useState(false);
+  const [processIdInput, setProcessIdInput] = useState('');
+>>>>>>> origin/develop
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
   const [isSigningSelfEval, setIsSigningSelfEval] = useState(false);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
@@ -565,6 +425,7 @@ export function SupervisorEvaluationWorkspace() {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
 
+<<<<<<< HEAD
   const loadProcessesList = async () => {
     if (!session) return;
     setIsLoadingProcesses(true);
@@ -593,25 +454,40 @@ export function SupervisorEvaluationWorkspace() {
     }
     return workspaceSnapshot ? [createRealDashboardRow(workspaceSnapshot), ...DASHBOARD_ROWS] : DASHBOARD_ROWS;
   }, [realProcesses, workspaceSnapshot, selfEvaluation]);
+=======
+  useEffect(() => {
+    if (!session) return;
+    setIsLoadingList(true);
+    getProcessList()
+      .then((result) => setApiRows(result.items.map(fromApiItem)))
+      .catch(() => setApiRows([]))
+      .finally(() => setIsLoadingList(false));
+  }, [session]);
+>>>>>>> origin/develop
 
+  const baseRows = apiRows ?? [];
+  const dashboardRows = useMemo(
+    () =>
+      workspaceSnapshot && !baseRows.some((r) => r.id === workspaceSnapshot.process.id)
+        ? [createRealDashboardRow(workspaceSnapshot), ...baseRows]
+        : baseRows,
+    [workspaceSnapshot, baseRows],
+  );
   const filteredRows = useMemo(
     () => dashboardRows.filter((row) => selectedFilters.includes(row.status)),
     [dashboardRows, selectedFilters],
   );
-  const previousEvaluationHistory = previousReviewRow
-    ? PREVIOUS_EVALUATION_HISTORY[previousReviewRow.id] ?? []
-    : [];
+  const previousEvaluationHistory: PreviousEvaluationItem[] = [];
 
   async function loadSupervisorWorkspace(processId: string) {
-    if (!session) {
-      return;
-    }
+    if (!session) return;
 
     setIsLoadingWorkspace(true);
     setLoadErrorMessage(null);
     setLoadErrorDetails([]);
 
     try {
+<<<<<<< HEAD
       const [snapshot, selfEval] = await Promise.all([
         getSupervisorEvaluationWorkspaceSnapshot(processId),
         getSelfEvaluation(processId).catch(() => null),
@@ -626,6 +502,14 @@ export function SupervisorEvaluationWorkspace() {
         : createRealDashboardRow(snapshot);
 
       setActiveEvaluation(createEvaluationDraft(row, snapshot.supervisorEvaluation));
+=======
+      const snapshot = await getSupervisorEvaluationWorkspaceSnapshot(processId);
+      setWorkspaceSnapshot(snapshot);
+      setActiveEvaluation((current) => {
+        if (!current || current.row.source !== 'real') return current;
+        return createEvaluationDraft(createRealDashboardRow(snapshot), snapshot.supervisorEvaluation);
+      });
+>>>>>>> origin/develop
     } catch (error) {
       const payload =
         typeof error === 'object' && error && 'payload' in error
@@ -642,25 +526,43 @@ export function SupervisorEvaluationWorkspace() {
     }
   }
 
+<<<<<<< HEAD
+=======
+  function handleLoadWorkspace(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedProcessId = processIdInput.trim();
+
+    if (!normalizedProcessId) {
+      setLoadErrorMessage('Informe o identificador do processo para consultar o workspace real da chefia.');
+      setLoadErrorDetails([]);
+      setWorkspaceSnapshot(null);
+      setActiveEvaluation((current) => (current?.row.source === 'real' ? null : current));
+      return;
+    }
+
+    void loadSupervisorWorkspace(normalizedProcessId);
+  }
+
+>>>>>>> origin/develop
   function toggleFilter(filterId: SupervisorDashboardStatus) {
     setSelectedFilters((current) => {
       if (current.includes(filterId)) {
-        if (current.length === 1) {
-          return current;
-        }
-
-        return current.filter((item) => item !== filterId);
+        return current.length === 1 ? current : current.filter((item) => item !== filterId);
       }
-
       return [...current, filterId];
     });
   }
 
+<<<<<<< HEAD
   async function openEvaluation(row: SupervisorDashboardRow) {
     if (row.actionDisabled) {
       return;
     }
 
+=======
+  function openEvaluation(row: SupervisorDashboardRow) {
+    if (row.actionDisabled) return;
+>>>>>>> origin/develop
     setActionErrorMessage(null);
     setFeedbackMessage(null);
 
@@ -671,155 +573,8 @@ export function SupervisorEvaluationWorkspace() {
     }
   }
 
-  function openPreviousEvaluations(row: SupervisorDashboardRow) {
-    setPreviousReviewRow(row);
-  }
-
-  function closePreviousEvaluations() {
-    setPreviousReviewRow(null);
-  }
-
-  function toggleFactor(factorId: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        expandedFactorIds: current.expandedFactorIds.includes(factorId)
-          ? current.expandedFactorIds.filter((item) => item !== factorId)
-          : [...current.expandedFactorIds, factorId],
-      };
-    });
-  }
-
-  function updateFactorScore(factorId: string, itemId: string, score: number) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        factors: current.factors.map((factor) =>
-          factor.id === factorId
-            ? {
-                ...factor,
-                items: factor.items.map((item) =>
-                  item.id === itemId
-                    ? {
-                        ...item,
-                        score: Math.min(100, Math.max(0, score)),
-                      }
-                    : item,
-                ),
-              }
-            : factor,
-        ),
-      };
-    });
-  }
-
-  function updateFinalResult(field: 'totalStageScore' | 'stageAverage' | 'administrativeConcept', value: string) {
-    setActiveEvaluation((current) => (current ? { ...current, [field]: value } : current));
-  }
-
-  function clearDefaultFinalScore(field: 'totalStageScore' | 'stageAverage') {
-    setActiveEvaluation((current) =>
-      current && current[field] === '0.0' ? { ...current, [field]: '' } : current,
-    );
-  }
-
-  function addMonthlyObservation() {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      const nextIndex = current.monthlyObservations.length + 1;
-      const selectedMonths = new Set(current.monthlyObservations.map((observation) => observation.monthLabel));
-      const nextMonth =
-        MONTHLY_OBSERVATION_OPTIONS.find((month) => !selectedMonths.has(month)) ??
-        MONTHLY_OBSERVATION_OPTIONS[Math.min(nextIndex - 1, MONTHLY_OBSERVATION_OPTIONS.length - 1)];
-
-      return {
-        ...current,
-        monthlyObservations: [
-          ...current.monthlyObservations,
-          {
-            id: `obs-${nextIndex}`,
-            monthLabel: nextMonth,
-            description: '',
-            attachmentName: '',
-          },
-        ],
-      };
-    });
-  }
-
-  function updateMonthlyObservationMonth(id: string, monthLabel: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        monthlyObservations: current.monthlyObservations.map((observation) =>
-          observation.id === id ? { ...observation, monthLabel } : observation,
-        ),
-      };
-    });
-  }
-
-  function updateMonthlyObservationDescription(id: string, description: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        monthlyObservations: current.monthlyObservations.map((observation) =>
-          observation.id === id ? { ...observation, description } : observation,
-        ),
-      };
-    });
-  }
-
-  function updateMonthlyObservationAttachment(id: string, attachmentName: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        monthlyObservations: current.monthlyObservations.map((observation) =>
-          observation.id === id ? { ...observation, attachmentName } : observation,
-        ),
-      };
-    });
-  }
-
-  function removeMonthlyObservation(id: string) {
-    setActiveEvaluation((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        monthlyObservations: current.monthlyObservations.filter((observation) => observation.id !== id),
-      };
-    });
-  }
-
   async function handleSaveDraft() {
-    if (!activeEvaluation) {
-      return;
-    }
+    if (!activeEvaluation) return;
 
     setIsSavingDraft(true);
     setFeedbackMessage(null);
@@ -836,11 +591,9 @@ export function SupervisorEvaluationWorkspace() {
       if (!session || !workspaceSnapshot) {
         throw new Error('Sessão ou processo real indisponível para salvar a avaliação.');
       }
-
       if (!workspaceSnapshot.canEditDraft) {
         throw new Error('O salvamento de rascunho nao esta liberado para o estado atual do processo.');
       }
-
       await saveSupervisorEvaluationDraft(
         workspaceSnapshot.process.id,
         buildSupervisorEvaluationPayload(activeEvaluation, 'draft'),
@@ -856,9 +609,7 @@ export function SupervisorEvaluationWorkspace() {
   }
 
   async function handleSubmitEvaluation() {
-    if (!activeEvaluation) {
-      return;
-    }
+    if (!activeEvaluation) return;
 
     setIsSubmittingEvaluation(true);
     setFeedbackMessage(null);
@@ -875,7 +626,6 @@ export function SupervisorEvaluationWorkspace() {
       if (!session || !workspaceSnapshot) {
         throw new Error('Sessão ou processo real indisponível para enviar a avaliação.');
       }
-
       const payload = buildSupervisorEvaluationPayload(activeEvaluation, 'submit');
 
       if (workspaceSnapshot.canRectify) {
@@ -885,12 +635,14 @@ export function SupervisorEvaluationWorkspace() {
         if (!workspaceSnapshot.canSubmit) {
           throw new Error('O envio da avaliação não está liberado para o estado atual do processo.');
         }
-
         await submitSupervisorEvaluation(workspaceSnapshot.process.id, payload);
         setFeedbackMessage('Avaliação enviada com sucesso! O processo agora aguarda assinaturas.');
       }
+<<<<<<< HEAD
 
       await loadProcessesList();
+=======
+>>>>>>> origin/develop
       await loadSupervisorWorkspace(workspaceSnapshot.process.id);
     } catch (error) {
       setActionErrorMessage(getRequestErrorMessage(error, 'Não foi possível enviar a avaliação da chefia.'));
@@ -899,6 +651,7 @@ export function SupervisorEvaluationWorkspace() {
     }
   }
 
+<<<<<<< HEAD
   async function handleConfirmSelfEvaluation() {
     if (!workspaceSnapshot) {
       return;
@@ -920,11 +673,30 @@ export function SupervisorEvaluationWorkspace() {
     }
   }
 
+=======
+>>>>>>> origin/develop
   const isRealEvaluation = activeEvaluation?.row.source === 'real';
   const canSaveActiveDraft = !isRealEvaluation || Boolean(workspaceSnapshot?.canEditDraft);
   const canSubmitActiveEvaluation =
     !isRealEvaluation || Boolean(workspaceSnapshot?.canSubmit || workspaceSnapshot?.canRectify);
   const submitButtonLabel = workspaceSnapshot?.canRectify ? 'Retificar avaliação' : 'Enviar para assinatura';
+<<<<<<< HEAD
+=======
+  const isRealProcessLoaded = Boolean(workspaceSnapshot);
+  const workspaceMode = isLoadingList
+    ? { label: 'Carregando lista de processos', detail: 'Consultando processos vinculados a esta chefia.' }
+    : apiRows !== null
+      ? {
+          label: `${apiRows.length} processo(s) encontrado(s)`,
+          detail: isRealProcessLoaded
+            ? `Workspace detalhado carregado para o processo ${workspaceSnapshot?.process.id}.`
+            : 'Lista real da chefia autenticada. Use o campo abaixo para carregar o workspace detalhado de um processo.',
+        }
+      : {
+          label: 'Identificador do processo',
+          detail: 'Informe o ID do processo para consultar o workspace real da chefia.',
+        };
+>>>>>>> origin/develop
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
@@ -937,7 +709,44 @@ export function SupervisorEvaluationWorkspace() {
             : 'Unidade escolar com lista de servidores e situação atual das avaliações do estágio probatório.'
         }
       >
+<<<<<<< HEAD
         {isLoadingWorkspace || isLoadingProcesses ? (
+=======
+        {!activeEvaluation ? (
+          <>
+            <form className="inline-form inline-form--elevated" onSubmit={handleLoadWorkspace}>
+              <label className="field-group" htmlFor="supervisor-workspace-process-id">
+                <span>Identificador do processo</span>
+                <input
+                  id="supervisor-workspace-process-id"
+                  name="processId"
+                  placeholder="Informe o ID do processo"
+                  value={processIdInput}
+                  onChange={(event) => setProcessIdInput(event.target.value)}
+                  disabled={isLoadingWorkspace}
+                />
+              </label>
+
+              <button type="submit" disabled={isLoadingWorkspace}>
+                {isLoadingWorkspace ? 'Consultando processo...' : 'Consultar processo'}
+              </button>
+            </form>
+
+            <div
+              className={
+                isRealProcessLoaded
+                  ? 'supervisor-workspace-mode supervisor-workspace-mode--real'
+                  : 'supervisor-workspace-mode'
+              }
+            >
+              <span>{workspaceMode.label}</span>
+              <strong>{workspaceMode.detail}</strong>
+            </div>
+          </>
+        ) : null}
+
+        {isLoadingWorkspace ? (
+>>>>>>> origin/develop
           <InlineLoadingState
             title="Carregando painel da chefia"
             description="Consultando as informacoes disponiveis para a chefia autenticada."
@@ -954,6 +763,7 @@ export function SupervisorEvaluationWorkspace() {
         ) : null}
 
         {activeEvaluation ? (
+<<<<<<< HEAD
           <div className="evaluation-detail">
             <button
               type="button"
@@ -1535,6 +1345,37 @@ export function SupervisorEvaluationWorkspace() {
               </div>
             ) : null}
           </div>
+=======
+          <EvaluationDetailView
+            evaluation={activeEvaluation}
+            isSavingDraft={isSavingDraft}
+            isSubmittingEvaluation={isSubmittingEvaluation}
+            canSaveActiveDraft={canSaveActiveDraft}
+            canSubmitActiveEvaluation={canSubmitActiveEvaluation}
+            submitButtonLabel={submitButtonLabel}
+            feedbackMessage={feedbackMessage}
+            actionErrorMessage={actionErrorMessage}
+            onChange={(updater) =>
+              setActiveEvaluation((current) => (current ? updater(current) : null))
+            }
+            onBack={() => setActiveEvaluation(null)}
+            onSaveDraft={() => void handleSaveDraft()}
+            onSubmit={() => void handleSubmitEvaluation()}
+          />
+        ) : (
+          <SupervisorDashboardTable
+            filteredRows={filteredRows}
+            selectedFilters={selectedFilters}
+            isFilterPanelOpen={isFilterPanelOpen}
+            previousReviewRow={previousReviewRow}
+            previousEvaluationHistory={previousEvaluationHistory}
+            onToggleFilterPanel={() => setIsFilterPanelOpen((current) => !current)}
+            onToggleFilter={toggleFilter}
+            onOpenEvaluation={openEvaluation}
+            onOpenPreviousEvaluations={(row) => setPreviousReviewRow(row)}
+            onClosePreviousEvaluations={() => setPreviousReviewRow(null)}
+          />
+>>>>>>> origin/develop
         )}
       </PageSection>
     </AuthGuard>

@@ -1,7 +1,15 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { UserRole, type CesadStageReadSnapshotRef } from '@sadep/contracts';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  CesadStageOpinionStatus,
+  ProcessStatus,
+  SignatureStatus,
+  UserRole,
+  type CesadStageOpinionInput,
+  type CesadStageOpinionSignatureStatusRef,
+  type CesadStageReadSnapshotRef,
+} from '@sadep/contracts';
 
 import {
   formatDateTime,
@@ -19,7 +27,15 @@ import {
   getRequestErrorMessage,
   isHttpErrorStatus,
 } from '@/shared/api/http-error';
-import { getCesadStageReadSnapshot } from '@/shared/api/services/processes-service';
+import {
+  completeCesadStageOpinion,
+  getCesadStageReadSnapshot,
+  getCesadStageOpinionSignatureStatus,
+  getProcessList,
+  prepareCesadStageOpinionSignatures,
+  saveCesadStageOpinionDraft,
+  signCesadStageOpinion,
+} from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { ContentState } from '@/shared/ui/content-state';
@@ -35,6 +51,14 @@ import {
 import { PageSection } from '@/shared/ui/page-section';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
+import {
+  CesadStageOpinionEditor,
+  type CesadStageOpinionFormState,
+} from './cesad-stage-opinion-editor';
+import {
+  getCesadStageSignatureActions,
+  getCesadStageSignatureBadge,
+} from './cesad-stage-signature-ui';
 import { ProcessHeaderCard } from './process-header-card';
 import { ProcessWarningsPanel } from './process-warnings-panel';
 import { ReadOnlyOpinionShell } from './read-only-opinion-shell';
@@ -77,6 +101,23 @@ function buildStageTimelineItems(snapshot: CesadStageReadSnapshotRef): StageTime
   });
 }
 
+function buildOpinionEditorState(
+  snapshot: CesadStageReadSnapshotRef | null,
+): CesadStageOpinionFormState {
+  const opinion = snapshot?.cesadStageOpinion;
+  return {
+    reportText: opinion?.reportText ?? '',
+    legalBasis: opinion?.legalBasis ?? '',
+    conclusion: opinion?.conclusion ?? '',
+    stageConcept: opinion?.stageConcept ?? '',
+    stageResult: opinion?.stageResult ?? '',
+  };
+}
+
+function buildSignatureContextKey(processId: string, stageSequence: number) {
+  return `${processId}:${stageSequence}`;
+}
+
 export function CesadStageReadWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState('');
@@ -86,10 +127,99 @@ export function CesadStageReadWorkspace() {
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [signatureStatus, setSignatureStatus] = useState<CesadStageOpinionSignatureStatusRef | null>(null);
+  const [isSignatureLoading, setIsSignatureLoading] = useState(false);
+  const [signatureFeedback, setSignatureFeedback] = useState<string | null>(null);
+  const [signatureError, setSignatureError] = useState<string | null>(null);
   const stageInstructionStatus = snapshot?.documentationStatus.stageInstructionStatus;
   const locatedDocuments = snapshot?.documents.filter((document) => document.exists).length ?? 0;
   const missingDocuments = snapshot?.documentationStatus.missingRequiredDocumentTypes.length ?? 0;
   const pendingSignatures = snapshot?.documentationStatus.pendingSignatureDocumentTypes.length ?? 0;
+
+  const isCesadMember = session?.user.role === UserRole.CESAD_MEMBER;
+  const opinionIsEditable =
+    isCesadMember &&
+    snapshot !== null &&
+    (snapshot.cesadStageOpinion === null ||
+      snapshot.cesadStageOpinion.status === CesadStageOpinionStatus.DRAFT);
+  const opinionIsCompleted =
+    snapshot?.cesadStageOpinion?.status === CesadStageOpinionStatus.COMPLETED;
+  const signatureProcessId = snapshot?.process.id ?? null;
+  const signatureStageSequence = snapshot?.stage.sequence ?? null;
+  const signatureContextKey =
+    signatureProcessId !== null && signatureStageSequence !== null
+      ? buildSignatureContextKey(signatureProcessId, signatureStageSequence)
+      : null;
+  const signatureContextKeyRef = useRef<string | null>(signatureContextKey);
+  signatureContextKeyRef.current = signatureContextKey;
+
+  const signatureActions = getCesadStageSignatureActions({
+    userId: session?.user.sub,
+    userRole: session?.user.role,
+    processStatus: snapshot?.process.status,
+    signatureStatus,
+  });
+
+  const reloadSnapshot = useCallback(async () => {
+    if (!snapshot) return;
+    const refreshed = await getCesadStageReadSnapshot(snapshot.process.id, snapshot.stage.sequence);
+    setSnapshot(refreshed);
+  }, [snapshot]);
+
+  useEffect(() => {
+    setSignatureFeedback(null);
+    setSignatureError(null);
+
+    if (
+      signatureProcessId === null ||
+      signatureStageSequence === null ||
+      !opinionIsCompleted
+    ) {
+      setSignatureStatus(null);
+      setIsSignatureLoading(false);
+      return;
+    }
+
+    let isActive = true;
+    setSignatureStatus(null);
+    setIsSignatureLoading(true);
+
+    getCesadStageOpinionSignatureStatus(signatureProcessId, signatureStageSequence)
+      .then((nextStatus) => {
+        if (isActive) {
+          setSignatureStatus(nextStatus);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setSignatureStatus(null);
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsSignatureLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [signatureProcessId, signatureStageSequence, opinionIsCompleted]);
+
+  useEffect(() => {
+    if (!session) return;
+    getProcessList()
+      .then((result) => {
+        const firstActive = result.items.find(
+          (item) => item.status === ProcessStatus.EM_ANALISE_CESAD,
+        );
+        if (firstActive) {
+          setProcessId(firstActive.id);
+        }
+      })
+      .catch(() => undefined);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -141,6 +271,68 @@ export function CesadStageReadWorkspace() {
       setSnapshot(null);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handlePrepareSignatures() {
+    if (!snapshot || !signatureActions.canPrepare) return;
+
+    const requestContextKey = buildSignatureContextKey(
+      snapshot.process.id,
+      snapshot.stage.sequence,
+    );
+    setIsSignatureLoading(true);
+    setSignatureFeedback(null);
+    setSignatureError(null);
+
+    try {
+      await prepareCesadStageOpinionSignatures(snapshot.process.id, snapshot.stage.sequence);
+      const refreshed = await getCesadStageOpinionSignatureStatus(
+        snapshot.process.id,
+        snapshot.stage.sequence,
+      );
+      if (signatureContextKeyRef.current !== requestContextKey) return;
+      setSignatureStatus(refreshed);
+      setSignatureFeedback('Assinaturas preparadas com sucesso.');
+    } catch (error) {
+      if (signatureContextKeyRef.current !== requestContextKey) return;
+      setSignatureError(
+        getRequestErrorMessage(error, 'Não foi possível preparar as assinaturas.'),
+      );
+    } finally {
+      if (signatureContextKeyRef.current === requestContextKey) {
+        setIsSignatureLoading(false);
+      }
+    }
+  }
+
+  async function handleSignOpinion() {
+    if (!snapshot || !signatureActions.canSign) return;
+
+    const requestContextKey = buildSignatureContextKey(
+      snapshot.process.id,
+      snapshot.stage.sequence,
+    );
+    setIsSignatureLoading(true);
+    setSignatureFeedback(null);
+    setSignatureError(null);
+
+    try {
+      await signCesadStageOpinion(snapshot.process.id, snapshot.stage.sequence);
+      const refreshed = await getCesadStageOpinionSignatureStatus(
+        snapshot.process.id,
+        snapshot.stage.sequence,
+      );
+      if (signatureContextKeyRef.current !== requestContextKey) return;
+      setSignatureStatus(refreshed);
+      setSignatureFeedback('Assinatura registrada com sucesso.');
+    } catch (error) {
+      if (signatureContextKeyRef.current !== requestContextKey) return;
+      setSignatureError(getRequestErrorMessage(error, 'Não foi possível assinar o parecer.'));
+    } finally {
+      if (signatureContextKeyRef.current === requestContextKey) {
+        setIsSignatureLoading(false);
+      }
     }
   }
 
@@ -289,13 +481,10 @@ export function CesadStageReadWorkspace() {
           ) : null}
 
           {!snapshot && !errorMessage ? (
-            <>
-              <EmptyState
-                title="Nenhuma etapa carregada"
-                description="Informe o processo e o numero da etapa para abrir a visao consolidada da CESAD em modo somente leitura."
-              />
-              <ReadOnlyOpinionShell isDemo />
-            </>
+            <EmptyState
+              title="Nenhuma etapa carregada"
+              description="Informe o processo e o numero da etapa para abrir a visao consolidada da CESAD em modo somente leitura."
+            />
           ) : null}
 
           {snapshot ? (
@@ -456,12 +645,105 @@ export function CesadStageReadWorkspace() {
                   )}
                 </InfoCard>
 
-                <ReadOnlyOpinionShell
-                  opinion={snapshot.cesadStageOpinion}
-                  stageLabel={`Etapa ${snapshot.stage.sequence} - ${snapshot.stage.stageCode}`}
-                  processLabel={snapshot.process.id}
-                />
+                {opinionIsEditable ? (
+                  <CesadStageOpinionEditor
+                    initialState={buildOpinionEditorState(snapshot)}
+                    onSaveDraft={async (input: CesadStageOpinionInput) => {
+                      await saveCesadStageOpinionDraft(snapshot.process.id, snapshot.stage.sequence, input);
+                      await reloadSnapshot();
+                    }}
+                    onComplete={async (input: CesadStageOpinionInput) => {
+                      await completeCesadStageOpinion(snapshot.process.id, snapshot.stage.sequence, input);
+                      await reloadSnapshot();
+                    }}
+                  />
+                ) : (
+                  <ReadOnlyOpinionShell
+                    opinion={snapshot.cesadStageOpinion}
+                    stageLabel={`Etapa ${snapshot.stage.sequence} - ${snapshot.stage.stageCode}`}
+                    processLabel={snapshot.process.id}
+                  />
+                )}
               </div>
+
+              {opinionIsCompleted ? (
+                <InfoCard title="Assinatura do parecer" eyebrow="Status das assinaturas">
+                  {isSignatureLoading ? (
+                    <ContentState
+                      title="Carregando status de assinatura"
+                      description="Consultando assinaturas do parecer de etapa."
+                      tone="info"
+                    />
+                  ) : signatureStatus ? (
+                    <div className="cesad-stage-read__stack">
+                      <KeyValueList
+                        items={[
+                          { label: 'Documento', value: signatureStatus.document?.documentId ?? 'Não gerado' },
+                          { label: 'Status do documento', value: signatureStatus.document?.documentStatus ?? 'Não disponível' },
+                          { label: 'Assinaturas', value: `${signatureStatus.expectedSigners.filter((signer) => signer.signatureStatus === SignatureStatus.COMPLETED).length} / ${signatureStatus.expectedSigners.length}` },
+                        ]}
+                      />
+
+                      <ul className="content-list">
+                        {signatureStatus.expectedSigners.map((signer) => {
+                          const badge = getCesadStageSignatureBadge(signer.signatureStatus);
+                          return (
+                            <li key={signer.expectedSignerId}>
+                              <strong>{signer.nameSnapshot}</strong>{' '}
+                              <StatusBadge label={badge.label} tone={badge.tone} />
+                              {signer.signedAt ? ` em ${formatDateTime(signer.signedAt)}` : ''}
+                            </li>
+                          );
+                        })}
+                      </ul>
+
+                      {signatureFeedback ? (
+                        <FeedbackAlert title="Operação de assinatura" tone="success" description={signatureFeedback} />
+                      ) : null}
+
+                      {signatureError ? (
+                        <FeedbackAlert title="Falha na assinatura" tone="error" description={signatureError} />
+                      ) : null}
+
+                      <div className="cesad-opinion-editor__actions">
+                        {signatureActions.canPrepare ? (
+                          <button
+                            type="button"
+                            disabled={isSignatureLoading}
+                            onClick={handlePrepareSignatures}
+                          >
+                            Preparar assinaturas
+                          </button>
+                        ) : null}
+
+                        {signatureActions.canSign ? (
+                          <button
+                            type="button"
+                            disabled={isSignatureLoading}
+                            onClick={handleSignOpinion}
+                          >
+                            Assinar parecer
+                          </button>
+                        ) : null}
+
+                        {signatureStatus.allExpectedSignersSigned ? (
+                          <ContentState
+                            title="Todas as assinaturas concluídas"
+                            description="O parecer de etapa foi assinado por todos os membros esperados."
+                            tone="success"
+                          />
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : (
+                    <ContentState
+                      title="Status de assinatura indisponível"
+                      description="Não foi possível carregar o status de assinatura do parecer."
+                      tone="warning"
+                    />
+                  )}
+                </InfoCard>
+              ) : null}
 
               <StageDocumentList documents={snapshot.documents} />
               <StageHistoryPanel history={snapshot.history} />

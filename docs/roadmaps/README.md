@@ -11,6 +11,7 @@ A partir da DOC-R1, os roadmaps passam a ter uma estrutura modular inicial por a
 - [`backend/`](./backend/): visao modular do roadmap backend.
 - [`frontend/`](./frontend/): visao modular do roadmap frontend.
 - [`cross-cutting/`](./cross-cutting/): painel modular de problemas e frentes transversais.
+- [`seguranca/`](./seguranca/): area de analise, hardening e acompanhamento de seguranca, com relatorios consolidados e tasks de hardening derivadas.
 
 ## Fontes de transicao (arquivadas em DOC-R8)
 

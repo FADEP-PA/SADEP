@@ -160,7 +160,8 @@ export class CesadStageReadService {
             updatedAt: true,
           },
         },
-        cesadStageOpinion: {
+        cesadStageOpinions: {
+          where: { supersededAt: null },
           select: {
             id: true,
             processId: true,
@@ -252,8 +253,8 @@ export class CesadStageReadService {
         ? this.toSupervisorEvaluationRef(stage.supervisorEvaluation)
         : null,
       selfEvaluation: stage.selfEvaluation ? this.toSelfEvaluationRef(stage.selfEvaluation) : null,
-      cesadStageOpinion: stage.cesadStageOpinion
-        ? this.toCesadStageOpinionRef(stage.cesadStageOpinion)
+      cesadStageOpinion: stage.cesadStageOpinions[0]
+        ? this.toCesadStageOpinionRef(stage.cesadStageOpinions[0])
         : null,
       documents,
       history,

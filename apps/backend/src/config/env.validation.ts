@@ -61,7 +61,7 @@ export function validateEnvironmentVariables(config: Record<string, unknown>): A
     'REFRESH_TOKEN_TTL',
     7 * 24 * 60 * 60,
   );
-  const refreshCookieName = String(config.REFRESH_COOKIE_NAME ?? 'aep_pa_refresh').trim();
+  const refreshCookieName = String(config.REFRESH_COOKIE_NAME ?? 'sadep_refresh').trim();
 
   if (!/^[A-Za-z0-9._-]+$/.test(refreshCookieName)) {
     throw new Error('Invalid REFRESH_COOKIE_NAME: expected a cookie-safe name.');

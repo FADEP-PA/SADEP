@@ -56,7 +56,8 @@ export class CesadFinalOpinionConsolidationService {
                 submittedAt: true,
               },
             },
-            cesadStageOpinion: {
+            cesadStageOpinions: {
+              where: { supersededAt: null },
               select: {
                 id: true,
                 status: true,
@@ -96,7 +97,7 @@ export class CesadFinalOpinionConsolidationService {
     const stages: CesadFinalOpinionConsolidatedStageRef[] = process.stages.map((stage) => {
       const supervisorEvaluation = stage.supervisorEvaluation;
       const selfEvaluation = stage.selfEvaluation;
-      const cesadStageOpinion = stage.cesadStageOpinion;
+      const cesadStageOpinion = stage.cesadStageOpinions[0] ?? null;
       const cesadOpinionDocument = stage.documents.find(
         (document) => document.documentType === PrismaDocumentType.CESAD_OPINION,
       );

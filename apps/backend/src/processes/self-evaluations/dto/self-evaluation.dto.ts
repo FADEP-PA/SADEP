@@ -1,17 +1,26 @@
+import { IsOptional, IsString } from 'class-validator';
 import {
   SelfEvaluationStatus,
-  type SelfEvaluationRef,
   type SelfEvaluationDocumentContextRef,
   type SelfEvaluationWithDocumentContextRef,
 } from '@sadep/contracts';
 
-export interface UpsertSelfEvaluationDto {
-  selfReflection: string;
+export class UpsertSelfEvaluationDto {
+  @IsString()
+  selfReflection!: string;
+
+  @IsOptional()
+  @IsString()
   additionalNotes?: string;
+
+  @IsOptional()
+  @IsString()
   comment?: string;
 }
 
-export interface SignSelfEvaluationDto {
+export class SignSelfEvaluationDto {
+  @IsOptional()
+  @IsString()
   comment?: string;
 }
 

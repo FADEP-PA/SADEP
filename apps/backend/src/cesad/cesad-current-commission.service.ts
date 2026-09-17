@@ -124,6 +124,9 @@ export class CesadCurrentCommissionService {
     const titularCount = commission.members.filter(
       (member) => member.roleType === PrismaCesadCommissionMemberRoleType.TITULAR,
     ).length;
+    const presidenteCount = commission.members.filter(
+      (member) => member.roleType === PrismaCesadCommissionMemberRoleType.PRESIDENTE,
+    ).length;
     const membersOutsideCommissionWindow = commission.members.filter((member) => {
       if (member.startDate < commission.effectiveStartDate) {
         return true;
@@ -142,6 +145,10 @@ export class CesadCurrentCommissionService {
 
     if (titularCount === 0 && commission.members.length > 0) {
       warnings.push('The active CESAD commission has no active titular member for the reference date');
+    }
+
+    if (presidenteCount === 0 && commission.members.length > 0) {
+      warnings.push('The active CESAD commission has no active presidente member for the reference date');
     }
 
     if (inactiveMemberCount > 0) {
@@ -251,6 +258,9 @@ export class CesadCurrentCommissionService {
     userId: string;
     actId: string | null;
     roleType: PrismaCesadCommissionMemberRoleType;
+    registrationSnapshot: string | null;
+    bondSnapshot: string | null;
+    positionSnapshot: string | null;
     startDate: Date;
     endDate: Date | null;
     createdAt: Date;
@@ -268,6 +278,9 @@ export class CesadCurrentCommissionService {
       userId: member.userId,
       actId: member.actId,
       roleType: this.toContractMemberRoleType(member.roleType),
+      registrationSnapshot: member.registrationSnapshot,
+      bondSnapshot: member.bondSnapshot,
+      positionSnapshot: member.positionSnapshot,
       startDate: member.startDate,
       endDate: member.endDate,
       createdAt: member.createdAt,
@@ -280,6 +293,9 @@ export class CesadCurrentCommissionService {
       userId: domainMember.userId,
       actId: domainMember.actId,
       roleType: domainMember.roleType,
+      registrationSnapshot: domainMember.registrationSnapshot ?? null,
+      bondSnapshot: domainMember.bondSnapshot ?? null,
+      positionSnapshot: domainMember.positionSnapshot ?? null,
       startDate: domainMember.startDate.toISOString(),
       endDate: domainMember.endDate?.toISOString() ?? null,
       createdAt: domainMember.createdAt.toISOString(),

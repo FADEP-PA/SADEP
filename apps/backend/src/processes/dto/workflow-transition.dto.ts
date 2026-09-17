@@ -1,9 +1,15 @@
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ProcessAction } from '@sadep/contracts';
 
-export type WorkflowTransitionRequestDto = {
-  action: ProcessAction;
+export class WorkflowTransitionRequestDto {
+  @IsEnum(ProcessAction)
+  action!: ProcessAction;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
   comment?: string;
-};
+}
 
 export type WorkflowResponseDto = {
   id: string;
