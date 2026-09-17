@@ -6,6 +6,7 @@ import {
   getInternWorkspaceSnapshot,
   getWorkflow,
   getWorkflowHistory,
+  listProcesses,
   transitionWorkflow,
 } from './processes-service';
 
@@ -35,6 +36,20 @@ describe('processes-service', () => {
   afterEach(() => {
     clearAccessToken();
     vi.unstubAllGlobals();
+  });
+
+  describe('listProcesses', () => {
+    it('faz GET /processes com Authorization Bearer', async () => {
+      const items = [{ id: PROCESS_ID, status: 'EM_AVALIACAO' }];
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, items));
+
+      const result = await listProcesses();
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes`);
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result).toEqual(items);
+    });
   });
 
   describe('getWorkflow', () => {

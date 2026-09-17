@@ -112,6 +112,61 @@ async function main() {
       },
     });
   }
+
+  const serverUser = await prisma.user.findUnique({ where: { email: 'server@sadep.local' } });
+  const supervisorUser = await prisma.user.findUnique({ where: { email: 'supervisor@sadep.local' } });
+
+  if (serverUser && supervisorUser) {
+    const existingProcess = await prisma.evaluationProcess.findFirst({
+      where: { evaluatedUserId: serverUser.id },
+    });
+
+    if (!existingProcess) {
+      const process = await prisma.evaluationProcess.create({
+        data: {
+          evaluatedUserId: serverUser.id,
+          status: 'EM_AVALIACAO',
+        },
+      });
+
+      await prisma.processStage.createMany({
+        data: [
+          {
+            evaluationProcessId: process.id,
+            sequence: 1,
+            stageCode: 'ETAPA_1',
+            responsibleSupervisorUserId: supervisorUser.id,
+            startedAt: new Date(),
+            endedAt: null,
+          },
+          {
+            evaluationProcessId: process.id,
+            sequence: 2,
+            stageCode: 'ETAPA_2',
+            responsibleSupervisorUserId: supervisorUser.id,
+            startedAt: null,
+            endedAt: null,
+          },
+          {
+            evaluationProcessId: process.id,
+            sequence: 3,
+            stageCode: 'ETAPA_3',
+            responsibleSupervisorUserId: supervisorUser.id,
+            startedAt: null,
+            endedAt: null,
+          },
+          {
+            evaluationProcessId: process.id,
+            sequence: 4,
+            stageCode: 'ETAPA_4',
+            responsibleSupervisorUserId: supervisorUser.id,
+            startedAt: null,
+            endedAt: null,
+          },
+        ],
+      });
+    }
+  }
 }
 
 main()

@@ -122,6 +122,82 @@ export class ProcessesService {
     private readonly cesadContextAuthorizationService: CesadContextAuthorizationService,
   ) {}
 
+  async listProcesses(user: AuthenticatedUser) {
+    let where: Prisma.EvaluationProcessWhereInput = {};
+
+    if (user.role === UserRole.IMMEDIATE_SUPERVISOR) {
+      where = {
+        stages: {
+          some: {
+            responsibleSupervisorUserId: user.sub,
+          },
+        },
+      };
+    } else if (user.role === UserRole.INTERN_SERVER) {
+      where = {
+        evaluatedUserId: user.sub,
+      };
+    }
+
+    const processes = await this.prismaService.evaluationProcess.findMany({
+      where,
+      include: {
+        evaluatedUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+        stages: {
+          orderBy: { sequence: 'asc' },
+          include: {
+            responsibleSupervisor: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return processes.map((process) => {
+      const activeStage =
+        process.stages.find((s) => s.startedAt !== null && s.endedAt === null) ??
+        process.stages[0] ??
+        null;
+
+      return {
+        id: process.id,
+        status: this.toContractProcessStatus(process.status),
+        createdAt: process.createdAt.toISOString(),
+        updatedAt: process.updatedAt.toISOString(),
+        evaluatedUser: {
+          id: process.evaluatedUser.id,
+          name: process.evaluatedUser.name,
+          email: process.evaluatedUser.email,
+          role: this.toContractUserRole(process.evaluatedUser.role),
+        },
+        currentStage: activeStage
+          ? {
+              id: activeStage.id,
+              sequence: activeStage.sequence,
+              stageCode: activeStage.stageCode,
+              responsibleSupervisorUserId: activeStage.responsibleSupervisorUserId,
+              responsibleSupervisorName: activeStage.responsibleSupervisor?.name ?? null,
+              startedAt: activeStage.startedAt?.toISOString() ?? null,
+            }
+          : null,
+      };
+    });
+  }
+
   async getWorkflow(processId: string, user: AuthenticatedUser): Promise<WorkflowResponseDto> {
     const process = await this.ensureUserHasProcessAccess(this.prismaService, processId, user);
 

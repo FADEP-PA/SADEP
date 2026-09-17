@@ -59,6 +59,34 @@ const AUTHENTICATED_REQUEST = {
   useStoredAccessToken: true,
 } as const;
 
+export type ProcessListItem = {
+  id: string;
+  status: ProcessStatus;
+  createdAt: string;
+  updatedAt: string;
+  evaluatedUser: {
+    id: string;
+    name: string;
+    email: string;
+    role: UserRole;
+  };
+  currentStage: {
+    id: string;
+    sequence: number;
+    stageCode: string;
+    responsibleSupervisorUserId: string | null;
+    responsibleSupervisorName: string | null;
+    startedAt: string | null;
+  } | null;
+};
+
+export async function listProcesses() {
+  return httpRequest<ProcessListItem[]>('/processes', {
+    ...AUTHENTICATED_REQUEST,
+    method: 'GET',
+  });
+}
+
 export async function getWorkflow(processId: string) {
   return httpRequest<WorkflowResponse>(`/processes/${processId}/workflow`, {
     ...AUTHENTICATED_REQUEST,
