@@ -61,6 +61,72 @@ export async function runProcessesServiceTests() {
       { userId: assistant.id, roleType: 'SUPLENTE' },
     ]);
 
+    const unrelatedCommissionForList = await createActiveCesadCommission(context.prisma, [
+      { userId: unrelatedCesad.id, roleType: 'SUPLENTE' },
+      { userId: unrelatedAssistant.id, roleType: 'SUPLENTE' },
+    ]);
+    const visibleCesadProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    const hiddenCesadProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_ANALISE_CESAD,
+      intern.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      visibleCesadProcess.id,
+      visibleCesadProcess.defaultStageId,
+      commission.id,
+      supervisor.id,
+    );
+    await createCesadStageAssignment(
+      context.prisma,
+      hiddenCesadProcess.id,
+      hiddenCesadProcess.defaultStageId,
+      unrelatedCommissionForList.id,
+      supervisor.id,
+    );
+
+    const cesadProcessList = await context.service.listForUser(
+      authenticatedUser(cesad.id, cesad.role),
+    );
+    assert.equal(cesadProcessList.items.some((item) => item.id === visibleCesadProcess.id), true);
+    assert.equal(cesadProcessList.items.some((item) => item.id === hiddenCesadProcess.id), false);
+
+    const assistantProcessList = await context.service.listForUser(
+      authenticatedUser(assistant.id, assistant.role),
+    );
+    assert.equal(
+      assistantProcessList.items.some((item) => item.id === visibleCesadProcess.id),
+      true,
+    );
+    assert.equal(
+      assistantProcessList.items.some((item) => item.id === hiddenCesadProcess.id),
+      false,
+    );
+
+    const unrelatedCesadProcessList = await context.service.listForUser(
+      authenticatedUser(unrelatedCesad.id, unrelatedCesad.role),
+    );
+    assert.equal(
+      unrelatedCesadProcessList.items.some((item) => item.id === hiddenCesadProcess.id),
+      true,
+    );
+    assert.equal(
+      unrelatedCesadProcessList.items.some((item) => item.id === visibleCesadProcess.id),
+      false,
+    );
+
+    await context.prisma.cesadCommission.update({
+      where: { id: unrelatedCommissionForList.id },
+      data: { status: 'INACTIVE' },
+    });
+
     const process = await createProcess(
       context.prisma,
       ProcessStatus.EM_AVALIACAO,
