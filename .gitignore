@@ -62,6 +62,8 @@ prisma/dev.db
 prisma/dev.db-journal
 apps/backend/prisma/dev.db
 apps/backend/prisma/dev.db-journal
+*.sqlite
+*.sqlite-journal
 
 # ------------------------------
 # Redis / BullMQ local

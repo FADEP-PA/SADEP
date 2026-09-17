@@ -2,19 +2,27 @@
 
 import {
   ProcessStatus,
+  SelfEvaluationStatus,
+  SignatureStatus,
   UserRole,
   type ProcessListItemRef,
+  type SelfEvaluationWithDocumentContextRef,
   type SupervisorEvaluationWithDocumentContextRef,
 } from '@sadep/contracts';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import {
   getProcessList,
+  getSelfEvaluation,
   getSupervisorEvaluationWorkspaceSnapshot,
+  listProcesses,
   rectifySupervisorEvaluation,
   saveSupervisorEvaluationDraft,
+  signSelfEvaluation,
   submitSupervisorEvaluation,
+  type ProcessListItem,
+  type SelfEvaluationResponse,
   type SupervisorEvaluationWorkspaceSnapshot,
   type UpsertSupervisorEvaluationInput,
 } from '@/shared/api/services/processes-service';
@@ -26,6 +34,7 @@ import { PageSection } from '@/shared/ui/page-section';
 
 import { SupervisorDashboardTable } from './supervisor-dashboard-table';
 import { EvaluationDetailView } from './supervisor-evaluation-form';
+import { SupervisorSelfEvaluationCard } from './supervisor-self-evaluation-card';
 import type {
   EvaluationDraft,
   PreviousEvaluationItem,
@@ -123,6 +132,46 @@ function toDashboardStatus(status: ProcessStatus): SupervisorDashboardStatus {
   return 'CONCLUIDO';
 }
 
+function createRealDashboardRowFromItem(
+  item: ProcessListItem,
+  snapshot?: SupervisorEvaluationWorkspaceSnapshot | null,
+  selfEval?: SelfEvaluationResponse | null,
+): SupervisorDashboardRow {
+  const status = toDashboardStatus(item.status);
+  const stageSeq = item.currentStage?.sequence ?? 1;
+
+  let actionLabel = 'Avaliar';
+  if (item.status === ProcessStatus.EM_AVALIACAO) {
+    actionLabel = 'Avaliar';
+  } else if (item.status === ProcessStatus.AGUARDANDO_ASSINATURA) {
+    if (selfEval?.status === SelfEvaluationStatus.SUBMITTED) {
+      actionLabel = 'Confirmar autoavaliação';
+    } else {
+      actionLabel = 'Visualizar';
+    }
+  } else {
+    actionLabel = 'Visualizar';
+  }
+
+  return {
+    id: item.id,
+    serverName: item.evaluatedUser.name || 'Servidor em Avaliação',
+    registration: item.evaluatedUser.email || item.id,
+    role: 'Servidor Estagiário',
+    exerciseStart: formatValidationDate(new Date(item.createdAt)),
+    status,
+    stageLabel: `${stageSeq}ª etapa`,
+    deadline: 'Conforme workflow',
+    canReviewPrevious: false,
+    actionLabel,
+    actionDisabled: false,
+    supervisorName: item.currentStage?.responsibleSupervisorName || 'Chefia imediata',
+    supervisorRole: 'Chefia imediata',
+    trackingPeriod: 'Etapa em andamento',
+    source: 'real',
+  };
+}
+
 function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot): SupervisorDashboardRow {
   const actionLabel = snapshot.canRectify
     ? 'Retificar'
@@ -134,12 +183,12 @@ function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot)
 
   return {
     id: snapshot.process.id,
-    serverName: 'Processo configurado',
+    serverName: 'Servidor em avaliação',
     registration: snapshot.process.id,
-    role: 'Servidor em avaliação',
+    role: 'Servidor Estagiário',
     exerciseStart: '-',
     status: toDashboardStatus(snapshot.process.status),
-    stageLabel: 'Etapa atual',
+    stageLabel: '1ª etapa',
     deadline: 'Conforme workflow',
     canReviewPrevious: false,
     actionLabel,
@@ -188,6 +237,10 @@ function createEvaluationDraft(
   };
 }
 
+function normalizeRating(score: number): number {
+  return Math.max(1, Math.min(5, Math.round(score / 25)));
+}
+
 function buildSupervisorEvaluationPayload(
   draft: EvaluationDraft,
   mode: OperationMode,
@@ -213,7 +266,7 @@ function buildSupervisorEvaluationPayload(
         factor.items.map((item) => ({
           code: item.id,
           label: item.label,
-          rating: Math.min(100, Math.max(0, item.score)),
+          rating: normalizeRating(item.score),
         })),
       ),
     },
@@ -224,6 +277,126 @@ function buildSupervisorEvaluationPayload(
   };
 }
 
+function getStatusLabel(status: SupervisorDashboardStatus) {
+  if (status === 'EM_AVALIACAO') {
+    return 'Em avaliação';
+  }
+
+  if (status === 'AGUARDANDO_ASSINATURA') {
+    return 'Aguardando assinatura';
+  }
+
+  if (status === 'EM_ANALISE_CESAD') {
+    return 'Em análise CESAD';
+  }
+
+  return 'Homologado';
+}
+
+function getStatusClassName(status: SupervisorDashboardStatus) {
+  if (status === 'EM_AVALIACAO') {
+    return 'supervisor-dashboard__pill supervisor-dashboard__pill--neutral';
+  }
+
+  if (status === 'AGUARDANDO_ASSINATURA') {
+    return 'supervisor-dashboard__pill supervisor-dashboard__pill--warning';
+  }
+
+  if (status === 'EM_ANALISE_CESAD') {
+    return 'supervisor-dashboard__pill supervisor-dashboard__pill--info';
+  }
+
+  return 'supervisor-dashboard__pill supervisor-dashboard__pill--success';
+}
+
+function getStageClassName(status: SupervisorDashboardStatus) {
+  if (status === 'CONCLUIDO') {
+    return 'supervisor-dashboard__stage-chip supervisor-dashboard__stage-chip--done';
+  }
+
+  return 'supervisor-dashboard__stage-chip';
+}
+
+function calculateFactorAverage(factor: { items: Array<{ score: number }> }) {
+  const total = factor.items.reduce((sum, item) => sum + item.score, 0);
+  return total / factor.items.length;
+}
+
+function formatValidationDate(date = new Date()) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+}
+
+function EvaluationFactorCard({
+  factor,
+  isExpanded,
+  onToggle,
+  onScoreChange,
+}: {
+  factor: { id: string; title: string; items: Array<{ id: string; label: string; score: number }> };
+  isExpanded: boolean;
+  onToggle: () => void;
+  onScoreChange: (itemId: string, score: number) => void;
+}) {
+  const subtotal = factor.items.reduce((sum, item) => sum + item.score, 0);
+  const average = calculateFactorAverage(factor);
+
+  return (
+    <section className="evaluation-detail__factor-card">
+      <button
+        type="button"
+        className="evaluation-detail__factor-header"
+        onClick={onToggle}
+      >
+        <div className="evaluation-detail__factor-title">
+          <span>{isExpanded ? '▼' : '▶'}</span>
+          <strong>{factor.title}</strong>
+        </div>
+
+        <div className="evaluation-detail__factor-metric">
+          <span>Média do fator</span>
+          <strong>{average.toFixed(1)}</strong>
+        </div>
+      </button>
+
+      {isExpanded ? (
+        <div className="evaluation-detail__factor-body">
+          {factor.items.map((item) => (
+            <div key={item.id} className="evaluation-detail__score-row">
+              <p>{item.label}</p>
+
+              <div className="evaluation-detail__score-input-wrap">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={item.score}
+                  onChange={(event) => onScoreChange(item.id, Number(event.target.value || 0))}
+                />
+                <span>Nota</span>
+              </div>
+            </div>
+          ))}
+
+          <div className="evaluation-detail__factor-footer">
+            <div>
+              <span>Soma bruta subfatores</span>
+              <strong>{subtotal.toFixed(1)}</strong>
+            </div>
+            <div>
+              <span>Pontuação final do fator (média)</span>
+              <strong>{average.toFixed(1)}</strong>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function SupervisorEvaluationWorkspace() {
   const { session } = useAuth();
   const [selectedFilters, setSelectedFilters] = useState<SupervisorDashboardStatus[]>(
@@ -232,10 +405,9 @@ export function SupervisorEvaluationWorkspace() {
   const [activeEvaluation, setActiveEvaluation] = useState<EvaluationDraft | null>(null);
   const [previousReviewRow, setPreviousReviewRow] = useState<SupervisorDashboardRow | null>(null);
   const [workspaceSnapshot, setWorkspaceSnapshot] = useState<SupervisorEvaluationWorkspaceSnapshot | null>(null);
-  const [apiRows, setApiRows] = useState<SupervisorDashboardRow[] | null>(null);
-  const [isLoadingList, setIsLoadingList] = useState(false);
-  const [processIdInput, setProcessIdInput] = useState('');
+  const [selfEvaluation, setSelfEvaluation] = useState<SelfEvaluationWithDocumentContextRef | null>(null);
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
+  const [isConfirmingSelfEvaluation, setIsConfirmingSelfEvaluation] = useState(false);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -244,14 +416,24 @@ export function SupervisorEvaluationWorkspace() {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
 
+  const [apiRows, setApiRows] = useState<SupervisorDashboardRow[] | null>(null);
+
   useEffect(() => {
     if (!session) return;
-    setIsLoadingList(true);
     getProcessList()
       .then((result) => setApiRows(result.items.map(fromApiItem)))
-      .catch(() => setApiRows([]))
-      .finally(() => setIsLoadingList(false));
+      .catch(() => setApiRows([]));
   }, [session]);
+
+  async function refreshProcessList() {
+    if (!session) return;
+    try {
+      const result = await getProcessList();
+      setApiRows(result.items.map(fromApiItem));
+    } catch {
+      // ignore — stale data acceptable
+    }
+  }
 
   const baseRows = apiRows ?? [];
   const dashboardRows = useMemo(
@@ -267,20 +449,25 @@ export function SupervisorEvaluationWorkspace() {
   );
   const previousEvaluationHistory: PreviousEvaluationItem[] = [];
 
-  async function loadSupervisorWorkspace(processId: string) {
-    if (!session) return;
+  async function loadSupervisorWorkspace(processId: string): Promise<SupervisorEvaluationWorkspaceSnapshot | null> {
+    if (!session) return null;
 
     setIsLoadingWorkspace(true);
     setLoadErrorMessage(null);
     setLoadErrorDetails([]);
 
     try {
-      const snapshot = await getSupervisorEvaluationWorkspaceSnapshot(processId);
+      const [snapshot, selfEval] = await Promise.all([
+        getSupervisorEvaluationWorkspaceSnapshot(processId),
+        getSelfEvaluation(processId).catch(() => null),
+      ]);
       setWorkspaceSnapshot(snapshot);
+      setSelfEvaluation(selfEval);
       setActiveEvaluation((current) => {
         if (!current || current.row.source !== 'real') return current;
         return createEvaluationDraft(createRealDashboardRow(snapshot), snapshot.supervisorEvaluation);
       });
+      return snapshot;
     } catch (error) {
       const payload =
         typeof error === 'object' && error && 'payload' in error
@@ -288,27 +475,14 @@ export function SupervisorEvaluationWorkspace() {
           : undefined;
 
       setWorkspaceSnapshot(null);
+      setSelfEvaluation(null);
       setActiveEvaluation((current) => (current?.row.source === 'real' ? null : current));
       setLoadErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar o workspace real da chefia.'));
       setLoadErrorDetails(getHttpErrorDetails(payload));
+      return null;
     } finally {
       setIsLoadingWorkspace(false);
     }
-  }
-
-  function handleLoadWorkspace(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const normalizedProcessId = processIdInput.trim();
-
-    if (!normalizedProcessId) {
-      setLoadErrorMessage('Informe o identificador do processo para consultar o workspace real da chefia.');
-      setLoadErrorDetails([]);
-      setWorkspaceSnapshot(null);
-      setActiveEvaluation((current) => (current?.row.source === 'real' ? null : current));
-      return;
-    }
-
-    void loadSupervisorWorkspace(normalizedProcessId);
   }
 
   function toggleFilter(filterId: SupervisorDashboardStatus) {
@@ -320,15 +494,21 @@ export function SupervisorEvaluationWorkspace() {
     });
   }
 
-  function openEvaluation(row: SupervisorDashboardRow) {
+  async function openEvaluation(row: SupervisorDashboardRow) {
     if (row.actionDisabled) return;
     setActionErrorMessage(null);
     setFeedbackMessage(null);
-    setActiveEvaluation(
-      row.source === 'real' && workspaceSnapshot
-        ? createEvaluationDraft(row, workspaceSnapshot.supervisorEvaluation)
-        : createEvaluationDraft(row),
-    );
+
+    if (row.source === 'real') {
+      const snapshot = await loadSupervisorWorkspace(row.id);
+      if (snapshot && snapshot.process.id === row.id) {
+        setActiveEvaluation(createEvaluationDraft(row, snapshot.supervisorEvaluation));
+      } else {
+        setActiveEvaluation(createEvaluationDraft(row));
+      }
+    } else {
+      setActiveEvaluation(createEvaluationDraft(row));
+    }
   }
 
   async function handleSaveDraft() {
@@ -356,7 +536,7 @@ export function SupervisorEvaluationWorkspace() {
         workspaceSnapshot.process.id,
         buildSupervisorEvaluationPayload(activeEvaluation, 'draft'),
       );
-      await loadSupervisorWorkspace(workspaceSnapshot.process.id);
+      await Promise.all([loadSupervisorWorkspace(workspaceSnapshot.process.id), refreshProcessList()]);
       setFeedbackMessage('Rascunho salvo no processo informado.');
     } catch (error) {
       setActionErrorMessage(getRequestErrorMessage(error, 'Não foi possível salvar o rascunho da avaliação.'));
@@ -387,19 +567,37 @@ export function SupervisorEvaluationWorkspace() {
 
       if (workspaceSnapshot.canRectify) {
         await rectifySupervisorEvaluation(workspaceSnapshot.process.id, payload);
-        setFeedbackMessage('Avaliacao retificada no processo informado.');
+        setFeedbackMessage('Avaliação retificada com sucesso.');
       } else {
         if (!workspaceSnapshot.canSubmit) {
-          throw new Error('O envio da avaliacao nao esta liberado para o estado atual do processo.');
+          throw new Error('O envio da avaliação não está liberado para o estado atual do processo.');
         }
         await submitSupervisorEvaluation(workspaceSnapshot.process.id, payload);
-        setFeedbackMessage('Avaliacao enviada para formalizacao documental.');
+        setFeedbackMessage('Avaliação enviada com sucesso! O processo agora aguarda assinaturas.');
       }
-      await loadSupervisorWorkspace(workspaceSnapshot.process.id);
+      await Promise.all([loadSupervisorWorkspace(workspaceSnapshot.process.id), refreshProcessList()]);
     } catch (error) {
       setActionErrorMessage(getRequestErrorMessage(error, 'Não foi possível enviar a avaliação da chefia.'));
     } finally {
       setIsSubmittingEvaluation(false);
+    }
+  }
+
+  async function handleConfirmSelfEvaluation() {
+    if (!session || !workspaceSnapshot) return;
+
+    setIsConfirmingSelfEvaluation(true);
+    setActionErrorMessage(null);
+    setFeedbackMessage(null);
+
+    try {
+      await signSelfEvaluation(workspaceSnapshot.process.id);
+      await Promise.all([loadSupervisorWorkspace(workspaceSnapshot.process.id), refreshProcessList()]);
+      setFeedbackMessage('Autoavaliação confirmada com sucesso.');
+    } catch (error) {
+      setActionErrorMessage(getRequestErrorMessage(error, 'Não foi possível confirmar a autoavaliação.'));
+    } finally {
+      setIsConfirmingSelfEvaluation(false);
     }
   }
 
@@ -408,20 +606,22 @@ export function SupervisorEvaluationWorkspace() {
   const canSubmitActiveEvaluation =
     !isRealEvaluation || Boolean(workspaceSnapshot?.canSubmit || workspaceSnapshot?.canRectify);
   const submitButtonLabel = workspaceSnapshot?.canRectify ? 'Retificar avaliação' : 'Enviar para assinatura';
+
   const isRealProcessLoaded = Boolean(workspaceSnapshot);
-  const workspaceMode = isLoadingList
-    ? { label: 'Carregando lista de processos', detail: 'Consultando processos vinculados a esta chefia.' }
-    : apiRows !== null
-      ? {
-          label: `${apiRows.length} processo(s) encontrado(s)`,
-          detail: isRealProcessLoaded
-            ? `Workspace detalhado carregado para o processo ${workspaceSnapshot?.process.id}.`
-            : 'Lista real da chefia autenticada. Use o campo abaixo para carregar o workspace detalhado de um processo.',
-        }
-      : {
-          label: 'Identificador do processo',
-          detail: 'Informe o ID do processo para consultar o workspace real da chefia.',
-        };
+
+  const showSelfEvaluationCard =
+    workspaceSnapshot &&
+    selfEvaluation &&
+    selfEvaluation.status === SelfEvaluationStatus.SUBMITTED &&
+    (workspaceSnapshot.process.status === ProcessStatus.AGUARDANDO_ASSINATURA ||
+      workspaceSnapshot.process.status === ProcessStatus.ASSINADO ||
+      workspaceSnapshot.process.status === ProcessStatus.EM_ANALISE_CESAD);
+
+  function handleBackToDashboard() {
+    setActiveEvaluation(null);
+    setWorkspaceSnapshot(null);
+    setSelfEvaluation(null);
+  }
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
@@ -431,42 +631,9 @@ export function SupervisorEvaluationWorkspace() {
         description={
           activeEvaluation
             ? undefined
-            : 'Visualização demonstrativa da unidade escolar com lista de servidores e situação atual das avaliações.'
+            : 'Unidade escolar com lista de servidores e situação atual das avaliações do estágio probatório.'
         }
       >
-        {!activeEvaluation ? (
-          <>
-            <form className="inline-form inline-form--elevated" onSubmit={handleLoadWorkspace}>
-              <label className="field-group" htmlFor="supervisor-workspace-process-id">
-                <span>Identificador do processo</span>
-                <input
-                  id="supervisor-workspace-process-id"
-                  name="processId"
-                  placeholder="Informe o ID do processo"
-                  value={processIdInput}
-                  onChange={(event) => setProcessIdInput(event.target.value)}
-                  disabled={isLoadingWorkspace}
-                />
-              </label>
-
-              <button type="submit" disabled={isLoadingWorkspace}>
-                {isLoadingWorkspace ? 'Consultando processo...' : 'Consultar processo'}
-              </button>
-            </form>
-
-            <div
-              className={
-                isRealProcessLoaded
-                  ? 'supervisor-workspace-mode supervisor-workspace-mode--real'
-                  : 'supervisor-workspace-mode'
-              }
-            >
-              <span>{workspaceMode.label}</span>
-              <strong>{workspaceMode.detail}</strong>
-            </div>
-          </>
-        ) : null}
-
         {isLoadingWorkspace ? (
           <InlineLoadingState
             title="Carregando painel da chefia"
@@ -484,22 +651,35 @@ export function SupervisorEvaluationWorkspace() {
         ) : null}
 
         {activeEvaluation ? (
-          <EvaluationDetailView
-            evaluation={activeEvaluation}
-            isSavingDraft={isSavingDraft}
-            isSubmittingEvaluation={isSubmittingEvaluation}
-            canSaveActiveDraft={canSaveActiveDraft}
-            canSubmitActiveEvaluation={canSubmitActiveEvaluation}
-            submitButtonLabel={submitButtonLabel}
-            feedbackMessage={feedbackMessage}
-            actionErrorMessage={actionErrorMessage}
-            onChange={(updater) =>
-              setActiveEvaluation((current) => (current ? updater(current) : null))
-            }
-            onBack={() => setActiveEvaluation(null)}
-            onSaveDraft={() => void handleSaveDraft()}
-            onSubmit={() => void handleSubmitEvaluation()}
-          />
+          <>
+            <EvaluationDetailView
+              evaluation={activeEvaluation}
+              isSavingDraft={isSavingDraft}
+              isSubmittingEvaluation={isSubmittingEvaluation}
+              canSaveActiveDraft={canSaveActiveDraft}
+              canSubmitActiveEvaluation={canSubmitActiveEvaluation}
+              submitButtonLabel={submitButtonLabel}
+              feedbackMessage={feedbackMessage}
+              actionErrorMessage={actionErrorMessage}
+              onChange={(updater) =>
+                setActiveEvaluation((current) => (current ? updater(current) : null))
+              }
+              onBack={handleBackToDashboard}
+              onSaveDraft={() => void handleSaveDraft()}
+              onSubmit={() => void handleSubmitEvaluation()}
+            />
+
+            {showSelfEvaluationCard ? (
+              <SupervisorSelfEvaluationCard
+                selfEvaluation={selfEvaluation}
+                documentContext={selfEvaluation.documentContext ?? null}
+                userName={session?.user.name ?? 'Chefia imediata'}
+                processStatus={workspaceSnapshot.process.status}
+                isConfirming={isConfirmingSelfEvaluation}
+                onConfirm={() => void handleConfirmSelfEvaluation()}
+              />
+            ) : null}
+          </>
         ) : (
           <SupervisorDashboardTable
             filteredRows={filteredRows}

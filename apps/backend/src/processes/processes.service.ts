@@ -166,6 +166,7 @@ export class ProcessesService {
       total: processes.length,
     };
   }
+  }
 
   async getWorkflow(processId: string, user: AuthenticatedUser): Promise<WorkflowResponseDto> {
     const process = await this.ensureUserHasProcessAccess(this.prismaService, processId, user);
