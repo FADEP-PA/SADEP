@@ -192,7 +192,7 @@ export async function disposeTestContext(context: TestContext): Promise<void> {
 
 export function applyCesadCommissionMemberDatabaseConstraints(): void {
   applyMigrationSqlBlock({
-    migration: '20260423153000_add_cesad_commission_member',
+    migration: '20260917233000_restore_postgresql_custom_constraints',
     beginMarker: 'CESAD_COMMISSION_MEMBER_CONSTRAINTS_BEGIN',
     endMarker: 'CESAD_COMMISSION_MEMBER_CONSTRAINTS_END',
     missingMessage: 'CESAD commission member custom constraints block was not found in migration',
@@ -202,7 +202,7 @@ export function applyCesadCommissionMemberDatabaseConstraints(): void {
 
 export function applyProcessDocumentFinalCesadOpinionDatabaseConstraints(): void {
   applyMigrationSqlBlock({
-    migration: '20260515143000_add_cesad_final_opinion_documents_signatures',
+    migration: '20260917233000_restore_postgresql_custom_constraints',
     beginMarker: 'PROCESS_DOCUMENT_FINAL_CESAD_OPINION_CONSTRAINTS_BEGIN',
     endMarker: 'PROCESS_DOCUMENT_FINAL_CESAD_OPINION_CONSTRAINTS_END',
     missingMessage: 'ProcessDocument final CESAD opinion constraints block was not found in migration',
