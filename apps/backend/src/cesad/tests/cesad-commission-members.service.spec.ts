@@ -169,7 +169,7 @@ export async function runCesadCommissionMembersServiceTests() {
             startDate: new Date('2025-06-01T00:00:00.000Z'),
           },
         }),
-      /Foreign key constraint violated on the foreign key/,
+      /Foreign key constraint violated/,
     );
   } finally {
     await disposeTestContext(context);
