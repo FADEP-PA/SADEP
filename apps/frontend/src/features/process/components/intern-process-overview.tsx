@@ -1,10 +1,15 @@
 'use client';
 
-import { type ProcessAction } from '@sadep/contracts';
-import type { InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
+import {
+  SignatureStatus,
+  UserRole,
+  type InternServerWorkspaceSnapshotRef,
+  type ProcessAction,
+} from '@sadep/contracts';
 
 import type { WorkflowHistoryItem } from '@/features/dashboard/types/process-dashboard-types';
 import { ContentState } from '@/shared/ui/content-state';
+import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { StatusBadge } from '@/shared/ui/status-badge';
 
 import {
@@ -22,13 +27,22 @@ type InternProcessOverviewProps = {
   stageCards: StageCardViewModel[];
   workspaceSnapshot: InternServerWorkspaceSnapshotRef | null;
   lastHistoryEntries: WorkflowHistoryItem[];
+  internDisplayName: string;
 };
 
 export function InternProcessOverview({
   stageCards,
   workspaceSnapshot,
   lastHistoryEntries,
+  internDisplayName,
 }: InternProcessOverviewProps) {
+  const supervisorEvaluation = workspaceSnapshot?.supervisorEvaluation;
+  const internConfirmation = supervisorEvaluation?.documentContext?.signatures.find(
+    (signature) =>
+      signature.signatoryRole === UserRole.INTERN_SERVER &&
+      signature.status === SignatureStatus.COMPLETED,
+  );
+
   return (
     <>
       <section className="operations-section">
@@ -52,11 +66,54 @@ export function InternProcessOverview({
 
       {workspaceSnapshot ? (
         <div className="intern-layout-grid">
+          {supervisorEvaluation ? (
+            <section className="operations-card">
+              <div className="operations-card__header">
+                <div>
+                  <span className="section-chip">Avaliação recebida</span>
+                  <h3>Avaliação da Chefia</h3>
+                  <p>{supervisorEvaluation.summary}</p>
+                </div>
+              </div>
+
+              <div className="self-evaluation-form">
+                <div>
+                  <strong>Observações gerais</strong>
+                  <p>{supervisorEvaluation.generalComments}</p>
+                </div>
+
+                <div className="intern-signature-card__list">
+                  {supervisorEvaluation.content.criteria.map((criterion) => (
+                    <span key={criterion.code} className="document-signature-pill">
+                      <strong>{criterion.label}</strong>
+                      <span>Nota {criterion.rating}</span>
+                      {criterion.comment ? <span>{criterion.comment}</span> : null}
+                    </span>
+                  ))}
+                </div>
+
+                {internConfirmation?.signedAt ? (
+                  <FeedbackAlert
+                    title="Ciência confirmada"
+                    tone="success"
+                    description={`${internDisplayName} — ciência confirmada em ${formatDateTime(internConfirmation.signedAt)}`}
+                  />
+                ) : (
+                  <FeedbackAlert
+                    title="Ciência pendente"
+                    tone="warning"
+                    description="Confirme que leu a avaliação da Chefia para liberar a autoavaliação."
+                  />
+                )}
+              </div>
+            </section>
+          ) : null}
+
           <section className="operations-card">
             <div className="operations-card__header">
               <div>
                 <span className="section-chip">Documentos atuais</span>
-                <h3>Assinaturas da etapa em foco</h3>
+                <h3>Confirmações da etapa em foco</h3>
               </div>
             </div>
 

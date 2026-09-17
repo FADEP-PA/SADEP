@@ -1,7 +1,8 @@
 'use client';
 
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
-import { DemonstrationModeState } from '@/shared/ui/operational-states';
+
+import { formatDateTime } from './process-formatters';
 
 export type SelfEvaluationFormState = {
   selfReflection: string;
@@ -17,13 +18,17 @@ type SelfEvaluationFormViewProps = {
   currentStageSequence: number;
   currentStagePeriod: string;
   canEdit: boolean;
+  canSubmit: boolean;
+  isSubmitted: boolean;
   isBusy: boolean;
   isSavingDraft: boolean;
+  isSubmitting: boolean;
+  submittedAt: string | null;
   formIssues: string[];
-  hasDemoMode: boolean;
   onChange: (updater: (current: SelfEvaluationFormState) => SelfEvaluationFormState) => void;
   onBack: () => void;
   onSaveDraft: () => void;
+  onSubmit: () => void;
 };
 
 export function SelfEvaluationFormView({
@@ -34,13 +39,17 @@ export function SelfEvaluationFormView({
   currentStageSequence,
   currentStagePeriod,
   canEdit,
+  canSubmit,
+  isSubmitted,
   isBusy,
   isSavingDraft,
+  isSubmitting,
+  submittedAt,
   formIssues,
-  hasDemoMode,
   onChange,
   onBack,
   onSaveDraft,
+  onSubmit,
 }: SelfEvaluationFormViewProps) {
   return (
     <section className="operations-card intern-self-screen">
@@ -88,15 +97,20 @@ export function SelfEvaluationFormView({
             <FeedbackAlert
               title="Autoavaliação pendente"
               tone="warning"
-              description="Complete o texto principal para liberar o salvamento da autoavaliação."
+              description="Complete o texto principal para liberar o envio da autoavaliação."
               details={formIssues}
             />
           ) : null}
 
-          {hasDemoMode ? (
-            <DemonstrationModeState
-              title="Visualizacao demonstrativa"
-              description="Esta tela usa dados ficticios e seguros. O salvamento fica habilitado apenas quando um processo consultavel estiver carregado."
+          {isSubmitted ? (
+            <FeedbackAlert
+              title="Autoavaliação enviada para a Chefia"
+              tone="success"
+              description={
+                submittedAt
+                  ? `Enviada em ${formatDateTime(submittedAt)}. O conteúdo permanece somente para consulta enquanto aguarda a confirmação da Chefia.`
+                  : 'O conteúdo foi submetido e permanece somente para consulta enquanto aguarda a confirmação da Chefia.'
+              }
             />
           ) : null}
 
@@ -145,26 +159,26 @@ export function SelfEvaluationFormView({
             />
           </label>
 
-          <div className="intern-self-screen__actions">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => {
-                const field = document.getElementById('self-evaluation-reflection');
-                field?.focus();
-              }}
-            >
-              Editar autoavaliação
-            </button>
+          {!isSubmitted ? (
+            <div className="intern-self-screen__actions">
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={!canSubmit || isBusy || formIssues.length > 0}
+              >
+                {isSubmitting ? 'Enviando...' : 'Enviar autoavaliação para a Chefia'}
+              </button>
 
-            <button
-              type="button"
-              onClick={onSaveDraft}
-              disabled={!canEdit || isBusy}
-            >
-              {isSavingDraft ? 'Salvando...' : 'Salvar autoavaliação'}
-            </button>
-          </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={onSaveDraft}
+                disabled={!canEdit || isBusy}
+              >
+                {isSavingDraft ? 'Salvando...' : 'Salvar rascunho'}
+              </button>
+            </div>
+          ) : null}
         </div>
       </section>
     </section>
