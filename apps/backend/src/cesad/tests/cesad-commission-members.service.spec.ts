@@ -20,7 +20,7 @@ export async function runCesadCommissionMembersServiceTests() {
 
   try {
     applyCesadCommissionMemberDatabaseConstraints();
-    assert.deepEqual(Object.values(CesadCommissionMemberRoleType), ['TITULAR', 'SUPLENTE']);
+    assert.deepEqual(Object.values(CesadCommissionMemberRoleType), ['PRESIDENTE', 'TITULAR', 'SUPLENTE']);
 
     const firstUser = await createUser(
       context.prisma,
@@ -155,7 +155,7 @@ export async function runCesadCommissionMembersServiceTests() {
             endDate: new Date('2026-02-01T00:00:00.000Z'),
           },
         }),
-      /Foreign key constraint violated on the foreign key/,
+      /periods cannot overlap/,
     );
 
     await assert.rejects(
