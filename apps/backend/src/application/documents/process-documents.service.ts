@@ -111,36 +111,15 @@ export class ProcessDocumentsService {
     }
 
     // Create new document
-    let document;
-    try {
-      document = await transaction.processDocument.create({
-        data: {
-          evaluationProcessId: processId,
-          processStageId,
-          documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
-          documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
-          artifactPath: null,
-        },
-      });
-    } catch (error: unknown) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        const existingAfterConflict = await transaction.processDocument.findFirst({
-          where: {
-            evaluationProcessId: processId,
-            processStageId,
-            documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
-          },
-        });
-
-        if (existingAfterConflict) {
-          return { documentId: existingAfterConflict.id };
-        }
-      }
-      throw error;
-    }
+    const document = await transaction.processDocument.create({
+      data: {
+        evaluationProcessId: processId,
+        processStageId,
+        documentType: PrismaDocumentType.SUPERVISOR_EVALUATION,
+        documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
+        artifactPath: null,
+      },
+    });
 
 
     // Create audit event for document creation
@@ -291,36 +270,15 @@ export class ProcessDocumentsService {
       return { documentId: existingDocument.id };
     }
 
-    let document;
-    try {
-      document = await transaction.processDocument.create({
-        data: {
-          evaluationProcessId: processId,
-          processStageId,
-          documentType: PrismaDocumentType.SELF_EVALUATION,
-          documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
-          artifactPath: null,
-        },
-      });
-    } catch (error: unknown) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        const existingAfterConflict = await transaction.processDocument.findFirst({
-          where: {
-            evaluationProcessId: processId,
-            processStageId,
-            documentType: PrismaDocumentType.SELF_EVALUATION,
-          },
-        });
-
-        if (existingAfterConflict) {
-          return { documentId: existingAfterConflict.id };
-        }
-      }
-      throw error;
-    }
+    const document = await transaction.processDocument.create({
+      data: {
+        evaluationProcessId: processId,
+        processStageId,
+        documentType: PrismaDocumentType.SELF_EVALUATION,
+        documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
+        artifactPath: null,
+      },
+    });
 
     await transaction.auditEvent.create({
       data: this.buildAuditEvent({
@@ -1275,39 +1233,16 @@ export class ProcessDocumentsService {
       return { documentId: existingDocument.id };
     }
 
-    let document;
-    try {
-      document = await transaction.processDocument.create({
-        data: {
-          evaluationProcessId: processId,
-          processStageId,
-          documentType: PrismaDocumentType.CESAD_OPINION,
-          opinionKind: PrismaCesadOpinionKind.STAGE,
-          documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
-          artifactPath: null,
-        },
-      });
-    } catch (error: unknown) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        const existingAfterConflict = await transaction.processDocument.findFirst({
-          where: {
-            evaluationProcessId: processId,
-            processStageId,
-            documentType: PrismaDocumentType.CESAD_OPINION,
-            opinionKind: PrismaCesadOpinionKind.STAGE,
-          },
-        });
-
-        if (existingAfterConflict) {
-          return { documentId: existingAfterConflict.id };
-        }
-      }
-
-      throw error;
-    }
+    const document = await transaction.processDocument.create({
+      data: {
+        evaluationProcessId: processId,
+        processStageId,
+        documentType: PrismaDocumentType.CESAD_OPINION,
+        opinionKind: PrismaCesadOpinionKind.STAGE,
+        documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
+        artifactPath: null,
+      },
+    });
 
     await transaction.auditEvent.create({
       data: this.buildAuditEvent({
@@ -1392,53 +1327,16 @@ export class ProcessDocumentsService {
       return { documentId: existingUnclassifiedFinalDocument.id };
     }
 
-    let document;
-    try {
-      document = await transaction.processDocument.create({
-        data: {
-          evaluationProcessId: processId,
-          processStageId: null,
-          documentType: PrismaDocumentType.CESAD_OPINION,
-          opinionKind: PrismaCesadOpinionKind.FINAL_CONCLUSIVE,
-          documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
-          artifactPath: null,
-        },
-      });
-    } catch (error: unknown) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        const existingAfterConflict = await transaction.processDocument.findFirst({
-          where: {
-            evaluationProcessId: processId,
-            processStageId: null,
-            documentType: PrismaDocumentType.CESAD_OPINION,
-            opinionKind: PrismaCesadOpinionKind.FINAL_CONCLUSIVE,
-          },
-        });
-
-        if (existingAfterConflict) {
-          if (existingAfterConflict.documentStatus === PrismaDocumentStatus.INVALIDATED_OR_SUPERSEDED) {
-            throw new BadRequestException('Cannot prepare signatures for an invalidated CESAD final opinion document');
-          }
-
-          if (
-            existingAfterConflict.documentStatus === PrismaDocumentStatus.DRAFT ||
-            existingAfterConflict.documentStatus === PrismaDocumentStatus.CONSOLIDATED
-          ) {
-            await transaction.processDocument.update({
-              where: { id: existingAfterConflict.id },
-              data: { documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE },
-            });
-          }
-
-          return { documentId: existingAfterConflict.id };
-        }
-      }
-
-      throw error;
-    }
+    const document = await transaction.processDocument.create({
+      data: {
+        evaluationProcessId: processId,
+        processStageId: null,
+        documentType: PrismaDocumentType.CESAD_OPINION,
+        opinionKind: PrismaCesadOpinionKind.FINAL_CONCLUSIVE,
+        documentStatus: PrismaDocumentStatus.READY_FOR_SIGNATURE,
+        artifactPath: null,
+      },
+    });
 
     await transaction.auditEvent.create({
       data: this.buildAuditEvent({
@@ -2199,83 +2097,72 @@ export class ProcessDocumentsService {
       cesadFinalOpinionExpectedSignerId?: string;
     },
   ): Promise<{ created: boolean }> {
-    try {
-      await transaction.signatureRecord.create({
-        data: {
-          processDocumentId: params.processDocumentId,
-          signatoryUserId: params.signatoryUserId,
-          signatoryRole: params.signatoryRole,
-          provider: params.provider,
-          status: params.status,
-          ...(params.signedAt ? { signedAt: params.signedAt } : {}),
-          ...(params.cesadStageOpinionExpectedSignerId
-            ? { cesadStageOpinionExpectedSignerId: params.cesadStageOpinionExpectedSignerId }
-            : {}),
-          ...(params.cesadFinalOpinionExpectedSignerId
-            ? { cesadFinalOpinionExpectedSignerId: params.cesadFinalOpinionExpectedSignerId }
-            : {}),
-        },
-      });
-
-      return { created: true };
-    } catch (error: unknown) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        const existingSignature = await transaction.signatureRecord.findFirst({
-          where: {
-            OR: [
-              {
-                processDocumentId: params.processDocumentId,
-                signatoryUserId: params.signatoryUserId,
-                signatoryRole: params.signatoryRole,
-              },
-              ...(params.cesadStageOpinionExpectedSignerId
-                ? [{ cesadStageOpinionExpectedSignerId: params.cesadStageOpinionExpectedSignerId }]
-                : []),
-              ...(params.cesadFinalOpinionExpectedSignerId
-                ? [{ cesadFinalOpinionExpectedSignerId: params.cesadFinalOpinionExpectedSignerId }]
-                : []),
-            ],
+    const existingSignature = await transaction.signatureRecord.findFirst({
+      where: {
+        OR: [
+          {
+            processDocumentId: params.processDocumentId,
+            signatoryUserId: params.signatoryUserId,
+            signatoryRole: params.signatoryRole,
           },
-        });
+          ...(params.cesadStageOpinionExpectedSignerId
+            ? [{ cesadStageOpinionExpectedSignerId: params.cesadStageOpinionExpectedSignerId }]
+            : []),
+          ...(params.cesadFinalOpinionExpectedSignerId
+            ? [{ cesadFinalOpinionExpectedSignerId: params.cesadFinalOpinionExpectedSignerId }]
+            : []),
+        ],
+      },
+    });
 
-        if (!existingSignature) {
-          throw error;
-        }
-
-        if (existingSignature.signatoryUserId !== params.signatoryUserId) {
-          throw new BadRequestException(
-            `Signature record for document ${params.processDocumentId} and role ${params.signatoryRole} already exists with a different signatory`,
-          );
-        }
-
-        if (
-          params.cesadStageOpinionExpectedSignerId &&
-          existingSignature.cesadStageOpinionExpectedSignerId &&
-          existingSignature.cesadStageOpinionExpectedSignerId !== params.cesadStageOpinionExpectedSignerId
-        ) {
-          throw new BadRequestException(
-            `Signature record for document ${params.processDocumentId} already exists with a different expected signer`,
-          );
-        }
-
-        if (
-          params.cesadFinalOpinionExpectedSignerId &&
-          existingSignature.cesadFinalOpinionExpectedSignerId &&
-          existingSignature.cesadFinalOpinionExpectedSignerId !== params.cesadFinalOpinionExpectedSignerId
-        ) {
-          throw new BadRequestException(
-            `Signature record for document ${params.processDocumentId} already exists with a different expected signer`,
-          );
-        }
-
-        return { created: false };
+    if (existingSignature) {
+      if (existingSignature.signatoryUserId !== params.signatoryUserId) {
+        throw new BadRequestException(
+          `Signature record for document ${params.processDocumentId} and role ${params.signatoryRole} already exists with a different signatory`,
+        );
       }
 
-      throw error;
+      if (
+        params.cesadStageOpinionExpectedSignerId &&
+        existingSignature.cesadStageOpinionExpectedSignerId &&
+        existingSignature.cesadStageOpinionExpectedSignerId !== params.cesadStageOpinionExpectedSignerId
+      ) {
+        throw new BadRequestException(
+          `Signature record for document ${params.processDocumentId} already exists with a different expected signer`,
+        );
+      }
+
+      if (
+        params.cesadFinalOpinionExpectedSignerId &&
+        existingSignature.cesadFinalOpinionExpectedSignerId &&
+        existingSignature.cesadFinalOpinionExpectedSignerId !== params.cesadFinalOpinionExpectedSignerId
+      ) {
+        throw new BadRequestException(
+          `Signature record for document ${params.processDocumentId} already exists with a different expected signer`,
+        );
+      }
+
+      return { created: false };
     }
+
+    await transaction.signatureRecord.create({
+      data: {
+        processDocumentId: params.processDocumentId,
+        signatoryUserId: params.signatoryUserId,
+        signatoryRole: params.signatoryRole,
+        provider: params.provider,
+        status: params.status,
+        ...(params.signedAt ? { signedAt: params.signedAt } : {}),
+        ...(params.cesadStageOpinionExpectedSignerId
+          ? { cesadStageOpinionExpectedSignerId: params.cesadStageOpinionExpectedSignerId }
+          : {}),
+        ...(params.cesadFinalOpinionExpectedSignerId
+          ? { cesadFinalOpinionExpectedSignerId: params.cesadFinalOpinionExpectedSignerId }
+          : {}),
+      },
+    });
+
+    return { created: true };
   }
 
   private buildAuditEvent(params: {

@@ -148,16 +148,13 @@ describe('ProcessDocumentsService', () => {
       expect(transaction.auditEvent.create).not.toHaveBeenCalled();
     });
 
-    it('returns the existing document after a P2002 retry path without emitting a misleading generation audit', async () => {
+    it('propagates P2002 when a concurrent insert races past the early guard', async () => {
       const transaction = {
         processStage: {
           findUnique: jest.fn().mockResolvedValue(stageMetadata),
         },
         processDocument: {
-          findFirst: jest
-            .fn()
-            .mockResolvedValueOnce(null)
-            .mockResolvedValueOnce({ id: 'doc-123' }),
+          findFirst: jest.fn().mockResolvedValue(null),
           create: jest.fn().mockRejectedValue(
             new Prisma.PrismaClientKnownRequestError(
               'Unique constraint failed',
@@ -173,15 +170,16 @@ describe('ProcessDocumentsService', () => {
         },
       } as any;
 
-      const result = await service.ensureSupervisorEvaluationDocument(
-        transaction,
-        'process-123',
-        stageId,
-        supervisorUser,
-      );
+      await expect(
+        service.ensureSupervisorEvaluationDocument(
+          transaction,
+          'process-123',
+          stageId,
+          supervisorUser,
+        ),
+      ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
 
-      expect(result).toEqual({ documentId: 'doc-123' });
-      expect(transaction.processDocument.findFirst).toHaveBeenCalledTimes(2);
+      expect(transaction.processDocument.findFirst).toHaveBeenCalledTimes(1);
       expect(transaction.auditEvent.create).not.toHaveBeenCalled();
     });
   });
@@ -194,7 +192,7 @@ describe('ProcessDocumentsService', () => {
         },
         signatureRecord: {
           create: jest.fn().mockResolvedValue({}),
-          findFirst: jest.fn(),
+          findFirst: jest.fn().mockResolvedValue(null),
         },
         auditEvent: {
           create: jest.fn().mockResolvedValue({}),
@@ -211,6 +209,29 @@ describe('ProcessDocumentsService', () => {
         supervisorUser,
       );
 
+      expect(transaction.signatureRecord.findFirst).toHaveBeenCalledTimes(2);
+      expect(transaction.signatureRecord.findFirst).toHaveBeenNthCalledWith(1, {
+        where: {
+          OR: [
+            {
+              processDocumentId: 'doc-123',
+              signatoryUserId: supervisorUser.sub,
+              signatoryRole: 'IMMEDIATE_SUPERVISOR',
+            },
+          ],
+        },
+      });
+      expect(transaction.signatureRecord.findFirst).toHaveBeenNthCalledWith(2, {
+        where: {
+          OR: [
+            {
+              processDocumentId: 'doc-123',
+              signatoryUserId: internUser.sub,
+              signatoryRole: 'INTERN_SERVER',
+            },
+          ],
+        },
+      });
       expect(transaction.signatureRecord.create).toHaveBeenCalledTimes(2);
       expect(transaction.signatureRecord.create).toHaveBeenNthCalledWith(1, {
         data: {
@@ -231,7 +252,6 @@ describe('ProcessDocumentsService', () => {
           status: 'PENDING',
         },
       });
-      expect(transaction.signatureRecord.findFirst).not.toHaveBeenCalled();
       expect(transaction.auditEvent.create).toHaveBeenCalledTimes(2);
       expect(transaction.auditEvent.create).toHaveBeenNthCalledWith(
         1,
@@ -269,20 +289,7 @@ describe('ProcessDocumentsService', () => {
           findUnique: jest.fn().mockResolvedValue(stageMetadata),
         },
         signatureRecord: {
-          create: jest
-            .fn()
-            .mockRejectedValueOnce(
-              new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
-                code: 'P2002',
-                clientVersion: '6.19.2',
-              }),
-            )
-            .mockRejectedValueOnce(
-              new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
-                code: 'P2002',
-                clientVersion: '6.19.2',
-              }),
-            ),
+          create: jest.fn(),
           findFirst: jest
             .fn()
             .mockResolvedValueOnce({
@@ -309,7 +316,7 @@ describe('ProcessDocumentsService', () => {
         supervisorUser,
       );
 
-      expect(transaction.signatureRecord.create).toHaveBeenCalledTimes(2);
+      expect(transaction.signatureRecord.findFirst).toHaveBeenCalledTimes(2);
       expect(transaction.signatureRecord.findFirst).toHaveBeenNthCalledWith(1, {
         where: {
           OR: [
@@ -332,6 +339,7 @@ describe('ProcessDocumentsService', () => {
           ],
         },
       });
+      expect(transaction.signatureRecord.create).not.toHaveBeenCalled();
       expect(transaction.auditEvent.create).not.toHaveBeenCalled();
     });
 
