@@ -6,10 +6,10 @@ import {
   UserRole,
   type InternServerWorkspaceSnapshotRef,
 } from '@sadep/contracts';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import type { WorkflowHistoryItem } from '@/features/dashboard/types/process-dashboard-types';
-import { getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
+import { HttpError, getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import {
   getProcessList,
   getWorkflowHistory,
@@ -17,6 +17,7 @@ import {
   saveSelfEvaluationDraft,
   signSupervisorEvaluation,
   submitSelfEvaluation,
+  type ProcessListRef,
   type SelfEvaluationResponse,
   type UpsertSelfEvaluationInput,
 } from '@/shared/api/services/processes-service';
@@ -36,13 +37,6 @@ import { SelfEvaluationFormView, type SelfEvaluationFormState } from './self-eva
 import { type StageCardViewModel, type StageDocumentItem } from './stage-card';
 
 const ALLOWED_ROLES = [UserRole.INTERN_SERVER];
-const TOTAL_STAGES = 4;
-const STAGE_PERIODS = [
-  '01/01/2023 - 30/06/2023',
-  '01/07/2023 - 31/12/2023',
-  '01/01/2024 - 30/06/2024',
-  '01/07/2024 - 31/12/2024',
-] as const;
 
 type OperationFeedback = {
   title: string;
@@ -85,10 +79,32 @@ function buildSelfEvaluationForm(
 
 function getDisplayName(name: string | undefined) {
   if (!name || name.trim().length === 0) {
-    return 'João da Silva';
+    return 'Servidor estagiário';
   }
 
   return name.trim();
+}
+
+function formatStageDate(value: string) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'America/Belem',
+  }).format(new Date(value));
+}
+
+function formatCurrentStagePeriod(snapshot: InternProcessSnapshot | null) {
+  const startedAt = snapshot?.workspace.currentStage.startedAt;
+  const endedAt = snapshot?.workspace.currentStage.endedAt;
+
+  if (!startedAt) {
+    return 'Período não informado';
+  }
+
+  return endedAt
+    ? `${formatStageDate(startedAt)} a ${formatStageDate(endedAt)}`
+    : `Iniciada em ${formatStageDate(startedAt)}`;
 }
 
 function normalizeSelfEvaluationPayload(
@@ -123,8 +139,8 @@ function getSelfEvaluationFormIssues(form: SelfEvaluationFormState) {
 function getActionOperationCopy(operation: ActionOperation) {
   if (operation === 'sign-supervisor') {
     return {
-      title: 'Registrando assinatura da avaliação da chefia',
-      description: 'A confirmação do servidor está sendo enviada e o painel será atualizado em seguida.',
+      title: 'Registrando ciência da avaliação da Chefia',
+      description: 'Sua confirmação está sendo registrada e o painel será atualizado em seguida.',
     };
   }
 
@@ -145,13 +161,41 @@ function getActionOperationCopy(operation: ActionOperation) {
   return null;
 }
 
+function getMutationErrorTitle(error: unknown, fallback: string) {
+  if (!(error instanceof HttpError)) {
+    return fallback;
+  }
+
+  if (error.status === 403) {
+    return 'Ação não autorizada';
+  }
+
+  if (error.status === 409) {
+    return 'O processo foi atualizado';
+  }
+
+  if (error.status === 422) {
+    return 'Dados da autoavaliação inválidos';
+  }
+
+  return fallback;
+}
+
 function getTopStatusBadge(
   snapshot: InternProcessSnapshot | null,
   canSignSupervisorEvaluation: boolean,
   canEditSelfEvaluation: boolean,
 ) {
-  if (!snapshot || canSignSupervisorEvaluation) {
-    return { label: 'Aguardando sua assinatura', tone: 'warning' as const };
+  if (!snapshot) {
+    return { label: 'Processo não carregado', tone: 'neutral' as const };
+  }
+
+  if (canSignSupervisorEvaluation) {
+    return { label: 'Aguardando sua ciência', tone: 'warning' as const };
+  }
+
+  if (snapshot.selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED) {
+    return { label: 'Autoavaliação enviada', tone: 'success' as const };
   }
 
   if (canEditSelfEvaluation) {
@@ -170,11 +214,15 @@ function getCurrentStageStatus(
   canEditSelfEvaluation: boolean,
 ) {
   if (canSignSupervisorEvaluation) {
-    return { label: 'Aguardando sua assinatura', tone: 'warning' as const };
+    return { label: 'Aguardando sua ciência', tone: 'warning' as const };
   }
 
   if (canEditSelfEvaluation) {
     return { label: 'Prazo em curso', tone: 'info' as const };
+  }
+
+  if (snapshot.selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED) {
+    return { label: 'Autoavaliação enviada', tone: 'success' as const };
   }
 
   if (snapshot.workflow.status === ProcessStatus.EM_ANALISE_CESAD) {
@@ -196,67 +244,6 @@ function getCurrentStageStatus(
   return { label: 'Prazo em curso', tone: 'neutral' as const };
 }
 
-function createDemoStageCards(): StageCardViewModel[] {
-  return [
-    {
-      sequence: 1,
-      title: '1ª Etapa',
-      period: STAGE_PERIODS[0],
-      statusLabel: 'Homologada',
-      statusTone: 'success',
-      markerLabel: '✓',
-      markerClassName: 'intern-stage-card__marker intern-stage-card__marker--done',
-      documents: [
-        { label: 'Avaliação da chefia', tone: 'default' },
-        { label: 'Autoavaliação', tone: 'default' },
-        { label: 'Parecer da comissão', tone: 'default' },
-      ],
-    },
-    {
-      sequence: 2,
-      title: '2ª Etapa',
-      period: STAGE_PERIODS[1],
-      statusLabel: 'Homologada',
-      statusTone: 'success',
-      markerLabel: '✓',
-      markerClassName: 'intern-stage-card__marker intern-stage-card__marker--done',
-      documents: [
-        { label: 'Avaliação da chefia', tone: 'default' },
-        { label: 'Autoavaliação', tone: 'default' },
-        { label: 'Parecer da comissão', tone: 'default' },
-      ],
-    },
-    {
-      sequence: 3,
-      title: '3ª Etapa',
-      period: STAGE_PERIODS[2],
-      statusLabel: 'Em análise pela comissão',
-      statusTone: 'info',
-      markerLabel: '3',
-      markerClassName: 'intern-stage-card__marker intern-stage-card__marker--current',
-      documents: [
-        { label: 'Avaliação da chefia', tone: 'default' },
-        { label: 'Autoavaliação', tone: 'default' },
-        { label: 'Parecer ainda não emitido', tone: 'muted' },
-      ],
-    },
-    {
-      sequence: 4,
-      title: '4ª Etapa',
-      period: STAGE_PERIODS[3],
-      statusLabel: 'Prazo em curso',
-      statusTone: 'neutral',
-      markerLabel: '4',
-      markerClassName: 'intern-stage-card__marker intern-stage-card__marker--future',
-      documents: [],
-      primaryAction: {
-        label: 'Realizar autoavaliação',
-        kind: 'primary',
-      },
-    },
-  ];
-}
-
 function buildStageCards(
   snapshot: InternProcessSnapshot | null,
   canSignSupervisorEvaluation: boolean,
@@ -266,20 +253,16 @@ function buildStageCards(
   onToggleSelfEvaluation: () => void,
 ): StageCardViewModel[] {
   if (!snapshot) {
-    return createDemoStageCards().map((item) =>
-      item.primaryAction
-        ? { ...item, primaryAction: { ...item.primaryAction, onClick: onToggleSelfEvaluation } }
-        : item,
-    );
+    return [];
   }
 
   const currentStageSequence = Math.min(
     Math.max(snapshot.workspace.currentStage.sequence, 1),
-    TOTAL_STAGES,
+    snapshot.workspace.currentStage.totalStages,
   );
   const currentStageStatus = getCurrentStageStatus(snapshot, canSignSupervisorEvaluation, canEditSelfEvaluation);
 
-  return Array.from({ length: TOTAL_STAGES }, (_, index) => {
+  return Array.from({ length: snapshot.workspace.currentStage.totalStages }, (_, index) => {
     const sequence = index + 1;
     const isPastStage = sequence < currentStageSequence;
     const isCurrentStage = sequence === currentStageSequence;
@@ -288,16 +271,12 @@ function buildStageCards(
       return {
         sequence,
         title: `${sequence}ª Etapa`,
-        period: STAGE_PERIODS[index] ?? 'Período institucional',
-        statusLabel: 'Homologada',
-        statusTone: 'success' as const,
+        period: 'Período não informado',
+        statusLabel: 'Etapa anterior',
+        statusTone: 'neutral' as const,
         markerLabel: '✓',
         markerClassName: 'intern-stage-card__marker intern-stage-card__marker--done',
-        documents: [
-          { label: 'Avaliação da chefia', tone: 'default' as const },
-          { label: 'Autoavaliação', tone: 'default' as const },
-          { label: 'Parecer da comissão', tone: 'default' as const },
-        ],
+        documents: [],
       };
     }
 
@@ -328,12 +307,12 @@ function buildStageCards(
 
       if (canSignSupervisorEvaluation) {
         primaryAction = {
-          label: activeOperation === 'sign-supervisor' ? 'Assinando...' : 'Assinar avaliação da chefia',
+          label: activeOperation === 'sign-supervisor' ? 'Confirmando ciência...' : 'Confirmar ciência',
           kind: 'primary',
           disabled: activeOperation !== null,
           onClick: onSignSupervisorEvaluation,
         };
-      } else if (canEditSelfEvaluation || snapshot.selfEvaluation?.status === SelfEvaluationStatus.DRAFT) {
+      } else if (canEditSelfEvaluation || snapshot.selfEvaluation) {
         primaryAction = {
           label: canEditSelfEvaluation ? 'Realizar autoavaliação' : 'Consultar autoavaliação',
           kind: 'primary',
@@ -344,7 +323,7 @@ function buildStageCards(
       return {
         sequence,
         title: `${sequence}ª Etapa`,
-        period: STAGE_PERIODS[index] ?? 'Período institucional',
+        period: formatCurrentStagePeriod(snapshot),
         statusLabel: currentStageStatus.label,
         statusTone: currentStageStatus.tone,
         markerLabel: String(sequence),
@@ -357,8 +336,8 @@ function buildStageCards(
     return {
       sequence,
       title: `${sequence}ª Etapa`,
-      period: STAGE_PERIODS[index] ?? 'Período institucional',
-      statusLabel: sequence === currentStageSequence + 1 ? 'Prazo em curso' : 'Aguardando etapa',
+      period: 'Período não informado',
+      statusLabel: 'Aguardando etapa',
       statusTone: 'neutral' as const,
       markerLabel: String(sequence),
       markerClassName: 'intern-stage-card__marker intern-stage-card__marker--future',
@@ -377,37 +356,101 @@ export function InternServerWorkspace() {
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [actionErrorDetails, setActionErrorDetails] = useState<string[]>([]);
   const [successFeedback, setSuccessFeedback] = useState<OperationFeedback | null>(null);
-  const [processIdInput, setProcessIdInput] = useState('');
+  const [processes, setProcesses] = useState<ProcessListRef['items']>([]);
+  const [selectedProcessId, setSelectedProcessId] = useState('');
+  const [isLoadingProcessList, setIsLoadingProcessList] = useState(false);
   const [isLoadingSnapshot, setIsLoadingSnapshot] = useState(false);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
   const [activeOperation, setActiveOperation] = useState<ActionOperation>(null);
   const [isSelfEvaluationExpanded, setIsSelfEvaluationExpanded] = useState(false);
 
-  useEffect(() => {
-    if (!session) return;
-    getProcessList()
-      .then((result) => {
-        if (result.items.length === 1 && result.items[0]) {
-          setProcessIdInput(result.items[0].id);
-          void loadProcessSnapshot(result.items[0].id);
-        }
-      })
-      .catch(() => undefined);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
+  const loadProcessSnapshot = useCallback(
+    async (activeProcessId: string, success?: OperationFeedback) => {
+      const normalizedProcessId = activeProcessId.trim();
+      const [workspaceSnapshot, historyResponse] = await Promise.all([
+        getInternWorkspaceSnapshot(normalizedProcessId),
+        getWorkflowHistory(normalizedProcessId),
+      ]);
 
-  const displayName = getDisplayName(session?.user.name);
-  const heroIdentity = useMemo(
-    () => ({
-      roleLabel: 'Professor Nivel II',
-      lotacao: 'Escola Estadual Paulo Freire',
-      modelLabel: 'Caso 2 - 4 Etapas',
-    }),
+      const nextSnapshot: InternProcessSnapshot = {
+        workspace: workspaceSnapshot,
+        workflow: workspaceSnapshot.process,
+        history: historyResponse.items,
+        supervisorEvaluation: workspaceSnapshot.supervisorEvaluation,
+        supervisorEvaluationWarning: workspaceSnapshot.capabilities.canViewSupervisorEvaluation
+          ? null
+          : 'A avaliação da Chefia será exibida quando estiver liberada no fluxo da etapa.',
+        selfEvaluation: workspaceSnapshot.selfEvaluation,
+        selfEvaluationWarning:
+          workspaceSnapshot.capabilities.canViewSelfEvaluation ||
+          workspaceSnapshot.capabilities.canEditSelfEvaluation
+            ? null
+            : workspaceSnapshot.supervisorEvaluation
+              ? 'Confirme a ciência da avaliação da Chefia para liberar a autoavaliação.'
+              : 'A autoavaliação será liberada após a Chefia enviar a avaliação da etapa.',
+      };
+
+      setSnapshot(nextSnapshot);
+      setSelfEvaluationForm(buildSelfEvaluationForm(nextSnapshot.selfEvaluation));
+      setIsSelfEvaluationExpanded(Boolean(nextSnapshot.selfEvaluation));
+      setSuccessFeedback(success ?? null);
+    },
     [],
   );
+
+  useEffect(() => {
+    if (!session) return;
+
+    let canceled = false;
+
+    async function initializeWorkspace() {
+      setIsLoadingProcessList(true);
+      setLoadErrorMessage(null);
+      setLoadErrorDetails([]);
+
+      try {
+        const result = await getProcessList();
+        if (canceled) return;
+
+        setProcesses(result.items);
+
+        if (result.items.length === 1 && result.items[0]) {
+          setSelectedProcessId(result.items[0].id);
+          setIsLoadingSnapshot(true);
+          await loadProcessSnapshot(result.items[0].id);
+        }
+      } catch (error) {
+        if (canceled) return;
+
+        const payload = error instanceof HttpError ? error.payload : undefined;
+        setLoadErrorMessage(
+          getRequestErrorMessage(error, 'Não foi possível localizar os processos do servidor.'),
+        );
+        setLoadErrorDetails(getHttpErrorDetails(payload));
+      } finally {
+        if (!canceled) {
+          setIsLoadingProcessList(false);
+          setIsLoadingSnapshot(false);
+        }
+      }
+    }
+
+    void initializeWorkspace();
+    return () => {
+      canceled = true;
+    };
+  }, [loadProcessSnapshot, session]);
+
+  const displayName = getDisplayName(session?.user.name);
+  const heroIdentity = {
+    roleLabel: 'Servidor estagiário',
+    lotacao: 'Não informada',
+    modelLabel: 'Caso 2 - 4 etapas',
+  };
   const canSignSupervisorEvaluation = snapshot?.workspace.capabilities.canSignSupervisorEvaluation ?? false;
   const canEditSelfEvaluation = snapshot?.workspace.capabilities.canEditSelfEvaluation ?? false;
+  const canSubmitSelfEvaluation = snapshot?.workspace.capabilities.canSubmitSelfEvaluation ?? false;
   const selfEvaluationFormIssues = useMemo(
     () => getSelfEvaluationFormIssues(selfEvaluationForm),
     [selfEvaluationForm],
@@ -433,66 +476,39 @@ export function InternServerWorkspace() {
     [activeOperation, canEditSelfEvaluation, canSignSupervisorEvaluation, snapshot],
   );
   const activeOperationCopy = getActionOperationCopy(activeOperation);
-  const currentStageSequence = snapshot?.workspace.currentStage.sequence ?? 4;
-  const currentStagePeriod =
-    STAGE_PERIODS[Math.min(Math.max(currentStageSequence - 1, 0), TOTAL_STAGES - 1)];
+  const currentStageSequence = snapshot?.workspace.currentStage.sequence ?? 1;
+  const currentStagePeriod = formatCurrentStagePeriod(snapshot);
   const canPersistSelfEvaluation = Boolean(snapshot && canEditSelfEvaluation);
+  const isSelfEvaluationSubmitted =
+    snapshot?.selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED;
   const isRealProcessLoaded = Boolean(snapshot);
   const journeyMode = isRealProcessLoaded
     ? {
-        label: 'Processo informado carregado',
-        detail: `Leitura disponivel para o processo ${snapshot?.workflow.id}.`,
+        label: 'Processo carregado automaticamente',
+        detail: `Dados reais do processo ${snapshot?.workflow.id}.`,
       }
     : {
-        label: 'Visualizacao demonstrativa',
-        detail: 'Dados ficticios e seguros permanecem disponiveis para apresentacao visual da jornada do servidor.',
+        label:
+          processes.length > 1
+            ? 'Selecione um processo'
+            : isLoadingProcessList
+              ? 'Localizando processo'
+              : 'Nenhum processo disponível',
+        detail:
+          processes.length > 1
+            ? 'Há mais de um processo vinculado ao seu perfil.'
+            : isLoadingProcessList
+              ? 'Consultando os processos vinculados ao servidor autenticado.'
+              : 'Não há processo vinculado ao servidor autenticado neste momento.',
       };
-
-  async function loadProcessSnapshot(activeProcessId: string, success?: OperationFeedback) {
-    if (!session) {
-      return;
-    }
-
-    const normalizedProcessId = activeProcessId.trim();
-    const [workspaceSnapshot, historyResponse] = await Promise.all([
-      getInternWorkspaceSnapshot(normalizedProcessId),
-      getWorkflowHistory(normalizedProcessId),
-    ]);
-
-    const nextSnapshot: InternProcessSnapshot = {
-      workspace: workspaceSnapshot,
-      workflow: workspaceSnapshot.process,
-      history: historyResponse.items,
-      supervisorEvaluation: workspaceSnapshot.supervisorEvaluation,
-      supervisorEvaluationWarning: workspaceSnapshot.capabilities.canViewSupervisorEvaluation
-        ? null
-        : 'A avaliação da chefia será exibida quando estiver liberada no fluxo da etapa.',
-      selfEvaluation: workspaceSnapshot.selfEvaluation,
-      selfEvaluationWarning:
-        workspaceSnapshot.capabilities.canViewSelfEvaluation ||
-        workspaceSnapshot.capabilities.canEditSelfEvaluation
-          ? null
-          : 'A autoavaliacao sera liberada conforme as regras do fluxo processual.',
-    };
-
-    setSnapshot(nextSnapshot);
-    setSelfEvaluationForm(buildSelfEvaluationForm(nextSnapshot.selfEvaluation));
-    setIsSelfEvaluationExpanded(
-      Boolean(
-        nextSnapshot.workspace.capabilities.canEditSelfEvaluation ||
-          nextSnapshot.selfEvaluation?.status === SelfEvaluationStatus.DRAFT,
-      ),
-    );
-    setSuccessFeedback(success ?? null);
-  }
 
   async function handleLoadProcessSnapshot(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const normalizedProcessId = processIdInput.trim();
+    const normalizedProcessId = selectedProcessId.trim();
 
     if (!normalizedProcessId) {
-      setLoadErrorMessage('Informe o identificador do processo para consultar a jornada real do servidor.');
+      setLoadErrorMessage('Selecione um processo para consultar a jornada do servidor.');
       setLoadErrorDetails([]);
       return;
     }
@@ -505,7 +521,7 @@ export function InternServerWorkspace() {
     try {
       await loadProcessSnapshot(normalizedProcessId, {
         title: 'Processo carregado',
-        description: 'A jornada do servidor foi atualizada com as informacoes disponiveis para este perfil.',
+        description: 'A jornada foi atualizada com os dados reais disponíveis para este perfil.',
       });
     } catch (error) {
       const payload =
@@ -530,7 +546,7 @@ export function InternServerWorkspace() {
     }
 
     setActiveOperation('sign-supervisor');
-    setActionErrorTitle('Falha ao registrar assinatura');
+    setActionErrorTitle('Falha ao confirmar ciência');
     setActionErrorMessage(null);
     setActionErrorDetails([]);
     setSuccessFeedback(null);
@@ -539,18 +555,18 @@ export function InternServerWorkspace() {
       await signSupervisorEvaluation(snapshot.workflow.id);
 
       await loadProcessSnapshot(snapshot.workflow.id, {
-        title: 'Assinatura registrada',
-        description: 'A avaliação da chefia foi confirmada e a autoavaliação ficou em destaque nesta tela.',
+        title: 'Ciência confirmada',
+        description: 'A ciência da avaliação da Chefia foi registrada e a autoavaliação foi liberada.',
       });
-      setIsSelfEvaluationExpanded(true);
     } catch (error) {
       const payload =
         typeof error === 'object' && error && 'payload' in error
           ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
           : undefined;
 
+      setActionErrorTitle(getMutationErrorTitle(error, 'Falha ao confirmar ciência'));
       setActionErrorMessage(
-        getRequestErrorMessage(error, 'Não foi possível assinar a avaliação da chefia.'),
+        getRequestErrorMessage(error, 'Não foi possível confirmar a ciência da avaliação da Chefia.'),
       );
       setActionErrorDetails(getHttpErrorDetails(payload));
     } finally {
@@ -591,6 +607,12 @@ export function InternServerWorkspace() {
           ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
           : undefined;
 
+      setActionErrorTitle(
+        getMutationErrorTitle(
+          error,
+          kind === 'draft' ? 'Falha ao salvar autoavaliação' : 'Falha ao enviar autoavaliação',
+        ),
+      );
       setActionErrorMessage(
         getRequestErrorMessage(
           error,
@@ -614,7 +636,7 @@ export function InternServerWorkspace() {
               <div>
                 <h2>{displayName}</h2>
                 <p>
-                  Cargo: {heroIdentity.roleLabel}
+                  Perfil: {heroIdentity.roleLabel}
                   <span>Lotação: {heroIdentity.lotacao}</span>
                   <span>Modelo: {heroIdentity.modelLabel}</span>
                 </p>
@@ -628,33 +650,41 @@ export function InternServerWorkspace() {
               <strong>{journeyMode.detail}</strong>
             </div>
 
-            <form className="inline-form inline-form--elevated" onSubmit={handleLoadProcessSnapshot}>
-              <label className="field-group" htmlFor="intern-workspace-process-id">
-                <span>Identificador do processo</span>
-                <input
-                  id="intern-workspace-process-id"
-                  name="processId"
-                  placeholder="Informe o ID do processo"
-                  value={processIdInput}
-                  onChange={(event) => setProcessIdInput(event.target.value)}
-                  disabled={isLoadingSnapshot}
-                />
-              </label>
+            {processes.length > 1 ? (
+              <form className="inline-form inline-form--elevated" onSubmit={handleLoadProcessSnapshot}>
+                <label className="field-group" htmlFor="intern-workspace-process-id">
+                  <span>Processo</span>
+                  <select
+                    id="intern-workspace-process-id"
+                    name="processId"
+                    value={selectedProcessId}
+                    onChange={(event) => setSelectedProcessId(event.target.value)}
+                    disabled={isLoadingSnapshot}
+                  >
+                    <option value="">Selecione um processo</option>
+                    {processes.map((process) => (
+                      <option key={process.id} value={process.id}>
+                        {process.evaluatedUserName} — {formatProcessStatus(process.status)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              <button type="submit" disabled={isLoadingSnapshot}>
-                {isLoadingSnapshot ? 'Consultando processo...' : 'Consultar processo'}
-              </button>
-            </form>
+                <button type="submit" disabled={isLoadingSnapshot || !selectedProcessId}>
+                  {isLoadingSnapshot ? 'Consultando processo...' : 'Abrir processo'}
+                </button>
+              </form>
+            ) : null}
 
             <div className="intern-hero__summary">
               <div className="intern-hero__summary-card">
                 <span>Processo</span>
-                <strong>{snapshot?.workflow.id ?? 'Demonstração visual'}</strong>
+                <strong>{snapshot?.workflow.id ?? 'Nenhum processo carregado'}</strong>
               </div>
 
               <div className="intern-hero__summary-card">
                 <span>Etapa atual</span>
-                <strong>{snapshot ? `${snapshot.workspace.currentStage.sequence}ª etapa` : '3ª etapa'}</strong>
+                <strong>{snapshot ? `${snapshot.workspace.currentStage.sequence}ª etapa` : 'Não carregada'}</strong>
               </div>
 
               <div className="intern-hero__summary-card">
@@ -671,10 +701,18 @@ export function InternServerWorkspace() {
           </section>
         ) : null}
 
-        {isLoadingSnapshot ? (
+        {isLoadingProcessList || isLoadingSnapshot ? (
           <InlineLoadingState
             title="Carregando jornada do servidor"
-            description="Consultando as informacoes disponiveis para o servidor autenticado."
+            description="Consultando as informações disponíveis para o servidor autenticado."
+          />
+        ) : null}
+
+        {!isLoadingProcessList && processes.length === 0 && !loadErrorMessage ? (
+          <FeedbackAlert
+            title="Nenhum processo disponível"
+            tone="info"
+            description="Não há processos vinculados ao servidor autenticado neste momento."
           />
         ) : null}
 
@@ -720,19 +758,24 @@ export function InternServerWorkspace() {
             currentStageSequence={currentStageSequence}
             currentStagePeriod={currentStagePeriod}
             canEdit={canPersistSelfEvaluation}
+            canSubmit={canSubmitSelfEvaluation}
+            isSubmitted={isSelfEvaluationSubmitted}
             isBusy={activeOperation !== null}
             isSavingDraft={activeOperation === 'save-self-draft'}
+            isSubmitting={activeOperation === 'submit-self-evaluation'}
+            submittedAt={snapshot?.selfEvaluation?.submittedAt ?? null}
             formIssues={selfEvaluationFormIssues}
-            hasDemoMode={!snapshot}
             onChange={(updater) => setSelfEvaluationForm(updater)}
             onBack={() => setIsSelfEvaluationExpanded(false)}
             onSaveDraft={() => void handleSelfEvaluationMutation('draft')}
+            onSubmit={() => void handleSelfEvaluationMutation('submit')}
           />
         ) : (
           <InternProcessOverview
             stageCards={stageCards}
             workspaceSnapshot={snapshot?.workspace ?? null}
             lastHistoryEntries={lastHistoryEntries}
+            internDisplayName={displayName}
           />
         )}
       </section>
