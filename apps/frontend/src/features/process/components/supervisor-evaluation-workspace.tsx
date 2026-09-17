@@ -16,13 +16,10 @@ import {
   getProcessList,
   getSelfEvaluation,
   getSupervisorEvaluationWorkspaceSnapshot,
-  listProcesses,
   rectifySupervisorEvaluation,
   saveSupervisorEvaluationDraft,
   signSelfEvaluation,
   submitSupervisorEvaluation,
-  type ProcessListItem,
-  type SelfEvaluationResponse,
   type SupervisorEvaluationWorkspaceSnapshot,
   type UpsertSupervisorEvaluationInput,
 } from '@/shared/api/services/processes-service';
@@ -49,6 +46,19 @@ type OperationMode = 'draft' | 'submit';
 function fromApiItem(item: ProcessListItemRef): SupervisorDashboardRow {
   const dashboardStatus = toDashboardStatus(item.status as ProcessStatus);
   const isActive = dashboardStatus === 'EM_AVALIACAO' || dashboardStatus === 'AGUARDANDO_ASSINATURA';
+
+  let actionLabel: string;
+  if (dashboardStatus === 'EM_AVALIACAO') {
+    actionLabel = 'Avaliar';
+  } else if (dashboardStatus === 'AGUARDANDO_ASSINATURA') {
+    actionLabel =
+      item.selfEvaluationStatus === SelfEvaluationStatus.SUBMITTED
+        ? 'Confirmar autoavaliação'
+        : 'Visualizar';
+  } else {
+    actionLabel = 'Visualizar';
+  }
+
   return {
     id: item.id,
     serverName: item.evaluatedUserName,
@@ -59,7 +69,7 @@ function fromApiItem(item: ProcessListItemRef): SupervisorDashboardRow {
     stageLabel: `${item.currentStageSequence}ª etapa`,
     deadline: '-',
     canReviewPrevious: false,
-    actionLabel: isActive ? 'Avaliar' : 'Visualizar',
+    actionLabel,
     actionDisabled: !isActive,
     supervisorName: item.responsibleSupervisorName ?? 'Chefia imediata',
     supervisorRole: 'Chefia imediata',
@@ -130,46 +140,6 @@ function toDashboardStatus(status: ProcessStatus): SupervisorDashboardStatus {
     return 'EM_ANALISE_CESAD';
   }
   return 'CONCLUIDO';
-}
-
-function createRealDashboardRowFromItem(
-  item: ProcessListItem,
-  snapshot?: SupervisorEvaluationWorkspaceSnapshot | null,
-  selfEval?: SelfEvaluationResponse | null,
-): SupervisorDashboardRow {
-  const status = toDashboardStatus(item.status);
-  const stageSeq = item.currentStage?.sequence ?? 1;
-
-  let actionLabel = 'Avaliar';
-  if (item.status === ProcessStatus.EM_AVALIACAO) {
-    actionLabel = 'Avaliar';
-  } else if (item.status === ProcessStatus.AGUARDANDO_ASSINATURA) {
-    if (selfEval?.status === SelfEvaluationStatus.SUBMITTED) {
-      actionLabel = 'Confirmar autoavaliação';
-    } else {
-      actionLabel = 'Visualizar';
-    }
-  } else {
-    actionLabel = 'Visualizar';
-  }
-
-  return {
-    id: item.id,
-    serverName: item.evaluatedUser.name || 'Servidor em Avaliação',
-    registration: item.evaluatedUser.email || item.id,
-    role: 'Servidor Estagiário',
-    exerciseStart: formatValidationDate(new Date(item.createdAt)),
-    status,
-    stageLabel: `${stageSeq}ª etapa`,
-    deadline: 'Conforme workflow',
-    canReviewPrevious: false,
-    actionLabel,
-    actionDisabled: false,
-    supervisorName: item.currentStage?.responsibleSupervisorName || 'Chefia imediata',
-    supervisorRole: 'Chefia imediata',
-    trackingPeriod: 'Etapa em andamento',
-    source: 'real',
-  };
 }
 
 function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot): SupervisorDashboardRow {
@@ -322,14 +292,6 @@ function calculateFactorAverage(factor: { items: Array<{ score: number }> }) {
   return total / factor.items.length;
 }
 
-function formatValidationDate(date = new Date()) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(date);
-}
-
 function EvaluationFactorCard({
   factor,
   isExpanded,
@@ -422,7 +384,18 @@ export function SupervisorEvaluationWorkspace() {
     if (!session) return;
     getProcessList()
       .then((result) => setApiRows(result.items.map(fromApiItem)))
-      .catch(() => setApiRows([]));
+      .catch((error) => {
+        setLoadErrorMessage(
+          getRequestErrorMessage(error, 'Não foi possível carregar a lista de processos da chefia.'),
+        );
+        setLoadErrorDetails(
+          getHttpErrorDetails(
+            typeof error === 'object' && error && 'payload' in error
+              ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
+              : undefined,
+          ),
+        );
+      });
   }, [session]);
 
   async function refreshProcessList() {

@@ -18,6 +18,7 @@ import {
   type AuditMetadata,
   ProcessAction,
   ProcessStatus,
+  SelfEvaluationStatus,
   UserRole,
 } from '@sadep/contracts';
 
@@ -145,7 +146,10 @@ export class ProcessesService {
           where: { startedAt: { not: null }, endedAt: null },
           orderBy: { sequence: 'asc' },
           take: 1,
-          include: { responsibleSupervisor: { select: { name: true } } },
+          include: {
+            responsibleSupervisor: { select: { name: true } },
+            selfEvaluation: { select: { status: true } },
+          },
         },
       },
     });
@@ -160,12 +164,12 @@ export class ProcessesService {
           evaluatedUserEmail: p.evaluatedUser.email,
           currentStageSequence: activeStage?.sequence ?? 1,
           responsibleSupervisorName: activeStage?.responsibleSupervisor?.name ?? null,
+          selfEvaluationStatus: (activeStage?.selfEvaluation?.status as SelfEvaluationStatus) ?? null,
           createdAt: p.createdAt.toISOString(),
         };
       }),
       total: processes.length,
     };
-  }
   }
 
   async getWorkflow(processId: string, user: AuthenticatedUser): Promise<WorkflowResponseDto> {
