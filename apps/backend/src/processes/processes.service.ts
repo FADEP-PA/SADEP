@@ -130,12 +130,36 @@ export class ProcessesService {
   ) {}
 
   async listForUser(user: AuthenticatedUser) {
+    const referenceDate = new Date();
     const where: Prisma.EvaluationProcessWhereInput =
       user.role === UserRole.INTERN_SERVER
         ? { evaluatedUserId: user.sub }
         : user.role === UserRole.IMMEDIATE_SUPERVISOR
           ? { stages: { some: { responsibleSupervisorUserId: user.sub } } }
-          : {};
+          : user.role === UserRole.CESAD_MEMBER || user.role === UserRole.COMMISSION_ASSISTANT
+            ? {
+                stages: {
+                  some: {
+                    startedAt: { not: null },
+                    endedAt: null,
+                    cesadStageAssignments: {
+                      some: {
+                        status: PrismaCesadStageAssignmentStatus.ACTIVE,
+                        commission: {
+                          members: {
+                            some: {
+                              userId: user.sub,
+                              startDate: { lte: referenceDate },
+                              OR: [{ endDate: null }, { endDate: { gte: referenceDate } }],
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              }
+            : {};
 
     const processes = await this.prismaService.evaluationProcess.findMany({
       where,

@@ -1,14 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   CesadStageOpinionStatus,
+  ProcessAction,
   ProcessStatus,
   SignatureStatus,
   UserRole,
   type CesadStageOpinionInput,
   type CesadStageOpinionSignatureStatusRef,
   type CesadStageReadSnapshotRef,
+  type ProcessListItemRef,
 } from '@sadep/contracts';
 
 import {
@@ -32,9 +34,11 @@ import {
   getCesadStageReadSnapshot,
   getCesadStageOpinionSignatureStatus,
   getProcessList,
+  getWorkflow,
   prepareCesadStageOpinionSignatures,
   saveCesadStageOpinionDraft,
   signCesadStageOpinion,
+  transitionWorkflow,
 } from '@/shared/api/services/processes-service';
 import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
@@ -65,10 +69,6 @@ import { ReadOnlyOpinionShell } from './read-only-opinion-shell';
 import { StageDocumentList } from './stage-document-list';
 import { StageHistoryPanel } from './stage-history-panel';
 import { StageSummaryCard } from './stage-summary-card';
-
-function getInitialStageSequence() {
-  return '1';
-}
 
 function buildStageTimelineItems(snapshot: CesadStageReadSnapshotRef): StageTimelineItem[] {
   const totalStages = Math.max(snapshot.stage.totalStages, snapshot.stage.sequence);
@@ -118,10 +118,19 @@ function buildSignatureContextKey(processId: string, stageSequence: number) {
   return `${processId}:${stageSequence}`;
 }
 
+function isCesadQueueStatus(status: ProcessStatus) {
+  return (
+    status === ProcessStatus.EM_ANALISE_CESAD ||
+    status === ProcessStatus.PARECER_EMITIDO
+  );
+}
+
 export function CesadStageReadWorkspace() {
   const { session } = useAuth();
   const [processId, setProcessId] = useState('');
-  const [stageSequenceInput, setStageSequenceInput] = useState(getInitialStageSequence);
+  const [processes, setProcesses] = useState<ProcessListItemRef[]>([]);
+  const [isLoadingProcessList, setIsLoadingProcessList] = useState(false);
+  const [processListError, setProcessListError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<CesadStageReadSnapshotRef | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
@@ -131,6 +140,11 @@ export function CesadStageReadWorkspace() {
   const [isSignatureLoading, setIsSignatureLoading] = useState(false);
   const [signatureFeedback, setSignatureFeedback] = useState<string | null>(null);
   const [signatureError, setSignatureError] = useState<string | null>(null);
+  const [workflowActions, setWorkflowActions] = useState<ProcessAction[]>([]);
+  const [transitionOperation, setTransitionOperation] = useState<ProcessAction | null>(null);
+  const [transitionFeedback, setTransitionFeedback] = useState<string | null>(null);
+  const [transitionError, setTransitionError] = useState<string | null>(null);
+  const [completedStageMessage, setCompletedStageMessage] = useState<string | null>(null);
   const stageInstructionStatus = snapshot?.documentationStatus.stageInstructionStatus;
   const locatedDocuments = snapshot?.documents.filter((document) => document.exists).length ?? 0;
   const missingDocuments = snapshot?.documentationStatus.missingRequiredDocumentTypes.length ?? 0;
@@ -162,8 +176,12 @@ export function CesadStageReadWorkspace() {
 
   const reloadSnapshot = useCallback(async () => {
     if (!snapshot) return;
-    const refreshed = await getCesadStageReadSnapshot(snapshot.process.id, snapshot.stage.sequence);
+    const [refreshed, workflow] = await Promise.all([
+      getCesadStageReadSnapshot(snapshot.process.id, snapshot.stage.sequence),
+      getWorkflow(snapshot.process.id),
+    ]);
     setSnapshot(refreshed);
+    setWorkflowActions(workflow.availableActions);
   }, [snapshot]);
 
   useEffect(() => {
@@ -206,71 +224,92 @@ export function CesadStageReadWorkspace() {
     };
   }, [signatureProcessId, signatureStageSequence, opinionIsCompleted]);
 
+  const loadProcess = useCallback(
+    async (item: ProcessListItemRef) => {
+      if (!session) return;
+
+      setProcessId(item.id);
+      setIsLoading(true);
+      setErrorMessage(null);
+      setErrorDetails([]);
+      setErrorStatus(null);
+      setTransitionFeedback(null);
+      setTransitionError(null);
+      setCompletedStageMessage(null);
+
+      try {
+        const [nextSnapshot, workflow] = await Promise.all([
+          getCesadStageReadSnapshot(item.id, item.currentStageSequence),
+          getWorkflow(item.id),
+        ]);
+        setSnapshot(nextSnapshot);
+        setWorkflowActions(workflow.availableActions);
+      } catch (error) {
+        const payload =
+          typeof error === 'object' && error && 'payload' in error
+            ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
+            : undefined;
+        setErrorMessage(
+          getRequestErrorMessage(error, 'Não foi possível carregar a leitura consolidada da etapa.'),
+        );
+        setErrorDetails(getHttpErrorDetails(payload));
+        if (isHttpErrorStatus(error, 404)) {
+          setErrorStatus(404);
+        } else if (isHttpErrorStatus(error, 403)) {
+          setErrorStatus(403);
+        } else {
+          setErrorStatus(null);
+        }
+        setSnapshot(null);
+        setWorkflowActions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [session],
+  );
+
   useEffect(() => {
     if (!session) return;
+
+    let isActive = true;
+    setIsLoadingProcessList(true);
+    setProcessListError(null);
+
     getProcessList()
       .then((result) => {
-        const firstActive = result.items.find(
-          (item) => item.status === ProcessStatus.EM_ANALISE_CESAD,
-        );
-        if (firstActive) {
-          setProcessId(firstActive.id);
+        if (!isActive) return;
+
+        const cesadProcesses = result.items.filter((item) => isCesadQueueStatus(item.status));
+        setProcesses(cesadProcesses);
+
+        if (cesadProcesses.length === 1 && cesadProcesses[0]) {
+          void loadProcess(cesadProcesses[0]);
         }
       })
-      .catch(() => undefined);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
+      .catch((error) => {
+        if (!isActive) return;
+        setProcesses([]);
+        setProcessListError(
+          getRequestErrorMessage(error, 'Não foi possível carregar a fila de processos da CESAD.'),
+        );
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoadingProcessList(false);
+        }
+      });
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    return () => {
+      isActive = false;
+    };
+  }, [loadProcess, session]);
 
-    const normalizedProcessId = processId.trim();
-    const parsedStageSequence = Number.parseInt(stageSequenceInput, 10);
-
-    if (!session || normalizedProcessId.length === 0) {
-      setErrorMessage('Informe um identificador de processo para consultar a etapa.');
-      setErrorDetails([]);
-      setErrorStatus(null);
-      return;
-    }
-
-    if (!Number.isInteger(parsedStageSequence) || parsedStageSequence <= 0) {
-      setErrorMessage('Informe um número de etapa válido.');
-      setErrorDetails([]);
-      setErrorStatus(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorMessage(null);
-    setErrorDetails([]);
-    setErrorStatus(null);
-
-    try {
-      const nextSnapshot = await getCesadStageReadSnapshot(
-        normalizedProcessId,
-        parsedStageSequence,
-      );
-      setSnapshot(nextSnapshot);
-    } catch (error) {
-      const payload =
-        typeof error === 'object' && error && 'payload' in error
-          ? (error as { payload?: { details?: Record<string, string | string[]> } }).payload
-          : undefined;
-      setErrorMessage(
-        getRequestErrorMessage(error, 'Não foi possível carregar a leitura consolidada da etapa.'),
-      );
-      setErrorDetails(getHttpErrorDetails(payload));
-      if (isHttpErrorStatus(error, 404)) {
-        setErrorStatus(404);
-      } else if (isHttpErrorStatus(error, 403)) {
-        setErrorStatus(403);
-      } else {
-        setErrorStatus(null);
-      }
-      setSnapshot(null);
-    } finally {
-      setIsLoading(false);
+  function handleProcessSelection(value: string) {
+    setProcessId(value);
+    const selected = processes.find((item) => item.id === value);
+    if (selected) {
+      void loadProcess(selected);
     }
   }
 
@@ -293,7 +332,7 @@ export function CesadStageReadWorkspace() {
       );
       if (signatureContextKeyRef.current !== requestContextKey) return;
       setSignatureStatus(refreshed);
-      setSignatureFeedback('Assinaturas preparadas com sucesso.');
+      setSignatureFeedback('Confirmações do parecer liberadas com sucesso.');
     } catch (error) {
       if (signatureContextKeyRef.current !== requestContextKey) return;
       setSignatureError(
@@ -325,16 +364,79 @@ export function CesadStageReadWorkspace() {
       );
       if (signatureContextKeyRef.current !== requestContextKey) return;
       setSignatureStatus(refreshed);
-      setSignatureFeedback('Assinatura registrada com sucesso.');
+      setSignatureFeedback('Parecer confirmado com sucesso.');
     } catch (error) {
       if (signatureContextKeyRef.current !== requestContextKey) return;
-      setSignatureError(getRequestErrorMessage(error, 'Não foi possível assinar o parecer.'));
+      setSignatureError(getRequestErrorMessage(error, 'Não foi possível confirmar o parecer.'));
     } finally {
       if (signatureContextKeyRef.current === requestContextKey) {
         setIsSignatureLoading(false);
       }
     }
   }
+
+  async function handleWorkflowTransition(action: ProcessAction) {
+    if (!snapshot || transitionOperation) return;
+
+    const processIdForRequest = snapshot.process.id;
+    const completedStageSequence = snapshot.stage.sequence;
+    const totalStages = snapshot.stage.totalStages;
+
+    setTransitionOperation(action);
+    setTransitionFeedback(null);
+    setTransitionError(null);
+
+    try {
+      const workflow = await transitionWorkflow(processIdForRequest, { action });
+      setWorkflowActions(workflow.availableActions);
+
+      if (action === ProcessAction.ISSUE_CESAD_OPINION) {
+        const refreshed = await getCesadStageReadSnapshot(
+          processIdForRequest,
+          completedStageSequence,
+        );
+        setSnapshot(refreshed);
+        setTransitionFeedback('Parecer da etapa emitido com sucesso.');
+        return;
+      }
+
+      setSnapshot((current) =>
+        current
+          ? {
+              ...current,
+              process: {
+                ...current.process,
+                status: workflow.status,
+              },
+            }
+          : current,
+      );
+
+      if (completedStageSequence < totalStages) {
+        setCompletedStageMessage(
+          `Etapa ${completedStageSequence} concluída. Etapa ${completedStageSequence + 1} aberta e processo retornou para avaliação.`,
+        );
+      } else {
+        setCompletedStageMessage(
+          `Etapa ${completedStageSequence} concluída com sucesso.`,
+        );
+      }
+      setSignatureStatus(null);
+    } catch (error) {
+      setTransitionError(
+        getRequestErrorMessage(error, 'Não foi possível avançar o fluxo da etapa.'),
+      );
+    } finally {
+      setTransitionOperation(null);
+    }
+  }
+
+  const canIssueCesadOpinion =
+    signatureStatus?.allExpectedSignersSigned === true &&
+    workflowActions.includes(ProcessAction.ISSUE_CESAD_OPINION);
+  const canCompleteCurrentStage =
+    snapshot?.process.status === ProcessStatus.PARECER_EMITIDO &&
+    workflowActions.includes(ProcessAction.COMPLETE_CURRENT_STAGE);
 
   return (
     <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]}>
@@ -357,42 +459,39 @@ export function CesadStageReadWorkspace() {
                 etapa, nos documentos obrigatorios e no historico resumido necessario para a instrucao.
               </p>
 
-              <form className="inline-form cesad-stage-read__form inline-form--elevated" onSubmit={handleSubmit}>
-                <label className="field-group" htmlFor="cesad-stage-process-id">
-                  <span>Identificador do processo</span>
-                  <input
-                    id="cesad-stage-process-id"
-                    name="processId"
-                    placeholder="Informe o ID do processo"
-                    value={processId}
-                    onChange={(event) => setProcessId(event.target.value)}
-                    disabled={isLoading}
-                  />
-                </label>
-
-                <label className="field-group" htmlFor="cesad-stage-sequence">
-                  <span>Etapa</span>
-                  <input
-                    id="cesad-stage-sequence"
-                    name="stageSequence"
-                    inputMode="numeric"
-                    placeholder="1"
-                    value={stageSequenceInput}
-                    onChange={(event) => setStageSequenceInput(event.target.value)}
-                    disabled={isLoading}
-                  />
-                </label>
-
-                <button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Carregando etapa...' : 'Abrir etapa'}
-                </button>
-              </form>
+              {processes.length > 1 ? (
+                <div className="inline-form cesad-stage-read__form inline-form--elevated">
+                  <label className="field-group" htmlFor="cesad-stage-process">
+                    <span>Processo para análise</span>
+                    <select
+                      id="cesad-stage-process"
+                      name="process"
+                      value={processId}
+                      onChange={(event) => handleProcessSelection(event.target.value)}
+                      disabled={isLoading || isLoadingProcessList}
+                    >
+                      <option value="">Selecione um servidor</option>
+                      {processes.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.evaluatedUserName} — {item.currentStageSequence}ª etapa — {formatProcessStatus(item.status)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              ) : processes.length === 1 ? (
+                <ContentState
+                  title="Processo localizado automaticamente"
+                  description="A etapa ativa vinculada à sua comissão foi aberta sem exigir identificador interno."
+                  tone="info"
+                />
+              ) : null}
             </div>
 
             <aside className="workspace-overview__panel">
               <KeyValueList
                 items={[
-                  { label: 'processo em foco', value: snapshot?.process.id ?? 'Nenhum processo carregado' },
+                  { label: 'processo em foco', value: snapshot ? 'Processo carregado' : 'Nenhum processo carregado' },
                   {
                     label: 'etapa',
                     value: snapshot ? `Etapa ${snapshot.stage.sequence}` : 'Aguardando consulta',
@@ -445,7 +544,7 @@ export function CesadStageReadWorkspace() {
           {isLoading ? (
             <InlineLoadingState
               title="Carregando leitura da etapa"
-              description="A tela esta consultando o processo e a etapa informados para montar a leitura consolidada."
+              description="A tela está carregando automaticamente o processo e a etapa ativa vinculados à CESAD."
             />
           ) : null}
 
@@ -480,10 +579,33 @@ export function CesadStageReadWorkspace() {
             )
           ) : null}
 
-          {!snapshot && !errorMessage ? (
+          {processListError ? (
+            <FeedbackAlert
+              title="Falha ao carregar fila da CESAD"
+              tone="error"
+              description={processListError}
+            />
+          ) : null}
+
+          {!snapshot &&
+          !errorMessage &&
+          !processListError &&
+          !isLoading &&
+          !isLoadingProcessList &&
+          processes.length === 0 ? (
             <EmptyState
-              title="Nenhuma etapa carregada"
-              description="Informe o processo e o numero da etapa para abrir a visao consolidada da CESAD em modo somente leitura."
+              title="Nenhum processo aguardando análise da CESAD"
+              description="Não há processo vinculado à sua comissão nas etapas de análise ou emissão de parecer."
+            />
+          ) : null}
+
+          {!snapshot &&
+          !errorMessage &&
+          processes.length > 1 &&
+          !processId ? (
+            <EmptyState
+              title="Selecione um processo"
+              description="Escolha um servidor da fila para abrir automaticamente a etapa ativa."
             />
           ) : null}
 
@@ -529,7 +651,6 @@ export function CesadStageReadWorkspace() {
                 <InfoCard title="Processo" eyebrow="Dados consolidados">
                   <KeyValueList
                     items={[
-                      { label: 'ID', value: snapshot.process.id },
                       { label: 'Status macro', value: formatProcessStatus(snapshot.process.status) },
                       { label: 'Criado em', value: formatDateTime(snapshot.process.createdAt) },
                       { label: 'Atualizado em', value: formatDateTime(snapshot.process.updatedAt) },
@@ -565,7 +686,6 @@ export function CesadStageReadWorkspace() {
                     items={[
                       { label: 'Sequência', value: snapshot.stage.sequence },
                       { label: 'Código', value: snapshot.stage.stageCode },
-                      { label: 'ID interno', value: snapshot.stage.stageId },
                       { label: 'Início', value: formatDateTime(snapshot.stage.startedAt) },
                       { label: 'Fim', value: formatDateTime(snapshot.stage.endedAt) },
                     ]}
@@ -667,7 +787,7 @@ export function CesadStageReadWorkspace() {
               </div>
 
               {opinionIsCompleted ? (
-                <InfoCard title="Assinatura do parecer" eyebrow="Status das assinaturas">
+                <InfoCard title="Confirmações do parecer" eyebrow="Status dos membros">
                   {isSignatureLoading ? (
                     <ContentState
                       title="Carregando status de assinatura"
@@ -678,9 +798,8 @@ export function CesadStageReadWorkspace() {
                     <div className="cesad-stage-read__stack">
                       <KeyValueList
                         items={[
-                          { label: 'Documento', value: signatureStatus.document?.documentId ?? 'Não gerado' },
                           { label: 'Status do documento', value: signatureStatus.document?.documentStatus ?? 'Não disponível' },
-                          { label: 'Assinaturas', value: `${signatureStatus.expectedSigners.filter((signer) => signer.signatureStatus === SignatureStatus.COMPLETED).length} / ${signatureStatus.expectedSigners.length}` },
+                          { label: 'Confirmações', value: `${signatureStatus.expectedSigners.filter((signer) => signer.signatureStatus === SignatureStatus.COMPLETED).length} / ${signatureStatus.expectedSigners.length}` },
                         ]}
                       />
 
@@ -712,7 +831,7 @@ export function CesadStageReadWorkspace() {
                             disabled={isSignatureLoading}
                             onClick={handlePrepareSignatures}
                           >
-                            Preparar assinaturas
+                            Preparar confirmações
                           </button>
                         ) : null}
 
@@ -722,14 +841,14 @@ export function CesadStageReadWorkspace() {
                             disabled={isSignatureLoading}
                             onClick={handleSignOpinion}
                           >
-                            Assinar parecer
+                            Confirmar parecer
                           </button>
                         ) : null}
 
                         {signatureStatus.allExpectedSignersSigned ? (
                           <ContentState
-                            title="Todas as assinaturas concluídas"
-                            description="O parecer de etapa foi assinado por todos os membros esperados."
+                            title="Todas as confirmações concluídas"
+                            description="O parecer de etapa foi confirmado por todos os membros esperados."
                             tone="success"
                           />
                         ) : null}
@@ -742,6 +861,64 @@ export function CesadStageReadWorkspace() {
                       tone="warning"
                     />
                   )}
+                </InfoCard>
+              ) : null}
+
+              {transitionFeedback ? (
+                <FeedbackAlert
+                  title="Fluxo atualizado"
+                  tone="success"
+                  description={transitionFeedback}
+                />
+              ) : null}
+
+              {transitionError ? (
+                <FeedbackAlert
+                  title="Não foi possível avançar a etapa"
+                  tone="error"
+                  description={transitionError}
+                />
+              ) : null}
+
+              {completedStageMessage ? (
+                <ContentState
+                  title="Etapa concluída"
+                  description={completedStageMessage}
+                  tone="success"
+                />
+              ) : null}
+
+              {canIssueCesadOpinion || canCompleteCurrentStage ? (
+                <InfoCard title="Progressão da etapa" eyebrow="Workflow real">
+                  <div className="cesad-opinion-editor__actions">
+                    {canIssueCesadOpinion ? (
+                      <button
+                        type="button"
+                        disabled={transitionOperation !== null}
+                        onClick={() =>
+                          void handleWorkflowTransition(ProcessAction.ISSUE_CESAD_OPINION)
+                        }
+                      >
+                        {transitionOperation === ProcessAction.ISSUE_CESAD_OPINION
+                          ? 'Emitindo parecer...'
+                          : 'Emitir parecer da etapa'}
+                      </button>
+                    ) : null}
+
+                    {canCompleteCurrentStage ? (
+                      <button
+                        type="button"
+                        disabled={transitionOperation !== null}
+                        onClick={() =>
+                          void handleWorkflowTransition(ProcessAction.COMPLETE_CURRENT_STAGE)
+                        }
+                      >
+                        {transitionOperation === ProcessAction.COMPLETE_CURRENT_STAGE
+                          ? 'Concluindo etapa...'
+                          : 'Concluir etapa'}
+                      </button>
+                    ) : null}
+                  </div>
                 </InfoCard>
               ) : null}
 
