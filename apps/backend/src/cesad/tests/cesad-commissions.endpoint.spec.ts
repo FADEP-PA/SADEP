@@ -223,7 +223,7 @@ export async function runCesadCommissionsEndpointTests() {
         body: JSON.stringify({ reason: 'Encerrando comissão por motivo x' }),
       },
     );
-    assert.equal(closeResponse.status, 200);
+    assert.equal(closeResponse.status, 201);
     const closePayload = (await closeResponse.json()) as {
       id: string;
       status: CesadCommissionStatus;
@@ -285,7 +285,7 @@ export async function runCesadCommissionsEndpointTests() {
         body: JSON.stringify({ reason: 'Supersedendo por motivo válido' }),
       },
     );
-    assert.equal(supersedeResponse.status, 200);
+    assert.equal(supersedeResponse.status, 201);
     const supersedePayload = (await supersedeResponse.json()) as {
       id: string;
       status: CesadCommissionStatus;
