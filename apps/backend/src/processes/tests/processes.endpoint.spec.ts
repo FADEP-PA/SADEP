@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ProcessAction, ProcessStatus, UserRole } from '@sadep/contracts';
 
@@ -25,6 +26,7 @@ export async function runProcessesEndpointTests() {
   try {
     const logger = app.get(AppLogger);
     app.useGlobalFilters(new GlobalExceptionFilter(logger));
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.listen(0);
 
     const address = app.getHttpServer().address();
