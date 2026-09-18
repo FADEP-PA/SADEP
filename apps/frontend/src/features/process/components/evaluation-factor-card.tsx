@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import type { EvaluationFactorDraft } from './supervisor-evaluation-types';
 
 function calculateFactorAverage(factor: EvaluationFactorDraft): number {
@@ -18,6 +20,7 @@ export function EvaluationFactorCard({
   onToggle: () => void;
   onScoreChange: (itemId: string, score: number) => void;
 }) {
+  const [focusedScoreId, setFocusedScoreId] = useState<string | null>(null);
   const subtotal = factor.items.reduce((sum, item) => sum + item.score, 0);
   const average = calculateFactorAverage(factor);
 
@@ -50,7 +53,11 @@ export function EvaluationFactorCard({
                   type="number"
                   min={0}
                   max={100}
-                  value={item.score}
+                  value={focusedScoreId === item.id && item.score === 0 ? '' : item.score}
+                  onFocus={() => setFocusedScoreId(item.id)}
+                  onBlur={() =>
+                    setFocusedScoreId((current) => (current === item.id ? null : current))
+                  }
                   onChange={(event) => onScoreChange(item.id, Number(event.target.value || 0))}
                 />
                 <span>Nota</span>
