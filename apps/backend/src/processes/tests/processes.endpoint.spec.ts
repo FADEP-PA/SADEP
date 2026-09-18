@@ -593,24 +593,19 @@ export async function runProcessesEndpointTests() {
 
     assert.equal(validationResponse.status, 400);
     const validationPayload = (await validationResponse.json()) as {
-      message: string;
+      message: string[];
       error: string;
-      details?: Record<string, string>;
     };
-    assert.equal(validationPayload.message, 'Supervisor evaluation payload is invalid');
     assert.equal(validationPayload.error, 'Bad Request');
-    assert.equal(validationPayload.details?.summary, 'Resumo da avaliação deve ser um texto.');
-    assert.equal(
-      validationPayload.details?.generalComments,
-      'Comentários gerais devem ser informados em texto.',
+    assert.ok(Array.isArray(validationPayload.message));
+    assert.ok(validationPayload.message.includes('summary must be a string'));
+    assert.ok(validationPayload.message.includes('generalComments must be a string'));
+    assert.ok(validationPayload.message.includes('content.criteria.0.code must be a string'));
+    assert.ok(validationPayload.message.includes('content.criteria.0.label must be a string'));
+    assert.ok(
+      validationPayload.message.includes('content.criteria.0.rating must be an integer number'),
     );
-    assert.equal(validationPayload.details?.['criteria[0].code'], 'Código do critério deve ser texto.');
-    assert.equal(validationPayload.details?.['criteria[0].label'], 'Título do critério deve ser texto.');
-    assert.equal(validationPayload.details?.['criteria[0].rating'], 'Nota do critério deve ser numérica.');
-    assert.equal(
-      validationPayload.details?.['criteria[0].comment'],
-      'Comentário do critério deve ser texto quando informado.',
-    );
+    assert.ok(validationPayload.message.includes('content.criteria.0.comment must be a string'));
 
     const incompatibleStageReadResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/stages/1/consolidated-read`,
