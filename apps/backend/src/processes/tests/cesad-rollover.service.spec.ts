@@ -38,7 +38,6 @@ export async function runCesadRolloverServiceTests() {
 
     async function makeExpiredAssignedProcess(status: ProcessStatus = ProcessStatus.EM_ANALISE_CESAD) {
       const expired = await createActiveCesadCommission(context.prisma, [], {
-        name: 'Comissão CESAD expirada (rollover)',
         effectiveStartDate: new Date('2019-01-01T00:00:00.000Z'),
         effectiveEndDate: new Date('2020-01-01T00:00:00.000Z'),
       });
