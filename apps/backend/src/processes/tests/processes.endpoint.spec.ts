@@ -775,7 +775,7 @@ export async function runProcessesEndpointTests() {
     assert.equal(opinionDraftPayload.status, 'DRAFT');
     assert.equal(opinionDraftPayload.reportText, 'Relatório preliminar da CESAD para a etapa 1.');
     assert.equal(opinionDraftPayload.legalBasis, 'Lei municipal X, art. 10.');
-    assert.equal(opinionDraftPayload.conclusion, '');
+    assert.equal(opinionDraftPayload.conclusion, 'Conclusão preliminar em elaboração.');
     assert.equal(opinionDraftPayload.stageConcept, 'Em análise');
     assert.equal(opinionDraftPayload.stageResult, 'Aguardando conclusão');
     assert.equal(opinionDraftPayload.completedAt, null);
