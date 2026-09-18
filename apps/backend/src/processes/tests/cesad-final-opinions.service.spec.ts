@@ -309,11 +309,6 @@ function buildPayload(overrides: Partial<{
   };
 }
 
-type FinalDocumentAfterConflict = {
-  id: string;
-  documentStatus: 'DRAFT' | 'CONSOLIDATED' | 'READY_FOR_SIGNATURE' | 'SIGNED' | 'INVALIDATED_OR_SUPERSEDED';
-};
-
 type FinalDocumentPrivateService = {
   ensureCesadFinalOpinionDocument(
     transaction: Prisma.TransactionClient,
@@ -324,9 +319,7 @@ type FinalDocumentPrivateService = {
   ): Promise<{ documentId: string }>;
 };
 
-function buildFinalDocumentConflictTransaction(existingAfterConflict: FinalDocumentAfterConflict | null) {
-  let findFirstCalls = 0;
-  const updates: Array<{ where: { id: string }; data: { documentStatus: string } }> = [];
+function buildFinalDocumentCollisionTransaction() {
   const p2002 = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
     code: 'P2002',
     clientVersion: '6.19.3',
@@ -334,46 +327,22 @@ function buildFinalDocumentConflictTransaction(existingAfterConflict: FinalDocum
 
   const transaction = {
     processDocument: {
-      findFirst: async () => {
-        findFirstCalls += 1;
-        return findFirstCalls < 3 ? null : existingAfterConflict;
-      },
+      findFirst: async () => null,
       create: async () => {
         throw p2002;
       },
-      update: async (args: { where: { id: string }; data: { documentStatus: string } }) => {
-        updates.push(args);
-        return { ...existingAfterConflict, ...args.data };
+      update: async () => {
+        throw new Error('P2002 collision path must not update a document after the transaction aborts');
       },
     },
     auditEvent: {
       create: async () => {
-        throw new Error('P2002 idempotency path must not emit document generation audit');
+        throw new Error('P2002 collision path must not emit document generation audit');
       },
     },
   } as unknown as Prisma.TransactionClient;
 
-  return { transaction, updates, p2002 };
-}
-
-async function ensureFinalDocumentAfterP2002ForTest(
-  context: TestContext,
-  existingAfterConflict: FinalDocumentAfterConflict | null,
-) {
-  const { transaction, updates, p2002 } = buildFinalDocumentConflictTransaction(existingAfterConflict);
-  const service = context.processDocumentsService as unknown as FinalDocumentPrivateService;
-
-  return {
-    result: await service.ensureCesadFinalOpinionDocument(
-      transaction,
-      'process-final-p2002',
-      'final-opinion-p2002',
-      authenticatedUser('admin-p2002', UserRole.ADMIN),
-      ProcessStatus.PARECER_EMITIDO,
-    ),
-    updates,
-    p2002,
-  };
+  return { transaction, p2002 };
 }
 
 async function buildCompletedFinalOpinionProcess(
@@ -440,36 +409,19 @@ export async function runCesadFinalOpinionsServiceTests() {
   const services = buildFinalServices(context);
 
   try {
-    const readyAfterConflict = await ensureFinalDocumentAfterP2002ForTest(context, {
-      id: 'ready-final-doc',
-      documentStatus: 'READY_FOR_SIGNATURE',
-    });
-    assert.equal(readyAfterConflict.result.documentId, 'ready-final-doc');
-    assert.equal(readyAfterConflict.updates.length, 0);
-
-    const draftAfterConflict = await ensureFinalDocumentAfterP2002ForTest(context, {
-      id: 'draft-final-doc',
-      documentStatus: 'DRAFT',
-    });
-    assert.equal(draftAfterConflict.result.documentId, 'draft-final-doc');
-    assert.deepEqual(draftAfterConflict.updates, [
-      {
-        where: { id: 'draft-final-doc' },
-        data: { documentStatus: 'READY_FOR_SIGNATURE' },
-      },
-    ]);
+    const { transaction: collisionTransaction } = buildFinalDocumentCollisionTransaction();
+    const privateDocumentsService =
+      context.processDocumentsService as unknown as FinalDocumentPrivateService;
 
     await assert.rejects(
       () =>
-        ensureFinalDocumentAfterP2002ForTest(context, {
-          id: 'invalidated-final-doc',
-          documentStatus: 'INVALIDATED_OR_SUPERSEDED',
-        }),
-      /invalidated CESAD final opinion document/,
-    );
-
-    await assert.rejects(
-      () => ensureFinalDocumentAfterP2002ForTest(context, null),
+        privateDocumentsService.ensureCesadFinalOpinionDocument(
+          collisionTransaction,
+          'process-final-p2002',
+          'final-opinion-p2002',
+          authenticatedUser('admin-p2002', UserRole.ADMIN),
+          ProcessStatus.PARECER_EMITIDO,
+        ),
       (error) => error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002',
     );
 
