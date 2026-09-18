@@ -680,7 +680,7 @@ export async function runProcessesEndpointTests() {
         },
         body: JSON.stringify({
           reportText: 'Tentativa indevida da assistente.',
-          conclusion: '',
+          conclusion: 'Conclusão válida para testar autorização.',
         }),
       },
     );
@@ -748,7 +748,7 @@ export async function runProcessesEndpointTests() {
         body: JSON.stringify({
           reportText: 'Relatório preliminar da CESAD para a etapa 1.',
           legalBasis: 'Lei municipal X, art. 10.',
-          conclusion: '',
+          conclusion: 'Conclusão preliminar em elaboração.',
           stageConcept: 'Em análise',
           stageResult: 'Aguardando conclusão',
           comment: 'Abertura do rascunho funcional.',
@@ -965,7 +965,7 @@ export async function runProcessesEndpointTests() {
         },
         body: JSON.stringify({
           reportText: 'Parecer fora da janela.',
-          conclusion: '',
+          conclusion: 'Conclusão válida fora da janela.',
         }),
       },
     );
@@ -989,7 +989,7 @@ export async function runProcessesEndpointTests() {
         },
         body: JSON.stringify({
           reportText: 'Tentativa indevida do supervisor.',
-          conclusion: '',
+          conclusion: 'Conclusão válida para testar autorização.',
         }),
       },
     );
