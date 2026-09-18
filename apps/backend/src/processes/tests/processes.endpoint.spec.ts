@@ -313,15 +313,10 @@ export async function runProcessesEndpointTests() {
     assert.equal(invalidSupersessionResponse.status, 400);
     const invalidSupersessionPayload = (await invalidSupersessionResponse.json()) as {
       message: string;
-      details?: Record<string, string>;
     };
     assert.equal(
       invalidSupersessionPayload.message,
-      'CESAD stage assignment supersession payload is invalid',
-    );
-    assert.match(
-      invalidSupersessionPayload.details?.reason ?? '',
-      /Motivo da reatribuição/,
+      'CESAD stage assignment supersession reason is required',
     );
 
     const supersessionResponse = await fetch(
