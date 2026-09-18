@@ -92,6 +92,9 @@ jobs:
       - name: Backend unit tests
         run: npm run test:unit --workspace @sadep/backend
 
+      - name: Backend integration tests
+        run: npm run test:integration --workspace @sadep/backend
+
       - name: Backend security hardening integration tests
         run: npm run test:security-hardening --workspace @sadep/backend
 

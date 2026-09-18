@@ -22,6 +22,7 @@ async function main() {
     { runCesadStageReadServiceTests },
     { runCompleteCurrentStageServiceTests },
     { runDemoSeedTests },
+    { runDemoE2EEndpointTests },
     { runWorkflowCatalogTests },
     { runProcessesServiceTests },
     { runProcessesEndpointTests },
@@ -45,6 +46,7 @@ async function main() {
     import('./cesad-stage-read.service.spec'),
     import('./complete-current-stage.service.spec'),
     import('./demo-seed.spec'),
+    import('./demo-e2e.endpoint.spec'),
     import('./workflow-catalog.spec'),
     import('./processes.service.spec'),
     import('./processes.endpoint.spec'),
@@ -71,11 +73,12 @@ async function main() {
   await runCesadFinalOpinionsServiceTests();
   await runCompleteCurrentStageServiceTests();
   await runDemoSeedTests();
+  await runDemoE2EEndpointTests();
   await runProcessesEndpointTests();
   await runSupervisorEvaluationsServiceTests();
   await runSelfEvaluationsTests();
   console.log(
-    'Workflow, CESAD current commission, CESAD commission acts, CESAD commission members, CESAD commissions, CESAD stage read, CESAD stage opinion, CESAD final opinion, supervisor evaluation, and self evaluation tests passed.',
+    'Workflow, demo E2E, CESAD current commission, CESAD commission acts, CESAD commission members, CESAD commissions, CESAD stage read, CESAD stage opinion, CESAD final opinion, supervisor evaluation, and self evaluation tests passed.',
   );
 }
 

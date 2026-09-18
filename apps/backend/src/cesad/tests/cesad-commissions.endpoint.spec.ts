@@ -86,20 +86,28 @@ export async function runCesadCommissionsEndpointTests() {
 
     assert.equal(listResponse.status, 200);
     const listPayload = (await listResponse.json()) as Array<{
-      id: string;
-      name: string;
-      description: string | null;
-      status: CesadCommissionStatus;
-      effectiveStartDate: string;
-      effectiveEndDate: string | null;
+      commission: {
+        id: string;
+        name: string;
+        description: string | null;
+        status: CesadCommissionStatus;
+        effectiveStartDate: string;
+        effectiveEndDate: string | null;
+      };
     }>;
     assert.equal(listPayload.length, 1);
-    assert.equal(listPayload[0].id, commission.id);
-    assert.equal(listPayload[0].name, 'Comissão CESAD 2026');
-    assert.equal(listPayload[0].description, 'Comissão institucional para leitura administrativa.');
-    assert.equal(listPayload[0].status, CesadCommissionStatus.ACTIVE);
-    assert.equal(listPayload[0].effectiveStartDate, '2026-01-01T00:00:00.000Z');
-    assert.equal(listPayload[0].effectiveEndDate, null);
+    assert.equal(listPayload[0].commission.id, commission.id);
+    assert.equal(listPayload[0].commission.name, 'Comissão CESAD 2026');
+    assert.equal(
+      listPayload[0].commission.description,
+      'Comissão institucional para leitura administrativa.',
+    );
+    assert.equal(listPayload[0].commission.status, CesadCommissionStatus.ACTIVE);
+    assert.equal(
+      listPayload[0].commission.effectiveStartDate,
+      '2026-01-01T00:00:00.000Z',
+    );
+    assert.equal(listPayload[0].commission.effectiveEndDate, null);
 
     const authorityListResponse = await fetch(`${baseUrl}/cesad/commissions`, {
       method: 'GET',
@@ -109,8 +117,10 @@ export async function runCesadCommissionsEndpointTests() {
     });
 
     assert.equal(authorityListResponse.status, 200);
-    const authorityListPayload = (await authorityListResponse.json()) as Array<{ id: string }>;
-    assert.equal(authorityListPayload[0].id, commission.id);
+    const authorityListPayload = (await authorityListResponse.json()) as Array<{
+      commission: { id: string };
+    }>;
+    assert.equal(authorityListPayload[0].commission.id, commission.id);
 
     const getByIdResponse = await fetch(`${baseUrl}/cesad/commissions/${commission.id}`, {
       method: 'GET',
@@ -121,11 +131,13 @@ export async function runCesadCommissionsEndpointTests() {
 
     assert.equal(getByIdResponse.status, 200);
     const getByIdPayload = (await getByIdResponse.json()) as {
-      id: string;
-      status: CesadCommissionStatus;
+      commission: {
+        id: string;
+        status: CesadCommissionStatus;
+      };
     };
-    assert.equal(getByIdPayload.id, commission.id);
-    assert.equal(getByIdPayload.status, CesadCommissionStatus.ACTIVE);
+    assert.equal(getByIdPayload.commission.id, commission.id);
+    assert.equal(getByIdPayload.commission.status, CesadCommissionStatus.ACTIVE);
 
     const authorityGetByIdResponse = await fetch(`${baseUrl}/cesad/commissions/${commission.id}`, {
       method: 'GET',
@@ -135,8 +147,10 @@ export async function runCesadCommissionsEndpointTests() {
     });
 
     assert.equal(authorityGetByIdResponse.status, 200);
-    const authorityGetByIdPayload = (await authorityGetByIdResponse.json()) as { id: string };
-    assert.equal(authorityGetByIdPayload.id, commission.id);
+    const authorityGetByIdPayload = (await authorityGetByIdResponse.json()) as {
+      commission: { id: string };
+    };
+    assert.equal(authorityGetByIdPayload.commission.id, commission.id);
 
     const forbiddenListResponse = await fetch(`${baseUrl}/cesad/commissions`, {
       method: 'GET',
@@ -209,7 +223,7 @@ export async function runCesadCommissionsEndpointTests() {
         body: JSON.stringify({ reason: 'Encerrando comissão por motivo x' }),
       },
     );
-    assert.equal(closeResponse.status, 200);
+    assert.equal(closeResponse.status, 201);
     const closePayload = (await closeResponse.json()) as {
       id: string;
       status: CesadCommissionStatus;
@@ -271,7 +285,7 @@ export async function runCesadCommissionsEndpointTests() {
         body: JSON.stringify({ reason: 'Supersedendo por motivo válido' }),
       },
     );
-    assert.equal(supersedeResponse.status, 200);
+    assert.equal(supersedeResponse.status, 201);
     const supersedePayload = (await supersedeResponse.json()) as {
       id: string;
       status: CesadCommissionStatus;

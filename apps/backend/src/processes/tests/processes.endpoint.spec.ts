@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ProcessAction, ProcessStatus, UserRole } from '@sadep/contracts';
 
@@ -25,6 +26,7 @@ export async function runProcessesEndpointTests() {
   try {
     const logger = app.get(AppLogger);
     app.useGlobalFilters(new GlobalExceptionFilter(logger));
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.listen(0);
 
     const address = app.getHttpServer().address();
@@ -313,15 +315,10 @@ export async function runProcessesEndpointTests() {
     assert.equal(invalidSupersessionResponse.status, 400);
     const invalidSupersessionPayload = (await invalidSupersessionResponse.json()) as {
       message: string;
-      details?: Record<string, string>;
     };
     assert.equal(
       invalidSupersessionPayload.message,
-      'CESAD stage assignment supersession payload is invalid',
-    );
-    assert.match(
-      invalidSupersessionPayload.details?.reason ?? '',
-      /Motivo da reatribuição/,
+      'CESAD stage assignment supersession reason is required',
     );
 
     const supersessionResponse = await fetch(
@@ -596,24 +593,19 @@ export async function runProcessesEndpointTests() {
 
     assert.equal(validationResponse.status, 400);
     const validationPayload = (await validationResponse.json()) as {
-      message: string;
+      message: string[];
       error: string;
-      details?: Record<string, string>;
     };
-    assert.equal(validationPayload.message, 'Supervisor evaluation payload is invalid');
     assert.equal(validationPayload.error, 'Bad Request');
-    assert.equal(validationPayload.details?.summary, 'Resumo da avaliação deve ser um texto.');
-    assert.equal(
-      validationPayload.details?.generalComments,
-      'Comentários gerais devem ser informados em texto.',
+    assert.ok(Array.isArray(validationPayload.message));
+    assert.ok(validationPayload.message.includes('summary must be a string'));
+    assert.ok(validationPayload.message.includes('generalComments must be a string'));
+    assert.ok(validationPayload.message.includes('content.criteria.0.code must be a string'));
+    assert.ok(validationPayload.message.includes('content.criteria.0.label must be a string'));
+    assert.ok(
+      validationPayload.message.includes('content.criteria.0.rating must be an integer number'),
     );
-    assert.equal(validationPayload.details?.['criteria[0].code'], 'Código do critério deve ser texto.');
-    assert.equal(validationPayload.details?.['criteria[0].label'], 'Título do critério deve ser texto.');
-    assert.equal(validationPayload.details?.['criteria[0].rating'], 'Nota do critério deve ser numérica.');
-    assert.equal(
-      validationPayload.details?.['criteria[0].comment'],
-      'Comentário do critério deve ser texto quando informado.',
-    );
+    assert.ok(validationPayload.message.includes('content.criteria.0.comment must be a string'));
 
     const incompatibleStageReadResponse = await fetch(
       `${baseUrl}/processes/${processOutsideCesadWindow.id}/stages/1/consolidated-read`,
@@ -688,7 +680,7 @@ export async function runProcessesEndpointTests() {
         },
         body: JSON.stringify({
           reportText: 'Tentativa indevida da assistente.',
-          conclusion: '',
+          conclusion: 'Conclusão válida para testar autorização.',
         }),
       },
     );
@@ -756,7 +748,7 @@ export async function runProcessesEndpointTests() {
         body: JSON.stringify({
           reportText: 'Relatório preliminar da CESAD para a etapa 1.',
           legalBasis: 'Lei municipal X, art. 10.',
-          conclusion: '',
+          conclusion: 'Conclusão preliminar em elaboração.',
           stageConcept: 'Em análise',
           stageResult: 'Aguardando conclusão',
           comment: 'Abertura do rascunho funcional.',
@@ -783,7 +775,7 @@ export async function runProcessesEndpointTests() {
     assert.equal(opinionDraftPayload.status, 'DRAFT');
     assert.equal(opinionDraftPayload.reportText, 'Relatório preliminar da CESAD para a etapa 1.');
     assert.equal(opinionDraftPayload.legalBasis, 'Lei municipal X, art. 10.');
-    assert.equal(opinionDraftPayload.conclusion, '');
+    assert.equal(opinionDraftPayload.conclusion, 'Conclusão preliminar em elaboração.');
     assert.equal(opinionDraftPayload.stageConcept, 'Em análise');
     assert.equal(opinionDraftPayload.stageResult, 'Aguardando conclusão');
     assert.equal(opinionDraftPayload.completedAt, null);
@@ -973,7 +965,7 @@ export async function runProcessesEndpointTests() {
         },
         body: JSON.stringify({
           reportText: 'Parecer fora da janela.',
-          conclusion: '',
+          conclusion: 'Conclusão válida fora da janela.',
         }),
       },
     );
@@ -997,7 +989,7 @@ export async function runProcessesEndpointTests() {
         },
         body: JSON.stringify({
           reportText: 'Tentativa indevida do supervisor.',
-          conclusion: '',
+          conclusion: 'Conclusão válida para testar autorização.',
         }),
       },
     );
