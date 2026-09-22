@@ -104,13 +104,12 @@ describe('CesadCommissionFormDialog — sincronização de initialData', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Nome da Comissão')).toHaveValue('Gerado automaticamente pela API');
     expect(screen.getByLabelText('Descrição')).toHaveValue('');
-    expect(screen.getByLabelText('Início da Vigência')).toHaveValue('');
-    expect(screen.getByLabelText('Fim da Vigência')).toHaveValue('');
+    expect(screen.getByLabelText('Início da vigência')).toHaveValue('');
+    expect(screen.getByLabelText('Fim da vigência')).toHaveValue('');
     expect(screen.getByLabelText('Número')).toHaveValue('');
-    expect(screen.getByLabelText('Data da Publicação')).toHaveValue('');
-    expect(screen.queryByPlaceholderText('ID do usuário')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Data da publicação')).toHaveValue('');
+    expect(screen.queryByLabelText('Usuário')).not.toBeInTheDocument();
   });
 
   it('abre a edição com os dados do registro', () => {
@@ -125,12 +124,11 @@ describe('CesadCommissionFormDialog — sincronização de initialData', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Nome da Comissão')).toHaveValue('cesad-commission-a');
     expect(screen.getByLabelText('Descrição')).toHaveValue('Comissão A');
-    expect(screen.getByLabelText('Início da Vigência')).toHaveValue('2026-01-01');
+    expect(screen.getByLabelText('Início da vigência')).toHaveValue('2026-01-01');
     expect(screen.getByLabelText('Número')).toHaveValue('456');
-    expect(screen.getByLabelText('Data da Publicação')).toHaveValue('2026-01-01');
-    expect(screen.getAllByPlaceholderText('ID do usuário')[0]).toHaveValue('commission-a-user-0');
+    expect(screen.getByLabelText('Data da publicação')).toHaveValue('2026-01-01');
+    expect(screen.getAllByLabelText('Usuário')[0]).toHaveValue('commission-a-user-0');
   });
 
   it('ao alternar de uma comissão para outra, reabre com os dados da comissão selecionada', () => {
@@ -153,7 +151,7 @@ describe('CesadCommissionFormDialog — sincronização de initialData', () => {
 
     expect(screen.getByLabelText('Descrição')).toHaveValue('Comissão B');
     expect(screen.getByLabelText('Número')).toHaveValue('222');
-    expect(screen.getAllByPlaceholderText('ID do usuário')[0]).toHaveValue('commission-b-user-0');
+    expect(screen.getAllByLabelText('Usuário')[0]).toHaveValue('commission-b-user-0');
   });
 
   it('fechar a edição e abrir nova comissão não deixa dados antigos no formulário', () => {
@@ -175,8 +173,8 @@ describe('CesadCommissionFormDialog — sincronização de initialData', () => {
 
     expect(screen.getByLabelText('Descrição')).toHaveValue('');
     expect(screen.getByLabelText('Número')).toHaveValue('');
-    expect(screen.getByLabelText('Data da Publicação')).toHaveValue('');
-    expect(screen.queryByPlaceholderText('ID do usuário')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Data da publicação')).toHaveValue('');
+    expect(screen.queryByLabelText('Usuário')).not.toBeInTheDocument();
   });
 
   it('não apaga a digitação enquanto o formulário permanece aberto', () => {
@@ -213,7 +211,7 @@ describe('CesadCommissionFormDialog — payload com ano civil e datas sem desloc
     );
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Salvar Comissão' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Salvar comissão' }));
     });
 
     expect(onSubmit).toHaveBeenCalledTimes(1);

@@ -21,7 +21,6 @@ export type SupervisorDashboardRow = {
   supervisorName: string;
   supervisorRole: string;
   trackingPeriod: string;
-  source?: 'demo' | 'real';
 };
 
 export type EvaluationFactorItemDraft = {

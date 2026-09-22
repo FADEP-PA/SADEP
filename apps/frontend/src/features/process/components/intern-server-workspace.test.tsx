@@ -207,17 +207,15 @@ describe('InternServerWorkspace', () => {
   it('carrega automaticamente o único processo e exibe a avaliação real com ciência pendente', async () => {
     renderWorkspace();
 
-    expect(await screen.findByText(PROCESS_ID)).toBeInTheDocument();
+    expect(await screen.findByText('Minha avaliação')).toBeInTheDocument();
     expect(api.getInternWorkspaceSnapshot).toHaveBeenCalledWith(PROCESS_ID);
     expect(screen.getByText('Desempenho satisfatório no período.')).toBeInTheDocument();
-    expect(screen.getByText('Assiduidade')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirmar ciência' })).toBeEnabled();
-    expect(screen.queryByLabelText('Identificador do processo')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Consultar processo' })).not.toBeInTheDocument();
+    expect(screen.queryByText(PROCESS_ID)).not.toBeInTheDocument();
     expect(
-      screen.getByText('Confirme a ciência da avaliação da Chefia para liberar a autoavaliação.'),
+      screen.getByText('Confirme que você leu a avaliação para liberar a autoavaliação.'),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText(/Descreva sua autoavaliação/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Autoavaliação')).not.toBeInTheDocument();
   });
 
   it('mostra estado vazio institucional quando o servidor não possui processos', async () => {
@@ -226,7 +224,7 @@ describe('InternServerWorkspace', () => {
     render(<InternServerWorkspace />);
 
     expect(
-      await screen.findByText('Não há processos vinculados ao servidor autenticado neste momento.'),
+      await screen.findByText('Nenhuma avaliação disponível'),
     ).toBeInTheDocument();
     expect(api.getInternWorkspaceSnapshot).not.toHaveBeenCalled();
     expect(screen.queryByLabelText('Identificador do processo')).not.toBeInTheDocument();
@@ -243,14 +241,13 @@ describe('InternServerWorkspace', () => {
     const selector = await screen.findByLabelText('Processo');
     expect(api.getInternWorkspaceSnapshot).not.toHaveBeenCalled();
     fireEvent.change(selector, { target: { value: 'second-process' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir processo' }));
 
     await waitFor(() => {
       expect(api.getInternWorkspaceSnapshot).toHaveBeenCalledWith('second-process');
     });
   });
 
-  it('confirma ciência pelo endpoint e exibe nome e data retornada pelo backend', async () => {
+  it('confirma ciência e libera a autoavaliação', async () => {
     api.getProcessList.mockResolvedValue(processList);
     api.getWorkflowHistory.mockResolvedValue({ items: [], meta: { total: 0 } });
     api.getInternWorkspaceSnapshot
@@ -261,9 +258,8 @@ describe('InternServerWorkspace', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Confirmar ciência' }));
 
     await waitFor(() => expect(api.signSupervisorEvaluation).toHaveBeenCalledWith(PROCESS_ID));
-    expect((await screen.findAllByText('Ciência confirmada')).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Servidor Demo — ciência confirmada em/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Realizar autoavaliação' })).toBeEnabled();
+    expect(await screen.findByText('Sua confirmação foi registrada.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Preencher autoavaliação' })).toBeEnabled();
   });
 
   it('bloqueia novo clique enquanto registra a ciência', async () => {
@@ -282,11 +278,11 @@ describe('InternServerWorkspace', () => {
     render(<InternServerWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Confirmar ciência' }));
 
-    expect(await screen.findByRole('button', { name: 'Confirmando ciência...' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Confirmando…' })).toBeDisabled();
     expect(api.signSupervisorEvaluation).toHaveBeenCalledTimes(1);
 
     await act(async () => completeConfirmation());
-    expect(await screen.findByRole('button', { name: 'Realizar autoavaliação' })).toBeEnabled();
+    expect(await screen.findByRole('button', { name: 'Preencher autoavaliação' })).toBeEnabled();
   });
 
   it('libera o formulário depois da ciência e salva o rascunho no backend', async () => {
@@ -302,11 +298,11 @@ describe('InternServerWorkspace', () => {
       .mockResolvedValueOnce(draftSnapshot);
 
     render(<InternServerWorkspace />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Realizar autoavaliação' }));
-    fireEvent.change(screen.getByLabelText(/Descreva sua autoavaliação/i), {
+    fireEvent.click(await screen.findByRole('button', { name: 'Preencher autoavaliação' }));
+    fireEvent.change(screen.getByLabelText('Autoavaliação'), {
       target: { value: 'Minha reflexão persistida.' },
     });
-    fireEvent.change(screen.getByLabelText('Outras observações'), {
+    fireEvent.change(screen.getByLabelText('Observações adicionais'), {
       target: { value: 'Observações persistidas.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
@@ -317,7 +313,7 @@ describe('InternServerWorkspace', () => {
         additionalNotes: 'Observações persistidas.',
       });
     });
-    expect(await screen.findByText('Rascunho salvo')).toBeInTheDocument();
+    expect(await screen.findByText('Rascunho salvo.')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Minha reflexão persistida.')).toBeInTheDocument();
   });
 
@@ -351,7 +347,7 @@ describe('InternServerWorkspace', () => {
 
     render(<InternServerWorkspace />);
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Enviar autoavaliação para a Chefia' }),
+      await screen.findByRole('button', { name: 'Enviar autoavaliação' }),
     );
 
     await waitFor(() => {
@@ -360,13 +356,13 @@ describe('InternServerWorkspace', () => {
         additionalNotes: 'Observações persistidas.',
       });
     });
-    expect(await screen.findByText('Autoavaliação enviada para a Chefia')).toBeInTheDocument();
-    expect(screen.getByText(/Enviada em .* O conteúdo permanece/)).toBeInTheDocument();
+    expect((await screen.findAllByText('Autoavaliação enviada')).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Aguarde a confirmação da chefia/)).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Enviar autoavaliação para a Chefia' }),
+      screen.queryByRole('button', { name: 'Enviar autoavaliação' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Salvar rascunho' })).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/Descreva sua autoavaliação/i)).toBeDisabled();
+    expect(screen.getByLabelText('Autoavaliação')).toBeDisabled();
   });
 
   it('bloqueia as ações enquanto envia a autoavaliação', async () => {
@@ -393,15 +389,15 @@ describe('InternServerWorkspace', () => {
 
     render(<InternServerWorkspace />);
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Enviar autoavaliação para a Chefia' }),
+      await screen.findByRole('button', { name: 'Enviar autoavaliação' }),
     );
 
-    expect(await screen.findByRole('button', { name: 'Enviando...' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Enviando…' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Salvar rascunho' })).toBeDisabled();
     expect(api.submitSelfEvaluation).toHaveBeenCalledTimes(1);
 
     await act(async () => completeSubmit());
-    expect(await screen.findByText('Autoavaliação enviada para a Chefia')).toBeInTheDocument();
+    expect((await screen.findAllByText('Autoavaliação enviada')).length).toBeGreaterThan(0);
   });
 
   it('restaura uma autoavaliação SUBMITTED após novo carregamento', async () => {
@@ -412,7 +408,7 @@ describe('InternServerWorkspace', () => {
       }),
     );
 
-    expect(await screen.findByText('Autoavaliação enviada para a Chefia')).toBeInTheDocument();
+    expect((await screen.findAllByText('Autoavaliação enviada')).length).toBeGreaterThan(0);
     expect(screen.getByDisplayValue('Minha reflexão persistida.')).toBeDisabled();
     expect(api.submitSelfEvaluation).not.toHaveBeenCalled();
   });
@@ -428,7 +424,7 @@ describe('InternServerWorkspace', () => {
     render(<InternServerWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Confirmar ciência' }));
 
-    expect(await screen.findByText('O processo foi atualizado')).toBeInTheDocument();
+    expect(await screen.findByText('Não foi possível confirmar a ciência')).toBeInTheDocument();
     expect(screen.getByText('A avaliação já foi confirmada em outra sessão.')).toBeInTheDocument();
   });
 
@@ -443,7 +439,7 @@ describe('InternServerWorkspace', () => {
     render(<InternServerWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Confirmar ciência' }));
 
-    expect(await screen.findByText('Ação não autorizada')).toBeInTheDocument();
+    expect(await screen.findByText('Não foi possível confirmar a ciência')).toBeInTheDocument();
     expect(screen.getByText('Seu perfil não pode confirmar esta avaliação.')).toBeInTheDocument();
   });
 
@@ -462,12 +458,12 @@ describe('InternServerWorkspace', () => {
 
     render(<InternServerWorkspace />);
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Enviar autoavaliação para a Chefia' }),
+      await screen.findByRole('button', { name: 'Enviar autoavaliação' }),
     );
 
-    expect(await screen.findByText('Dados da autoavaliação inválidos')).toBeInTheDocument();
+    expect(await screen.findByText('Não foi possível enviar a autoavaliação')).toBeInTheDocument();
     expect(screen.getByText('Revise os dados informados.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Enviar autoavaliação para a Chefia' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Enviar autoavaliação' })).toBeEnabled();
   });
 
   it('não mostra sucesso quando há erro de rede ao salvar o rascunho', async () => {
@@ -484,8 +480,8 @@ describe('InternServerWorkspace', () => {
     render(<InternServerWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Salvar rascunho' }));
 
-    expect(await screen.findByText('Falha ao salvar autoavaliação')).toBeInTheDocument();
+    expect(await screen.findByText('Não foi possível salvar a autoavaliação')).toBeInTheDocument();
     expect(screen.getByText('Falha de conexão com o serviço.')).toBeInTheDocument();
-    expect(screen.queryByText('Rascunho salvo')).not.toBeInTheDocument();
+    expect(screen.queryByText('Rascunho salvo.')).not.toBeInTheDocument();
   });
 });

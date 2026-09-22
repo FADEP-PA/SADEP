@@ -53,6 +53,42 @@ const ACTION_LABELS: Partial<Record<ProcessAction, string>> = {
   [ProcessAction.CLOSE_PROCESS]: 'Encerrar processo',
 };
 
+const HISTORY_ACTION_LABELS: Record<ProcessAction, string> = {
+  [ProcessAction.CREATE_PROCESS]: 'Processo criado',
+  [ProcessAction.ACTIVATE_STAGE]: 'Etapa iniciada',
+  [ProcessAction.START_EVALUATION]: 'Chefia iniciou a avaliação',
+  [ProcessAction.SAVE_EVALUATION_DRAFT]: 'Chefia salvou a avaliação',
+  [ProcessAction.COMPLETE_EVALUATION]: 'Chefia enviou a avaliação',
+  [ProcessAction.RELEASE_FOR_SERVER_SIGNATURE]: 'Avaliação liberada para ciência',
+  [ProcessAction.RECTIFY_EVALUATION]: 'Chefia retificou a avaliação',
+  [ProcessAction.SIGN_EVALUATION]: 'Servidor confirmou ciência da avaliação',
+  [ProcessAction.SUBMIT_SELF_EVALUATION]: 'Servidor enviou a autoavaliação',
+  [ProcessAction.SEND_TO_CESAD]: 'Processo encaminhado à CESAD',
+  [ProcessAction.START_CESAD_OPINION]: 'CESAD iniciou o parecer',
+  [ProcessAction.SAVE_CESAD_OPINION_DRAFT]: 'CESAD salvou o parecer',
+  [ProcessAction.COMPLETE_CESAD_STAGE_OPINION]: 'CESAD concluiu o parecer da etapa',
+  [ProcessAction.SUPERSEDE_CESAD_STAGE_ASSIGNMENT]: 'Composição da CESAD atualizada',
+  [ProcessAction.ROLLOVER_CESAD_STAGE_ASSIGNMENT]: 'Composição da CESAD renovada para a etapa',
+  [ProcessAction.PREPARE_CESAD_OPINION_SIGNATURES]: 'Parecer liberado para confirmações',
+  [ProcessAction.ISSUE_CESAD_OPINION]: 'Parecer CESAD emitido',
+  [ProcessAction.SIGN_CESAD_OPINION]: 'Parecer CESAD confirmado',
+  [ProcessAction.REQUEST_ADJUSTMENT]: 'CESAD solicitou ajuste',
+  [ProcessAction.COMPLETE_CURRENT_STAGE]: 'Etapa concluída',
+  [ProcessAction.START_CESAD_FINAL_OPINION]: 'CESAD iniciou o parecer conclusivo final',
+  [ProcessAction.SAVE_CESAD_FINAL_OPINION_DRAFT]: 'CESAD salvou o parecer conclusivo final',
+  [ProcessAction.COMPLETE_CESAD_FINAL_OPINION]: 'CESAD concluiu o parecer conclusivo final',
+  [ProcessAction.PREPARE_CESAD_FINAL_OPINION_SIGNATURES]: 'Parecer final liberado para confirmações',
+  [ProcessAction.SIGN_CESAD_FINAL_OPINION]: 'Parecer conclusivo final confirmado',
+  [ProcessAction.SEND_TO_HOMOLOGATION]: 'Processo encaminhado para homologação',
+  [ProcessAction.HOMOLOGATE_RESULT]: 'Resultado homologado',
+  [ProcessAction.RETURN_FOR_REGULARIZATION]: 'Processo devolvido para regularização',
+  [ProcessAction.GENERATE_NOTIFICATION]: 'Notificação gerada',
+  [ProcessAction.SEND_NOTIFICATION]: 'Notificação enviada',
+  [ProcessAction.RECORD_ACKNOWLEDGEMENT]: 'Ciência registrada',
+  [ProcessAction.LINK_ORDINANCE]: 'Portaria vinculada',
+  [ProcessAction.CLOSE_PROCESS]: 'Processo encerrado',
+};
+
 const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.INTERN_SERVER]: 'Servidor estagiário',
   [UserRole.IMMEDIATE_SUPERVISOR]: 'Chefia imediata',
@@ -138,6 +174,18 @@ export function formatProcessAction(action: string | undefined) {
   }
 
   return ACTION_LABELS[action as ProcessAction] ?? action;
+}
+
+export function formatHistoryAction(action: string | null | undefined) {
+  if (!action) {
+    return 'Processo atualizado';
+  }
+
+  if (action === 'SUBMIT_SUPERVISOR_EVALUATION') {
+    return 'Chefia enviou a avaliação';
+  }
+
+  return HISTORY_ACTION_LABELS[action as ProcessAction] ?? 'Processo atualizado';
 }
 
 export function formatRole(role: string | null | undefined) {

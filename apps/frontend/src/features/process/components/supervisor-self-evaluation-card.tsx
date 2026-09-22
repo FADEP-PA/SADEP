@@ -5,13 +5,16 @@ import {
   SelfEvaluationStatus,
   SignatureStatus,
   UserRole,
-  type SelfEvaluationWithDocumentContextRef,
   type SelfEvaluationDocumentContextRef,
+  type SelfEvaluationWithDocumentContextRef,
 } from '@sadep/contracts';
+
+import { StatusBadge } from '@/shared/ui/status-badge';
+import { WorkSection } from '@/shared/ui/work-patterns';
 
 import { formatDateTime } from './process-formatters';
 
-type SupervisorSelfEvaluationCardProps = {
+type Props = {
   selfEvaluation: SelfEvaluationWithDocumentContextRef | null;
   documentContext: SelfEvaluationDocumentContextRef | null;
   userName: string;
@@ -20,13 +23,6 @@ type SupervisorSelfEvaluationCardProps = {
   onConfirm: () => void;
 };
 
-function getSupervisorSignature(documentContext: SelfEvaluationDocumentContextRef | null) {
-  if (!documentContext) return null;
-  return documentContext.signatures.find(
-    (s) => s.signatoryRole === UserRole.IMMEDIATE_SUPERVISOR,
-  ) ?? null;
-}
-
 export function SupervisorSelfEvaluationCard({
   selfEvaluation,
   documentContext,
@@ -34,69 +30,45 @@ export function SupervisorSelfEvaluationCard({
   processStatus,
   isConfirming,
   onConfirm,
-}: SupervisorSelfEvaluationCardProps) {
-  if (!selfEvaluation || selfEvaluation.status !== SelfEvaluationStatus.SUBMITTED) {
-    return null;
-  }
+}: Props) {
+  if (!selfEvaluation || selfEvaluation.status !== SelfEvaluationStatus.SUBMITTED) return null;
 
-  const supervisorSignature = getSupervisorSignature(documentContext);
-  const isSigned = supervisorSignature?.status === SignatureStatus.COMPLETED;
-  const isPendingSignature = documentContext?.supervisorSignaturePending === true;
-  const isEmAnalise = processStatus === ProcessStatus.EM_ANALISE_CESAD;
+  const signature = documentContext?.signatures.find(
+    (item) => item.signatoryRole === UserRole.IMMEDIATE_SUPERVISOR,
+  );
+  const isSigned = signature?.status === SignatureStatus.COMPLETED;
+  const isPending = documentContext?.supervisorSignaturePending === true;
+  const isUnderReview = processStatus === ProcessStatus.EM_ANALISE_CESAD;
 
   return (
-    <section className="operations-card supervisor-self-eval-card">
-      <div className="supervisor-self-eval-card__header">
-        <h3>Autoavaliação do servidor</h3>
-        <span className="supervisor-self-eval-card__status">
-          {isSigned
-            ? 'Confirmada pela chefia'
-            : isEmAnalise
-              ? 'Em análise pela CESAD'
-              : 'Aguardando confirmação da chefia'}
-        </span>
-      </div>
-
-      <div className="supervisor-self-eval-card__content">
-        <div className="supervisor-self-eval-card__field">
-          <strong>Reflexão do servidor</strong>
-          <p>{selfEvaluation.selfReflection || 'Não informado'}</p>
-        </div>
-
-        {selfEvaluation.additionalNotes ? (
-          <div className="supervisor-self-eval-card__field">
-            <strong>Observações adicionais</strong>
-            <p>{selfEvaluation.additionalNotes}</p>
-          </div>
-        ) : null}
-
-        <div className="supervisor-self-eval-card__meta">
-          <span>
-            Submetida em: {selfEvaluation.submittedAt ? formatDateTime(selfEvaluation.submittedAt) : '—'}
-          </span>
-        </div>
-      </div>
-
-      {isSigned && supervisorSignature ? (
-        <div className="supervisor-self-eval-card__confirmed">
-          <span className="supervisor-self-eval-card__confirmed-icon">✓</span>
-          <span>
-            Confirmada por <strong>{userName}</strong>
-            {supervisorSignature.signedAt ? ` em ${formatDateTime(supervisorSignature.signedAt)}` : ''}
-          </span>
-        </div>
-      ) : isPendingSignature ? (
-        <div className="supervisor-self-eval-card__actions">
-          <button
-            type="button"
-            className="supervisor-self-eval-card__confirm-btn"
-            disabled={isConfirming}
-            onClick={onConfirm}
-          >
-            {isConfirming ? 'Confirmando...' : 'Confirmar recebimento / Dar OK'}
+    <WorkSection
+      title="Autoavaliação recebida"
+      action={
+        isPending ? (
+          <button type="button" disabled={isConfirming} onClick={onConfirm}>
+            {isConfirming ? 'Confirmando…' : 'Confirmar recebimento'}
           </button>
-        </div>
-      ) : null}
-    </section>
+        ) : (
+          <StatusBadge
+            label={isSigned ? 'Confirmada' : isUnderReview ? 'Em análise pela CESAD' : 'Recebida'}
+            tone={isSigned ? 'success' : 'info'}
+          />
+        )
+      }
+    >
+      <div className="evaluation-summary">
+        <p>{selfEvaluation.selfReflection || 'Não informado'}</p>
+        <details className="compact-disclosure">
+          <summary>Ver autoavaliação completa</summary>
+          {selfEvaluation.additionalNotes ? <p>{selfEvaluation.additionalNotes}</p> : null}
+          {selfEvaluation.submittedAt ? <small>Enviada em {formatDateTime(selfEvaluation.submittedAt)}</small> : null}
+        </details>
+        {isSigned ? (
+          <p className="success-copy">
+            Confirmada por <strong>{userName}</strong>{signature?.signedAt ? ` em ${formatDateTime(signature.signedAt)}` : ''}.
+          </p>
+        ) : null}
+      </div>
+    </WorkSection>
   );
 }

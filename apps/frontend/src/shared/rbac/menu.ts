@@ -13,17 +13,6 @@ export type NavigationGroup = {
   items: NavigationItem[];
 };
 
-const processGroup: NavigationGroup = {
-  title: 'Painel principal',
-  items: [
-    {
-      label: 'Processos',
-      href: '/processos',
-      description: 'Consultar status, ações disponíveis, histórico e leitura operacional do processo.',
-    },
-  ],
-};
-
 const accountGroup: NavigationGroup = {
   title: 'Conta',
   items: [
@@ -38,12 +27,12 @@ const accountGroup: NavigationGroup = {
 const menuByRole: Record<UserRole, NavigationGroup[]> = {
   [UserRole.INTERN_SERVER]: [
     {
-      title: 'Avaliações',
+      title: 'Meu trabalho',
       items: [
         {
           label: 'Minhas avaliações',
           href: '/servidor-estagiario',
-          description: 'Acompanhar a etapa atual, assinar a avaliação da chefia e registrar a autoavaliação.',
+          description: 'Acompanhar e responder às avaliações.',
         },
       ],
     },
@@ -51,40 +40,38 @@ const menuByRole: Record<UserRole, NavigationGroup[]> = {
   ],
   [UserRole.IMMEDIATE_SUPERVISOR]: [
     {
-      title: 'Avaliações',
+      title: 'Meu trabalho',
       items: [
         {
           label: 'Avaliações da chefia',
           href: '/chefia-imediata',
-          description: 'Elaborar, salvar, submeter e retificar a avaliação sob responsabilidade da chefia imediata.',
+          description: 'Avaliar os servidores sob sua responsabilidade.',
         },
       ],
     },
     accountGroup,
   ],
   [UserRole.CESAD_MEMBER]: [
-    processGroup,
     {
-      title: 'Minha atuação',
+      title: 'Meu trabalho',
       items: [
         {
           label: getRolePresentation(UserRole.CESAD_MEMBER).label,
           href: '/cesad-comissao',
-          description: 'Analisar processos, consultar histórico e acompanhar a etapa colegiada da comissão.',
+          description: 'Analisar processos e emitir pareceres.',
         },
       ],
     },
     accountGroup,
   ],
   [UserRole.COMMISSION_ASSISTANT]: [
-    processGroup,
     {
-      title: 'Minha atuação',
+      title: 'Meu trabalho',
       items: [
         {
           label: getRolePresentation(UserRole.COMMISSION_ASSISTANT).label,
           href: '/cesad-comissao',
-          description: 'Consultar processos, histórico e leitura consolidada da etapa para apoio à comissão.',
+          description: 'Consultar processos encaminhados à comissão.',
         },
       ],
     },

@@ -37,7 +37,7 @@ describe('ReadOnlyOpinionShell', () => {
     render(<ReadOnlyOpinionShell opinion={null} />);
 
     expect(screen.getByText('Parecer da etapa ausente')).toBeTruthy();
-    expect(screen.getByText('Parecer ausente')).toBeTruthy();
+    expect(screen.getByText('Aguardando parecer')).toBeTruthy();
   });
 
   it('renderiza campos do parecer quando opinion e DRAFT', () => {
@@ -60,25 +60,24 @@ describe('ReadOnlyOpinionShell', () => {
   it('exibe status badge com label correto para DRAFT', () => {
     render(<ReadOnlyOpinionShell opinion={mockDraftOpinion} />);
 
-    expect(screen.getByText('Parecer em elaboracao')).toBeTruthy();
+    expect(screen.getByText('Parecer em elaboração')).toBeTruthy();
   });
 
   it('exibe status badge com label correto para COMPLETED', () => {
     render(<ReadOnlyOpinionShell opinion={mockCompletedOpinion} />);
 
-    expect(screen.getByText('Parecer pronto/consolidado')).toBeTruthy();
+    expect(screen.getByText('Parecer concluído')).toBeTruthy();
   });
 
-  it('exibe labels de stage e process', () => {
+  it('exibe a etapa sem expor o identificador do processo', () => {
     render(
       <ReadOnlyOpinionShell
         opinion={mockDraftOpinion}
         stageLabel="Etapa 1 - ETAPA_1"
-        processLabel="proc-abc"
       />,
     );
 
     expect(screen.getByText('Etapa 1 - ETAPA_1')).toBeTruthy();
-    expect(screen.getByText('proc-abc')).toBeTruthy();
+    expect(screen.queryByText('proc-abc')).not.toBeInTheDocument();
   });
 });

@@ -40,9 +40,9 @@ describe('CesadStageOpinionEditor', () => {
       />,
     );
 
-    expect(screen.getByLabelText(/Relatorio/i)).toBeTruthy();
-    expect(screen.getByLabelText(/Fundamentacao legal/i)).toBeTruthy();
-    expect(screen.getByLabelText(/Conclusao/i)).toBeTruthy();
+    expect(screen.getByLabelText(/Relatório/i)).toBeTruthy();
+    expect(screen.getByLabelText(/Fundamentação legal/i)).toBeTruthy();
+    expect(screen.getByLabelText(/Conclusão/i)).toBeTruthy();
     expect(screen.getByLabelText(/Conceito da etapa/i)).toBeTruthy();
     expect(screen.getByLabelText(/Resultado da etapa/i)).toBeTruthy();
   });
@@ -201,7 +201,7 @@ describe('CesadStageOpinionEditor', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Salvando rascunho...' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Salvando…' })).toBeDisabled();
       expect(screen.getByRole('button', { name: 'Concluir parecer' })).toBeDisabled();
     });
 

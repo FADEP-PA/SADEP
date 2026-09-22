@@ -15,11 +15,8 @@ export default function ForbiddenPage() {
         </div>
 
         <span className="forbidden-page__badge">Acesso bloqueado</span>
-        <h1 id="forbidden-title">Seu perfil não pode abrir esta rota</h1>
-        <p>
-          A pagina solicitada continua protegida pela politica atual de permissao. O ambiente
-          manteve a navegação dentro do escopo liberado para o perfil autenticado.
-        </p>
+        <h1 id="forbidden-title">Você não tem acesso a esta página</h1>
+        <p>Volte à sua área de trabalho para continuar.</p>
 
         <div className="forbidden-page__actions">
           <Link href="/perfil">Voltar ao perfil</Link>

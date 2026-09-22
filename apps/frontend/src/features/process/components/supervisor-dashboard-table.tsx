@@ -1,6 +1,7 @@
 'use client';
 
 import { EmptyState } from '@/shared/ui/operational-states';
+import { StatusBadge, type StatusBadgeTone } from '@/shared/ui/status-badge';
 
 import type {
   PreviousEvaluationItem,
@@ -9,37 +10,21 @@ import type {
 } from './supervisor-evaluation-types';
 
 const STATUS_FILTERS: Array<{ id: SupervisorDashboardStatus; label: string }> = [
-  { id: 'EM_AVALIACAO', label: 'Em avaliação' },
-  { id: 'AGUARDANDO_ASSINATURA', label: 'Aguardando assinatura' },
-  { id: 'EM_ANALISE_CESAD', label: 'Em análise CESAD' },
-  { id: 'CONCLUIDO', label: 'Concluídos' },
+  { id: 'EM_AVALIACAO', label: 'Avaliação pendente' },
+  { id: 'AGUARDANDO_ASSINATURA', label: 'Aguardando confirmação' },
+  { id: 'EM_ANALISE_CESAD', label: 'Em análise pela CESAD' },
+  { id: 'CONCLUIDO', label: 'Concluído' },
 ];
 
-function getStatusLabel(status: SupervisorDashboardStatus) {
-  if (status === 'EM_AVALIACAO') return 'Em avaliação';
-  if (status === 'AGUARDANDO_ASSINATURA') return 'Aguardando assinatura';
-  if (status === 'EM_ANALISE_CESAD') return 'Em análise CESAD';
-  return 'Homologado';
-}
-
-function getStatusClassName(status: SupervisorDashboardStatus) {
-  if (status === 'EM_AVALIACAO') {
-    return 'supervisor-dashboard__pill supervisor-dashboard__pill--neutral';
+function getStatusPresentation(row: SupervisorDashboardRow): { label: string; tone: StatusBadgeTone } {
+  if (row.status === 'EM_AVALIACAO') return { label: 'Avaliação pendente', tone: 'warning' };
+  if (row.status === 'AGUARDANDO_ASSINATURA') {
+    return row.actionLabel === 'Confirmar autoavaliação'
+      ? { label: 'Confirmar autoavaliação', tone: 'warning' }
+      : { label: 'Aguardando servidor', tone: 'info' };
   }
-  if (status === 'AGUARDANDO_ASSINATURA') {
-    return 'supervisor-dashboard__pill supervisor-dashboard__pill--warning';
-  }
-  if (status === 'EM_ANALISE_CESAD') {
-    return 'supervisor-dashboard__pill supervisor-dashboard__pill--info';
-  }
-  return 'supervisor-dashboard__pill supervisor-dashboard__pill--success';
-}
-
-function getStageClassName(status: SupervisorDashboardStatus) {
-  if (status === 'CONCLUIDO') {
-    return 'supervisor-dashboard__stage-chip supervisor-dashboard__stage-chip--done';
-  }
-  return 'supervisor-dashboard__stage-chip';
+  if (row.status === 'EM_ANALISE_CESAD') return { label: 'Em análise pela CESAD', tone: 'info' };
+  return { label: 'Concluído', tone: 'success' };
 }
 
 type SupervisorDashboardTableProps = {
@@ -64,208 +49,59 @@ export function SupervisorDashboardTable({
   onToggleFilterPanel,
   onToggleFilter,
   onOpenEvaluation,
-  onOpenPreviousEvaluations,
   onClosePreviousEvaluations,
 }: SupervisorDashboardTableProps) {
   return (
-    <div className="supervisor-dashboard">
-      <section className="supervisor-dashboard__table-card">
-        <div className="supervisor-dashboard__filters">
-          <div className="supervisor-dashboard__filters-title">
-            <button
-              type="button"
-              className="supervisor-dashboard__filters-trigger"
-              aria-label="Abrir filtros por status"
-              aria-expanded={isFilterPanelOpen}
-              aria-controls="supervisor-status-filters"
-              onClick={onToggleFilterPanel}
-            >
-              <svg viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M4.5 6.5h15l-6 6.7v3.9l-3 1.7v-5.6l-6-6.7Z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            <span>Filtrar por status</span>
+    <div className="task-list">
+      <div className="task-list__toolbar">
+        <strong>Servidores</strong>
+        <button type="button" className="ghost-button task-list__filter-button" aria-expanded={isFilterPanelOpen} aria-controls="supervisor-status-filters" onClick={onToggleFilterPanel}>
+          Filtrar
+        </button>
+        {isFilterPanelOpen ? (
+          <div id="supervisor-status-filters" className="task-list__filters">
+            {STATUS_FILTERS.map((filter) => (
+              <label key={filter.id}>
+                <input type="checkbox" checked={selectedFilters.includes(filter.id)} onChange={() => onToggleFilter(filter.id)} />
+                <span>{filter.label}</span>
+              </label>
+            ))}
           </div>
+        ) : null}
+      </div>
 
-          {isFilterPanelOpen ? (
-            <div
-              id="supervisor-status-filters"
-              className="supervisor-dashboard__filter-popover"
-              role="dialog"
-              aria-label="Filtros por status da avaliação"
-            >
-              <div className="supervisor-dashboard__filter-popover-header">
-                <strong>Status exibidos</strong>
-                <span>
-                  {selectedFilters.length} de {STATUS_FILTERS.length} ativos
-                </span>
+      {filteredRows.length > 0 ? (
+        <div className="task-table" role="table" aria-label="Avaliações sob responsabilidade da chefia">
+          <div className="task-table__header" role="row">
+            <span role="columnheader">Servidor</span><span role="columnheader">Etapa</span><span role="columnheader">Situação</span><span role="columnheader">Ação</span>
+          </div>
+          {filteredRows.map((row) => {
+            const status = getStatusPresentation(row);
+            return (
+              <div className="task-table__row" role="row" key={row.id}>
+                <div role="cell" className="task-table__person"><strong>{row.serverName}</strong></div>
+                <div role="cell" data-label="Etapa">{row.stageLabel}</div>
+                <div role="cell" data-label="Situação"><StatusBadge label={status.label} tone={status.tone} /></div>
+                <div role="cell" className="task-table__action">
+                  <button type="button" className={row.actionDisabled ? 'secondary-button' : undefined} disabled={row.actionDisabled} onClick={() => onOpenEvaluation(row)}>{row.actionLabel}</button>
+                </div>
               </div>
-
-              <div className="supervisor-dashboard__filter-options">
-                {STATUS_FILTERS.map((filter) => (
-                  <label key={filter.id} className="supervisor-dashboard__filter-option">
-                    <input
-                      type="checkbox"
-                      checked={selectedFilters.includes(filter.id)}
-                      onChange={() => onToggleFilter(filter.id)}
-                    />
-                    <span>{filter.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ) : null}
+            );
+          })}
         </div>
-
-        <div className="supervisor-dashboard__table-header">
-          <div>Servidor</div>
-          <div>Matrícula</div>
-          <div>Cargo</div>
-          <div>Exercício</div>
-          <div>Status</div>
-          <div>Etapa atual</div>
-          <div>Prazo limite</div>
-          <div>Avaliações anteriores</div>
-          <div>Ação</div>
-        </div>
-
-        <div className="supervisor-dashboard__rows">
-          {filteredRows.length > 0 ? (
-            filteredRows.map((row) => (
-              <article
-                key={row.id}
-                className={
-                  row.source === 'real'
-                    ? 'supervisor-dashboard__row supervisor-dashboard__row--real'
-                    : 'supervisor-dashboard__row'
-                }
-              >
-                <div className="supervisor-dashboard__server" data-label="Servidor">
-                  <strong>{row.serverName}</strong>
-                  {row.source === 'real' ? <span>processo informado carregado</span> : null}
-                </div>
-
-                <div
-                  className="supervisor-dashboard__cell supervisor-dashboard__registration"
-                  data-label="Matrícula"
-                >
-                  {row.registration}
-                </div>
-                <div className="supervisor-dashboard__cell" data-label="Cargo">
-                  {row.role}
-                </div>
-                <div className="supervisor-dashboard__cell" data-label="Exercício">
-                  {row.exerciseStart}
-                </div>
-                <div className="supervisor-dashboard__cell" data-label="Status">
-                  <span className={getStatusClassName(row.status)}>{getStatusLabel(row.status)}</span>
-                </div>
-                <div className="supervisor-dashboard__cell" data-label="Etapa atual">
-                  <span className={getStageClassName(row.status)}>{row.stageLabel}</span>
-                </div>
-                <div className="supervisor-dashboard__cell" data-label="Prazo limite">
-                  {row.deadline}
-                </div>
-                <div
-                  className="supervisor-dashboard__cell supervisor-dashboard__cell--center"
-                  data-label="Avaliações anteriores"
-                >
-                  {row.canReviewPrevious ? (
-                    <button
-                      type="button"
-                      className="secondary-button supervisor-dashboard__ghost-action"
-                      onClick={() => onOpenPreviousEvaluations(row)}
-                    >
-                      Visualizar
-                    </button>
-                  ) : (
-                    <span className="supervisor-dashboard__empty-value">Nao aplicavel</span>
-                  )}
-                </div>
-                <div
-                  className="supervisor-dashboard__cell supervisor-dashboard__cell--end"
-                  data-label="Ação"
-                >
-                  <button
-                    type="button"
-                    className={
-                      row.actionDisabled
-                        ? 'secondary-button supervisor-dashboard__primary-action supervisor-dashboard__primary-action--disabled'
-                        : 'supervisor-dashboard__primary-action'
-                    }
-                    disabled={row.actionDisabled}
-                    onClick={() => onOpenEvaluation(row)}
-                  >
-                    {row.actionLabel}
-                  </button>
-                </div>
-              </article>
-            ))
-          ) : (
-            <EmptyState
-              title="Nenhum servidor encontrado nos filtros"
-              description="Ajuste os filtros de status para voltar a exibir os registros disponiveis."
-            />
-          )}
-        </div>
-      </section>
+      ) : <EmptyState title="Nenhuma avaliação encontrada" description="Altere os filtros para ver outras situações." />}
 
       {previousReviewRow ? (
-        <div className="previous-evaluations-modal">
-          <div
-            className="previous-evaluations-modal__backdrop"
-            onClick={onClosePreviousEvaluations}
-          />
+        <div className="previous-evaluations-modal" role="dialog" aria-modal="true" aria-label="Avaliações anteriores">
+          <button className="previous-evaluations-modal__backdrop" onClick={onClosePreviousEvaluations} aria-label="Fechar" />
           <div className="previous-evaluations-modal__content">
-            <header className="previous-evaluations-modal__header">
-              <h2>AVALIAÇÕES ANTERIORES DO SERVIDOR</h2>
-              <p>
-                {previousReviewRow.serverName} • Matrícula: {previousReviewRow.registration}
-              </p>
-            </header>
-
-            <div className="previous-evaluations-modal__table">
-              <div className="previous-evaluations-modal__row previous-evaluations-modal__row--header">
-                <span>Etapa</span>
-                <span>Data de conclusão</span>
-                <span>Ação</span>
-              </div>
-              {previousEvaluationHistory.length > 0 ? (
-                previousEvaluationHistory.map((historyItem) => (
-                  <div key={historyItem.stageLabel} className="previous-evaluations-modal__row">
-                    <div>
-                      <strong>{historyItem.stageLabel}</strong>
-                      <span>{historyItem.statusLabel.toLowerCase()}</span>
-                    </div>
-                    <span>{historyItem.conclusionDate}</span>
-                    <button type="button" className="supervisor-dashboard__primary-action">
-                      {historyItem.actionLabel}
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <EmptyState
-                  title="Nenhuma avaliacao anterior localizada"
-                  description="Este registro nao possui historico anterior para exibicao no momento."
-                />
-              )}
+            <div className="previous-evaluations-modal__header">
+              <div><h3>Avaliações anteriores</h3><p>{previousReviewRow.serverName}</p></div>
+              <button type="button" className="ghost-button" onClick={onClosePreviousEvaluations}>Fechar</button>
             </div>
-
-            <div className="previous-evaluations-modal__footer">
-              <button
-                type="button"
-                className="supervisor-dashboard__primary-action"
-                onClick={onClosePreviousEvaluations}
-              >
-                Fechar visualização
-              </button>
-            </div>
+            {previousEvaluationHistory.length > 0 ? (
+              <ul className="plain-list">{previousEvaluationHistory.map((item) => <li key={item.stageLabel}><strong>{item.stageLabel}</strong><span>{item.statusLabel}</span></li>)}</ul>
+            ) : <EmptyState title="Nenhuma avaliação anterior" description="Este servidor ainda não possui avaliações concluídas." />}
           </div>
         </div>
       ) : null}

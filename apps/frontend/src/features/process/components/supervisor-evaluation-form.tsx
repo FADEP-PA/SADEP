@@ -1,68 +1,29 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
-import { EmptyState } from '@/shared/ui/operational-states';
+import { DetailList, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
 import { EvaluationFactorCard } from './evaluation-factor-card';
 import type { EvaluationDraft, MonthlyObservation } from './supervisor-evaluation-types';
 
-const MONTHLY_OBSERVATION_OPTIONS = [
-  '1º mês',
-  '2º mês',
-  '3º mês',
-  '4º mês',
-  '5º mês',
-  '6º mês',
-  '7º mês',
-  '8º mês',
-  '9º mês',
-  '10º mês',
-  '11º mês',
-  '12º mês',
-] as const;
+const MONTHS = ['1º mês', '2º mês', '3º mês', '4º mês', '5º mês', '6º mês', '7º mês', '8º mês', '9º mês', '10º mês', '11º mês', '12º mês'];
 
-function getConceptByAverage(average: number) {
-  if (average < 50) {
-    return { label: 'Insuficiente', className: 'evaluation-detail__concept evaluation-detail__concept--bad' };
-  }
-  if (average < 70) {
-    return { label: 'Regular', className: 'evaluation-detail__concept evaluation-detail__concept--regular' };
-  }
-  if (average < 90) {
-    return { label: 'Bom', className: 'evaluation-detail__concept evaluation-detail__concept--good' };
-  }
-  return { label: 'Excelente', className: 'evaluation-detail__concept evaluation-detail__concept--great' };
+function getConcept(average: number) {
+  if (average < 50) return 'Insuficiente';
+  if (average < 70) return 'Regular';
+  if (average < 90) return 'Bom';
+  return 'Excelente';
 }
 
-function calculateTotalAndAverage(factors: EvaluationDraft['factors']) {
-  if (factors.length === 0) {
-    return { totalStageScore: '0.0', stageAverage: '0.0', administrativeConcept: 'Insuficiente' };
-  }
-  const total = factors.reduce((sum, factor) => {
-    const factorAvg =
-      factor.items.length > 0
-        ? factor.items.reduce((itemSum, item) => itemSum + item.score, 0) / factor.items.length
-        : 0;
-    return sum + factorAvg;
-  }, 0);
-  const average = total / factors.length;
-  const concept = getConceptByAverage(average);
-  return {
-    totalStageScore: total.toFixed(1),
-    stageAverage: average.toFixed(1),
-    administrativeConcept: concept.label,
-  };
+function calculate(factors: EvaluationDraft['factors']) {
+  const total = factors.reduce((sum, factor) => sum + factor.items.reduce((part, item) => part + item.score, 0) / factor.items.length, 0);
+  const average = factors.length > 0 ? total / factors.length : 0;
+  return { totalStageScore: total.toFixed(1), stageAverage: average.toFixed(1), administrativeConcept: getConcept(average) };
 }
 
-function formatValidationDate(date = new Date()) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(date);
-}
-
-type EvaluationDetailViewProps = {
+type Props = {
   evaluation: EvaluationDraft;
   isSavingDraft: boolean;
   isSubmittingEvaluation: boolean;
@@ -71,6 +32,7 @@ type EvaluationDetailViewProps = {
   submitButtonLabel: string;
   feedbackMessage: string | null;
   actionErrorMessage: string | null;
+  leadingContent?: ReactNode;
   onChange: (updater: (current: EvaluationDraft) => EvaluationDraft) => void;
   onBack: () => void;
   onSaveDraft: () => void;
@@ -86,11 +48,12 @@ export function EvaluationDetailView({
   submitButtonLabel,
   feedbackMessage,
   actionErrorMessage,
+  leadingContent,
   onChange,
   onBack,
   onSaveDraft,
   onSubmit,
-}: EvaluationDetailViewProps) {
+}: Props) {
   function toggleFactor(factorId: string) {
     onChange((current) => ({
       ...current,
@@ -102,383 +65,114 @@ export function EvaluationDetailView({
 
   function updateFactorScore(factorId: string, itemId: string, score: number) {
     onChange((current) => {
-      const nextFactors = current.factors.map((factor) =>
-        factor.id === factorId
-          ? {
-              ...factor,
-              items: factor.items.map((item) =>
-                item.id === itemId ? { ...item, score: Math.min(100, Math.max(0, score)) } : item,
-              ),
-            }
-          : factor,
-      );
-      const { totalStageScore, stageAverage, administrativeConcept } =
-        calculateTotalAndAverage(nextFactors);
-      return { ...current, factors: nextFactors, totalStageScore, stageAverage, administrativeConcept };
+      const factors = current.factors.map((factor) => factor.id === factorId ? {
+        ...factor,
+        items: factor.items.map((item) => item.id === itemId ? { ...item, score: Math.min(100, Math.max(0, score)) } : item),
+      } : factor);
+      return { ...current, factors, ...calculate(factors) };
     });
   }
 
-  function updateFinalResult(
-    field: 'totalStageScore' | 'stageAverage' | 'administrativeConcept',
-    value: string,
-  ) {
-    onChange((current) => {
-      if (field === 'stageAverage') {
-        const numValue = Number(value || 0);
-        const concept = getConceptByAverage(numValue);
-        return { ...current, stageAverage: value, administrativeConcept: concept.label };
-      }
-      return { ...current, [field]: value };
-    });
-  }
-
-  function clearDefaultFinalScore(field: 'totalStageScore' | 'stageAverage') {
-    onChange((current) => (current[field] === '0.0' ? { ...current, [field]: '' } : current));
-  }
-
-  function addMonthlyObservation() {
-    onChange((current) => {
-      const nextIndex = current.monthlyObservations.length + 1;
-      const selectedMonths = new Set(current.monthlyObservations.map((obs) => obs.monthLabel));
-      const nextMonth =
-        MONTHLY_OBSERVATION_OPTIONS.find((month) => !selectedMonths.has(month)) ??
-        MONTHLY_OBSERVATION_OPTIONS[Math.min(nextIndex - 1, MONTHLY_OBSERVATION_OPTIONS.length - 1)];
-      return {
-        ...current,
-        monthlyObservations: [
-          ...current.monthlyObservations,
-          { id: `obs-${nextIndex}`, monthLabel: nextMonth, description: '', attachmentName: '' },
-        ],
-      };
-    });
+  function addObservation() {
+    onChange((current) => ({
+      ...current,
+      monthlyObservations: [...current.monthlyObservations, {
+        id: `obs-${current.monthlyObservations.length + 1}`,
+        monthLabel: MONTHS[current.monthlyObservations.length] ?? 'Período',
+        description: '',
+        attachmentName: '',
+      }],
+    }));
   }
 
   function updateObservation(id: string, patch: Partial<MonthlyObservation>) {
-    onChange((current) => ({
-      ...current,
-      monthlyObservations: current.monthlyObservations.map((obs) =>
-        obs.id === id ? { ...obs, ...patch } : obs,
-      ),
-    }));
+    onChange((current) => ({ ...current, monthlyObservations: current.monthlyObservations.map((item) => item.id === id ? { ...item, ...patch } : item) }));
   }
 
-  function removeMonthlyObservation(id: string) {
-    onChange((current) => ({
-      ...current,
-      monthlyObservations: current.monthlyObservations.filter((obs) => obs.id !== id),
-    }));
-  }
+  const editable = canSaveActiveDraft || canSubmitActiveEvaluation;
 
   return (
-    <div className="evaluation-detail">
-      <button
-        type="button"
-        className="ghost-button evaluation-detail__back"
-        onClick={onBack}
-      >
-        ← Voltar
-      </button>
+    <div className="work-page evaluation-workspace">
+      <button type="button" className="ghost-button work-back" onClick={onBack}>← Voltar às avaliações</button>
+      <WorkPageHeader
+        title="Avaliação de desempenho"
+        description={`${evaluation.row.stageLabel} · ${evaluation.row.serverName}`}
+        status={leadingContent ? 'Aguardando confirmação' : editable ? 'Em preenchimento' : 'Somente leitura'}
+        statusTone={leadingContent ? 'warning' : editable ? 'info' : 'neutral'}
+      />
 
-      <div className="evaluation-detail__heading">
-        <h3>Avaliação de desempenho - {evaluation.row.stageLabel}</h3>
-        <p>Relatório Técnico Individual de Estágio Probatório</p>
-      </div>
+      {leadingContent}
 
-      <section className="evaluation-detail__card">
-        <div className="evaluation-detail__section-title">
-          I. Identificação do servidor e chefia (somente leitura)
+      <WorkSection title="Identificação">
+        <DetailList items={[
+          { label: 'Servidor', value: evaluation.row.serverName },
+          { label: 'Etapa', value: evaluation.row.stageLabel },
+          { label: 'Chefia imediata', value: evaluation.row.supervisorName || 'Não informado' },
+        ]} />
+      </WorkSection>
+
+      <WorkSection title="Conteúdo da avaliação">
+        {editable ? <div className="form-stack">
+          <label className="field-group" htmlFor="unit-competencies">
+            <span>Competências da unidade</span>
+            <textarea id="unit-competencies" rows={3} value={evaluation.unitCompetencies} disabled={!editable} onChange={(event) => onChange((current) => ({ ...current, unitCompetencies: event.target.value }))} />
+          </label>
+          <label className="field-group" htmlFor="server-assignments">
+            <span>Atribuições no período</span>
+            <textarea id="server-assignments" rows={3} value={evaluation.serverAssignments} disabled={!editable} onChange={(event) => onChange((current) => ({ ...current, serverAssignments: event.target.value }))} />
+            <small>Inclua apenas atividades realizadas nesta etapa.</small>
+          </label>
+          <label className="field-group" htmlFor="general-comments">
+            <span>Comentários gerais</span>
+            <textarea id="general-comments" rows={3} value={evaluation.generalComments} disabled={!editable} onChange={(event) => onChange((current) => ({ ...current, generalComments: event.target.value }))} />
+          </label>
+        </div> : <DetailList items={[
+          { label: 'Competências da unidade', value: evaluation.unitCompetencies || 'Não informado' },
+          { label: 'Atribuições no período', value: evaluation.serverAssignments || 'Não informado' },
+          { label: 'Comentários gerais', value: evaluation.generalComments || 'Não informado' },
+        ]} />}
+      </WorkSection>
+
+      <WorkSection title="Fatores de desempenho">
+        <div className="evaluation-detail__factor-stack">
+          {evaluation.factors.map((factor) => (
+            <EvaluationFactorCard key={factor.id} factor={factor} isExpanded={evaluation.expandedFactorIds.includes(factor.id)} onToggle={() => toggleFactor(factor.id)} onScoreChange={(itemId, score) => updateFactorScore(factor.id, itemId, score)} />
+          ))}
         </div>
+        <details className="compact-disclosure">
+          <summary>Consultar faixas de conceito</summary>
+          <div className="concept-guide">
+            <span><strong>0–49,9</strong> Insuficiente</span><span><strong>50–69,9</strong> Regular</span><span><strong>70–89,9</strong> Bom</span><span><strong>90–100</strong> Excelente</span>
+          </div>
+        </details>
+      </WorkSection>
 
-        <div className="evaluation-detail__identity-grid">
-          <div>
-            <span>Nome do servidor</span>
-            <strong>{evaluation.row.serverName}</strong>
-          </div>
-          <div>
-            <span>Cargo / matrícula</span>
-            <strong>
-              {evaluation.row.role} / {evaluation.row.registration}
-            </strong>
-          </div>
-          <div>
-            <span>Data exercício</span>
-            <strong>{evaluation.row.exerciseStart}</strong>
-          </div>
-          <div>
-            <span>Período de acompanhamento</span>
-            <strong>{evaluation.row.trackingPeriod}</strong>
-          </div>
-          <div>
-            <span>Unidade de lotação</span>
-            <strong>Escola Estadual X</strong>
-          </div>
-          <div>
-            <span>Chefia imediata</span>
-            <strong>{evaluation.row.supervisorName}</strong>
-          </div>
-          <div>
-            <span>Cargo da chefia</span>
-            <strong>{evaluation.row.supervisorRole}</strong>
-          </div>
-        </div>
-      </section>
-
-      <section className="evaluation-detail__card">
-        <div className="evaluation-detail__section-title">II. Competência da unidade</div>
-        <label className="field-group">
-          <textarea
-            value={evaluation.unitCompetencies}
-            onChange={(event) =>
-              onChange((current) => ({ ...current, unitCompetencies: event.target.value }))
-            }
-            rows={5}
-            placeholder="Descreva as competências e objetivos da unidade escolar..."
-          />
-          <small>{evaluation.unitCompetencies.length} / 450 caracteres</small>
-        </label>
-      </section>
-
-      <section className="evaluation-detail__card">
-        <div className="evaluation-detail__section-title">
-          III. Atribuições do servidor-estagiário no período
-        </div>
-        <label className="field-group">
-          <textarea
-            value={evaluation.serverAssignments}
-            onChange={(event) =>
-              onChange((current) => ({ ...current, serverAssignments: event.target.value }))
-            }
-            rows={5}
-            placeholder="Descreva as tarefas e responsabilidades específicas do servidor..."
-          />
-          <small>{evaluation.serverAssignments.length} / 450 caracteres</small>
-        </label>
-      </section>
-
-      <section className="evaluation-detail__card">
-        <div className="evaluation-detail__section-header">
-          <div className="evaluation-detail__section-title">
-            IV. Considerações sobre o período (mensal)
-          </div>
-
-          <button
-            type="button"
-            className="evaluation-detail__compact-button"
-            onClick={addMonthlyObservation}
-          >
-            + Inserir observação
-          </button>
-        </div>
-
-        {evaluation.monthlyObservations.length > 0 ? (
-          <div className="evaluation-detail__observation-list">
-            {evaluation.monthlyObservations.map((observation) => (
-              <article key={observation.id} className="evaluation-detail__observation-item">
-                <div className="evaluation-detail__observation-row">
-                  <label className="evaluation-detail__month-select">
-                    <span>Mês da observação</span>
-                    <select
-                      value={observation.monthLabel}
-                      onChange={(event) =>
-                        updateObservation(observation.id, { monthLabel: event.target.value })
-                      }
-                    >
-                      {MONTHLY_OBSERVATION_OPTIONS.map((month) => (
-                        <option key={month} value={month}>
-                          {month}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => removeMonthlyObservation(observation.id)}
-                  >
-                    Remover
-                  </button>
-                </div>
-                <textarea
-                  value={observation.description}
-                  onChange={(event) =>
-                    updateObservation(observation.id, { description: event.target.value })
-                  }
-                  rows={4}
-                  placeholder="Relate fatos e evidências do desempenho observado..."
-                />
-
-                <div className="evaluation-detail__observation-attachment">
-                  <label>
-                    <input
-                      type="file"
-                      onChange={(event) =>
-                        updateObservation(observation.id, {
-                          attachmentName: event.target.files?.[0]?.name ?? '',
-                        })
-                      }
-                    />
-                    <span>Anexar arquivo</span>
-                  </label>
-
-                  <small>
-                    {observation.attachmentName || 'Nenhum arquivo anexado para este mês.'}
-                  </small>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            title="Nenhuma observacao mensal registrada"
-            description="Inclua uma observacao para documentar fatos relevantes deste periodo."
-          />
+      {editable || evaluation.monthlyObservations.length > 0 ? <WorkSection title="Observações mensais" action={editable ? <button type="button" className="secondary-button" onClick={addObservation}>Adicionar observação</button> : null}>
+        {evaluation.monthlyObservations.length === 0 ? <p className="muted-copy">Nenhuma observação registrada.</p> : (
+          <div className="observation-list">{evaluation.monthlyObservations.map((observation) => (
+            <div key={observation.id} className="observation-item">
+              <label className="field-group"><span>Período</span><select value={observation.monthLabel} disabled={!editable} onChange={(event) => updateObservation(observation.id, { monthLabel: event.target.value })}>{MONTHS.map((month) => <option key={month}>{month}</option>)}</select></label>
+              <label className="field-group"><span>Observação</span><textarea rows={2} value={observation.description} disabled={!editable} onChange={(event) => updateObservation(observation.id, { description: event.target.value })} /></label>
+            </div>
+          ))}</div>
         )}
-      </section>
+      </WorkSection> : null}
 
-      <section className="evaluation-detail__card">
-        <div className="evaluation-detail__section-title">
-          V. Instruções para avaliação técnica (conceitos oficiais)
+      <WorkSection title="Resumo">
+        <div className="score-summary">
+          <div><span>Pontuação</span><strong>{evaluation.totalStageScore}</strong></div>
+          <div><span>Média</span><strong>{evaluation.stageAverage}</strong></div>
+          <div><span>Conceito</span><strong>{evaluation.administrativeConcept}</strong></div>
         </div>
-
-        <div className="evaluation-detail__concept-table">
-          <div className="evaluation-detail__concept-header">
-            <div>Faixa de pontos</div>
-            <div>Conceito</div>
-            <div>Descrição técnica</div>
+        {feedbackMessage ? <FeedbackAlert title="Avaliação atualizada" tone="success" description={feedbackMessage} /> : null}
+        {actionErrorMessage ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={actionErrorMessage} /> : null}
+        {editable ? (
+          <div className="form-actions">
+            <button type="button" className="secondary-button" disabled={isSavingDraft || isSubmittingEvaluation || !canSaveActiveDraft} onClick={onSaveDraft}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
+            <button type="button" disabled={isSubmittingEvaluation || isSavingDraft || !canSubmitActiveEvaluation} onClick={onSubmit}>{isSubmittingEvaluation ? 'Enviando…' : submitButtonLabel}</button>
           </div>
-          <div className="evaluation-detail__concept-row">
-            <div>0 a 49,9</div>
-            <div className="evaluation-detail__concept evaluation-detail__concept--bad">Insuficiente</div>
-            <div>"O servidor não atendeu as expectativas de desempenho definidas previamente."</div>
-          </div>
-          <div className="evaluation-detail__concept-row">
-            <div>50 a 69,9</div>
-            <div className="evaluation-detail__concept evaluation-detail__concept--regular">Regular</div>
-            <div>"O servidor atendeu parcialmente as expectativas de desempenho definidas previamente, necessitando melhorar a atuação."</div>
-          </div>
-          <div className="evaluation-detail__concept-row">
-            <div>70 a 89,9</div>
-            <div className="evaluation-detail__concept evaluation-detail__concept--good">Bom</div>
-            <div>"O servidor atendeu as expectativas de desempenho definidas previamente, porém ainda apresentou aspectos passíveis de melhora."</div>
-          </div>
-          <div className="evaluation-detail__concept-row">
-            <div>90 a 100</div>
-            <div className="evaluation-detail__concept evaluation-detail__concept--great">Excelente</div>
-            <div>"O servidor apresentou desempenho plenamente satisfatório quanto ao aspecto avaliado, superando as expectativas."</div>
-          </div>
-        </div>
-      </section>
-
-      <div className="evaluation-detail__factors-title">VI. Pontuação dos fatores</div>
-
-      <div className="evaluation-detail__factor-stack">
-        {evaluation.factors.map((factor) => (
-          <EvaluationFactorCard
-            key={factor.id}
-            factor={factor}
-            isExpanded={evaluation.expandedFactorIds.includes(factor.id)}
-            onToggle={() => toggleFactor(factor.id)}
-            onScoreChange={(itemId, score) => updateFactorScore(factor.id, itemId, score)}
-          />
-        ))}
-      </div>
-
-      <section className="evaluation-detail__card evaluation-detail__summary-card">
-        <div className="evaluation-detail__final-score-panel">
-          <label>
-            <span>Pontuação total da etapa (soma das médias)</span>
-            <input
-              type="number"
-              min="0"
-              step="0.1"
-              value={evaluation.totalStageScore ?? '0.0'}
-              onFocus={() => clearDefaultFinalScore('totalStageScore')}
-              onChange={(event) => updateFinalResult('totalStageScore', event.target.value)}
-            />
-          </label>
-
-          <label>
-            <span>Média da etapa</span>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={evaluation.stageAverage ?? '0.0'}
-              onFocus={() => clearDefaultFinalScore('stageAverage')}
-              onChange={(event) => updateFinalResult('stageAverage', event.target.value)}
-            />
-          </label>
-
-          <label>
-            <span>Conceito administrativo</span>
-            <div className="evaluation-detail__concept-tag-wrap" aria-label="Conceito administrativo">
-              <div className={getConceptByAverage(Number(evaluation.stageAverage || 0)).className}>
-                {evaluation.administrativeConcept}
-              </div>
-            </div>
-          </label>
-        </div>
-
-        <p className="evaluation-detail__final-note">
-          "A média da 4ª etapa será provisória, devendo ser confirmada conforme normas específicas."
-        </p>
-
-        <div className="evaluation-detail__signature-card">
-          <div className="evaluation-detail__signature-title">
-            Validação do Relatório Individual de Estágio Probatório
-          </div>
-
-          <div className="evaluation-detail__signature-grid">
-            <div className="evaluation-detail__signature-box">
-              <div>Aguardando conclusão do preenchimento</div>
-              <strong>{evaluation.row.serverName}</strong>
-              <span>Assinatura do servidor-estagiário</span>
-            </div>
-
-            <div className="evaluation-detail__signature-box">
-              <div>Aguardando conclusão do preenchimento</div>
-              <strong>{evaluation.row.supervisorName}</strong>
-              <span>Assinatura da chefia imediata ({evaluation.row.supervisorRole})</span>
-            </div>
-          </div>
-
-          <div className="evaluation-detail__signature-place-date">
-            Belém, Pará - {formatValidationDate()}
-          </div>
-        </div>
-
-        {feedbackMessage ? (
-          <div className="evaluation-detail__feedback">{feedbackMessage}</div>
         ) : null}
-
-        {actionErrorMessage ? (
-          <FeedbackAlert
-            title="Operação não concluída"
-            tone="error"
-            description={actionErrorMessage}
-          />
-        ) : null}
-
-        <div className="evaluation-detail__actions">
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={isSavingDraft || isSubmittingEvaluation || !canSaveActiveDraft}
-            onClick={onSaveDraft}
-          >
-            {isSavingDraft ? 'Salvando...' : 'Salvar rascunho'}
-          </button>
-          <button
-            type="button"
-            className="warning-button"
-            disabled={isSubmittingEvaluation || isSavingDraft || !canSubmitActiveEvaluation}
-            onClick={onSubmit}
-          >
-            {isSubmittingEvaluation ? 'Submetendo...' : submitButtonLabel}
-          </button>
-        </div>
-      </section>
+      </WorkSection>
     </div>
   );
 }

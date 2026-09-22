@@ -30,9 +30,11 @@ export function EvaluationFactorCard({
         type="button"
         className="evaluation-detail__factor-header"
         onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-controls={`factor-${factor.id}`}
       >
         <div className="evaluation-detail__factor-title">
-          <span>{isExpanded ? '▼' : '▶'}</span>
+          <span aria-hidden="true">{isExpanded ? '−' : '+'}</span>
           <strong>{factor.title}</strong>
         </div>
 
@@ -43,13 +45,14 @@ export function EvaluationFactorCard({
       </button>
 
       {isExpanded ? (
-        <div className="evaluation-detail__factor-body">
+        <div className="evaluation-detail__factor-body" id={`factor-${factor.id}`}>
           {factor.items.map((item) => (
             <div key={item.id} className="evaluation-detail__score-row">
               <p>{item.label}</p>
 
               <div className="evaluation-detail__score-input-wrap">
                 <input
+                  aria-label={`Nota: ${item.label}`}
                   type="number"
                   min={0}
                   max={100}

@@ -36,9 +36,9 @@ function canManageCommissions(role: UserRole | undefined) {
 }
 
 function getProfileActionLabel(role: UserRole | undefined) {
-  if (role === UserRole.ADMIN) return 'ADMIN';
-  if (role === UserRole.HOMOLOGATION_AUTHORITY) return 'HOMOLOGATION_AUTHORITY';
-  return 'Leitura sem ações administrativas';
+  if (role === UserRole.ADMIN) return 'Administrador';
+  if (role === UserRole.HOMOLOGATION_AUTHORITY) return 'Autoridade homologadora';
+  return 'Somente leitura';
 }
 
 function countByRole(members: CesadCommissionMemberDisplayRef[], roleType: CesadCommissionMemberRoleType) {
@@ -172,8 +172,7 @@ export function CesadCommissionAdminPage() {
             <div>
               <span className="section-chip">Gestão administrativa</span>
               <p>
-                Perfil autorizado: <strong>{permissionLabel}</strong>. Ações administrativas
-                seguem condicionadas à API.
+                Perfil atual: <strong>{permissionLabel}</strong>
               </p>
             </div>
             <button 
@@ -208,7 +207,7 @@ export function CesadCommissionAdminPage() {
           {loading && (
             <InlineLoadingState
               title="Carregando comissões"
-              description="Aguarde enquanto os registros são carregados."
+              description=""
             />
           )}
 
@@ -272,7 +271,7 @@ export function CesadCommissionAdminPage() {
                   <FeedbackAlert
                     title="Composição formal"
                     tone="info"
-                    description="A composição exige exatamente 1 presidente e, no mínimo, 2 titulares e 2 suplentes. O perfil COMMISSION_ASSISTANT permanece como apoio operacional e não integra a composição formal."
+                    description="A composição exige exatamente 1 presidente e, no mínimo, 2 titulares e 2 suplentes. O assistente da comissão permanece como apoio operacional e não integra a composição formal."
                   />
                 </details>
               )}

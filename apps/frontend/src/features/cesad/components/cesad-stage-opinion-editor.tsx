@@ -77,7 +77,7 @@ export function CesadStageOpinionEditor({
 
     try {
       await onComplete(toOpinionInput(form));
-      setFeedbackMessage('Parecer concluido e registrado. Prossiga para a assinatura na leitura consolidada.');
+      setFeedbackMessage('Parecer concluído.');
     } catch (error) {
       setErrorMessage(getRequestErrorMessage(error, 'Nao foi possivel concluir o parecer.'));
     } finally {
@@ -88,45 +88,40 @@ export function CesadStageOpinionEditor({
   return (
     <section className="cesad-opinion-editor" aria-label="Editor do parecer CESAD">
       <div className="cesad-opinion-editor__header">
-        <span className="section-chip">Elaboracao do parecer</span>
-        <h3>Parecer CESAD da etapa</h3>
-        <p>Preencha o relatorio, a fundamentacao e a conclusao. Salve como rascunho para continuar depois ou conclua quando estiver pronto.</p>
+        <h3>Parecer CESAD</h3>
       </div>
 
       <div className="cesad-opinion-editor__form">
         <label className="field-group" htmlFor="cesad-opinion-report">
-          <span>Relatorio <abbr title="obrigatorio">*</abbr></span>
+          <span>Relatório <abbr title="obrigatório">*</abbr></span>
           <textarea
             id="cesad-opinion-report"
             rows={6}
             value={form.reportText}
             disabled={isBusy}
             onChange={(e) => update('reportText', e.target.value)}
-            placeholder="Descreva a analise da etapa, as condicoes observadas e os fundamentos do parecer."
           />
         </label>
 
         <label className="field-group" htmlFor="cesad-opinion-legal">
-          <span>Fundamentacao legal</span>
+          <span>Fundamentação legal</span>
           <textarea
             id="cesad-opinion-legal"
             rows={3}
             value={form.legalBasis}
             disabled={isBusy}
             onChange={(e) => update('legalBasis', e.target.value)}
-            placeholder="Artigos, decretos ou normas aplicaveis (opcional)."
           />
         </label>
 
         <label className="field-group" htmlFor="cesad-opinion-conclusion">
-          <span>Conclusao <abbr title="obrigatorio">*</abbr></span>
+          <span>Conclusão <abbr title="obrigatório">*</abbr></span>
           <textarea
             id="cesad-opinion-conclusion"
             rows={3}
             value={form.conclusion}
             disabled={isBusy}
             onChange={(e) => update('conclusion', e.target.value)}
-            placeholder="Parecer favoravel, desfavoravel ou condicional — com justificativa objetiva."
           />
         </label>
 
@@ -139,7 +134,6 @@ export function CesadStageOpinionEditor({
               value={form.stageConcept}
               disabled={isBusy}
               onChange={(e) => update('stageConcept', e.target.value)}
-              placeholder="Ex: Satisfatorio (opcional)"
             />
           </label>
 
@@ -151,14 +145,13 @@ export function CesadStageOpinionEditor({
               value={form.stageResult}
               disabled={isBusy}
               onChange={(e) => update('stageResult', e.target.value)}
-              placeholder="Ex: Aprovado (opcional)"
             />
           </label>
         </div>
       </div>
 
       {feedbackMessage ? (
-        <FeedbackAlert title="Operacao concluida" tone="success" description={feedbackMessage} />
+        <FeedbackAlert title="Operação concluída" tone="success" description={feedbackMessage} />
       ) : null}
 
       {errorMessage ? (
@@ -168,10 +161,11 @@ export function CesadStageOpinionEditor({
       <div className="cesad-opinion-editor__actions">
         <button
           type="button"
+          className="secondary-button"
           disabled={isBusy}
           onClick={() => void handleSaveDraft()}
         >
-          {isSaving ? 'Salvando rascunho...' : 'Salvar rascunho'}
+          {isSaving ? 'Salvando…' : 'Salvar rascunho'}
         </button>
 
         <button
@@ -179,7 +173,7 @@ export function CesadStageOpinionEditor({
           disabled={isBusy}
           onClick={() => void handleComplete()}
         >
-          {isCompleting ? 'Concluindo parecer...' : 'Concluir parecer'}
+          {isCompleting ? 'Concluindo…' : 'Concluir parecer'}
         </button>
       </div>
     </section>

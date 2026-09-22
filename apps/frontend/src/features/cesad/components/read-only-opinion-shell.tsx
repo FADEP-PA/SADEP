@@ -12,36 +12,29 @@ import { StatusBadge } from '@/shared/ui/status-badge';
 type ReadOnlyOpinionShellProps = {
   opinion?: CesadStageReadSnapshotRef['cesadStageOpinion'] | null;
   stageLabel?: string;
-  processLabel?: string;
 };
 
 function getOpinionStateLabel(opinion?: CesadStageReadSnapshotRef['cesadStageOpinion'] | null) {
   if (!opinion) {
-    return 'Parecer ausente';
+    return 'Aguardando parecer';
   }
 
   if (opinion.status === CesadStageOpinionStatus.COMPLETED) {
-    return 'Parecer pronto/consolidado';
+    return 'Parecer concluído';
   }
 
-  return 'Parecer em elaboracao';
+  return 'Parecer em elaboração';
 }
 
 export function ReadOnlyOpinionShell({
   opinion,
-  stageLabel = 'Etapa nao carregada',
-  processLabel = 'Processo nao carregado',
+  stageLabel = 'Etapa não informada',
 }: ReadOnlyOpinionShellProps) {
   return (
     <section className="cesad-opinion-shell" aria-labelledby="cesad-stage-opinion-shell-title">
       <div className="cesad-opinion-shell__header">
         <div>
-          <span className="section-chip">Leitura do parecer</span>
           <h3 id="cesad-stage-opinion-shell-title">Parecer CESAD da etapa</h3>
-          <p>
-            Estrutura visual do parecer de etapa, com leitura dos campos
-            retornados pela integracao.
-          </p>
         </div>
         <StatusBadge
           label={getOpinionStateLabel(opinion)}
@@ -57,24 +50,23 @@ export function ReadOnlyOpinionShell({
               tone={getCesadStageOpinionStatusTone(opinion.status)}
             />
             <span>{stageLabel}</span>
-            <span>{processLabel}</span>
           </div>
 
           <KeyValueList
             items={[
-              { label: 'Relatorio', value: opinion.reportText },
-              { label: 'Fundamentacao', value: opinion.legalBasis ?? 'Nao informada' },
-              { label: 'Conclusao', value: opinion.conclusion },
-              { label: 'Conceito da etapa', value: opinion.stageConcept ?? 'Nao informado' },
-              { label: 'Resultado da etapa', value: opinion.stageResult ?? 'Nao informado' },
-              { label: 'Concluido em', value: formatDateTime(opinion.completedAt) },
+              { label: 'Relatório', value: opinion.reportText },
+              { label: 'Fundamentação', value: opinion.legalBasis ?? 'Não informada' },
+              { label: 'Conclusão', value: opinion.conclusion },
+              { label: 'Conceito da etapa', value: opinion.stageConcept ?? 'Não informado' },
+              { label: 'Resultado da etapa', value: opinion.stageResult ?? 'Não informado' },
+              { label: 'Concluído em', value: formatDateTime(opinion.completedAt) },
             ]}
           />
         </div>
       ) : (
         <ContentState
           title="Parecer da etapa ausente"
-          description="A etapa carregada ainda nao possui parecer CESAD retornado pela integracao."
+          description="O parecer ainda não foi elaborado."
           tone="warning"
         />
       )}

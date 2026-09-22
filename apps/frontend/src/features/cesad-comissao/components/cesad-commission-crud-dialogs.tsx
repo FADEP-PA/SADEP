@@ -31,7 +31,7 @@ export function CesadModal({ isOpen, onClose, title, children }: BaseModalProps)
       <div className="previous-evaluations-modal__backdrop" onClick={onClose} />
       <div className="previous-evaluations-modal__content" style={{ maxWidth: '800px' }}>
         <header className="previous-evaluations-modal__header">
-          <h2>{title.toUpperCase()}</h2>
+          <h2>{title}</h2>
         </header>
         <div style={{ padding: '24px', maxHeight: '70vh', overflowY: 'auto' }}>
           {children}
@@ -137,7 +137,7 @@ export function CesadCommissionFormDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isCompositionValid) {
-      setError('Composição incompleta: a API exige exatamente 1 presidente e, no mínimo, 2 titulares e 2 suplentes.');
+      setError('Inclua 1 presidente, pelo menos 2 titulares e 2 suplentes.');
       return;
     }
     setError(null);
@@ -179,17 +179,9 @@ export function CesadCommissionFormDialog({
   ].join(' · ');
 
   return (
-    <CesadModal isOpen={isOpen} onClose={onClose} title={initialData ? "Editar Comissão" : "Nova Comissão"}>
+    <CesadModal isOpen={isOpen} onClose={onClose} title={initialData ? "Editar comissão" : "Nova comissão"}>
       <form onSubmit={handleSubmit} className="cesad-form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {error && <FeedbackAlert title="Validação" tone="error" description={error} />}
-
-        <label className="field-group">
-          <span>Nome da Comissão</span>
-          <input
-            readOnly
-            value={initialData?.commission?.name ?? 'Gerado automaticamente pela API'}
-          />
-        </label>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <label className="field-group">
@@ -197,11 +189,11 @@ export function CesadCommissionFormDialog({
             <input value={description} onChange={(e) => setDescription(e.target.value)} />
           </label>
           <label className="field-group">
-            <span>Início da Vigência</span>
+            <span>Início da vigência</span>
             <input type="date" required value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </label>
           <label className="field-group">
-            <span>Fim da Vigência</span>
+            <span>Fim da vigência</span>
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </label>
         </div>
@@ -210,10 +202,10 @@ export function CesadCommissionFormDialog({
           <legend>Ato / Portaria</legend>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
             <label className="field-group">
-              <span>Tipo de Ato</span>
+              <span>Tipo de ato</span>
               <select value={actType} onChange={(e) => setActType(e.target.value as CesadCommissionActType)}>
                 <option value={CesadCommissionActType.CONSTITUTION}>Constituição</option>
-                <option value={CesadCommissionActType.AMENDMENT}>Alteração (Amendment)</option>
+                <option value={CesadCommissionActType.AMENDMENT}>Alteração</option>
                 <option value={CesadCommissionActType.RENEWAL}>Renovação</option>
               </select>
             </label>
@@ -222,7 +214,7 @@ export function CesadCommissionFormDialog({
               <input required value={actNumber} onChange={(e) => setActNumber(e.target.value)} />
             </label>
             <label className="field-group">
-              <span>Data da Publicação</span>
+              <span>Data da publicação</span>
               <input
                 type="date"
                 required
@@ -234,7 +226,7 @@ export function CesadCommissionFormDialog({
           <FeedbackAlert
             title="Ano do ato"
             tone="info"
-            description="O ano do ato é derivado da data de publicação pela API."
+            description="O ano será definido pela data de publicação."
           />
         </fieldset>
 
@@ -242,54 +234,30 @@ export function CesadCommissionFormDialog({
           <legend>Composição ({compositionHint})</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {members.map((m, idx) => (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', alignItems: 'center' }}>
-                <input
-                  placeholder="ID do usuário"
-                  required
-                  value={m.userId}
-                  onChange={(e) => updateMember(idx, { userId: e.target.value })}
-                />
-                <select
-                  value={m.roleType}
-                  onChange={(e) => updateMember(idx, { roleType: e.target.value as CesadCommissionMemberRoleType })}
-                >
+              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '8px', alignItems: 'end' }}>
+                <label className="field-group"><span>Usuário</span><input required value={m.userId} onChange={(e) => updateMember(idx, { userId: e.target.value })} /></label>
+                <label className="field-group"><span>Função</span><select value={m.roleType} onChange={(e) => updateMember(idx, { roleType: e.target.value as CesadCommissionMemberRoleType })}>
                   <option value={CesadCommissionMemberRoleType.PRESIDENTE}>Presidente</option>
                   <option value={CesadCommissionMemberRoleType.TITULAR}>Titular</option>
                   <option value={CesadCommissionMemberRoleType.SUPLENTE}>Suplente</option>
-                </select>
-                <input
-                  type="date"
-                  value={m.startDate}
-                  onChange={(e) => updateMember(idx, { startDate: e.target.value })}
-                />
+                </select></label>
+                <label className="field-group"><span>Início</span><input type="date" value={m.startDate} onChange={(e) => updateMember(idx, { startDate: e.target.value })} /></label>
                 <button type="button" onClick={() => removeMember(idx)}>Remover</button>
               </div>
             ))}
-            <button type="button" onClick={addMember} style={{ alignSelf: 'flex-start' }}>+ Adicionar Membro</button>
+            <button type="button" onClick={addMember} style={{ alignSelf: 'flex-start' }}>+ Adicionar membro</button>
           </div>
         </fieldset>
 
         {members.length > 0 && (
           <fieldset style={{ padding: '16px', border: '1px solid #ccc', borderRadius: '4px' }}>
-            <legend>Snapshots funcionais (opcionais)</legend>
+            <legend>Dados funcionais (opcionais)</legend>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {members.map((m, idx) => (
                 <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                  <input
-                    placeholder="Matrícula"
-                    value={m.registrationSnapshot}
-                    onChange={(e) => updateMember(idx, { registrationSnapshot: e.target.value })}
-                  />
-                  <input
-                    placeholder="Vínculo"
-                    value={m.bondSnapshot}
-                    onChange={(e) => updateMember(idx, { bondSnapshot: e.target.value })}
-                  />
-                  <input
-                    placeholder="Cargo"
-                    value={m.positionSnapshot}
-                    onChange={(e) => updateMember(idx, { positionSnapshot: e.target.value })}
-                  />
+                  <label className="field-group"><span>Matrícula</span><input value={m.registrationSnapshot} onChange={(e) => updateMember(idx, { registrationSnapshot: e.target.value })} /></label>
+                  <label className="field-group"><span>Vínculo</span><input value={m.bondSnapshot} onChange={(e) => updateMember(idx, { bondSnapshot: e.target.value })} /></label>
+                  <label className="field-group"><span>Cargo</span><input value={m.positionSnapshot} onChange={(e) => updateMember(idx, { positionSnapshot: e.target.value })} /></label>
                 </div>
               ))}
             </div>
@@ -300,13 +268,13 @@ export function CesadCommissionFormDialog({
           <FeedbackAlert
             title="Composição incompleta"
             tone="warning"
-            description="A API exige exatamente 1 presidente e, no mínimo, 2 titulares e 2 suplentes."
+            description="Inclua 1 presidente, pelo menos 2 titulares e 2 suplentes."
           />
         )}
 
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', marginTop: '16px' }}>
           <button type="button" className="secondary-button" onClick={onClose} disabled={loading}>Cancelar</button>
-          <button type="submit" disabled={loading}>{loading ? 'Salvando...' : 'Salvar Comissão'}</button>
+          <button type="submit" disabled={loading}>{loading ? 'Salvando…' : 'Salvar comissão'}</button>
         </div>
       </form>
     </CesadModal>

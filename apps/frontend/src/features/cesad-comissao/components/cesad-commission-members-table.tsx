@@ -50,7 +50,6 @@ export function CesadCommissionMembersTable({
           <article key={member.id} className="cesad-member-table__row">
             <div className="cesad-member-table__cell cesad-member-table__cell--title">
               <span data-label="Integrante">{member.displayName}</span>
-              <small>{member.userId}</small>
             </div>
             <div className="cesad-member-table__cell" data-label="Matrícula">
               <span>{formatCesadSnapshot(member.registrationSnapshot)}</span>
