@@ -26,11 +26,9 @@ describe('ProcessRequestFeedback', () => {
       />,
     );
 
-    expect(screen.getByText('Processo')).toBeInTheDocument();
     expect(screen.getByText(/Processo n.o encontrado/)).toBeInTheDocument();
-    expect(
-      screen.getByText('O identificador informado nao retornou processo disponivel para este perfil.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Volte à lista e tente novamente.')).toBeInTheDocument();
+    expect(screen.getByText('Ver detalhes')).toBeInTheDocument();
     expect(screen.getByText('Confira o codigo informado.')).toBeInTheDocument();
     expect(screen.getByText('Tente novamente apos atualizar a consulta.')).toBeInTheDocument();
   });
@@ -45,11 +43,9 @@ describe('ProcessRequestFeedback', () => {
       />,
     );
 
-    expect(screen.getByText('Acesso')).toBeInTheDocument();
     expect(screen.getByText('Acesso bloqueado')).toBeInTheDocument();
-    expect(
-      screen.getByText('O perfil autenticado nao possui permissao para acessar este processo.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Seu perfil não possui acesso a este processo.')).toBeInTheDocument();
+    expect(screen.getByText('Ver detalhes')).toBeInTheDocument();
     expect(screen.getByText('A consulta deve respeitar a autorizacao contextual do servico.')).toBeInTheDocument();
   });
 
@@ -63,9 +59,9 @@ describe('ProcessRequestFeedback', () => {
       />,
     );
 
-    expect(screen.getByText('Indisponivel')).toBeInTheDocument();
     expect(screen.getByText('Falha ao carregar processo')).toBeInTheDocument();
     expect(screen.getByText('Nao foi possivel carregar os dados do processo.')).toBeInTheDocument();
+    expect(screen.getByText('Ver detalhes')).toBeInTheDocument();
     expect(screen.getByText('Tente novamente em instantes.')).toBeInTheDocument();
   });
 });

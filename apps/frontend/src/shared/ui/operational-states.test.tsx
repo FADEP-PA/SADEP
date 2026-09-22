@@ -4,7 +4,6 @@ import { render, screen } from '@testing-library/react';
 import {
   AccessBlockedState,
   ClearState,
-  DemonstrationModeState,
   EmptyState,
   InsufficientHistoryState,
   MissingDocumentState,
@@ -16,14 +15,14 @@ import {
 
 describe('operational-states', () => {
   describe('EmptyState', () => {
-    it('renders the default institutional empty title, description and badge', () => {
+    it('renders a concise default empty state', () => {
       render(<EmptyState />);
 
-      expect(screen.getByText('Nenhum registro disponivel')).toBeTruthy();
+      expect(screen.getByText('Nenhum registro disponível')).toBeTruthy();
       expect(
-        screen.getByText('Ainda nao ha informacoes disponiveis para esta consulta.'),
+        screen.getByText('Não há informações para exibir agora.'),
       ).toBeTruthy();
-      expect(screen.getByText('Sem dados')).toBeTruthy();
+      expect(screen.queryByText('Sem dados')).toBeNull();
     });
 
     it('accepts custom institutional title and description without altering the badge', () => {
@@ -38,21 +37,18 @@ describe('operational-states', () => {
       expect(
         screen.getByText('Os filtros atuais nao retornaram registros para esta consulta.'),
       ).toBeTruthy();
-      expect(screen.getByText('Sem dados')).toBeTruthy();
+      expect(screen.queryByText('Sem dados')).toBeNull();
     });
   });
 
   describe('AccessBlockedState', () => {
-    it('renders the default access-blocked title, description and badge', () => {
+    it('renders the default access-blocked title and next step', () => {
       render(<AccessBlockedState />);
 
-      expect(screen.getByText('Acesso bloqueado')).toBeTruthy();
+      expect(screen.getByText('Acesso não permitido')).toBeTruthy();
       expect(
-        screen.getByText(
-          'O perfil autenticado nao possui permissao para acessar este conteudo no momento.',
-        ),
+        screen.getByText('Seu perfil não possui acesso a esta página.'),
       ).toBeTruthy();
-      expect(screen.getByText('Acesso')).toBeTruthy();
     });
   });
 
@@ -60,59 +56,17 @@ describe('operational-states', () => {
     it('renders the default temporarily unavailable institutional copy', () => {
       render(<TemporaryUnavailableState />);
 
-      expect(screen.getByText('Conteudo temporariamente indisponivel')).toBeTruthy();
-      expect(
-        screen.getByText('Esta informacao ainda nao esta disponivel para exibicao neste perfil.'),
-      ).toBeTruthy();
-      expect(screen.getByText('Indisponivel')).toBeTruthy();
-    });
-  });
-
-  describe('DemonstrationModeState', () => {
-    it('renders the default demonstration mode title, description and badge', () => {
-      render(<DemonstrationModeState />);
-
-      expect(screen.getByText('Visualizacao demonstrativa')).toBeTruthy();
-      expect(
-        screen.getByText(
-          'Esta area usa dados ficticios e seguros para apresentacao visual enquanto a consulta autenticada nao estiver carregada.',
-        ),
-      ).toBeTruthy();
-      expect(screen.getByText('Demonstracao')).toBeTruthy();
-    });
-
-    it('renders extra institutional details passed via the children slot', () => {
-      render(
-        <DemonstrationModeState
-          title="Painel demonstrativo"
-          description="A consulta autenticada ainda nao foi carregada."
-        >
-          <p>Informe um identificador de processo para carregar os dados reais.</p>
-        </DemonstrationModeState>,
-      );
-
-      expect(screen.getByText('Painel demonstrativo')).toBeTruthy();
-      expect(
-        screen.getByText('A consulta autenticada ainda nao foi carregada.'),
-      ).toBeTruthy();
-      expect(
-        screen.getByText('Informe um identificador de processo para carregar os dados reais.'),
-      ).toBeTruthy();
-      expect(screen.getByText('Demonstracao')).toBeTruthy();
+      expect(screen.getByText('Conteúdo temporariamente indisponível')).toBeTruthy();
+      expect(screen.getByText('Tente novamente.')).toBeTruthy();
     });
   });
 
   describe('ProcessNotFoundState', () => {
-    it('renders the default process-not-found title, description and badge', () => {
+    it('renders the default process-not-found title and next step', () => {
       render(<ProcessNotFoundState />);
 
       expect(screen.getByText('Processo não encontrado')).toBeTruthy();
-      expect(
-        screen.getByText(
-          'O identificador informado nao retornou processo disponivel para este perfil. Confira o codigo e tente novamente.',
-        ),
-      ).toBeTruthy();
-      expect(screen.getByText('Processo')).toBeTruthy();
+      expect(screen.getByText('Volte à lista e tente novamente.')).toBeTruthy();
     });
 
     it('accepts custom institutional title and description without altering the badge', () => {
@@ -127,7 +81,6 @@ describe('operational-states', () => {
       expect(
         screen.getByText('Confira o identificador informado e tente novamente.'),
       ).toBeTruthy();
-      expect(screen.getByText('Processo')).toBeTruthy();
     });
   });
 
@@ -136,12 +89,7 @@ describe('operational-states', () => {
       render(<StageUnavailableState />);
 
       expect(screen.getByText('Etapa indisponível')).toBeTruthy();
-      expect(
-        screen.getByText(
-          'A etapa solicitada ainda nao esta disponivel para leitura neste contexto operacional.',
-        ),
-      ).toBeTruthy();
-      expect(screen.getByText('Etapa')).toBeTruthy();
+      expect(screen.getByText('Esta etapa ainda não está disponível.')).toBeTruthy();
     });
   });
 
@@ -150,12 +98,7 @@ describe('operational-states', () => {
       render(<MissingDocumentState />);
 
       expect(screen.getByText('Documento ausente')).toBeTruthy();
-      expect(
-        screen.getByText(
-          'O documento esperado ainda nao foi localizado ou formalizado para esta etapa.',
-        ),
-      ).toBeTruthy();
-      expect(screen.getByText('Documento')).toBeTruthy();
+      expect(screen.getByText('Este documento ainda não está disponível.')).toBeTruthy();
     });
 
     it('renders extra institutional details passed via the children slot', () => {
@@ -169,7 +112,6 @@ describe('operational-states', () => {
       expect(
         screen.getByText('Solicite o reenvio do documento institucional para prosseguir.'),
       ).toBeTruthy();
-      expect(screen.getByText('Documento')).toBeTruthy();
     });
   });
 
@@ -178,12 +120,7 @@ describe('operational-states', () => {
       render(<ReadNotReleasedState />);
 
       expect(screen.getByText('Leitura ainda não liberada')).toBeTruthy();
-      expect(
-        screen.getByText(
-          'A leitura completa deste conteudo ainda nao esta disponivel para o momento processual atual.',
-        ),
-      ).toBeTruthy();
-      expect(screen.getByText('Leitura')).toBeTruthy();
+      expect(screen.getByText('Este conteúdo ainda não está disponível.')).toBeTruthy();
     });
   });
 
@@ -191,13 +128,10 @@ describe('operational-states', () => {
     it('renders the default insufficient-history institutional copy', () => {
       render(<InsufficientHistoryState />);
 
-      expect(screen.getByText('Histórico insuficiente')).toBeTruthy();
+      expect(screen.getByText('Nenhuma movimentação registrada')).toBeTruthy();
       expect(
-        screen.getByText(
-          'Ainda nao ha eventos auditaveis suficientes para compor a leitura operacional desta area.',
-        ),
+        screen.getByText('O histórico aparecerá aqui quando houver uma atualização.'),
       ).toBeTruthy();
-      expect(screen.getByText('Histórico')).toBeTruthy();
     });
   });
 
@@ -205,13 +139,8 @@ describe('operational-states', () => {
     it('renders the default clear-state institutional copy', () => {
       render(<ClearState />);
 
-      expect(screen.getByText('Nenhuma pendencia identificada')).toBeTruthy();
-      expect(
-        screen.getByText(
-          'Os dados disponiveis nao indicam bloqueios para esta leitura operacional.',
-        ),
-      ).toBeTruthy();
-      expect(screen.getByText('Regular')).toBeTruthy();
+      expect(screen.getByText('Nenhuma pendência')).toBeTruthy();
+      expect(screen.getByText('Você não possui ações para realizar agora.')).toBeTruthy();
     });
 
     it('accepts custom institutional title and description without altering the badge', () => {
@@ -228,7 +157,6 @@ describe('operational-states', () => {
           'A leitura operacional nao indica bloqueios para o perfil autenticado.',
         ),
       ).toBeTruthy();
-      expect(screen.getByText('Regular')).toBeTruthy();
     });
   });
 });

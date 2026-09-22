@@ -15,11 +15,14 @@ function DetailsList({ details }: { details: string[] }) {
   }
 
   return (
-    <ul className="content-list">
-      {details.map((detail) => (
-        <li key={detail}>{detail}</li>
-      ))}
-    </ul>
+    <details className="compact-disclosure">
+      <summary>Ver detalhes</summary>
+      <ul className="content-list">
+        {details.map((detail) => (
+          <li key={detail}>{detail}</li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
@@ -37,7 +40,7 @@ export function ProcessRequestFeedback({
 
   if (status === 404) {
     return (
-      <ProcessNotFoundState title={notFoundTitle} description={message}>
+      <ProcessNotFoundState title={notFoundTitle} description="Volte à lista e tente novamente.">
         <DetailsList details={details} />
       </ProcessNotFoundState>
     );
@@ -45,7 +48,7 @@ export function ProcessRequestFeedback({
 
   if (status === 403) {
     return (
-      <AccessBlockedState title={blockedTitle} description={message}>
+      <AccessBlockedState title={blockedTitle} description="Seu perfil não possui acesso a este processo.">
         <DetailsList details={details} />
       </AccessBlockedState>
     );

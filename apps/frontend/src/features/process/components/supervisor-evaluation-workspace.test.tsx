@@ -168,10 +168,10 @@ describe('SupervisorEvaluationWorkspace', () => {
       expect(api.getSupervisorEvaluationWorkspaceSnapshot).toHaveBeenCalledWith(PROCESS_ID),
     );
 
-    const summaryInput = screen.getByPlaceholderText(/Descreva as competências/i);
+    const summaryInput = screen.getByLabelText('Competências da unidade');
     fireEvent.input(summaryInput, { target: { value: 'Competências testadas' } });
 
-    const assignmentsInput = screen.getByPlaceholderText(/Descreva as tarefas/i);
+    const assignmentsInput = screen.getByLabelText(/Atribuições no período/);
     fireEvent.input(assignmentsInput, { target: { value: 'Atribuições testadas' } });
 
     const submitButton = screen.getByRole('button', { name: /Enviar para assinatura/i });
@@ -199,7 +199,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Visualizar|Avaliar/i }));
 
     expect(
-      await screen.findByText('Autoavaliação do servidor'),
+      await screen.findByText('Autoavaliação recebida'),
     ).toBeInTheDocument();
     expect(screen.getByText('Reflexão do servidor sobre o desempenho.')).toBeInTheDocument();
   });
@@ -237,7 +237,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Visualizar|Avaliar/i }));
 
     await waitFor(() =>
-      expect(screen.getByText('Autoavaliação do servidor')).toBeInTheDocument(),
+      expect(screen.getByText('Autoavaliação recebida')).toBeInTheDocument(),
     );
 
     const confirmButton = screen.getByRole('button', {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { useAuth } from '@/shared/auth/auth-context';
 import { getMenuByRole } from '@/shared/rbac/menu';
@@ -24,8 +24,6 @@ type SidebarIconName =
   | 'logout'
   | 'chevron-left'
   | 'chevron-right';
-
-const SIDEBAR_STORAGE_KEY = 'sadep-sidebar-collapsed';
 
 function SidebarIcon({ name }: { name: SidebarIconName }) {
   if (name === 'home') {
@@ -106,7 +104,7 @@ function getSidebarIconByHref(href: string): SidebarIconName {
 
 function getDisplayName(name: string | undefined) {
   if (!name || name.trim().length === 0) {
-    return 'Usuario interno';
+    return 'Usuário';
   }
 
   return name.trim();
@@ -143,33 +141,10 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
   const headerTitle = title ?? currentNavigationItem?.label;
   const headerSubtitle = subtitle ?? currentNavigationItem?.description ?? rolePresentation?.description;
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const storedValue = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
-
-    if (storedValue === 'true' || storedValue === 'false') {
-      setIsSidebarCollapsed(storedValue === 'true');
-      return;
-    }
-
-    setIsSidebarCollapsed(window.innerWidth < 1180);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isSidebarCollapsed));
-  }, [isSidebarCollapsed]);
-
   return (
     <div className={isSidebarCollapsed ? 'app-shell app-shell--sidebar-collapsed' : 'app-shell'}>
       <a className="app-shell__skip-link" href="#conteudo-principal">
-        Pular para o conteudo principal
+        Pular para o conteúdo principal
       </a>
 
       <aside className="app-shell__sidebar" aria-label="Menu lateral do ambiente autenticado">
@@ -197,8 +172,6 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
             <SidebarIcon name={isSidebarCollapsed ? 'chevron-right' : 'chevron-left'} />
           </button>
         </div>
-
-        <div className="app-shell__sidebar-divider" />
 
         <nav className="app-shell__sidebar-nav" aria-label="Navegação lateral do ambiente autenticado">
           {navigationGroups.map((group) => (
@@ -237,9 +210,12 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
         <div className="app-shell__sidebar-bottom">
           {sidebarFooter}
           {rolePresentation ? (
-            <div className="app-shell__sidebar-badge" aria-label={`Perfil atual: ${rolePresentation.label}`}>
-              <span>Perfil ativo</span>
-              <strong>{rolePresentation.shortLabel}</strong>
+            <div className="app-shell__sidebar-badge" role="group" aria-label={`Perfil atual: ${rolePresentation.label}`}>
+              <span className="app-shell__sidebar-avatar" aria-hidden="true">{avatarLabel}</span>
+              <span>
+                <strong>{displayName}</strong>
+                <small>{rolePresentation.shortLabel}</small>
+              </span>
             </div>
           ) : null}
           <button
@@ -262,7 +238,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
             <div className="app-shell__header-branding">
               <div className="app-shell__header-branding-copy">
                 <strong>Governo do Estado do Pará</strong>
-                <span>Secretaria de Educação</span>
+                <span>Secretaria de Estado de Educação</span>
               </div>
             </div>
 
@@ -271,14 +247,8 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
           <div className="app-shell__header-right">
             {headerActions}
 
-            <div className="app-shell__header-user">
-              <strong>{displayName}</strong>
-              <span>{rolePresentation?.label ?? session?.user.role ?? 'Perfil interno'}</span>
-            </div>
-
-            <span className="app-shell__header-avatar" aria-hidden="true">
-              {avatarLabel}
-            </span>
+            {headerTitle ? <span className="app-shell__current-area">{headerTitle}</span> : null}
+            {headerSubtitle ? <span className="sr-only">{headerSubtitle}</span> : null}
           </div>
         </header>
 

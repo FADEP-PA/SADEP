@@ -101,7 +101,7 @@ describe('SupervisorSelfEvaluationCard', () => {
       />,
     );
 
-    expect(screen.getByText('Autoavaliação do servidor')).toBeTruthy();
+    expect(screen.getByText('Autoavaliação recebida')).toBeTruthy();
     expect(screen.getByText('Minha reflexao sobre o desempenho.')).toBeTruthy();
     expect(screen.getByText('Observacoes adicionais do servidor.')).toBeTruthy();
   });
@@ -167,7 +167,7 @@ describe('SupervisorSelfEvaluationCard', () => {
       />,
     );
 
-    expect(screen.getByText(/Confirmada pela chefia/)).toBeTruthy();
+    expect(screen.getByText('Confirmada')).toBeTruthy();
     expect(screen.getByText(/Confirmada por/)).toBeTruthy();
     expect(screen.getByText('Chefia Imediata SADEP')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Confirmar recebimento/i })).toBeNull();

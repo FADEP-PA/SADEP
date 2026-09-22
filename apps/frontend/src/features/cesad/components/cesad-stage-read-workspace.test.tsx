@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
+  AuditEventType,
   CesadStageOpinionStatus,
   ProcessAction,
   ProcessStatus,
@@ -69,6 +70,15 @@ function createSnapshot(
     processStatus: ProcessStatus;
     stageSequence: number;
     opinionCompleted: boolean;
+    history: Array<{
+      id: string;
+      eventType: AuditEventType;
+      action: ProcessAction | null;
+      actorUserId: string | null;
+      actorRole: UserRole | null;
+      occurredAt: string;
+      comment: string | null;
+    }>;
   }> = {},
 ) {
   const stageSequence = overrides.stageSequence ?? 1;
@@ -128,7 +138,7 @@ function createSnapshot(
         }
       : null,
     documents: [],
-    history: [],
+    history: overrides.history ?? [],
     warnings: [],
   };
 }
@@ -169,6 +179,7 @@ function createSignatureStatus() {
 describe('CesadStageReadWorkspace', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.session.user.role = 'CESAD_MEMBER';
     api.getProcessList.mockResolvedValue({
       items: [createProcessListItem()],
       total: 1,
@@ -186,22 +197,21 @@ describe('CesadStageReadWorkspace', () => {
     api.signCesadStageOpinion.mockResolvedValue(createSignatureStatus());
   });
 
-  it('abre automaticamente o único processo CESAD sem pedir UUID ou etapa', async () => {
+  it('mostra a fila sem expor UUID e abre o processo pela ação da linha', async () => {
     render(<CesadStageReadWorkspace />);
 
-    expect(
-      await screen.findByText('Processo localizado automaticamente'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Servidor Demo')).toBeInTheDocument();
+    expect(screen.queryByText(PROCESS_ID)).not.toBeInTheDocument();
+    expect(api.getCesadStageReadSnapshot).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Analisar' }));
 
     await waitFor(() =>
       expect(api.getCesadStageReadSnapshot).toHaveBeenCalledWith(PROCESS_ID, 1),
     );
     expect(api.getWorkflow).toHaveBeenCalledWith(PROCESS_ID);
-    expect(screen.queryByLabelText('Identificador do processo')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Etapa')).not.toBeInTheDocument();
   });
 
-  it('mostra seleção amigável quando há mais de um processo', async () => {
+  it('prioriza uma lista clara quando há mais de um processo', async () => {
     const second = createProcessListItem({
       id: 'process-demo-2',
       evaluatedUserName: 'Segundo Servidor',
@@ -214,10 +224,9 @@ describe('CesadStageReadWorkspace', () => {
 
     render(<CesadStageReadWorkspace />);
 
-    const selector = await screen.findByLabelText('Processo para análise');
+    expect(await screen.findByText('Segundo Servidor')).toBeInTheDocument();
     expect(api.getCesadStageReadSnapshot).not.toHaveBeenCalled();
-
-    fireEvent.change(selector, { target: { value: second.id } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Analisar' })[1]!);
 
     await waitFor(() =>
       expect(api.getCesadStageReadSnapshot).toHaveBeenCalledWith(second.id, 2),
@@ -230,9 +239,47 @@ describe('CesadStageReadWorkspace', () => {
     render(<CesadStageReadWorkspace />);
 
     expect(
-      await screen.findByText('Nenhum processo aguardando análise da CESAD'),
+      await screen.findByText('Nenhum processo pendente'),
     ).toBeInTheDocument();
     expect(api.getCesadStageReadSnapshot).not.toHaveBeenCalled();
+  });
+
+  it('separa análise, documentos e histórico em abas', async () => {
+    const snapshot = createSnapshot({
+      history: [{
+        id: 'history-1',
+        eventType: AuditEventType.EVALUATION_COMPLETED,
+        action: ProcessAction.COMPLETE_EVALUATION,
+        actorUserId: 'supervisor-user-id',
+        actorRole: UserRole.IMMEDIATE_SUPERVISOR,
+        occurredAt: '2026-09-17T10:00:00.000Z',
+        comment: null,
+      }],
+    });
+    api.getCesadStageReadSnapshot.mockResolvedValue(snapshot);
+
+    render(<CesadStageReadWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Analisar' }));
+
+    expect(await screen.findByText('Parecer CESAD')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Documentos' }));
+    expect(screen.getByText('Documentos da etapa')).toBeInTheDocument();
+    expect(screen.queryByText('Parecer CESAD')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Histórico' }));
+    expect(screen.getByText('Chefia enviou a avaliação')).toBeInTheDocument();
+    expect(screen.queryByText(ProcessAction.COMPLETE_EVALUATION)).not.toBeInTheDocument();
+  });
+
+  it('oculta ações de escrita para o assistente da comissão', async () => {
+    auth.session.user.role = 'COMMISSION_ASSISTANT';
+    render(<CesadStageReadWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Abrir' }));
+
+    expect(await screen.findByText('Parecer CESAD da etapa')).toBeInTheDocument();
+    expect(screen.getByText('Somente leitura')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Salvar rascunho' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Concluir parecer' })).not.toBeInTheDocument();
   });
 
   it('emite o parecer e conclui a etapa usando as transições reais', async () => {
@@ -244,11 +291,17 @@ describe('CesadStageReadWorkspace', () => {
           processStatus: ProcessStatus.PARECER_EMITIDO,
         }),
       );
-    api.getWorkflow.mockResolvedValue({
-      id: PROCESS_ID,
-      status: ProcessStatus.EM_ANALISE_CESAD,
-      availableActions: [ProcessAction.ISSUE_CESAD_OPINION],
-    });
+    api.getWorkflow
+      .mockResolvedValueOnce({
+        id: PROCESS_ID,
+        status: ProcessStatus.EM_ANALISE_CESAD,
+        availableActions: [ProcessAction.ISSUE_CESAD_OPINION],
+      })
+      .mockResolvedValueOnce({
+        id: PROCESS_ID,
+        status: ProcessStatus.PARECER_EMITIDO,
+        availableActions: [ProcessAction.COMPLETE_CURRENT_STAGE],
+      });
     api.transitionWorkflow
       .mockResolvedValueOnce({
         id: PROCESS_ID,
@@ -262,9 +315,10 @@ describe('CesadStageReadWorkspace', () => {
       });
 
     render(<CesadStageReadWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Analisar' }));
 
     const issueButton = await screen.findByRole('button', {
-      name: 'Emitir parecer da etapa',
+      name: 'Emitir parecer',
     });
     fireEvent.click(issueButton);
 
@@ -286,7 +340,7 @@ describe('CesadStageReadWorkspace', () => {
     );
     expect(
       await screen.findByText(
-        'Etapa 1 concluída. Etapa 2 aberta e processo retornou para avaliação.',
+        'Etapa 1 concluída. A Etapa 2 foi aberta.',
       ),
     ).toBeInTheDocument();
   });

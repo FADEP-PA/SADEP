@@ -27,7 +27,7 @@ import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
-import { PageSection } from '@/shared/ui/page-section';
+import { WorkPageHeader } from '@/shared/ui/work-patterns';
 
 import { SupervisorDashboardTable } from './supervisor-dashboard-table';
 import { EvaluationDetailView } from './supervisor-evaluation-form';
@@ -45,8 +45,6 @@ type OperationMode = 'draft' | 'submit';
 
 function fromApiItem(item: ProcessListItemRef): SupervisorDashboardRow {
   const dashboardStatus = toDashboardStatus(item.status as ProcessStatus);
-  const isActive = dashboardStatus === 'EM_AVALIACAO' || dashboardStatus === 'AGUARDANDO_ASSINATURA';
-
   let actionLabel: string;
   if (dashboardStatus === 'EM_AVALIACAO') {
     actionLabel = 'Avaliar';
@@ -62,19 +60,18 @@ function fromApiItem(item: ProcessListItemRef): SupervisorDashboardRow {
   return {
     id: item.id,
     serverName: item.evaluatedUserName,
-    registration: item.evaluatedUserEmail,
-    role: 'Servidor em avaliação',
-    exerciseStart: new Date(item.createdAt).toLocaleDateString('pt-BR'),
+    registration: '',
+    role: '',
+    exerciseStart: '',
     status: dashboardStatus,
     stageLabel: `${item.currentStageSequence}ª etapa`,
-    deadline: '-',
+    deadline: '',
     canReviewPrevious: false,
     actionLabel,
-    actionDisabled: !isActive,
-    supervisorName: item.responsibleSupervisorName ?? 'Chefia imediata',
-    supervisorRole: 'Chefia imediata',
-    trackingPeriod: 'Período institucional',
-    source: 'real',
+    actionDisabled: false,
+    supervisorName: item.responsibleSupervisorName ?? 'Não informado',
+    supervisorRole: '',
+    trackingPeriod: '',
   };
 }
 
@@ -153,20 +150,19 @@ function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot)
 
   return {
     id: snapshot.process.id,
-    serverName: 'Servidor em avaliação',
-    registration: snapshot.process.id,
-    role: 'Servidor Estagiário',
-    exerciseStart: '-',
+    serverName: 'Servidor não informado',
+    registration: '',
+    role: '',
+    exerciseStart: '',
     status: toDashboardStatus(snapshot.process.status),
-    stageLabel: '1ª etapa',
-    deadline: 'Conforme workflow',
+    stageLabel: 'Etapa atual',
+    deadline: '',
     canReviewPrevious: false,
     actionLabel,
     actionDisabled: false,
-    supervisorName: 'Chefia autenticada',
-    supervisorRole: 'Chefia imediata',
-    trackingPeriod: 'Processo real',
-    source: 'real',
+    supervisorName: 'Não informado',
+    supervisorRole: '',
+    trackingPeriod: '',
   };
 }
 
@@ -417,7 +413,13 @@ export function SupervisorEvaluationWorkspace() {
     [workspaceSnapshot, baseRows],
   );
   const filteredRows = useMemo(
-    () => dashboardRows.filter((row) => selectedFilters.includes(row.status)),
+    () => dashboardRows
+      .filter((row) => selectedFilters.includes(row.status))
+      .sort((left, right) => {
+        const priority = (row: SupervisorDashboardRow) =>
+          row.actionLabel === 'Confirmar autoavaliação' ? 0 : row.status === 'EM_AVALIACAO' ? 1 : 2;
+        return priority(left) - priority(right);
+      }),
     [dashboardRows, selectedFilters],
   );
   const previousEvaluationHistory: PreviousEvaluationItem[] = [];
@@ -437,7 +439,7 @@ export function SupervisorEvaluationWorkspace() {
       setWorkspaceSnapshot(snapshot);
       setSelfEvaluation(selfEval);
       setActiveEvaluation((current) => {
-        if (!current || current.row.source !== 'real') return current;
+        if (!current) return current;
         return createEvaluationDraft(createRealDashboardRow(snapshot), snapshot.supervisorEvaluation);
       });
       return snapshot;
@@ -449,8 +451,8 @@ export function SupervisorEvaluationWorkspace() {
 
       setWorkspaceSnapshot(null);
       setSelfEvaluation(null);
-      setActiveEvaluation((current) => (current?.row.source === 'real' ? null : current));
-      setLoadErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar o workspace real da chefia.'));
+      setActiveEvaluation(null);
+      setLoadErrorMessage(getRequestErrorMessage(error, 'Não foi possível carregar a avaliação.'));
       setLoadErrorDetails(getHttpErrorDetails(payload));
       return null;
     } finally {
@@ -472,13 +474,9 @@ export function SupervisorEvaluationWorkspace() {
     setActionErrorMessage(null);
     setFeedbackMessage(null);
 
-    if (row.source === 'real') {
-      const snapshot = await loadSupervisorWorkspace(row.id);
-      if (snapshot && snapshot.process.id === row.id) {
-        setActiveEvaluation(createEvaluationDraft(row, snapshot.supervisorEvaluation));
-      } else {
-        setActiveEvaluation(createEvaluationDraft(row));
-      }
+    const snapshot = await loadSupervisorWorkspace(row.id);
+    if (snapshot && snapshot.process.id === row.id) {
+      setActiveEvaluation(createEvaluationDraft(row, snapshot.supervisorEvaluation));
     } else {
       setActiveEvaluation(createEvaluationDraft(row));
     }
@@ -491,16 +489,9 @@ export function SupervisorEvaluationWorkspace() {
     setFeedbackMessage(null);
     setActionErrorMessage(null);
 
-    if (activeEvaluation.row.source !== 'real') {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      setIsSavingDraft(false);
-      setFeedbackMessage('Rascunho salvo localmente.');
-      return;
-    }
-
     try {
       if (!session || !workspaceSnapshot) {
-        throw new Error('Sessão ou processo real indisponível para salvar a avaliação.');
+        throw new Error('Não foi possível abrir a avaliação. Tente novamente.');
       }
       if (!workspaceSnapshot.canEditDraft) {
         throw new Error('O salvamento de rascunho nao esta liberado para o estado atual do processo.');
@@ -510,7 +501,7 @@ export function SupervisorEvaluationWorkspace() {
         buildSupervisorEvaluationPayload(activeEvaluation, 'draft'),
       );
       await Promise.all([loadSupervisorWorkspace(workspaceSnapshot.process.id), refreshProcessList()]);
-      setFeedbackMessage('Rascunho salvo no processo informado.');
+      setFeedbackMessage('Rascunho salvo.');
     } catch (error) {
       setActionErrorMessage(getRequestErrorMessage(error, 'Não foi possível salvar o rascunho da avaliação.'));
     } finally {
@@ -525,16 +516,9 @@ export function SupervisorEvaluationWorkspace() {
     setFeedbackMessage(null);
     setActionErrorMessage(null);
 
-    if (activeEvaluation.row.source !== 'real') {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setIsSubmittingEvaluation(false);
-      setFeedbackMessage('Avaliação encaminhada para assinatura da chefia imediata.');
-      return;
-    }
-
     try {
       if (!session || !workspaceSnapshot) {
-        throw new Error('Sessão ou processo real indisponível para enviar a avaliação.');
+        throw new Error('Não foi possível abrir a avaliação. Tente novamente.');
       }
       const payload = buildSupervisorEvaluationPayload(activeEvaluation, 'submit');
 
@@ -574,13 +558,10 @@ export function SupervisorEvaluationWorkspace() {
     }
   }
 
-  const isRealEvaluation = activeEvaluation?.row.source === 'real';
-  const canSaveActiveDraft = !isRealEvaluation || Boolean(workspaceSnapshot?.canEditDraft);
+  const canSaveActiveDraft = Boolean(workspaceSnapshot?.canEditDraft);
   const canSubmitActiveEvaluation =
-    !isRealEvaluation || Boolean(workspaceSnapshot?.canSubmit || workspaceSnapshot?.canRectify);
+    Boolean(workspaceSnapshot?.canSubmit || workspaceSnapshot?.canRectify);
   const submitButtonLabel = workspaceSnapshot?.canRectify ? 'Retificar avaliação' : 'Enviar para assinatura';
-
-  const isRealProcessLoaded = Boolean(workspaceSnapshot);
 
   const showSelfEvaluationCard =
     workspaceSnapshot &&
@@ -598,15 +579,13 @@ export function SupervisorEvaluationWorkspace() {
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
-      <PageSection
-        eyebrow={activeEvaluation ? undefined : 'Chefia imediata'}
-        title={activeEvaluation ? undefined : 'Painel da chefia'}
-        description={
-          activeEvaluation
-            ? undefined
-            : 'Unidade escolar com lista de servidores e situação atual das avaliações do estágio probatório.'
-        }
-      >
+      <div className="work-page">
+        {!activeEvaluation ? (
+          <WorkPageHeader
+            title="Avaliações da equipe"
+            description="Pendências que precisam da sua atenção aparecem primeiro."
+          />
+        ) : null}
         {isLoadingWorkspace ? (
           <InlineLoadingState
             title="Carregando painel da chefia"
@@ -634,6 +613,16 @@ export function SupervisorEvaluationWorkspace() {
               submitButtonLabel={submitButtonLabel}
               feedbackMessage={feedbackMessage}
               actionErrorMessage={actionErrorMessage}
+              leadingContent={showSelfEvaluationCard ? (
+                <SupervisorSelfEvaluationCard
+                  selfEvaluation={selfEvaluation}
+                  documentContext={selfEvaluation.documentContext ?? null}
+                  userName={session?.user.name ?? 'Chefia imediata'}
+                  processStatus={workspaceSnapshot.process.status}
+                  isConfirming={isConfirmingSelfEvaluation}
+                  onConfirm={() => void handleConfirmSelfEvaluation()}
+                />
+              ) : null}
               onChange={(updater) =>
                 setActiveEvaluation((current) => (current ? updater(current) : null))
               }
@@ -642,16 +631,6 @@ export function SupervisorEvaluationWorkspace() {
               onSubmit={() => void handleSubmitEvaluation()}
             />
 
-            {showSelfEvaluationCard ? (
-              <SupervisorSelfEvaluationCard
-                selfEvaluation={selfEvaluation}
-                documentContext={selfEvaluation.documentContext ?? null}
-                userName={session?.user.name ?? 'Chefia imediata'}
-                processStatus={workspaceSnapshot.process.status}
-                isConfirming={isConfirmingSelfEvaluation}
-                onConfirm={() => void handleConfirmSelfEvaluation()}
-              />
-            ) : null}
           </>
         ) : (
           <SupervisorDashboardTable
@@ -667,7 +646,7 @@ export function SupervisorEvaluationWorkspace() {
             onClosePreviousEvaluations={() => setPreviousReviewRow(null)}
           />
         )}
-      </PageSection>
+      </div>
     </AuthGuard>
   );
 }
