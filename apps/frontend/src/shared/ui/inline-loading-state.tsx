@@ -1,6 +1,6 @@
 type InlineLoadingStateProps = {
   title: string;
-  description: string;
+  description?: string;
 };
 
 export function InlineLoadingState({ title, description }: InlineLoadingStateProps) {
@@ -9,7 +9,7 @@ export function InlineLoadingState({ title, description }: InlineLoadingStatePro
       <div className="inline-loading-state__spinner" />
       <div>
         <strong>{title}</strong>
-        <p>{description}</p>
+        {description ? <p>{description}</p> : null}
       </div>
     </section>
   );

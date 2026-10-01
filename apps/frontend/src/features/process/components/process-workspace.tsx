@@ -21,13 +21,9 @@ export function ProcessWorkspace() {
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
       <div className="work-page">
-        <WorkPageHeader
-          title="Processos"
-          description="Acesse os processos pela sua área de trabalho."
-        />
+        <WorkPageHeader title="Processos" />
         <NextAction
-          title="Continue na sua área principal"
-          description="Os processos e as ações disponíveis já aparecem organizados para o seu perfil."
+          title="Acesse sua área de trabalho"
           action={
             role ? (
               <Link className="portal-link-button" href={role.homePath}>

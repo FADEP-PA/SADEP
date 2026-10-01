@@ -16,7 +16,7 @@ import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { EmptyState } from '@/shared/ui/operational-states';
-import { PageSection } from '@/shared/ui/page-section';
+import { WorkPageHeader } from '@/shared/ui/work-patterns';
 import { listCommissions, createCommission, updateCommission, closeCommission, supersedeCommission } from '@/shared/api/services/cesad-commissions-service';
 
 import {
@@ -33,12 +33,6 @@ const ALLOWED_ROLES: UserRole[] = [UserRole.ADMIN, UserRole.HOMOLOGATION_AUTHORI
 
 function canManageCommissions(role: UserRole | undefined) {
   return role === UserRole.ADMIN || role === UserRole.HOMOLOGATION_AUTHORITY;
-}
-
-function getProfileActionLabel(role: UserRole | undefined) {
-  if (role === UserRole.ADMIN) return 'Administrador';
-  if (role === UserRole.HOMOLOGATION_AUTHORITY) return 'Autoridade homologadora';
-  return 'Somente leitura';
 }
 
 function countByRole(members: CesadCommissionMemberDisplayRef[], roleType: CesadCommissionMemberRoleType) {
@@ -84,11 +78,9 @@ export function CesadCommissionAdminPage() {
   const { session } = useAuth();
   const activeRole = session?.user.role;
   const canManage = canManageCommissions(activeRole);
-  const permissionLabel = getProfileActionLabel(activeRole);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [actionWarning, setActionWarning] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [details, setDetails] = useState<CesadCommissionDetailRef[]>([]);
 
   // Dialog states
@@ -140,10 +132,10 @@ export function CesadCommissionAdminPage() {
 
   const openEdit = (record: CesadCommissionAdminRecord) => {
     if (record.isUsedInProcess) {
-      setActionWarning('Esta comissão já foi utilizada em um processo e não pode mais ser editada.');
+      setActionNotice('Esta comissão já está vinculada a um processo e não pode ser editada.');
       return;
     }
-    setActionWarning(null);
+    setActionNotice(null);
     setTargetId(record.commission.id);
     setEditingRecord(record);
     setIsFormOpen(true);
@@ -165,34 +157,19 @@ export function CesadCommissionAdminPage() {
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
-      <section className="portal-dashboard cesad-commission-admin">
-        <PageSection
+      <div className="work-page cesad-commission-admin">
+        <WorkPageHeader
           title="Administração da Comissão CESAD"
-          description="Gerencie a comissão vigente, sua composição formal e os atos de nomeação."
-        >
-          <div className="cesad-admin-toolbar surface-card">
-            <div>
-              <span className="section-chip">Gestão administrativa</span>
-              <p>
-                Perfil atual: <strong>{permissionLabel}</strong>
-              </p>
-            </div>
+          description="Comissão vigente, composição e atos de nomeação."
+          actions={canManage ? (
             <button 
               type="button" 
               onClick={() => { setTargetId(null); setEditingRecord(null); setIsFormOpen(true); }}
-              disabled={!canManage}
             >
               Nova comissão
             </button>
-          </div>
-
-          {actionWarning ? (
-            <FeedbackAlert
-              title="Edição indisponível"
-              tone="warning"
-              description={actionWarning}
-            />
           ) : null}
+        />
 
           <CesadCommissionFormDialog
             isOpen={isFormOpen}
@@ -214,12 +191,11 @@ export function CesadCommissionAdminPage() {
             commissions={adminRecords}
           />
 
-          {loading && (
-            <InlineLoadingState
-              title="Carregando comissões"
-              description=""
-            />
-          )}
+          {actionNotice ? (
+            <FeedbackAlert title="Edição indisponível" tone="warning" description={actionNotice} />
+          ) : null}
+
+          {loading && <InlineLoadingState title="Carregando comissões…" />}
 
           {error && (
             <FeedbackAlert
@@ -287,8 +263,7 @@ export function CesadCommissionAdminPage() {
               )}
             </>
           )}
-        </PageSection>
-      </section>
+      </div>
     </AuthGuard>
   );
 }

@@ -39,6 +39,15 @@ describe('operational-states', () => {
       ).toBeTruthy();
       expect(screen.queryByText('Sem dados')).toBeNull();
     });
+
+    it('does not render an empty description container', () => {
+      const { container } = render(
+        <EmptyState title="Nenhuma movimentação registrada" description="" />,
+      );
+
+      expect(screen.getByText('Nenhuma movimentação registrada')).toBeTruthy();
+      expect(container.querySelector('.content-state > p')).toBeNull();
+    });
   });
 
   describe('AccessBlockedState', () => {

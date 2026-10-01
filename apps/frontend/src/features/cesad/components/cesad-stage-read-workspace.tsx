@@ -159,7 +159,7 @@ export function CesadStageReadWorkspace() {
       <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]}>
         <div className="work-page">
           <WorkPageHeader title="Processos para análise" description={isCesadMember ? 'Selecione um processo para elaborar ou acompanhar o parecer.' : 'Consulte os processos encaminhados à comissão.'} status={!isCesadMember ? 'Somente leitura' : undefined} />
-          {isLoading ? <InlineLoadingState title="Carregando processos…" description="" /> : null}
+          {isLoading ? <InlineLoadingState title="Carregando processos…" /> : null}
           {error ? <FeedbackAlert title="Não foi possível carregar" tone="error" description={error} /> : null}
           {!isLoading && processes.length === 0 && !error ? <EmptyState title="Nenhum processo pendente" description="Você não possui ações para realizar agora." /> : null}
           {processes.length > 0 ? (
@@ -245,7 +245,7 @@ export function CesadStageReadWorkspace() {
 
         {activeTab === 'history' ? (
           <div id="cesad-process-panel-history" role="tabpanel" aria-labelledby="cesad-process-tab-history" tabIndex={0}><WorkSection title="Histórico">
-            {snapshot.history.length > 0 ? <ol className="human-timeline">{[...snapshot.history].reverse().map((item) => <li key={item.id}><time>{formatDateTime(item.occurredAt)}</time><div><strong>{formatHistoryAction(item.action)}</strong><span>{item.actorRole ? formatRole(item.actorRole) : 'Sistema'}</span>{item.comment ? <p>{item.comment}</p> : null}</div></li>)}</ol> : <EmptyState title="Nenhuma movimentação registrada" description="" />}
+            {snapshot.history.length > 0 ? <ol className="human-timeline">{[...snapshot.history].reverse().map((item) => <li key={item.id}><time>{formatDateTime(item.occurredAt)}</time><div><strong>{formatHistoryAction(item.action)}</strong><span>{item.actorRole ? formatRole(item.actorRole) : 'Sistema'}</span>{item.comment ? <p>{item.comment}</p> : null}</div></li>)}</ol> : <EmptyState title="Nenhuma movimentação registrada" />}
           </WorkSection></div>
         ) : null}
       </div>

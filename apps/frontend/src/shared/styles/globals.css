@@ -2366,6 +2366,7 @@ textarea { padding: 10px 11px; resize: vertical; }
 .human-timeline span { color: var(--text-secondary); font-size: 12px; }
 .human-timeline p { margin: 4px 0 0; color: var(--text-secondary); font-size: 13px; }
 .admin-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.work-section-actions { display: flex; justify-content: flex-end; margin-top: 20px; }
 
 .feedback-alert, .content-state, .operational-state { border-radius: 8px; box-shadow: none; }
 .feedback-alert p, .content-state p { max-width: 72ch; }
@@ -4223,33 +4224,34 @@ h3,
 }
 
 .cesad-commission-current-card {
-  display: grid;
-  gap: 1rem;
+  display: block;
   border-color: rgba(0, 124, 192, 0.22);
 }
 
 .cesad-current-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 0;
 }
 
 .cesad-current-summary article {
   display: grid;
   gap: 0.32rem;
-  min-height: 5.3rem;
-  padding: 0.9rem;
-  border: 1px solid rgba(19, 51, 93, 0.08);
-  border-radius: 0.85rem;
-  background: #f8fbfe;
+  min-height: 4rem;
+  padding: 0.5rem 1rem;
+  border-left: 1px solid var(--border);
+}
+
+.cesad-current-summary article:first-child {
+  padding-left: 0;
+  border-left: 0;
 }
 
 .cesad-current-summary span {
   color: #48617f;
   font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .cesad-current-summary strong {
@@ -4262,6 +4264,7 @@ h3,
 
 .cesad-commission-actions {
   justify-content: flex-start;
+  margin-top: 1rem;
 }
 
 .cesad-commission-actions button:disabled,
@@ -4314,9 +4317,8 @@ h3,
   background: rgba(0, 124, 192, 0.08);
   color: #48617f;
   font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .cesad-commission-table__row,
@@ -4450,6 +4452,11 @@ h3,
 
   .cesad-current-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cesad-current-summary article:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
   }
 }
 
@@ -7422,6 +7429,16 @@ button,
 
   .cesad-current-summary {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cesad-current-summary article {
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+
+  .cesad-current-summary article:first-child {
+    border-top: 0;
   }
 
   .cesad-commission-table__cell,
