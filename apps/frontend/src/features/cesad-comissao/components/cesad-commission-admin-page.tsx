@@ -88,6 +88,7 @@ export function CesadCommissionAdminPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [actionWarning, setActionWarning] = useState<string | null>(null);
   const [details, setDetails] = useState<CesadCommissionDetailRef[]>([]);
 
   // Dialog states
@@ -139,9 +140,10 @@ export function CesadCommissionAdminPage() {
 
   const openEdit = (record: CesadCommissionAdminRecord) => {
     if (record.isUsedInProcess) {
-      alert("Comissão já utilizada em processo não pode ser editada.");
+      setActionWarning('Esta comissão já foi utilizada em um processo e não pode mais ser editada.');
       return;
     }
+    setActionWarning(null);
     setTargetId(record.commission.id);
     setEditingRecord(record);
     setIsFormOpen(true);
@@ -183,6 +185,14 @@ export function CesadCommissionAdminPage() {
               Nova comissão
             </button>
           </div>
+
+          {actionWarning ? (
+            <FeedbackAlert
+              title="Edição indisponível"
+              tone="warning"
+              description={actionWarning}
+            />
+          ) : null}
 
           <CesadCommissionFormDialog
             isOpen={isFormOpen}
