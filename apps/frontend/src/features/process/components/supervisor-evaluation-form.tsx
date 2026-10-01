@@ -6,22 +6,10 @@ import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { DetailList, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
 import { EvaluationFactorCard } from './evaluation-factor-card';
+import { calculateEvaluationScore, clampCriterionRating } from './supervisor-evaluation-scoring';
 import type { EvaluationDraft, MonthlyObservation } from './supervisor-evaluation-types';
 
 const MONTHS = ['1º mês', '2º mês', '3º mês', '4º mês', '5º mês', '6º mês', '7º mês', '8º mês', '9º mês', '10º mês', '11º mês', '12º mês'];
-
-function getConcept(average: number) {
-  if (average < 50) return 'Insuficiente';
-  if (average < 70) return 'Regular';
-  if (average < 90) return 'Bom';
-  return 'Excelente';
-}
-
-function calculate(factors: EvaluationDraft['factors']) {
-  const total = factors.reduce((sum, factor) => sum + factor.items.reduce((part, item) => part + item.score, 0) / factor.items.length, 0);
-  const average = factors.length > 0 ? total / factors.length : 0;
-  return { totalStageScore: total.toFixed(1), stageAverage: average.toFixed(1), administrativeConcept: getConcept(average) };
-}
 
 type Props = {
   evaluation: EvaluationDraft;
@@ -67,9 +55,9 @@ export function EvaluationDetailView({
     onChange((current) => {
       const factors = current.factors.map((factor) => factor.id === factorId ? {
         ...factor,
-        items: factor.items.map((item) => item.id === itemId ? { ...item, score: Math.min(100, Math.max(0, score)), hasRecordedScore: true } : item),
+        items: factor.items.map((item) => item.id === itemId ? { ...item, score: clampCriterionRating(score), hasRecordedScore: true } : item),
       } : factor);
-      return { ...current, factors, ...calculate(factors) };
+      return { ...current, factors, ...calculateEvaluationScore(factors) };
     });
   }
 
