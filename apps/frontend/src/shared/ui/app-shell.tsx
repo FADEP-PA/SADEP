@@ -247,7 +247,7 @@ export function AppShell({ children, title, subtitle, headerActions, sidebarFoot
           <div className="app-shell__header-right">
             {headerActions}
 
-            {headerTitle ? <span className="app-shell__current-area">{headerTitle}</span> : null}
+            {headerTitle ? <span className="sr-only">{headerTitle}</span> : null}
             {headerSubtitle ? <span className="sr-only">{headerSubtitle}</span> : null}
           </div>
         </header>

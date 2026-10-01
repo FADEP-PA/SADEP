@@ -35,7 +35,7 @@ export function LoginPage() {
     <main className="login-screen">
       <div className="login-screen__shell">
         <section className="login-screen__brand" aria-hidden="true">
-          <p>Acesse o portal</p>
+          <p>SEDUC/PA</p>
           <h1>SADEP</h1>
         </section>
 

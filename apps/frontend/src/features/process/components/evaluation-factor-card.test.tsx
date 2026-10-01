@@ -36,6 +36,19 @@ function TestHarness() {
 }
 
 describe('EvaluationFactorCard', () => {
+  it('não apresenta a média do valor local ainda não registrado como nota', () => {
+    render(
+      <EvaluationFactorCard
+        factor={{ ...INITIAL_FACTOR, items: [{ ...INITIAL_FACTOR.items[0], score: 1, hasRecordedScore: false }] }}
+        isExpanded={false}
+        onToggle={() => undefined}
+        onScoreChange={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Assiduidade/ }).textContent).toContain('—');
+  });
+
   it('remove o zero visual ao focar e substitui pelo número digitado', () => {
     render(<TestHarness />);
 
