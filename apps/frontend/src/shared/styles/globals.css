@@ -7672,3 +7672,49 @@ button,
   .app-shell__header { display: none; }
   .app-shell__body { padding: 22px 16px 40px; }
 }
+
+/* Authenticated surfaces stay quiet: structure comes from spacing and borders. */
+.app-shell .surface-card,
+.app-shell .operations-card,
+.app-shell .workspace-overview__panel,
+.app-shell .workspace-service-card,
+.app-shell .workspace-stat,
+.app-shell .history-item,
+.app-shell .document-tile,
+.app-shell .intern-stage-card,
+.app-shell .intern-signature-card,
+.app-shell .evaluation-detail__card,
+.app-shell .supervisor-dashboard__hero,
+.app-shell .supervisor-dashboard__table-card,
+.app-shell .previous-evaluations-modal__row {
+  border-color: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-shell .section-chip,
+.app-shell .status-badge,
+.app-shell .supervisor-dashboard__pill,
+.app-shell .supervisor-dashboard__stage-chip {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+[role='tabpanel']:focus-visible {
+  outline: 3px solid rgba(0, 124, 192, 0.28);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

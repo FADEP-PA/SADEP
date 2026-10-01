@@ -199,10 +199,10 @@ export function CesadStageReadWorkspace() {
         {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
         {error ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={error} /> : null}
 
-        <WorkTabs tabs={[{ id: 'analysis', label: 'Análise' }, { id: 'documents', label: 'Documentos' }, { id: 'history', label: 'Histórico' }]} activeTab={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
+        <WorkTabs idPrefix="cesad-process" tabs={[{ id: 'analysis', label: 'Análise' }, { id: 'documents', label: 'Documentos' }, { id: 'history', label: 'Histórico' }]} activeTab={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
 
         {activeTab === 'analysis' ? (
-          <div id="analysis-panel" className="cesad-analysis" role="tabpanel">
+          <div id="cesad-process-panel-analysis" className="cesad-analysis" role="tabpanel" aria-labelledby="cesad-process-tab-analysis" tabIndex={0}>
             <div className="source-summaries">
               <WorkSection title="Avaliação da chefia">
                 {snapshot.supervisorEvaluation ? <><p>{snapshot.supervisorEvaluation.summary}</p><details className="compact-disclosure"><summary>Ver avaliação completa</summary><p>{snapshot.supervisorEvaluation.generalComments || 'Sem comentários adicionais.'}</p><div className="document-detail">{snapshot.supervisorEvaluation.content.criteria.map((criterion) => <div key={criterion.code}><strong>{criterion.label}</strong><span>{criterion.rating}</span></div>)}</div></details></> : <EmptyState title="Avaliação indisponível" description="O documento ainda não foi recebido." />}
@@ -234,7 +234,7 @@ export function CesadStageReadWorkspace() {
         ) : null}
 
         {activeTab === 'documents' ? (
-          <div id="documents-panel" role="tabpanel"><WorkSection title="Documentos da etapa">
+          <div id="cesad-process-panel-documents" role="tabpanel" aria-labelledby="cesad-process-tab-documents" tabIndex={0}><WorkSection title="Documentos da etapa">
             <div className="document-list">{snapshot.documents.map((document) => <article key={document.documentType} className="document-list__item">
               <div><strong>{formatDocumentType({ documentType: document.documentType, opinionScope: 'STAGE' })}</strong><span>{document.updatedAt ? formatDateTime(document.updatedAt) : 'Sem data'}</span></div>
               <StatusBadge label={document.exists ? formatDocumentStatus(document.documentStatus) : 'Aguardando emissão'} tone={document.exists && document.documentStatus === 'SIGNED' ? 'success' : 'warning'} />
@@ -244,7 +244,7 @@ export function CesadStageReadWorkspace() {
         ) : null}
 
         {activeTab === 'history' ? (
-          <div id="history-panel" role="tabpanel"><WorkSection title="Histórico">
+          <div id="cesad-process-panel-history" role="tabpanel" aria-labelledby="cesad-process-tab-history" tabIndex={0}><WorkSection title="Histórico">
             {snapshot.history.length > 0 ? <ol className="human-timeline">{[...snapshot.history].reverse().map((item) => <li key={item.id}><time>{formatDateTime(item.occurredAt)}</time><div><strong>{formatHistoryAction(item.action)}</strong><span>{item.actorRole ? formatRole(item.actorRole) : 'Sistema'}</span>{item.comment ? <p>{item.comment}</p> : null}</div></li>)}</ol> : <EmptyState title="Nenhuma movimentação registrada" description="" />}
           </WorkSection></div>
         ) : null}
