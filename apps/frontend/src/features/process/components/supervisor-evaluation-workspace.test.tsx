@@ -198,7 +198,9 @@ describe('SupervisorEvaluationWorkspace', () => {
     expect(submittedId).toBe(PROCESS_ID);
     expect(submittedBody).toMatchObject({ summary: expect.stringContaining('Competências testadas') });
     expect(submittedBody.content.criteria).toHaveLength(20);
-    expect(submittedBody.content.criteria.every((criterion) => criterion.rating === 4)).toBe(true);
+    expect(
+      submittedBody.content.criteria.every((criterion: { rating: number }) => criterion.rating === 4),
+    ).toBe(true);
   });
 
   it('exibe card de autoavaliação quando SUBMITTED e processo em AGUARDANDO_ASSINATURA', async () => {
