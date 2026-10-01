@@ -57,8 +57,9 @@ export function EvaluationFactorCard({
                 <input
                   aria-label={`Nota: ${item.label}`}
                   type="number"
-                  min={0}
-                  max={100}
+                  min={1}
+                  max={5}
+                  step={1}
                   value={
                     item.hasRecordedScore === false
                       ? ''
