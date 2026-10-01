@@ -53,6 +53,14 @@ const globalForbiddenPatterns = [
 // Source-only rules protect visible UI copy. Technical README guidance remains allowed.
 const sourceOnlyForbiddenPatterns = [
   {
+    pattern: /\b(?:window\.)?(?:alert|confirm|prompt)\s*\(/g,
+    message: 'Use feedback inline ou dialogo do produto em vez de API nativa do navegador.',
+  },
+  {
+    pattern: /\bdescription\s*=\s*["']\s*["']/g,
+    message: 'Omita descricoes vazias para nao renderizar espaco sem conteudo.',
+  },
+  {
     pattern: /\bbackend\b/gi,
     message: 'Evite termo tecnico "backend" em texto de interface; prefira servico, integracao ou API.',
   },

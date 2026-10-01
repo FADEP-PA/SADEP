@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 
 import { StatusBadge, type StatusBadgeTone } from './status-badge';
 
@@ -89,22 +89,50 @@ export function WorkTabs({
   tabs,
   activeTab,
   onChange,
+  idPrefix = 'work',
 }: {
   tabs: WorkTab[];
   activeTab: string;
   onChange: (id: string) => void;
+  idPrefix?: string;
 }) {
+  function focusTab(tabId: string) {
+    document.getElementById(`${idPrefix}-tab-${tabId}`)?.focus();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextIndex = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? tabs.length - 1
+        : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    const nextTab = tabs[nextIndex];
+
+    if (nextTab) {
+      onChange(nextTab.id);
+      focusTab(nextTab.id);
+    }
+  }
+
   return (
     <div className="work-tabs" role="tablist" aria-label="Seções do processo">
-      {tabs.map((tab) => (
+      {tabs.map((tab, index) => (
         <button
           key={tab.id}
+          id={`${idPrefix}-tab-${tab.id}`}
           type="button"
           role="tab"
           aria-selected={activeTab === tab.id}
-          aria-controls={`${tab.id}-panel`}
+          aria-controls={`${idPrefix}-panel-${tab.id}`}
+          tabIndex={activeTab === tab.id ? 0 : -1}
           className={activeTab === tab.id ? 'work-tabs__tab work-tabs__tab--active' : 'work-tabs__tab'}
           onClick={() => onChange(tab.id)}
+          onKeyDown={(event) => handleKeyDown(event, index)}
         >
           {tab.label}
         </button>

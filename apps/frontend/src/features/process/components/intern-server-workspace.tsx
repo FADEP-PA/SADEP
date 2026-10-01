@@ -158,7 +158,7 @@ export function InternServerWorkspace() {
           </label>
         ) : null}
 
-        {isLoading ? <InlineLoadingState title="Carregando avaliações…" description="" /> : null}
+        {isLoading ? <InlineLoadingState title="Carregando avaliações…" /> : null}
         {!isLoading && processes.length === 0 && !error ? <EmptyState title="Nenhuma avaliação disponível" description="Você não possui ações para realizar agora." /> : null}
         {error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}
         {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}

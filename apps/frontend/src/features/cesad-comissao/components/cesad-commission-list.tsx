@@ -1,4 +1,5 @@
 import { StatusBadge } from '@/shared/ui/status-badge';
+import { WorkSection } from '@/shared/ui/work-patterns';
 
 import type { CesadCommissionAdminRecord } from '../data/cesad-commission-admin-types';
 import {
@@ -16,15 +17,11 @@ type CesadCommissionListProps = {
 
 export function CesadCommissionList({ records, onEdit, canManage }: CesadCommissionListProps) {
   return (
-    <section className="surface-card cesad-commission-list" aria-labelledby="cesad-commission-list-title">
-      <div className="cesad-commission-card-header">
-        <div>
-          <span className="section-chip">Histórico administrativo</span>
-          <h3 id="cesad-commission-list-title">Comissões cadastradas</h3>
-        </div>
-        <StatusBadge label={`${records.length} registros visuais`} tone="info" />
-      </div>
-
+    <WorkSection
+      title="Comissões cadastradas"
+      className="cesad-commission-list"
+      action={<StatusBadge label={`${records.length} ${records.length === 1 ? 'comissão' : 'comissões'}`} tone="info" />}
+    >
       <div className="cesad-commission-table">
         <div className="cesad-commission-table__header" aria-hidden="true">
           <span>Comissão</span>
@@ -77,6 +74,6 @@ export function CesadCommissionList({ records, onEdit, canManage }: CesadCommiss
           </article>
         ))}
       </div>
-    </section>
+    </WorkSection>
   );
 }

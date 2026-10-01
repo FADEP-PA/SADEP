@@ -1,4 +1,5 @@
 import { StatusBadge } from '@/shared/ui/status-badge';
+import { WorkSection } from '@/shared/ui/work-patterns';
 
 import type { CesadCommissionAdminRecord } from '../data/cesad-commission-admin-types';
 import {
@@ -22,12 +23,10 @@ export function CesadCommissionCurrentCard({ record, onEdit, onClose, onSupersed
   const primaryAct = acts[0];
 
   return (
-    <section className="surface-card cesad-commission-current-card">
-      <div className="cesad-commission-card-header">
-        <div>
-          <span className="section-chip">Comissão vigente</span>
-          <h3>{commission.name}</h3>
-        </div>
+    <WorkSection
+      title={commission.name}
+      className="cesad-commission-current-card"
+      action={
         <div className="workspace-badge-row">
           <StatusBadge
             label={formatCesadCommissionStatus(commission.status)}
@@ -35,7 +34,8 @@ export function CesadCommissionCurrentCard({ record, onEdit, onClose, onSupersed
           />
           <CesadCommissionTemporalBadge situation={record.temporalSituation} />
         </div>
-      </div>
+      }
+    >
 
       <div className="cesad-current-summary">
         <article>
@@ -76,6 +76,6 @@ export function CesadCommissionCurrentCard({ record, onEdit, onClose, onSupersed
           Superseder
         </button>
       </div>
-    </section>
+    </WorkSection>
   );
 }

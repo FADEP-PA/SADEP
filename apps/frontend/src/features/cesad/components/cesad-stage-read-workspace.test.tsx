@@ -271,6 +271,23 @@ describe('CesadStageReadWorkspace', () => {
     expect(screen.queryByText(ProcessAction.COMPLETE_EVALUATION)).not.toBeInTheDocument();
   });
 
+  it('permite navegar entre as abas pelo teclado', async () => {
+    render(<CesadStageReadWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Analisar' }));
+
+    const analysisTab = await screen.findByRole('tab', { name: 'Análise' });
+    analysisTab.focus();
+    fireEvent.keyDown(analysisTab, { key: 'ArrowRight' });
+
+    const documentsTab = screen.getByRole('tab', { name: 'Documentos' });
+    expect(documentsTab).toHaveAttribute('aria-selected', 'true');
+    expect(documentsTab).toHaveFocus();
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Documentos');
+
+    fireEvent.keyDown(documentsTab, { key: 'End' });
+    expect(screen.getByRole('tab', { name: 'Histórico' })).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('oculta ações de escrita para o assistente da comissão', async () => {
     auth.session.user.role = 'COMMISSION_ASSISTANT';
     render(<CesadStageReadWorkspace />);
