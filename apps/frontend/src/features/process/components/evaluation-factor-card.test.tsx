@@ -36,6 +36,33 @@ function TestHarness() {
 }
 
 describe('EvaluationFactorCard', () => {
+  it('não apresenta a média do valor local ainda não registrado como nota', () => {
+    render(
+      <EvaluationFactorCard
+        factor={{ ...INITIAL_FACTOR, items: [{ ...INITIAL_FACTOR.items[0], score: 1, hasRecordedScore: false }] }}
+        isExpanded={false}
+        onToggle={() => undefined}
+        onScoreChange={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Assiduidade/ }).textContent).toContain('—');
+  });
+
+  it('mantém a nota local não registrada visualmente vazia ao abrir o fator', () => {
+    render(
+      <EvaluationFactorCard
+        factor={{ ...INITIAL_FACTOR, items: [{ ...INITIAL_FACTOR.items[0], score: 1, hasRecordedScore: false }] }}
+        isExpanded
+        onToggle={() => undefined}
+        onScoreChange={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole('spinbutton', { name: /Nota:/ })).toHaveValue(null);
+    expect(screen.getByText('Soma bruta subfatores').parentElement?.textContent).toContain('—');
+  });
+
   it('remove o zero visual ao focar e substitui pelo número digitado', () => {
     render(<TestHarness />);
 

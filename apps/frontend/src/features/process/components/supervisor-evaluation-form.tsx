@@ -67,7 +67,7 @@ export function EvaluationDetailView({
     onChange((current) => {
       const factors = current.factors.map((factor) => factor.id === factorId ? {
         ...factor,
-        items: factor.items.map((item) => item.id === itemId ? { ...item, score: Math.min(100, Math.max(0, score)) } : item),
+        items: factor.items.map((item) => item.id === itemId ? { ...item, score: Math.min(100, Math.max(0, score)), hasRecordedScore: true } : item),
       } : factor);
       return { ...current, factors, ...calculate(factors) };
     });
@@ -90,6 +90,9 @@ export function EvaluationDetailView({
   }
 
   const editable = canSaveActiveDraft || canSubmitActiveEvaluation;
+  const hasCompleteScores = evaluation.factors.every((factor) =>
+    factor.items.every((item) => item.hasRecordedScore !== false),
+  );
 
   return (
     <div className="work-page evaluation-workspace">
@@ -103,7 +106,7 @@ export function EvaluationDetailView({
 
       {leadingContent}
 
-      <WorkSection title="Identificação">
+      <WorkSection title="Identificação" className="evaluation-workspace__identity">
         <DetailList items={[
           { label: 'Servidor', value: evaluation.row.serverName },
           { label: 'Etapa', value: evaluation.row.stageLabel },
@@ -133,7 +136,7 @@ export function EvaluationDetailView({
         ]} />}
       </WorkSection>
 
-      <WorkSection title="Fatores de desempenho">
+      <WorkSection title="Fatores de desempenho" className="evaluation-workspace__factors">
         <div className="evaluation-detail__factor-stack">
           {evaluation.factors.map((factor) => (
             <EvaluationFactorCard key={factor.id} factor={factor} isExpanded={evaluation.expandedFactorIds.includes(factor.id)} onToggle={() => toggleFactor(factor.id)} onScoreChange={(itemId, score) => updateFactorScore(factor.id, itemId, score)} />
@@ -147,8 +150,8 @@ export function EvaluationDetailView({
         </details>
       </WorkSection>
 
-      {editable || evaluation.monthlyObservations.length > 0 ? <WorkSection title="Observações mensais" action={editable ? <button type="button" className="secondary-button" onClick={addObservation}>Adicionar observação</button> : null}>
-        {evaluation.monthlyObservations.length === 0 ? <p className="muted-copy">Nenhuma observação registrada.</p> : (
+      {editable || evaluation.monthlyObservations.length > 0 ? <WorkSection title="Observações mensais" className="evaluation-workspace__observations" action={editable ? <button type="button" className="secondary-button" onClick={addObservation}>Adicionar observação</button> : null}>
+        {evaluation.monthlyObservations.length === 0 ? <p className="muted-copy">Não há observações registradas.</p> : (
           <div className="observation-list">{evaluation.monthlyObservations.map((observation) => (
             <div key={observation.id} className="observation-item">
               <label className="field-group"><span>Período</span><select value={observation.monthLabel} disabled={!editable} onChange={(event) => updateObservation(observation.id, { monthLabel: event.target.value })}>{MONTHS.map((month) => <option key={month}>{month}</option>)}</select></label>
@@ -158,11 +161,11 @@ export function EvaluationDetailView({
         )}
       </WorkSection> : null}
 
-      <WorkSection title="Resumo">
+      <WorkSection title="Resumo" className="evaluation-workspace__summary">
         <div className="score-summary">
-          <div><span>Pontuação</span><strong>{evaluation.totalStageScore}</strong></div>
-          <div><span>Média</span><strong>{evaluation.stageAverage}</strong></div>
-          <div><span>Conceito</span><strong>{evaluation.administrativeConcept}</strong></div>
+          <div><span>Pontuação</span><strong>{hasCompleteScores ? evaluation.totalStageScore : '—'}</strong></div>
+          <div><span>Média</span><strong>{hasCompleteScores ? evaluation.stageAverage : '—'}</strong></div>
+          <div><span>Conceito</span><strong>{hasCompleteScores ? evaluation.administrativeConcept : '—'}</strong></div>
         </div>
         {feedbackMessage ? <FeedbackAlert title="Avaliação atualizada" tone="success" description={feedbackMessage} /> : null}
         {actionErrorMessage ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={actionErrorMessage} /> : null}

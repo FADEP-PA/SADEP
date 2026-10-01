@@ -174,11 +174,15 @@ function createEvaluationDraft(
   const factors = FACTOR_TEMPLATES.map((factor) => ({
     id: factor.id,
     title: factor.title,
-    items: factor.items.map((item) => ({
-      id: item.id,
-      label: item.label,
-      score: storedCriteria.find((criterion) => criterion.code === item.id)?.rating ?? 1,
-    })),
+    items: factor.items.map((item) => {
+      const recorded = storedCriteria.find((criterion) => criterion.code === item.id);
+      return {
+        id: item.id,
+        label: item.label,
+        score: recorded?.rating ?? 1,
+        hasRecordedScore: Boolean(recorded),
+      };
+    }),
   }));
 
   const total = factors.reduce((sum, factor) => {

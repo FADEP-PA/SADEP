@@ -27,6 +27,8 @@ export type EvaluationFactorItemDraft = {
   id: string;
   label: string;
   score: number;
+  /** Display-only: distinguishes an untouched local default from a recorded rating. */
+  hasRecordedScore?: boolean;
 };
 
 export type EvaluationFactorDraft = {
