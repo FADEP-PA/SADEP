@@ -59,7 +59,13 @@ export function EvaluationFactorCard({
                   type="number"
                   min={0}
                   max={100}
-                  value={focusedScoreId === item.id && item.score === 0 ? '' : item.score}
+                  value={
+                    item.hasRecordedScore === false
+                      ? ''
+                      : focusedScoreId === item.id && item.score === 0
+                        ? ''
+                        : item.score
+                  }
                   onFocus={() => setFocusedScoreId(item.id)}
                   onBlur={() =>
                     setFocusedScoreId((current) => (current === item.id ? null : current))
@@ -74,7 +80,7 @@ export function EvaluationFactorCard({
           <div className="evaluation-detail__factor-footer">
             <div>
               <span>Soma bruta subfatores</span>
-              <strong>{subtotal.toFixed(1)}</strong>
+              <strong>{hasCompleteScores ? subtotal.toFixed(1) : '—'}</strong>
             </div>
             <div>
               <span>Pontuação final do fator (média)</span>
