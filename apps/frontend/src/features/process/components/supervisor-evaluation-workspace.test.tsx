@@ -203,6 +203,59 @@ describe('SupervisorEvaluationWorkspace', () => {
     ).toBe(true);
   });
 
+  it('salva rascunho parcial sem persistir notas ainda não preenchidas', async () => {
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+
+    await waitFor(() =>
+      expect(api.getSupervisorEvaluationWorkspaceSnapshot).toHaveBeenCalledWith(PROCESS_ID),
+    );
+
+    fireEvent.input(screen.getByLabelText('Competências da unidade'), {
+      target: { value: 'Competências em preenchimento' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Assiduidade/i }));
+
+    const [firstScoreInput] = screen.getAllByRole('spinbutton');
+    fireEvent.change(firstScoreInput, { target: { value: '4' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Salvar rascunho/i }));
+    });
+
+    expect(api.saveSupervisorEvaluationDraft).toHaveBeenCalledTimes(1);
+    const [savedId, savedBody] = api.saveSupervisorEvaluationDraft.mock.calls[0];
+    expect(savedId).toBe(PROCESS_ID);
+    expect(savedBody.content.criteria).toHaveLength(1);
+    expect(savedBody.content.criteria[0]).toMatchObject({ rating: 4 });
+    expect(savedBody.generalComments).not.toContain('Resultado final informado pela chefia');
+  });
+
+  it('impede o envio final enquanto houver critérios sem nota registrada', async () => {
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+
+    await waitFor(() =>
+      expect(api.getSupervisorEvaluationWorkspaceSnapshot).toHaveBeenCalledWith(PROCESS_ID),
+    );
+
+    fireEvent.input(screen.getByLabelText('Competências da unidade'), {
+      target: { value: 'Competências testadas' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Assiduidade/i }));
+    const [firstScoreInput] = screen.getAllByRole('spinbutton');
+    fireEvent.change(firstScoreInput, { target: { value: '4' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Enviar para assinatura/i }));
+    });
+
+    expect(api.submitSupervisorEvaluation).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText('Preencha a nota de todos os critérios antes de enviar a avaliação.'),
+    ).toBeInTheDocument();
+  });
+
   it('exibe card de autoavaliação quando SUBMITTED e processo em AGUARDANDO_ASSINATURA', async () => {
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(
       createWorkspaceSnapshot({
