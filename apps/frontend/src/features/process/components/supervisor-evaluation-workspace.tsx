@@ -49,7 +49,7 @@ const INCOMPLETE_DRAFT_COMMENT = 'Avaliação em preenchimento pela chefia.';
 
 function stripGeneratedGeneralComments(value: string): string {
   return value
-    .split(/\\n{2,}/)
+    .split(/\n{2,}/)
     .map((part) => part.trim())
     .filter(
       (part) =>
@@ -57,7 +57,7 @@ function stripGeneratedGeneralComments(value: string): string {
         part !== INCOMPLETE_DRAFT_COMMENT &&
         !part.startsWith(GENERATED_RESULT_PREFIX),
     )
-    .join('\\n\\n');
+    .join('\n\n');
 }
 
 function fromApiItem(item: ProcessListItemRef): SupervisorDashboardRow {
