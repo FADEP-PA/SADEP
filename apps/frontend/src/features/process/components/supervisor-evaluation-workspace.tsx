@@ -31,6 +31,7 @@ import { WorkPageHeader } from '@/shared/ui/work-patterns';
 
 import { SupervisorDashboardTable } from './supervisor-dashboard-table';
 import { EvaluationDetailView } from './supervisor-evaluation-form';
+import { calculateEvaluationScore, clampCriterionRating } from './supervisor-evaluation-scoring';
 import { SupervisorSelfEvaluationCard } from './supervisor-self-evaluation-card';
 import type {
   EvaluationDraft,
@@ -185,30 +186,18 @@ function createEvaluationDraft(
     }),
   }));
 
-  const total = factors.reduce((sum, factor) => {
-    const avg = factor.items.length > 0
-      ? factor.items.reduce((s, item) => s + item.score, 0) / factor.items.length
-      : 0;
-    return sum + avg;
-  }, 0);
-  const average = factors.length > 0 ? total / factors.length : 0;
+  const scoreSummary = calculateEvaluationScore(factors);
 
   return {
     row,
     unitCompetencies: evaluation?.summary ?? '',
     serverAssignments: '',
     generalComments: evaluation?.generalComments ?? '',
-    totalStageScore: total.toFixed(1),
-    stageAverage: average.toFixed(1),
-    administrativeConcept: average < 50 ? 'Insuficiente' : average < 70 ? 'Regular' : average < 90 ? 'Bom' : 'Excelente',
+    ...scoreSummary,
     monthlyObservations: [],
     factors,
     expandedFactorIds: [],
   };
-}
-
-function normalizeRating(score: number): number {
-  return Math.max(1, Math.min(5, Math.round(score / 25)));
 }
 
 function buildSupervisorEvaluationPayload(
@@ -228,6 +217,13 @@ function buildSupervisorEvaluationPayload(
     throw new Error('Informe as competências da unidade ou as atribuições do servidor antes de salvar.');
   }
 
+  if (
+    mode === 'submit' &&
+    draft.factors.some((factor) => factor.items.some((item) => item.hasRecordedScore === false))
+  ) {
+    throw new Error('Preencha a nota de todos os critérios antes de enviar a avaliação.');
+  }
+
   return {
     summary,
     generalComments,
@@ -236,7 +232,7 @@ function buildSupervisorEvaluationPayload(
         factor.items.map((item) => ({
           code: item.id,
           label: item.label,
-          rating: normalizeRating(item.score),
+          rating: clampCriterionRating(item.score),
         })),
       ),
     },

@@ -174,6 +174,20 @@ describe('SupervisorEvaluationWorkspace', () => {
     const assignmentsInput = screen.getByLabelText(/Atribuições no período/);
     fireEvent.input(assignmentsInput, { target: { value: 'Atribuições testadas' } });
 
+    for (const factorName of [
+      'Assiduidade',
+      'Disciplina',
+      'Capacidade de iniciativa',
+      'Produtividade',
+      'Responsabilidade',
+    ]) {
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(factorName, 'i') }));
+    }
+
+    for (const scoreInput of screen.getAllByRole('spinbutton')) {
+      fireEvent.change(scoreInput, { target: { value: '4' } });
+    }
+
     const submitButton = screen.getByRole('button', { name: /Enviar para assinatura/i });
     await act(async () => {
       fireEvent.click(submitButton);
@@ -183,6 +197,10 @@ describe('SupervisorEvaluationWorkspace', () => {
     const [submittedId, submittedBody] = api.submitSupervisorEvaluation.mock.calls[0];
     expect(submittedId).toBe(PROCESS_ID);
     expect(submittedBody).toMatchObject({ summary: expect.stringContaining('Competências testadas') });
+    expect(submittedBody.content.criteria).toHaveLength(20);
+    expect(
+      submittedBody.content.criteria.every((criterion: { rating: number }) => criterion.rating === 4),
+    ).toBe(true);
   });
 
   it('exibe card de autoavaliação quando SUBMITTED e processo em AGUARDANDO_ASSINATURA', async () => {
