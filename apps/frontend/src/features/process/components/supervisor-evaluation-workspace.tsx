@@ -44,6 +44,22 @@ const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
 
 type OperationMode = 'draft' | 'submit';
 
+const GENERATED_RESULT_PREFIX = 'Resultado final informado pela chefia:';
+const INCOMPLETE_DRAFT_COMMENT = 'Avaliação em preenchimento pela chefia.';
+
+function stripGeneratedGeneralComments(value: string): string {
+  return value
+    .split(/\\n{2,}/)
+    .map((part) => part.trim())
+    .filter(
+      (part) =>
+        part.length > 0 &&
+        part !== INCOMPLETE_DRAFT_COMMENT &&
+        !part.startsWith(GENERATED_RESULT_PREFIX),
+    )
+    .join('\\n\\n');
+}
+
 function fromApiItem(item: ProcessListItemRef): SupervisorDashboardRow {
   const dashboardStatus = toDashboardStatus(item.status as ProcessStatus);
   let actionLabel: string;
@@ -192,7 +208,7 @@ function createEvaluationDraft(
     row,
     unitCompetencies: evaluation?.summary ?? '',
     serverAssignments: '',
-    generalComments: evaluation?.generalComments ?? '',
+    generalComments: stripGeneratedGeneralComments(evaluation?.generalComments ?? ''),
     ...scoreSummary,
     monthlyObservations: [],
     factors,
@@ -206,35 +222,42 @@ function buildSupervisorEvaluationPayload(
 ): UpsertSupervisorEvaluationInput {
   const summaryParts = [draft.unitCompetencies.trim(), draft.serverAssignments.trim()].filter(Boolean);
   const summary = summaryParts.join('\n\n');
-  const generalComments = [
-    draft.generalComments.trim(),
-    `Resultado final informado pela chefia: pontuação total ${draft.totalStageScore || '0.0'}, média ${draft.stageAverage || '0.0'}, conceito ${draft.administrativeConcept}.`,
-  ]
-    .filter(Boolean)
-    .join('\n\n');
+  const hasCompleteScores = draft.factors.every((factor) =>
+    factor.items.every((item) => item.hasRecordedScore !== false),
+  );
+  const recordedCriteria = draft.factors.flatMap((factor) =>
+    factor.items
+      .filter((item) => item.hasRecordedScore !== false)
+      .map((item) => ({
+        code: item.id,
+        label: item.label,
+        rating: clampCriterionRating(item.score),
+      })),
+  );
+  const userGeneralComments = stripGeneratedGeneralComments(draft.generalComments);
+  const resultComment = hasCompleteScores
+    ? `Resultado final informado pela chefia: pontuação total ${draft.totalStageScore || '0.0'}, média ${draft.stageAverage || '0.0'}, conceito ${draft.administrativeConcept}.`
+    : '';
+  const generalComments =
+    [userGeneralComments, resultComment].filter(Boolean).join('\n\n') || INCOMPLETE_DRAFT_COMMENT;
 
   if (!summary) {
     throw new Error('Informe as competências da unidade ou as atribuições do servidor antes de salvar.');
   }
 
-  if (
-    mode === 'submit' &&
-    draft.factors.some((factor) => factor.items.some((item) => item.hasRecordedScore === false))
-  ) {
+  if (mode === 'submit' && !hasCompleteScores) {
     throw new Error('Preencha a nota de todos os critérios antes de enviar a avaliação.');
+  }
+
+  if (mode === 'draft' && recordedCriteria.length === 0) {
+    throw new Error('Preencha ao menos uma nota antes de salvar o rascunho da avaliação.');
   }
 
   return {
     summary,
     generalComments,
     content: {
-      criteria: draft.factors.flatMap((factor) =>
-        factor.items.map((item) => ({
-          code: item.id,
-          label: item.label,
-          rating: clampCriterionRating(item.score),
-        })),
-      ),
+      criteria: recordedCriteria,
     },
     comment:
       mode === 'submit'
