@@ -11,6 +11,7 @@ export interface PdfDocumentSection {
 }
 
 export interface ProcessDocumentPdfInput {
+  documentType?: string;
   title: string;
   subtitle?: string;
   metadata: Array<[string, PdfDocumentValue]>;
@@ -29,7 +30,12 @@ export interface ProcessDocumentPdfRenderer {
 export class PdfKitProcessDocumentPdfRenderer implements ProcessDocumentPdfRenderer {
   render(input: ProcessDocumentPdfInput): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const document = new PDFDocument({ size: 'A4', margin: 48, compress: false, info: { Title: input.title, Creator: 'SADEP' } });
+      const document = new PDFDocument({
+        size: 'A4',
+        margin: 48,
+        compress: false,
+        info: { Title: input.title, Creator: 'SADEP', CreationDate: input.generatedAt },
+      });
       const chunks: Buffer[] = [];
       document.on('data', (chunk: Buffer) => chunks.push(chunk));
       document.on('end', () => resolve(this.makeDeterministic(Buffer.concat(chunks))));
@@ -39,7 +45,7 @@ export class PdfKitProcessDocumentPdfRenderer implements ProcessDocumentPdfRende
       document.moveDown(1);
       this.renderMetadata(document, input.metadata);
       for (const section of input.sections) this.renderSection(document, section);
-      document.fontSize(8).fillColor('#666666').text(`Gerado em ${input.generatedAt.toLocaleString('pt-BR')}`, 48, 790, { align: 'left' });
+      document.fontSize(8).fillColor('#666666').text(`Gerado em ${input.generatedAt.toISOString()}`, 48, 790, { align: 'left' });
       document.end();
     });
   }
