@@ -2,6 +2,9 @@
 
 import type { ReactNode } from 'react';
 
+import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
+import { EvaluationTextarea } from '@/shared/ui/evaluation-textarea';
+
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { DetailList, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
@@ -77,6 +80,7 @@ export function EvaluationDetailView({
     onChange((current) => ({ ...current, monthlyObservations: current.monthlyObservations.map((item) => item.id === id ? { ...item, ...patch } : item) }));
   }
 
+  const exceedsTextLimit = [evaluation.unitCompetencies, evaluation.serverAssignments, evaluation.generalComments, ...evaluation.monthlyObservations.map((item) => item.description)].some((value) => !isEvaluationTextWithinLimit(value));
   const editable = canSaveActiveDraft || canSubmitActiveEvaluation;
   const hasCompleteScores = evaluation.factors.every((factor) =>
     factor.items.every((item) => item.hasRecordedScore !== false),
@@ -106,16 +110,16 @@ export function EvaluationDetailView({
         {editable ? <div className="form-stack">
           <label className="field-group" htmlFor="unit-competencies">
             <span>Competências da unidade</span>
-            <textarea id="unit-competencies" rows={3} value={evaluation.unitCompetencies} disabled={!editable} onChange={(event) => onChange((current) => ({ ...current, unitCompetencies: event.target.value }))} />
+            <EvaluationTextarea aria-label="Competências da unidade" id="unit-competencies" rows={3} value={evaluation.unitCompetencies} disabled={!editable} onChange={(event) => onChange((current) => ({ ...current, unitCompetencies: event.target.value }))} />
           </label>
           <label className="field-group" htmlFor="server-assignments">
             <span>Atribuições no período</span>
-            <textarea id="server-assignments" rows={3} value={evaluation.serverAssignments} disabled={!editable} onChange={(event) => onChange((current) => ({ ...current, serverAssignments: event.target.value }))} />
+            <EvaluationTextarea aria-label="Atribuições no período" id="server-assignments" rows={3} value={evaluation.serverAssignments} disabled={!editable} onChange={(event) => onChange((current) => ({ ...current, serverAssignments: event.target.value }))} />
             <small>Inclua apenas atividades realizadas nesta etapa.</small>
           </label>
           <label className="field-group" htmlFor="general-comments">
             <span>Comentários gerais</span>
-            <textarea id="general-comments" rows={3} value={evaluation.generalComments} disabled={!editable} onChange={(event) => onChange((current) => ({ ...current, generalComments: event.target.value }))} />
+            <EvaluationTextarea aria-label="Comentários gerais" id="general-comments" rows={3} value={evaluation.generalComments} disabled={!editable} onChange={(event) => onChange((current) => ({ ...current, generalComments: event.target.value }))} />
           </label>
         </div> : <DetailList items={[
           { label: 'Competências da unidade', value: evaluation.unitCompetencies || 'Não informado' },
@@ -143,7 +147,7 @@ export function EvaluationDetailView({
           <div className="observation-list">{evaluation.monthlyObservations.map((observation) => (
             <div key={observation.id} className="observation-item">
               <label className="field-group"><span>Período</span><select value={observation.monthLabel} disabled={!editable} onChange={(event) => updateObservation(observation.id, { monthLabel: event.target.value })}>{MONTHS.map((month) => <option key={month}>{month}</option>)}</select></label>
-              <label className="field-group"><span>Observação</span><textarea rows={2} value={observation.description} disabled={!editable} onChange={(event) => updateObservation(observation.id, { description: event.target.value })} /></label>
+              <label className="field-group"><span>Observação</span><EvaluationTextarea aria-label="Observação" rows={2} value={observation.description} disabled={!editable} onChange={(event) => updateObservation(observation.id, { description: event.target.value })} /></label>
             </div>
           ))}</div>
         )}
@@ -155,12 +159,13 @@ export function EvaluationDetailView({
           <div><span>Média</span><strong>{hasCompleteScores ? evaluation.stageAverage : '—'}</strong></div>
           <div><span>Conceito</span><strong>{hasCompleteScores ? evaluation.administrativeConcept : '—'}</strong></div>
         </div>
+        {editable && exceedsTextLimit ? <p className="field-error">{EVALUATION_TEXT_LIMIT_MESSAGE}</p> : null}
         {feedbackMessage ? <FeedbackAlert title="Avaliação atualizada" tone="success" description={feedbackMessage} /> : null}
         {actionErrorMessage ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={actionErrorMessage} /> : null}
         {editable ? (
           <div className="form-actions">
-            <button type="button" className="secondary-button" disabled={isSavingDraft || isSubmittingEvaluation || !canSaveActiveDraft} onClick={onSaveDraft}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
-            <button type="button" disabled={isSubmittingEvaluation || isSavingDraft || !canSubmitActiveEvaluation} onClick={onSubmit}>{isSubmittingEvaluation ? 'Enviando…' : submitButtonLabel}</button>
+            <button type="button" className="secondary-button" disabled={exceedsTextLimit || isSavingDraft || isSubmittingEvaluation || !canSaveActiveDraft} onClick={onSaveDraft}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
+            <button type="button" disabled={exceedsTextLimit || isSubmittingEvaluation || isSavingDraft || !canSubmitActiveEvaluation} onClick={onSubmit}>{isSubmittingEvaluation ? 'Enviando…' : submitButtonLabel}</button>
           </div>
         ) : null}
       </WorkSection>

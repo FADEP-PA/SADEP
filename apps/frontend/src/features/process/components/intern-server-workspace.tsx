@@ -1,5 +1,7 @@
 'use client';
 
+import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
+
 import { SelfEvaluationStatus, UserRole, type InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -108,6 +110,7 @@ export function InternServerWorkspace() {
         await signSupervisorEvaluation(snapshot.process.id);
         setFeedback('Sua confirmação foi registrada.');
       } else {
+        if (Object.values(form).some((value) => !isEvaluationTextWithinLimit(value))) throw new Error(EVALUATION_TEXT_LIMIT_MESSAGE);
         const payload: UpsertSelfEvaluationInput = {
           selfReflection: form.selfReflection.trim(),
           ...(form.additionalNotes.trim() ? { additionalNotes: form.additionalNotes.trim() } : {}),

@@ -1,5 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
+  EVALUATION_TEXT_MAX_LENGTH,
+  EVALUATION_TEXT_LIMIT_MESSAGE,
   DocumentStatus,
   DocumentType,
   ProcessStatus,
@@ -483,5 +485,62 @@ describe('InternServerWorkspace', () => {
     expect(await screen.findByText('Não foi possível salvar a autoavaliação')).toBeInTheDocument();
     expect(screen.getByText('Falha de conexão com o serviço.')).toBeInTheDocument();
     expect(screen.queryByText('Rascunho salvo.')).not.toBeInTheDocument();
+  });
+});
+
+
+describe('limites de texto no workspace do servidor', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.saveSelfEvaluationDraft.mockResolvedValue({});
+    api.submitSelfEvaluation.mockResolvedValue({});
+  });
+
+  it.each(['draft', 'submit'])('mantém contadores e envia exatamente o limite no %s', async (action) => {
+    renderWorkspace(createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT }));
+    const reflection = await screen.findByLabelText('Autoavaliação');
+    const notes = screen.getByLabelText('Observações adicionais');
+    expect(screen.getByText((reflection as HTMLTextAreaElement).value.length + ' / ' + EVALUATION_TEXT_MAX_LENGTH)).toBeInTheDocument();
+    for (const field of [reflection, notes]) {
+      expect(field).toHaveAttribute('maxlength', String(EVALUATION_TEXT_MAX_LENGTH));
+      fireEvent.change(field, { target: { value: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH - 1) } });
+      expect(field).toHaveValue('a'.repeat(EVALUATION_TEXT_MAX_LENGTH - 1));
+      fireEvent.change(field, { target: { value: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH) } });
+      fireEvent.change(field, { target: { value: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH + 1) } });
+      expect(field).toHaveValue('a'.repeat(EVALUATION_TEXT_MAX_LENGTH));
+    }
+    expect(screen.getAllByText(EVALUATION_TEXT_MAX_LENGTH + ' / ' + EVALUATION_TEXT_MAX_LENGTH)).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: action === 'draft' ? 'Salvar rascunho' : 'Enviar autoavaliação' }));
+    const request = action === 'draft' ? api.saveSelfEvaluationDraft : api.submitSelfEvaluation;
+    await waitFor(() => expect(request).toHaveBeenCalledWith(PROCESS_ID, { selfReflection: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH), additionalNotes: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH) }));
+  });
+
+  it.each(['selfReflection', 'additionalNotes'] as const)('preserva legado em %s e bloqueia as duas ações até corrigir', async (field) => {
+    const snapshot = createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT });
+    snapshot.selfEvaluation![field] = 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH + 2);
+    renderWorkspace(snapshot);
+    const input = await screen.findByLabelText(field === 'selfReflection' ? 'Autoavaliação' : 'Observações adicionais');
+    expect(input).toHaveValue('a'.repeat(EVALUATION_TEXT_MAX_LENGTH + 2));
+    const save = screen.getByRole('button', { name: 'Salvar rascunho' });
+    const submit = screen.getByRole('button', { name: 'Enviar autoavaliação' });
+    expect(save).toBeDisabled(); expect(submit).toBeDisabled();
+    fireEvent.click(save); fireEvent.click(submit);
+    expect(api.saveSelfEvaluationDraft).not.toHaveBeenCalled(); expect(api.submitSelfEvaluation).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH + 1) } });
+    expect(input).toHaveValue('a'.repeat(EVALUATION_TEXT_MAX_LENGTH + 1));
+    expect(save).toBeDisabled();
+    fireEvent.change(input, { target: { value: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH) } });
+    expect(save).toBeEnabled(); expect(submit).toBeEnabled();
+  });
+
+  it.each(['draft', 'submit'])('mostra rejeição do backend no %s e preserva o texto', async (action) => {
+    const request = action === 'draft' ? api.saveSelfEvaluationDraft : api.submitSelfEvaluation;
+    request.mockRejectedValueOnce(new HttpError(400, EVALUATION_TEXT_LIMIT_MESSAGE));
+    renderWorkspace(createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT }));
+    const input = await screen.findByLabelText('Autoavaliação');
+    fireEvent.change(input, { target: { value: 'Texto preservado.' } });
+    fireEvent.click(screen.getByRole('button', { name: action === 'draft' ? 'Salvar rascunho' : 'Enviar autoavaliação' }));
+    expect(await screen.findByText(EVALUATION_TEXT_LIMIT_MESSAGE)).toBeInTheDocument();
+    expect(input).toHaveValue('Texto preservado.');
   });
 });
