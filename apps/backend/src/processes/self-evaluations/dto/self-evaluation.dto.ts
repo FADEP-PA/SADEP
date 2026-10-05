@@ -1,5 +1,7 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 import {
+  EVALUATION_TEXT_MAX_LENGTH,
+  EVALUATION_TEXT_LIMIT_MESSAGE,
   SelfEvaluationStatus,
   type SelfEvaluationDocumentContextRef,
   type SelfEvaluationWithDocumentContextRef,
@@ -7,14 +9,17 @@ import {
 
 export class UpsertSelfEvaluationDto {
   @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
   selfReflection!: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
   additionalNotes?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
   comment?: string;
 }
 

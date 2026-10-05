@@ -1,6 +1,9 @@
-import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min, MaxLength, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
+  EVALUATION_TEXT_MAX_LENGTH,
+  EVALUATION_TEXT_LIMIT_MESSAGE,
+  type SupervisorEvaluationTextFields,
   SupervisorEvaluationStatus,
   type SupervisorEvaluationRef,
   ProcessStatus,
@@ -26,10 +29,44 @@ export class SupervisorEvaluationCriterionDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
   comment?: string;
 }
 
+export class SupervisorEvaluationObservationDto {
+  @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
+  id!: string;
+  @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
+  monthLabel!: string;
+  @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
+  description!: string;
+}
+
+export class SupervisorEvaluationTextFieldsDto implements SupervisorEvaluationTextFields {
+  @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
+  unitCompetencies!: string;
+  @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
+  serverAssignments!: string;
+  @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
+  generalComments!: string;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SupervisorEvaluationObservationDto)
+  monthlyObservations!: SupervisorEvaluationObservationDto[];
+}
+
 export class SupervisorEvaluationContentDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SupervisorEvaluationTextFieldsDto)
+  textFields?: SupervisorEvaluationTextFieldsDto;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SupervisorEvaluationCriterionDto)
@@ -51,6 +88,7 @@ export class UpsertSupervisorEvaluationDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(EVALUATION_TEXT_MAX_LENGTH, { message: EVALUATION_TEXT_LIMIT_MESSAGE })
   comment?: string;
 }
 

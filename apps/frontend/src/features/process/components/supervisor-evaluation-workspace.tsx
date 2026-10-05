@@ -44,21 +44,7 @@ const ALLOWED_ROLES = [UserRole.IMMEDIATE_SUPERVISOR];
 
 type OperationMode = 'draft' | 'submit';
 
-const GENERATED_RESULT_PREFIX = 'Resultado final informado pela chefia:';
 const INCOMPLETE_DRAFT_COMMENT = 'Avaliação em preenchimento pela chefia.';
-
-function stripGeneratedGeneralComments(value: string): string {
-  return value
-    .split(/\n{2,}/)
-    .map((part) => part.trim())
-    .filter(
-      (part) =>
-        part.length > 0 &&
-        part !== INCOMPLETE_DRAFT_COMMENT &&
-        !part.startsWith(GENERATED_RESULT_PREFIX),
-    )
-    .join('\n\n');
-}
 
 function fromApiItem(item: ProcessListItemRef): SupervisorDashboardRow {
   const dashboardStatus = toDashboardStatus(item.status as ProcessStatus);
@@ -206,11 +192,11 @@ function createEvaluationDraft(
 
   return {
     row,
-    unitCompetencies: evaluation?.summary ?? '',
-    serverAssignments: '',
-    generalComments: stripGeneratedGeneralComments(evaluation?.generalComments ?? ''),
+    unitCompetencies: evaluation?.content.textFields?.unitCompetencies ?? evaluation?.summary ?? '',
+    serverAssignments: evaluation?.content.textFields?.serverAssignments ?? '',
+    generalComments: evaluation?.content.textFields?.generalComments ?? evaluation?.generalComments ?? '',
     ...scoreSummary,
-    monthlyObservations: [],
+    monthlyObservations: evaluation?.content.textFields?.monthlyObservations.map((item) => ({ ...item, attachmentName: '' })) ?? [],
     factors,
     expandedFactorIds: [],
   };
@@ -234,7 +220,7 @@ function buildSupervisorEvaluationPayload(
         rating: clampCriterionRating(item.score),
       })),
   );
-  const userGeneralComments = stripGeneratedGeneralComments(draft.generalComments);
+  const userGeneralComments = draft.generalComments;
   const resultComment = hasCompleteScores
     ? `Resultado final informado pela chefia: pontuação total ${draft.totalStageScore || '0.0'}, média ${draft.stageAverage || '0.0'}, conceito ${draft.administrativeConcept}.`
     : '';
@@ -258,6 +244,12 @@ function buildSupervisorEvaluationPayload(
     generalComments,
     content: {
       criteria: recordedCriteria,
+      textFields: {
+        unitCompetencies: draft.unitCompetencies,
+        serverAssignments: draft.serverAssignments,
+        generalComments: userGeneralComments,
+        monthlyObservations: draft.monthlyObservations.map(({ id, monthLabel, description }) => ({ id, monthLabel, description })),
+      },
     },
     comment:
       mode === 'submit'

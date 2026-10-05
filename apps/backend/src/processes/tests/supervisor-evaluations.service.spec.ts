@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 import { Prisma } from '@prisma/client';
 import {
+  EVALUATION_TEXT_MAX_LENGTH,
   AuditEventType,
   DocumentType,
   ProcessStatus,
@@ -39,6 +40,65 @@ export async function runSupervisorEvaluationsServiceTests() {
       evaluatedUser.id,
       supervisor.id,
     );
+
+    const limitsProcess = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id, supervisor.id);
+    const limitsUser = authenticatedUser(supervisor.id, supervisor.role);
+    for (const length of [EVALUATION_TEXT_MAX_LENGTH - 1, EVALUATION_TEXT_MAX_LENGTH]) {
+      const text = 'x'.repeat(length);
+      const payload = buildSupervisorEvaluationPayload({
+        summary: 'Ignored client projection',
+        generalComments: 'Ignored system result projection'.repeat(100),
+        comment: text,
+        content: {
+          criteria: [{ code: '1.1', label: 'Assiduidade', rating: 4, comment: text }],
+          textFields: {
+            unitCompetencies: text, serverAssignments: text, generalComments: text,
+            monthlyObservations: [{ id: 'obs-1', monthLabel: '1º mês', description: text }],
+          },
+        },
+      });
+      const saved = await context.supervisorEvaluationsService.saveDraft(limitsProcess.id, limitsUser, payload);
+      assert.equal(saved.summary, `${text}\n\n${text}`);
+      assert.equal(saved.generalComments, text);
+      assert.deepEqual(saved.content, payload.content);
+      const over = 'x'.repeat(EVALUATION_TEXT_MAX_LENGTH + 1);
+      const invalidPayloads = [
+        ...(['unitCompetencies', 'serverAssignments', 'generalComments'] as const).map((field) => ({
+          ...payload, content: { ...payload.content, textFields: { ...payload.content.textFields!, [field]: over } },
+        })),
+        { ...payload, comment: over },
+        { ...payload, content: { ...payload.content, criteria: [{ ...payload.content.criteria[0], comment: over }] } },
+        { ...payload, content: { ...payload.content, textFields: { ...payload.content.textFields!, monthlyObservations: [{ id: 'obs-1', monthLabel: '1º mês', description: over }] } } },
+        buildSupervisorEvaluationPayload({ summary: over }),
+        buildSupervisorEvaluationPayload({ generalComments: over }),
+      ];
+      for (const invalid of invalidPayloads) {
+        for (const operation of ['saveDraft', 'submit', 'rectify'] as const) {
+          await assert.rejects(() => context.supervisorEvaluationsService[operation](limitsProcess.id, limitsUser, invalid), /900 caracteres/);
+        }
+      }
+      assert.deepEqual((await context.supervisorEvaluationsService.getByProcessId(limitsProcess.id, limitsUser))?.content, saved.content);
+    }
+    const legacy = 'legado'.repeat(EVALUATION_TEXT_MAX_LENGTH);
+    await context.prisma.supervisorEvaluation.update({ where: { processStageId: limitsProcess.defaultStageId }, data: { summary: legacy, generalComments: legacy } });
+    assert.equal((await context.supervisorEvaluationsService.getByProcessId(limitsProcess.id, limitsUser))?.summary, legacy);
+    const limitText = 'x'.repeat(EVALUATION_TEXT_MAX_LENGTH);
+    const completePayload = buildSupervisorEvaluationPayload({
+      summary: 'ignored', generalComments: 'ignored',
+      content: {
+        criteria: Array.from({ length: 5 }, (_, factor) => Array.from({ length: 4 }, (_, item) => ({ code: `${factor + 1}.${item + 1}`, label: 'Critério', rating: 4 }))).flat(),
+        textFields: { unitCompetencies: limitText, serverAssignments: limitText, generalComments: limitText, monthlyObservations: [] },
+      },
+    });
+    const submittedLimit = await context.supervisorEvaluationsService.submit(limitsProcess.id, limitsUser, completePayload);
+    assert.equal(submittedLimit.generalComments, `${limitText}\n\nResultado final informado pela chefia: pontuação total 80.0, média 4.0, conceito Bom.`);
+    assert.equal(submittedLimit.content.textFields?.generalComments, limitText);
+    const rectifiedLimit = await context.supervisorEvaluationsService.rectify(limitsProcess.id, limitsUser, completePayload);
+    assert.equal(rectifiedLimit.summary, `${limitText}\n\n${limitText}`);
+    // Generated results must use the same first-by-code selection as the real UI.
+    const duplicatePayload = { ...completePayload, content: { ...completePayload.content, criteria: [...completePayload.content.criteria, { code: '1.1', label: 'Duplicado', rating: 1 }] } };
+    const duplicateResult = await context.supervisorEvaluationsService.rectify(limitsProcess.id, limitsUser, duplicatePayload);
+    assert.equal(duplicateResult.generalComments, rectifiedLimit.generalComments);
 
     await assert.rejects(
       () => context.service.getWorkflow(process.id, authenticatedUser(supervisor.id, supervisor.role)),

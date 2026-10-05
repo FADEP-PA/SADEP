@@ -15,6 +15,15 @@ export interface SupervisorEvaluationCriterionInput {
 
 export interface SupervisorEvaluationContentInput {
   criteria: SupervisorEvaluationCriterionInput[];
+  /** Structured user fields; summary remains a derived compatibility projection. */
+  textFields?: SupervisorEvaluationTextFields;
+}
+
+export interface SupervisorEvaluationTextFields {
+  unitCompetencies: string;
+  serverAssignments: string;
+  generalComments: string;
+  monthlyObservations: Array<{ id: string; monthLabel: string; description: string }>;
 }
 
 export interface SupervisorEvaluationRef {

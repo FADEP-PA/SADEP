@@ -1,3 +1,4 @@
+import { validateEvaluationText } from '../evaluation-text-validation';
 import {
   BadRequestException,
   ForbiddenException,
@@ -14,6 +15,7 @@ import {
 } from '@prisma/client';
 import {
   AuditEventType,
+  calculateEvaluationRatingsScore,
   ProcessAction,
   ProcessStatus,
   SupervisorEvaluationStatus,
@@ -547,9 +549,31 @@ export class SupervisorEvaluationsService {
       throw new BadRequestException('Supervisor evaluation payload must be an object');
     }
 
-    const summary = this.normalizeRequiredText(payload.summary, 'summary');
-    const generalComments = this.normalizeRequiredText(payload.generalComments, 'generalComments');
     const content = this.normalizeContent(payload.content);
+    const fields = content.textFields;
+    // Projections are derived, never parsed for validation or trusted from the client.
+    if (!fields) {
+      validateEvaluationText(payload.summary, 'summary');
+      validateEvaluationText(payload.generalComments, 'generalComments');
+    }
+    const summary = this.normalizeRequiredText(
+      fields ? [fields.unitCompetencies.trim(), fields.serverAssignments.trim()].filter(Boolean).join('\n\n') : payload.summary,
+      'summary',
+    );
+    let generalComments: string;
+    if (fields) {
+      const expectedCriteria = Array.from({ length: 5 }, (_, factor) =>
+        Array.from({ length: 4 }, (_, item) => `${factor + 1}.${item + 1}`),
+      ).flat().map((code) => content.criteria.find((criterion) => criterion.code === code));
+      const complete = expectedCriteria.every((criterion) => criterion !== undefined);
+      const score = calculateEvaluationRatingsScore(expectedCriteria.flatMap((criterion) => criterion ? [criterion.rating] : []));
+      const result = complete
+        ? `Resultado final informado pela chefia: pontuação total ${score.totalStageScore}, média ${score.stageAverage}, conceito ${score.administrativeConcept}.`
+        : '';
+      generalComments = [fields.generalComments.trim(), result].filter(Boolean).join('\n\n') || 'Avaliação em preenchimento pela chefia.';
+    } else {
+      generalComments = this.normalizeRequiredText(payload.generalComments, 'generalComments');
+    }
     const comment = this.normalizeOptionalText(payload.comment);
 
     return {
@@ -582,6 +606,7 @@ export class SupervisorEvaluationsService {
       throw new BadRequestException('Supervisor evaluation comment must be a string when provided');
     }
 
+    validateEvaluationText(value, 'comment');
     const normalizedValue = value.trim();
     return normalizedValue.length > 0 ? normalizedValue : null;
   }
@@ -596,7 +621,9 @@ export class SupervisorEvaluationsService {
       throw new BadRequestException('Supervisor evaluation content must include at least one criterion');
     }
 
+    const textFields = this.normalizeTextFields((value as { textFields?: unknown }).textFields);
     return {
+      ...(textFields ? { textFields } : {}),
       criteria: criteria.map((criterion, index) => {
         if (!criterion || typeof criterion !== 'object') {
           throw new BadRequestException(`Supervisor evaluation criterion ${index} must be an object`);
@@ -632,6 +659,7 @@ export class SupervisorEvaluationsService {
           throw new BadRequestException(`Supervisor evaluation criterion ${index} comment must be a string`);
         }
 
+        validateEvaluationText(candidate.comment, `criteria[${index}].comment`);
         return {
           code: candidate.code.trim(),
           label: candidate.label.trim(),
@@ -644,8 +672,35 @@ export class SupervisorEvaluationsService {
     };
   }
 
+  private normalizeTextFields(value: unknown): SupervisorEvaluationContentDto['textFields'] {
+    if (value === undefined) return undefined;
+    if (!value || typeof value !== 'object') throw new BadRequestException('textFields must be an object');
+    const fields = value as Record<string, unknown>;
+    for (const key of ['unitCompetencies', 'serverAssignments', 'generalComments']) {
+      if (typeof fields[key] !== 'string') throw new BadRequestException(`${key} must be a string`);
+      validateEvaluationText(fields[key], key);
+    }
+    if (!Array.isArray(fields.monthlyObservations)) throw new BadRequestException('monthlyObservations must be an array');
+    const monthlyObservations = fields.monthlyObservations.map((value: unknown) => {
+      if (!value || typeof value !== 'object') throw new BadRequestException('Observation must be an object');
+      const observation = value as Record<string, unknown>;
+      for (const key of ['id', 'monthLabel', 'description']) {
+        if (typeof observation[key] !== 'string') throw new BadRequestException(`${key} must be a string`);
+        validateEvaluationText(observation[key], key);
+      }
+      return { id: observation.id as string, monthLabel: observation.monthLabel as string, description: observation.description as string };
+    });
+    return {
+      unitCompetencies: fields.unitCompetencies as string,
+      serverAssignments: fields.serverAssignments as string,
+      generalComments: fields.generalComments as string,
+      monthlyObservations,
+    };
+  }
+
   private toPrismaJsonContent(content: SupervisorEvaluationContentDto): Prisma.InputJsonObject {
     return {
+      ...(content.textFields ? { textFields: { ...content.textFields, monthlyObservations: content.textFields.monthlyObservations.map((item) => ({ ...item })) } } : {}),
       criteria: content.criteria.map((criterion) => ({
         code: criterion.code,
         label: criterion.label,
@@ -667,6 +722,7 @@ export class SupervisorEvaluationsService {
     }
 
     return {
+      ...(content.textFields ? { textFields: content.textFields } : {}),
       criteria: content.criteria.map((criterion) => ({
         code: criterion.code,
         label: criterion.label,

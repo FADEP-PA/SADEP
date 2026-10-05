@@ -37,6 +37,29 @@ Não cobre ainda:
 
 ## Princípios de modelagem
 
+### Limite dos campos livres
+
+Cada campo digitado pelo usuário admite no máximo `EVALUATION_TEXT_MAX_LENGTH`
+(900 unidades UTF-16, a mesma contagem da textarea), definido em `@sadep/contracts`.
+O limite incide sobre gravação e submissão, inclusive chamadas diretas ao serviço;
+leituras de conteúdo legado não são truncadas nem rejeitadas pelo tamanho.
+
+Na avaliação da chefia, `content.textFields` preserva separadamente competências
+da unidade, atribuições, comentários gerais e observações mensais. `summary` é
+uma projeção derivada dos dois primeiros campos, sem parsing de separadores.
+Quando os campos estruturados são enviados, o backend ignora as projeções
+textuais do cliente e preserva os comentários do usuário em `textFields`.
+O resultado técnico acrescentado a `generalComments` é regenerado no backend
+a partir das notas, usando a mesma função de cálculo já usada pela interface,
+sem consumir a cota do usuário. A fórmula, a escala e as faixas não mudam.
+Payloads antigos sem
+`textFields` continuam aceitos, com limite por campo bruto; textos concatenados
+acima do limite precisam usar o contrato estruturado. Não há migration.
+
+Na autoavaliação, o limite cobre `selfReflection`, `additionalNotes` e comentários
+de operação. As regras de autoria, estado, assinatura e auditoria permanecem
+as mesmas.
+
 No SADEP, os instrumentos de avaliação devem ser entendidos em três camadas complementares:
 
 ### 1. Conteúdo funcional
