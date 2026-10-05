@@ -277,7 +277,8 @@ describe('SupervisorEvaluationWorkspace', () => {
     expect(
       await screen.findByText('Autoavaliação recebida'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Reflexão do servidor sobre o desempenho.')).toBeInTheDocument();
+    expect(screen.queryByText('Reflexão do servidor sobre o desempenho.')).not.toBeInTheDocument();
+    expect(screen.getByText('PDF em preparação ou aguardando geração.')).toBeInTheDocument();
   });
 
   it('chama signSelfEvaluation ao confirmar recebimento da autoavaliação', async () => {

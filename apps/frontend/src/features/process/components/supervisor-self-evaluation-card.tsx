@@ -12,6 +12,8 @@ import {
 import { StatusBadge } from '@/shared/ui/status-badge';
 import { WorkSection } from '@/shared/ui/work-patterns';
 
+import { EvaluationPdfViewer } from './evaluation-pdf-viewer';
+
 import { formatDateTime } from './process-formatters';
 
 type Props = {
@@ -57,12 +59,8 @@ export function SupervisorSelfEvaluationCard({
       }
     >
       <div className="evaluation-summary">
-        <p>{selfEvaluation.selfReflection || 'Não informado'}</p>
-        <details className="compact-disclosure">
-          <summary>Ver autoavaliação completa</summary>
-          {selfEvaluation.additionalNotes ? <p>{selfEvaluation.additionalNotes}</p> : null}
-          {selfEvaluation.submittedAt ? <small>Enviada em {formatDateTime(selfEvaluation.submittedAt)}</small> : null}
-        </details>
+        <EvaluationPdfViewer processId={selfEvaluation.processId} documentContext={documentContext} updatedAt={selfEvaluation.updatedAt} title="PDF da autoavaliação do Servidor" />
+        {selfEvaluation.submittedAt ? <small>Enviada em {formatDateTime(selfEvaluation.submittedAt)}</small> : null}
         {isSigned ? (
           <p className="success-copy">
             Confirmada por <strong>{userName}</strong>{signature?.signedAt ? ` em ${formatDateTime(signature.signedAt)}` : ''}.

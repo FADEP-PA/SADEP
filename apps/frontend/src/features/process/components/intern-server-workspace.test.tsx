@@ -19,6 +19,7 @@ import { HttpError } from '@/shared/api/http-error';
 import { InternServerWorkspace } from './intern-server-workspace';
 
 const api = vi.hoisted(() => ({
+  getEvaluationDocumentPdf: vi.fn(),
   getProcessList: vi.fn(),
   getWorkflowHistory: vi.fn(),
   getInternWorkspaceSnapshot: vi.fn(),
@@ -206,12 +207,34 @@ describe('InternServerWorkspace', () => {
     api.submitSelfEvaluation.mockResolvedValue({});
   });
 
+
+  it('recebe PDF disponível da Chefia e preserva ciência após reload', async () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:intern-pdf');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    api.getEvaluationDocumentPdf.mockResolvedValue(new Blob(['%PDF-test'], { type: 'application/pdf' }));
+    const snapshot = createSnapshot(); snapshot.supervisorEvaluation!.documentContext!.hasArtifact = true;
+    snapshot.supervisorEvaluation!.documentContext!.artifactPath = 'private/storage.pdf';
+    renderWorkspace(snapshot);
+    expect(await screen.findByTitle('PDF da avaliação da Chefia')).toHaveAttribute('src', 'blob:intern-pdf');
+    expect(api.getEvaluationDocumentPdf).toHaveBeenCalledWith(PROCESS_ID, 'supervisor-document-1', expect.any(AbortSignal));
+    expect(screen.queryByText('Desempenho satisfatório no período.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirmar ciência' })).toBeEnabled();
+    expect(document.body.innerHTML).not.toContain('private/storage.pdf');
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
+    await waitFor(() => expect(api.signSupervisorEvaluation).toHaveBeenCalledWith(PROCESS_ID));
+    expect(await screen.findByTitle('PDF da avaliação da Chefia')).toBeInTheDocument();
+  });
+
   it('carrega automaticamente o único processo e exibe a avaliação real com ciência pendente', async () => {
     renderWorkspace();
 
     expect(await screen.findByText('Minha avaliação')).toBeInTheDocument();
     expect(api.getInternWorkspaceSnapshot).toHaveBeenCalledWith(PROCESS_ID);
-    expect(screen.getByText('Desempenho satisfatório no período.')).toBeInTheDocument();
+    expect(screen.queryByText('Desempenho satisfatório no período.')).not.toBeInTheDocument();
+    expect(screen.queryByText('O servidor cumpriu as atribuições da etapa.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Boa frequência.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ver avaliação completa')).not.toBeInTheDocument();
+    expect(screen.getByText('PDF em preparação ou aguardando geração.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirmar ciência' })).toBeEnabled();
     expect(screen.queryByText(PROCESS_ID)).not.toBeInTheDocument();
     expect(
