@@ -58,4 +58,32 @@ export class AppConfigService {
   get frontendOrigin(): string {
     return this.configService.get('FRONTEND_ORIGIN', { infer: true });
   }
+
+  get artifactStorageDriver(): 'filesystem' | 's3' {
+    return this.configService.get('ARTIFACT_STORAGE_DRIVER', { infer: true });
+  }
+
+  get artifactStorageRoot(): string {
+    return this.configService.get('ARTIFACT_STORAGE_ROOT', { infer: true });
+  }
+
+  get artifactStorageS3Bucket(): string {
+    return this.configService.get('ARTIFACT_STORAGE_S3_BUCKET', { infer: true });
+  }
+
+  get artifactStorageS3Region(): string {
+    return this.configService.get('ARTIFACT_STORAGE_S3_REGION', { infer: true });
+  }
+
+  get artifactStorageS3Endpoint(): string {
+    return this.configService.get('ARTIFACT_STORAGE_S3_ENDPOINT', { infer: true });
+  }
+
+  get artifactStorageS3AccessKeyId(): string {
+    return this.configService.get('ARTIFACT_STORAGE_S3_ACCESS_KEY_ID', { infer: true });
+  }
+
+  get artifactStorageS3SecretAccessKey(): string {
+    return this.configService.get('ARTIFACT_STORAGE_S3_SECRET_ACCESS_KEY', { infer: true });
+  }
 }
