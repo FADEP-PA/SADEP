@@ -1,8 +1,10 @@
 const VALID_NODE_ENVS = ['development', 'test', 'production'] as const;
 const VALID_COOKIE_SAMESITE_VALUES = ['lax', 'strict', 'none'] as const;
+const VALID_ARTIFACT_STORAGE_DRIVERS = ['filesystem', 's3'] as const;
 
 type NodeEnv = (typeof VALID_NODE_ENVS)[number];
 type CookieSameSite = (typeof VALID_COOKIE_SAMESITE_VALUES)[number];
+type ArtifactStorageDriver = (typeof VALID_ARTIFACT_STORAGE_DRIVERS)[number];
 
 export interface AppEnvironment {
   ACCESS_TOKEN_TTL_SECONDS: number;
@@ -18,6 +20,13 @@ export interface AppEnvironment {
   REFRESH_TOKEN_TTL_SECONDS: number;
   JWT_SECRET: string;
   FRONTEND_ORIGIN: string;
+  ARTIFACT_STORAGE_DRIVER: ArtifactStorageDriver;
+  ARTIFACT_STORAGE_ROOT: string;
+  ARTIFACT_STORAGE_S3_BUCKET: string;
+  ARTIFACT_STORAGE_S3_REGION: string;
+  ARTIFACT_STORAGE_S3_ENDPOINT: string;
+  ARTIFACT_STORAGE_S3_ACCESS_KEY_ID: string;
+  ARTIFACT_STORAGE_S3_SECRET_ACCESS_KEY: string;
 }
 
 export function validateEnvironmentVariables(config: Record<string, unknown>): AppEnvironment {
@@ -121,6 +130,22 @@ export function validateEnvironmentVariables(config: Record<string, unknown>): A
   }
 
   const normalizedFrontendOrigin = normalizeFrontendOrigin(frontendOrigin, nodeEnv as NodeEnv);
+  const artifactStorageDriver = String(config.ARTIFACT_STORAGE_DRIVER ?? 'filesystem').trim().toLowerCase();
+  if (!VALID_ARTIFACT_STORAGE_DRIVERS.includes(artifactStorageDriver as ArtifactStorageDriver)) {
+    throw new Error(`Invalid ARTIFACT_STORAGE_DRIVER: ${artifactStorageDriver}. Expected filesystem or s3.`);
+  }
+  const artifactStorageRoot = String(config.ARTIFACT_STORAGE_ROOT ?? '.data/private-artifacts').trim();
+  if (!artifactStorageRoot) {
+    throw new Error('Invalid ARTIFACT_STORAGE_ROOT: value is required.');
+  }
+  const artifactStorageS3Bucket = String(config.ARTIFACT_STORAGE_S3_BUCKET ?? '').trim();
+  const artifactStorageS3Region = String(config.ARTIFACT_STORAGE_S3_REGION ?? 'us-east-1').trim();
+  const artifactStorageS3Endpoint = String(config.ARTIFACT_STORAGE_S3_ENDPOINT ?? '').trim();
+  const artifactStorageS3AccessKeyId = String(config.ARTIFACT_STORAGE_S3_ACCESS_KEY_ID ?? '').trim();
+  const artifactStorageS3SecretAccessKey = String(config.ARTIFACT_STORAGE_S3_SECRET_ACCESS_KEY ?? '').trim();
+  if (artifactStorageDriver === 's3' && (!artifactStorageS3Bucket || !artifactStorageS3Region)) {
+    throw new Error('Invalid S3 artifact storage configuration: bucket and region are required.');
+  }
 
   return {
     ACCESS_TOKEN_TTL_SECONDS: accessTokenTtlSeconds,
@@ -136,6 +161,13 @@ export function validateEnvironmentVariables(config: Record<string, unknown>): A
     REFRESH_TOKEN_TTL_SECONDS: refreshTokenTtlSeconds,
     JWT_SECRET: jwtSecret,
     FRONTEND_ORIGIN: normalizedFrontendOrigin,
+    ARTIFACT_STORAGE_DRIVER: artifactStorageDriver as ArtifactStorageDriver,
+    ARTIFACT_STORAGE_ROOT: artifactStorageRoot,
+    ARTIFACT_STORAGE_S3_BUCKET: artifactStorageS3Bucket,
+    ARTIFACT_STORAGE_S3_REGION: artifactStorageS3Region,
+    ARTIFACT_STORAGE_S3_ENDPOINT: artifactStorageS3Endpoint,
+    ARTIFACT_STORAGE_S3_ACCESS_KEY_ID: artifactStorageS3AccessKeyId,
+    ARTIFACT_STORAGE_S3_SECRET_ACCESS_KEY: artifactStorageS3SecretAccessKey,
   };
 }
 

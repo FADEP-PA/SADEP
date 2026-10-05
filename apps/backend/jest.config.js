@@ -11,6 +11,7 @@ module.exports = {
     '<rootDir>/src/processes/homologation/**/*.spec.ts',
     '<rootDir>/src/processes/intern-workspace/**/*.spec.ts',
     '<rootDir>/src/processes/supervisor-evaluations/**/*.spec.ts',
+    '<rootDir>/src/infrastructure/**/*.spec.ts',
   ],
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],

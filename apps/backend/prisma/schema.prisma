@@ -65,6 +65,8 @@ enum AuditEventType {
   SENT_TO_HOMOLOGATION
   RESULT_HOMOLOGATED
   DOCUMENT_GENERATED
+  DOCUMENT_ARTIFACT_GENERATED
+  DOCUMENT_ARTIFACT_GENERATION_FAILED
   NOTIFICATION_SENT
   ACKNOWLEDGEMENT_RECORDED
   PROCESS_CLOSED
@@ -334,6 +336,8 @@ model ProcessDocument {
   documentStatus      DocumentStatus    @default(DRAFT)
   version             Int               @default(1)
   artifactPath        String?
+  artifactChecksum    String?
+  artifactGeneratedAt DateTime?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   evaluationProcess   EvaluationProcess @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
