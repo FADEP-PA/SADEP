@@ -65,6 +65,17 @@ const AUTHENTICATED_REQUEST = {
   useStoredAccessToken: true,
 } as const;
 
+export async function getEvaluationDocumentPdf(processId: string, documentId: string, signal?: AbortSignal) {
+  const pdf = await httpRequest<Blob>(
+    `/processes/${encodeURIComponent(processId)}/supervisor-evaluation/documents/${encodeURIComponent(documentId)}/artifact`,
+    { ...AUTHENTICATED_REQUEST, responseType: 'blob', signal },
+  );
+  if (pdf.type.split(';')[0] !== 'application/pdf' || pdf.size === 0) {
+    throw new Error('O documento PDF está indisponível.');
+  }
+  return pdf;
+}
+
 export async function getProcessList() {
   return httpRequest<ProcessListRef>('/processes', {
     ...AUTHENTICATED_REQUEST,

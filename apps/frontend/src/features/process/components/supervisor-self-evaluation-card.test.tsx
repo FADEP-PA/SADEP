@@ -11,6 +11,9 @@ import {
   type SelfEvaluationDocumentContextRef,
 } from '@sadep/contracts';
 
+const api = vi.hoisted(() => ({ getEvaluationDocumentPdf: vi.fn() }));
+vi.mock('@/shared/api/services/processes-service', () => api);
+
 import { SupervisorSelfEvaluationCard } from './supervisor-self-evaluation-card';
 
 const BASE_SELF_EVALUATION: SelfEvaluationWithDocumentContextRef = {
@@ -59,6 +62,21 @@ describe('SupervisorSelfEvaluationCard', () => {
     onConfirm = vi.fn();
   });
 
+
+  it('recebe PDF disponível do Servidor sem campos brutos e preserva confirmação', async () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:supervisor-pdf');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    api.getEvaluationDocumentPdf.mockResolvedValue(new Blob(['%PDF-test'], { type: 'application/pdf' }));
+    const context = { ...createDocumentContext({ supervisorPending: true }), hasArtifact: true, artifactPath: 'private/storage.pdf' };
+    render(<SupervisorSelfEvaluationCard selfEvaluation={BASE_SELF_EVALUATION} documentContext={context} userName="Chefia" processStatus={ProcessStatus.AGUARDANDO_ASSINATURA} isConfirming={false} onConfirm={onConfirm} />);
+    expect(await screen.findByTitle('PDF da autoavaliação do Servidor')).toHaveAttribute('src', 'blob:supervisor-pdf');
+    expect(api.getEvaluationDocumentPdf).toHaveBeenCalledWith(BASE_SELF_EVALUATION.processId, 'doc-1', expect.any(AbortSignal));
+    expect(screen.queryByText(BASE_SELF_EVALUATION.selfReflection)).not.toBeInTheDocument();
+    expect(screen.queryByText(BASE_SELF_EVALUATION.additionalNotes!)).not.toBeInTheDocument();
+    expect(document.body.innerHTML).not.toContain('private/storage.pdf');
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar recebimento' })); expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
   it('renderiza nada quando selfEvaluation e null', () => {
     const { container } = render(
       <SupervisorSelfEvaluationCard
@@ -89,7 +107,7 @@ describe('SupervisorSelfEvaluationCard', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('renderiza o texto da reflexao quando SUBMITTED', () => {
+  it('substitui campos brutos pelo estado do PDF quando SUBMITTED', () => {
     render(
       <SupervisorSelfEvaluationCard
         selfEvaluation={BASE_SELF_EVALUATION}
@@ -102,8 +120,9 @@ describe('SupervisorSelfEvaluationCard', () => {
     );
 
     expect(screen.getByText('Autoavaliação recebida')).toBeTruthy();
-    expect(screen.getByText('Minha reflexao sobre o desempenho.')).toBeTruthy();
-    expect(screen.getByText('Observacoes adicionais do servidor.')).toBeTruthy();
+    expect(screen.queryByText('Minha reflexao sobre o desempenho.')).not.toBeInTheDocument();
+    expect(screen.getByText('PDF em preparação ou aguardando geração.')).toBeInTheDocument();
+    expect(screen.queryByText('Observacoes adicionais do servidor.')).not.toBeInTheDocument();
   });
 
   it('renderiza botao de confirmacao quando assinatura esta pendente', () => {

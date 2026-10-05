@@ -22,6 +22,7 @@ import { EmptyState } from '@/shared/ui/operational-states';
 import { NextAction, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
 import { formatDateTime } from './process-formatters';
+import { EvaluationPdfViewer } from './evaluation-pdf-viewer';
 import { SelfEvaluationFormView, type SelfEvaluationFormState } from './self-evaluation-form';
 
 const ALLOWED_ROLES = [UserRole.INTERN_SERVER];
@@ -186,8 +187,7 @@ export function InternServerWorkspace() {
                     <div><span>Situação</span><strong>{snapshot.supervisorEvaluation.status === 'SUBMITTED' ? 'Enviada pela chefia' : 'Em elaboração'}</strong></div>
                     <div><span>Data</span><strong>{formatDateTime(snapshot.supervisorEvaluation.submittedAt)}</strong></div>
                   </div>
-                  <p>{snapshot.supervisorEvaluation.summary}</p>
-                  <details className="compact-disclosure"><summary>Ver avaliação completa</summary><div className="document-detail"><p>{snapshot.supervisorEvaluation.generalComments || 'Sem comentários adicionais.'}</p>{snapshot.supervisorEvaluation.content.criteria.map((criterion) => <div key={criterion.code}><strong>{criterion.label}</strong><span>{criterion.rating}</span>{criterion.comment ? <small>{criterion.comment}</small> : null}</div>)}</div></details>
+                  <EvaluationPdfViewer processId={snapshot.process.id} documentContext={snapshot.supervisorEvaluation.documentContext ?? null} updatedAt={snapshot.supervisorEvaluation.updatedAt} title="PDF da avaliação da Chefia" />
                 </div>
               ) : <EmptyState title="Avaliação ainda não enviada" description="Aguarde a chefia concluir o preenchimento." />}
             </WorkSection>

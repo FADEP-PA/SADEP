@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearAccessToken, setAccessToken } from '@/shared/auth/access-token-store';
 import { ProcessAction } from '@sadep/contracts';
 import {
+  getEvaluationDocumentPdf,
   completeCesadStageOpinion,
   getCesadStageOpinion,
   getCesadStageOpinionSignatureStatus,
@@ -49,7 +50,31 @@ describe('processes-service', () => {
   });
 
   describe('getWorkflow', () => {
-    it('faz GET /processes/:id/workflow com Authorization Bearer', async () => {
+
+  it('baixa bytes PDF autenticados sem usar caminho de storage', async () => {
+    const pdf = new Blob(['%PDF-test'], { type: 'application/pdf' });
+    fetchMock.mockResolvedValueOnce({ ok: true, status: 200, blob: async () => pdf });
+    expect(await getEvaluationDocumentPdf(PROCESS_ID, 'document-1')).toBe(pdf);
+    expect(fetchMock).toHaveBeenCalledWith(API_BASE + '/processes/' + PROCESS_ID + '/supervisor-evaluation/documents/document-1/artifact', expect.objectContaining({ cache: 'no-store', headers: expect.objectContaining({ Authorization: 'Bearer ' + TOKEN }) }));
+  });
+
+  it('rejeita resposta vazia ou conteúdo que não seja PDF', async () => {
+    for (const pdf of [new Blob([], { type: 'application/pdf' }), new Blob(['html'], { type: 'text/html' })]) {
+      fetchMock.mockResolvedValueOnce({ ok: true, status: 200, blob: async () => pdf });
+      await expect(getEvaluationDocumentPdf(PROCESS_ID, 'document-1')).rejects.toThrow('O documento PDF está indisponível.');
+    }
+  });
+
+  it('renova token expirado e repete o download binário autorizado', async () => {
+    const pdf = new Blob(['%PDF-test'], { type: 'application/pdf' });
+    fetchMock.mockResolvedValueOnce(jsonResponse(401, { message: 'expired' }))
+      .mockResolvedValueOnce(jsonResponse(200, { accessToken: 'renewed-token' }))
+      .mockResolvedValueOnce({ ok: true, status: 200, blob: async () => pdf });
+    expect(await getEvaluationDocumentPdf(PROCESS_ID, 'document-1')).toBe(pdf);
+    expect(fetchMock.mock.calls[2]![1]).toMatchObject({ headers: { Authorization: 'Bearer renewed-token' } });
+  });
+
+  it('faz GET /processes/:id/workflow com Authorization Bearer', async () => {
       const payload = { id: PROCESS_ID, status: 'EM_AVALIACAO', currentStage: 1 };
       fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
 

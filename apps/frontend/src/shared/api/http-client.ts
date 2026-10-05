@@ -8,6 +8,7 @@ import { HttpError, getHttpErrorMessage, type HttpErrorPayload } from './http-er
 type Primitive = string | number | boolean | null;
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
+  responseType?: 'json' | 'blob';
   body?: unknown;
   params?: Record<string, Primitive | undefined>;
   useStoredAccessToken?: boolean;
@@ -148,7 +149,7 @@ async function fetchJson<T>(
     redirectOnUnauthorized?: boolean;
   },
 ) {
-  const { body, headers, params, token, redirectOnUnauthorized, ...rest } = options;
+  const { body, headers, params, token, redirectOnUnauthorized, responseType, ...rest } = options;
   const response = await fetch(buildUrl(path, params), {
     ...rest,
     headers: {
@@ -160,6 +161,9 @@ async function fetchJson<T>(
     cache: 'no-store',
   });
 
+  if (response.ok && responseType === 'blob') {
+    return (await response.blob()) as T;
+  }
   return parseResponse<T>(response, { token, redirectOnUnauthorized });
 }
 
