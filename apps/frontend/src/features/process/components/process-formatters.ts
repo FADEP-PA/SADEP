@@ -87,6 +87,7 @@ const HISTORY_ACTION_LABELS: Record<ProcessAction, string> = {
   [ProcessAction.RECORD_ACKNOWLEDGEMENT]: 'Ciência registrada',
   [ProcessAction.LINK_ORDINANCE]: 'Portaria vinculada',
   [ProcessAction.CLOSE_PROCESS]: 'Processo encerrado',
+  [ProcessAction.GENERATE_DOCUMENT_ARTIFACT]: 'Documento PDF materializado',
 };
 
 const ROLE_LABELS: Record<UserRole, string> = {
