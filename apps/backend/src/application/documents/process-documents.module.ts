@@ -40,6 +40,6 @@ import { ProcessDocumentArtifactService } from './process-document-artifact.serv
       ) => config.artifactStorageDriver === 's3' ? s3 : filesystem,
     },
   ],
-  exports: [ProcessDocumentsService, ProcessDocumentArtifactService],
+  exports: [ProcessDocumentsService, ProcessDocumentArtifactService, DOCUMENT_ARTIFACT_STORAGE],
 })
 export class ProcessDocumentsModule {}

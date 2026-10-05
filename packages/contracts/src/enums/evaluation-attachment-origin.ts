@@ -1,0 +1,4 @@
+export enum EvaluationAttachmentOrigin {
+  SUPERVISOR_EVALUATION = 'SUPERVISOR_EVALUATION',
+  SELF_EVALUATION = 'SELF_EVALUATION',
+}
