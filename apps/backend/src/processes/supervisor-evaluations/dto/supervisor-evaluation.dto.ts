@@ -1,8 +1,12 @@
-import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min, MaxLength, ValidateNested } from 'class-validator';
+import { IsArray, IsInt, IsIn, IsNotEmpty, IsOptional, IsString, Max, Min, MaxLength, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
   EVALUATION_TEXT_MAX_LENGTH,
   EVALUATION_TEXT_LIMIT_MESSAGE,
+  PERCENT_EVALUATION_SCORING_VERSION,
+  LEGACY_EVALUATION_SCORING_VERSION,
+  type EvaluationScoringVersion,
+  type EvaluationScoreScale,
   type SupervisorEvaluationTextFields,
   SupervisorEvaluationStatus,
   type SupervisorEvaluationRef,
@@ -23,8 +27,8 @@ export class SupervisorEvaluationCriterionDto {
   label!: string;
 
   @IsInt()
-  @Min(1)
-  @Max(5)
+  @Min(0)
+  @Max(100)
   rating!: number;
 
   @IsOptional()
@@ -62,6 +66,14 @@ export class SupervisorEvaluationTextFieldsDto implements SupervisorEvaluationTe
 }
 
 export class SupervisorEvaluationContentDto {
+  @IsOptional()
+  @IsIn(['LEGACY_1_5', 'PERCENT_0_100'])
+  scoreScale?: EvaluationScoreScale;
+
+  @IsOptional()
+  @IsIn([LEGACY_EVALUATION_SCORING_VERSION, PERCENT_EVALUATION_SCORING_VERSION])
+  scoringVersion?: EvaluationScoringVersion;
+
   @IsOptional()
   @ValidateNested()
   @Type(() => SupervisorEvaluationTextFieldsDto)
@@ -128,6 +140,7 @@ export function isSupervisorEvaluationStatus(value: string): value is Supervisor
 
 export function isSupervisorEvaluationCriterionDto(
   value: unknown,
+  scale: EvaluationScoreScale = 'LEGACY_1_5',
 ): value is SupervisorEvaluationCriterionDto {
   if (!value || typeof value !== 'object') {
     return false;
@@ -141,8 +154,9 @@ export function isSupervisorEvaluationCriterionDto(
     candidate.label.trim().length > 0 &&
     typeof candidate.rating === 'number' &&
     Number.isFinite(candidate.rating) &&
-    candidate.rating >= 1 &&
-    candidate.rating <= 5 &&
+    Number.isInteger(candidate.rating) &&
+    candidate.rating >= (scale === 'PERCENT_0_100' ? 0 : 1) &&
+    candidate.rating <= (scale === 'PERCENT_0_100' ? 100 : 5) &&
     (candidate.comment === undefined || typeof candidate.comment === 'string')
   );
 }
@@ -155,5 +169,11 @@ export function isSupervisorEvaluationContentDto(
   }
 
   const candidate = value as Partial<SupervisorEvaluationContentDto>;
-  return Array.isArray(candidate.criteria) && candidate.criteria.every(isSupervisorEvaluationCriterionDto);
+  const scale = candidate.scoreScale ?? 'LEGACY_1_5';
+  const version = candidate.scoringVersion ?? LEGACY_EVALUATION_SCORING_VERSION;
+  if (
+    (scale === 'PERCENT_0_100' && version !== PERCENT_EVALUATION_SCORING_VERSION) ||
+    (scale === 'LEGACY_1_5' && version !== LEGACY_EVALUATION_SCORING_VERSION)
+  ) return false;
+  return Array.isArray(candidate.criteria) && candidate.criteria.every((criterion) => isSupervisorEvaluationCriterionDto(criterion, scale));
 }

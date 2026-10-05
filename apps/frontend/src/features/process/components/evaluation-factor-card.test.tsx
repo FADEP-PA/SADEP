@@ -12,7 +12,7 @@ const INITIAL_FACTOR: EvaluationFactorDraft = {
     {
       id: '1.1',
       label: '1.1 Cumpre o horário integralmente',
-      score: 0,
+      score: null,
     },
   ],
 };
@@ -36,10 +36,10 @@ function TestHarness() {
 }
 
 describe('EvaluationFactorCard', () => {
-  it('não apresenta a média do valor local ainda não registrado como nota', () => {
+  it('não apresenta a média de um critério vazio', () => {
     render(
       <EvaluationFactorCard
-        factor={{ ...INITIAL_FACTOR, items: [{ ...INITIAL_FACTOR.items[0], score: 1, hasRecordedScore: false }] }}
+        factor={{ ...INITIAL_FACTOR, items: [{ ...INITIAL_FACTOR.items[0], score: null }] }}
         isExpanded={false}
         onToggle={() => undefined}
         onScoreChange={() => undefined}
@@ -49,44 +49,43 @@ describe('EvaluationFactorCard', () => {
     expect(screen.getByRole('button', { name: /Assiduidade/ }).textContent).toContain('—');
   });
 
-  it('mantém a nota local não registrada visualmente vazia ao abrir o fator', () => {
+  it('mantém a nota vazia ao abrir o fator', () => {
     render(
       <EvaluationFactorCard
-        factor={{ ...INITIAL_FACTOR, items: [{ ...INITIAL_FACTOR.items[0], score: 1, hasRecordedScore: false }] }}
+        factor={{ ...INITIAL_FACTOR, items: [{ ...INITIAL_FACTOR.items[0], score: null }] }}
         isExpanded
         onToggle={() => undefined}
         onScoreChange={() => undefined}
       />,
     );
 
-    expect(screen.getByRole('spinbutton', { name: /Nota:/ })).toHaveValue(null);
+    expect((screen.getByRole('spinbutton', { name: /Nota:/ }) as HTMLInputElement).value).toBe('');
     expect(screen.getByText('Soma bruta subfatores').parentElement?.textContent).toContain('—');
   });
 
-  it('remove o zero visual ao focar e substitui pelo número digitado', () => {
+  it('aceita uma nota digitada sem prefixar zero', () => {
     render(<TestHarness />);
 
     const input = screen.getByRole('spinbutton') as HTMLInputElement;
 
-    expect(input.value).toBe('0');
-
-    fireEvent.focus(input);
     expect(input.value).toBe('');
 
+    fireEvent.focus(input);
     fireEvent.change(input, { target: { value: '1' } });
     expect(input.value).toBe('1');
     expect(input.value).not.toBe('01');
   });
 
-  it('restaura zero se o campo perder foco sem nova nota', () => {
+  it('mantém vazio quando perde foco sem nova nota e preserva zero como valor válido', () => {
     render(<TestHarness />);
 
     const input = screen.getByRole('spinbutton') as HTMLInputElement;
 
     fireEvent.focus(input);
+    fireEvent.blur(input);
     expect(input.value).toBe('');
 
-    fireEvent.blur(input);
+    fireEvent.change(input, { target: { value: '0' } });
     expect(input.value).toBe('0');
   });
 });

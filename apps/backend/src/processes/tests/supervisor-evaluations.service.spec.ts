@@ -41,6 +41,68 @@ export async function runSupervisorEvaluationsServiceTests() {
       supervisor.id,
     );
 
+    const percentProcess = await createProcess(
+      context.prisma,
+      ProcessStatus.EM_AVALIACAO,
+      evaluatedUser.id,
+      supervisor.id,
+    );
+    const percentCriteria = Array.from({ length: 5 }, (_, factor) =>
+      Array.from({ length: 4 }, (_, item) => ({
+        code: `${factor + 1}.${item + 1}`,
+        label: 'Critério percentual',
+        rating: factor === 0 && item === 0 ? 0 : 50,
+      })),
+    ).flat();
+    const percentPayload = buildSupervisorEvaluationPayload({
+      content: {
+        scoreScale: 'PERCENT_0_100',
+        scoringVersion: 2,
+        criteria: percentCriteria,
+        textFields: {
+          unitCompetencies: 'Competências da unidade',
+          serverAssignments: 'Atribuições da etapa',
+          generalComments: 'Comentários percentuais',
+          monthlyObservations: [],
+        },
+      },
+    });
+    const percentDraft = await context.supervisorEvaluationsService.saveDraft(
+      percentProcess.id,
+      authenticatedUser(supervisor.id, supervisor.role),
+      percentPayload,
+    );
+    assert.equal(percentDraft.content.criteria[0].rating, 0);
+    assert.equal(percentDraft.content.scoreScale, 'PERCENT_0_100');
+    assert.equal(percentDraft.content.scoringVersion, 2);
+    await assert.rejects(
+      () => context.supervisorEvaluationsService.saveDraft(percentProcess.id, authenticatedUser(supervisor.id, supervisor.role), {
+        ...percentPayload,
+        content: { ...percentPayload.content, criteria: [{ ...percentCriteria[0], rating: -1 }] },
+      }),
+      /between 0 and 100/,
+    );
+    await assert.rejects(
+      () => context.supervisorEvaluationsService.saveDraft(percentProcess.id, authenticatedUser(supervisor.id, supervisor.role), {
+        ...percentPayload,
+        content: { ...percentPayload.content, criteria: [{ ...percentCriteria[0], rating: 101 }] },
+      }),
+      /between 0 and 100/,
+    );
+    await assert.rejects(
+      () => context.supervisorEvaluationsService.submit(percentProcess.id, authenticatedUser(supervisor.id, supervisor.role), {
+        ...percentPayload,
+        content: { ...percentPayload.content, criteria: percentCriteria.slice(0, 19) },
+      }),
+      /All 20 criteria/,
+    );
+    const percentSubmitted = await context.supervisorEvaluationsService.submit(
+      percentProcess.id,
+      authenticatedUser(supervisor.id, supervisor.role),
+      percentPayload,
+    );
+    assert.match(percentSubmitted.generalComments, /pontuação total 47.5, média 47.5, conceito Insuficiente/);
+
     const limitsProcess = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id, supervisor.id);
     const limitsUser = authenticatedUser(supervisor.id, supervisor.role);
     for (const length of [EVALUATION_TEXT_MAX_LENGTH - 1, EVALUATION_TEXT_MAX_LENGTH]) {

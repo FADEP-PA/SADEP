@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DocumentType } from '@sadep/contracts';
+import { calculateEvaluationRatingsScore, DocumentType, type EvaluationScoreScale } from '@sadep/contracts';
 
 import {
   PdfKitProcessDocumentPdfRenderer,
@@ -27,17 +27,25 @@ export class EvaluationProcessDocumentPdfRenderer implements ProcessDocumentPdfR
     const logicalContent = input.logicalContent ?? {};
     const content = (logicalContent.content ?? {}) as { criteria?: unknown };
     const criteria = Array.isArray(content.criteria) ? content.criteria.filter(this.isCriterion) : [];
-    const rows: Array<Array<string | number>> = [['Código', 'Critério', 'Nota (1–5)', 'Comentário']];
+    const scoreScale: EvaluationScoreScale = logicalContent.scoreScale === 'PERCENT_0_100'
+      ? 'PERCENT_0_100'
+      : 'LEGACY_1_5';
+    const rows: Array<Array<string | number>> = [[
+      'Código',
+      'Critério',
+      scoreScale === 'PERCENT_0_100' ? 'Nota (0–100)' : 'Nota (1–5)',
+      'Comentário',
+    ]];
     for (const criterion of criteria) rows.push([criterion.code, criterion.label, criterion.rating, criterion.comment ?? '']);
     const summaries = [
       `Resumo: ${String(logicalContent.summary ?? '')}`,
       `Observações: ${String(logicalContent.generalComments ?? '')}`,
     ];
     if (criteria.length === 20) {
-      const total = criteria.reduce((sum, criterion) => sum + criterion.rating, 0);
-      summaries.push(`Total das 20 notas: ${total} (escala possível: 20–100)`);
-      summaries.push(`Média das notas registradas: ${(total / criteria.length).toFixed(2)}`);
-      summaries.push('Conceito administrativo: não informado pelo conteúdo funcional atual.');
+      const score = calculateEvaluationRatingsScore(criteria.map((criterion) => criterion.rating), scoreScale);
+      summaries.push(`Pontuação da etapa: ${score.totalStageScore} (${scoreScale === 'PERCENT_0_100' ? 'escala 0–100' : 'escala histórica 1–5'})`);
+      summaries.push(`Média final da etapa: ${score.stageAverage}`);
+      summaries.push(`Conceito administrativo: ${score.administrativeConcept}`);
     } else {
       summaries.push(`Critérios registrados: ${criteria.length}. O backend não fornece consolidação administrativa para este conteúdo.`);
     }

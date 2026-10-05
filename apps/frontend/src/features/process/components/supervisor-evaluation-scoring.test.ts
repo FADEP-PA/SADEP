@@ -7,7 +7,7 @@ import {
   getAdministrativeConcept,
 } from './supervisor-evaluation-scoring';
 
-function buildFactors(score: number): EvaluationFactorDraft[] {
+function buildFactors(score: number | null): EvaluationFactorDraft[] {
   return Array.from({ length: 5 }, (_, factorIndex) => ({
     id: `factor-${factorIndex + 1}`,
     title: `Factor ${factorIndex + 1}`,
@@ -26,26 +26,38 @@ describe('supervisor evaluation scoring', () => {
     { rating: 3, total: '60.0', average: '3.0', concept: 'Regular' },
     { rating: 4, total: '80.0', average: '4.0', concept: 'Bom' },
     { rating: 5, total: '100.0', average: '5.0', concept: 'Excelente' },
-  ])('calculates 20 criterion ratings on the backend 1-to-5 scale: $rating', ({ rating, total, average, concept }) => {
-    expect(calculateEvaluationScore(buildFactors(rating))).toEqual({
+  ])('preserves the historical 1-to-5 calculation: $rating', ({ rating, total, average, concept }) => {
+    expect(calculateEvaluationScore(buildFactors(rating), 'LEGACY_1_5')).toEqual({
       totalStageScore: total,
       stageAverage: average,
       administrativeConcept: concept,
     });
   });
 
-  it('uses the 0-to-100 total score for the administrative concept bands', () => {
+  it('uses the 0-to-100 final average for the administrative concept bands', () => {
     expect(getAdministrativeConcept(49.9)).toBe('Insuficiente');
     expect(getAdministrativeConcept(50)).toBe('Regular');
     expect(getAdministrativeConcept(70)).toBe('Bom');
     expect(getAdministrativeConcept(90)).toBe('Excelente');
   });
 
-  it('normalizes criterion input to an integer between 1 and 5 without percentage rescaling', () => {
-    expect(clampCriterionRating(0)).toBe(1);
+  it('calculates new scores in the 0-to-100 scale and ignores empty criteria', () => {
+    expect(calculateEvaluationScore(buildFactors(null), 'PERCENT_0_100')).toEqual({
+      totalStageScore: '0.0',
+      stageAverage: '0.0',
+      administrativeConcept: 'Insuficiente',
+    });
+    expect(calculateEvaluationScore(buildFactors(50), 'PERCENT_0_100').stageAverage).toBe('50.0');
+    expect(calculateEvaluationScore(buildFactors(100), 'PERCENT_0_100').administrativeConcept).toBe('Excelente');
+  });
+
+  it('normalizes new criterion input to an integer between 0 and 100', () => {
+    expect(clampCriterionRating(-1)).toBe(0);
+    expect(clampCriterionRating(0)).toBe(0);
     expect(clampCriterionRating(1)).toBe(1);
-    expect(clampCriterionRating(3.4)).toBe(3);
-    expect(clampCriterionRating(4.6)).toBe(5);
-    expect(clampCriterionRating(100)).toBe(5);
+    expect(clampCriterionRating(50.4)).toBe(50);
+    expect(clampCriterionRating(99)).toBe(99);
+    expect(clampCriterionRating(99.6)).toBe(100);
+    expect(clampCriterionRating(101)).toBe(100);
   });
 });

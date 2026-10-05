@@ -54,13 +54,17 @@ export function EvaluationDetailView({
     }));
   }
 
-  function updateFactorScore(factorId: string, itemId: string, score: number) {
+  function updateFactorScore(factorId: string, itemId: string, score: number | null) {
     onChange((current) => {
       const factors = current.factors.map((factor) => factor.id === factorId ? {
         ...factor,
-        items: factor.items.map((item) => item.id === itemId ? { ...item, score: clampCriterionRating(score), hasRecordedScore: true } : item),
+        items: factor.items.map((item) => item.id === itemId ? {
+          ...item,
+          score: score === null ? null : clampCriterionRating(score, current.scoreScale),
+          hasRecordedScore: score !== null,
+        } : item),
       } : factor);
-      return { ...current, factors, ...calculateEvaluationScore(factors) };
+      return { ...current, factors, ...calculateEvaluationScore(factors, current.scoreScale) };
     });
   }
 
@@ -82,9 +86,7 @@ export function EvaluationDetailView({
 
   const exceedsTextLimit = [evaluation.unitCompetencies, evaluation.serverAssignments, evaluation.generalComments, ...evaluation.monthlyObservations.map((item) => item.description)].some((value) => !isEvaluationTextWithinLimit(value));
   const editable = canSaveActiveDraft || canSubmitActiveEvaluation;
-  const hasCompleteScores = evaluation.factors.every((factor) =>
-    factor.items.every((item) => item.hasRecordedScore !== false),
-  );
+  const hasCompleteScores = evaluation.factors.every((factor) => factor.items.every((item) => item.score !== null));
 
   return (
     <div className="work-page evaluation-workspace">
@@ -131,13 +133,13 @@ export function EvaluationDetailView({
       <WorkSection title="Fatores de desempenho" className="evaluation-workspace__factors">
         <div className="evaluation-detail__factor-stack">
           {evaluation.factors.map((factor) => (
-            <EvaluationFactorCard key={factor.id} factor={factor} isExpanded={evaluation.expandedFactorIds.includes(factor.id)} onToggle={() => toggleFactor(factor.id)} onScoreChange={(itemId, score) => updateFactorScore(factor.id, itemId, score)} />
+            <EvaluationFactorCard key={factor.id} factor={factor} scoreScale={evaluation.scoreScale} isExpanded={evaluation.expandedFactorIds.includes(factor.id)} onToggle={() => toggleFactor(factor.id)} onScoreChange={(itemId, score) => updateFactorScore(factor.id, itemId, score)} />
           ))}
         </div>
         <details className="compact-disclosure">
           <summary>Consultar faixas de conceito</summary>
-          <div className="concept-guide">
-            <span><strong>0–49,9</strong> Insuficiente</span><span><strong>50–69,9</strong> Regular</span><span><strong>70–89,9</strong> Bom</span><span><strong>90–100</strong> Excelente</span>
+            <div className="concept-guide">
+            {evaluation.scoreScale === 'PERCENT_0_100' ? <><span><strong>0–49,9</strong> Insuficiente</span><span><strong>50–69,9</strong> Regular</span><span><strong>70–89,9</strong> Bom</span><span><strong>90–100</strong> Excelente</span></> : <span><strong>Registro histórico 1–5</strong> Conceito preservado</span>}
           </div>
         </details>
       </WorkSection>

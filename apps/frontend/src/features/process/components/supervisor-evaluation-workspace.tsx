@@ -7,6 +7,9 @@ import {
   SelfEvaluationStatus,
   SignatureStatus,
   UserRole,
+  LEGACY_EVALUATION_SCORING_VERSION,
+  PERCENT_EVALUATION_SCORING_VERSION,
+  type EvaluationScoreScale,
   type ProcessListItemRef,
   type SelfEvaluationWithDocumentContextRef,
   type SupervisorEvaluationWithDocumentContextRef,
@@ -176,6 +179,10 @@ function createEvaluationDraft(
   evaluation?: SupervisorEvaluationWithDocumentContextRef | null,
 ): EvaluationDraft {
   const storedCriteria = evaluation?.content.criteria ?? [];
+  const scoreScale: EvaluationScoreScale = evaluation?.content.scoreScale ?? 'PERCENT_0_100';
+  const scoringVersion = evaluation?.content.scoringVersion ?? (
+    scoreScale === 'LEGACY_1_5' ? LEGACY_EVALUATION_SCORING_VERSION : PERCENT_EVALUATION_SCORING_VERSION
+  );
   const factors = FACTOR_TEMPLATES.map((factor) => ({
     id: factor.id,
     title: factor.title,
@@ -184,13 +191,13 @@ function createEvaluationDraft(
       return {
         id: item.id,
         label: item.label,
-        score: recorded?.rating ?? 1,
+        score: recorded?.rating ?? null,
         hasRecordedScore: Boolean(recorded),
       };
     }),
   }));
 
-  const scoreSummary = calculateEvaluationScore(factors);
+  const scoreSummary = calculateEvaluationScore(factors, scoreScale);
 
   return {
     row,
@@ -201,6 +208,8 @@ function createEvaluationDraft(
     monthlyObservations: evaluation?.content.textFields?.monthlyObservations.map((item) => ({ ...item, attachmentName: '' })) ?? [],
     factors,
     expandedFactorIds: [],
+    scoreScale,
+    scoringVersion,
   };
 }
 
@@ -213,16 +222,14 @@ function buildSupervisorEvaluationPayload(
   }
   const summaryParts = [draft.unitCompetencies.trim(), draft.serverAssignments.trim()].filter(Boolean);
   const summary = summaryParts.join('\n\n');
-  const hasCompleteScores = draft.factors.every((factor) =>
-    factor.items.every((item) => item.hasRecordedScore !== false),
-  );
+  const hasCompleteScores = draft.factors.every((factor) => factor.items.every((item) => item.score !== null));
   const recordedCriteria = draft.factors.flatMap((factor) =>
     factor.items
-      .filter((item) => item.hasRecordedScore !== false)
+      .filter((item) => item.score !== null)
       .map((item) => ({
         code: item.id,
         label: item.label,
-        rating: clampCriterionRating(item.score),
+        rating: clampCriterionRating(item.score as number, draft.scoreScale),
       })),
   );
   const userGeneralComments = draft.generalComments;
@@ -248,6 +255,8 @@ function buildSupervisorEvaluationPayload(
     summary,
     generalComments,
     content: {
+      scoreScale: draft.scoreScale,
+      scoringVersion: draft.scoringVersion,
       criteria: recordedCriteria,
       textFields: {
         unitCompetencies: draft.unitCompetencies,
@@ -301,78 +310,6 @@ function getStageClassName(status: SupervisorDashboardStatus) {
   }
 
   return 'supervisor-dashboard__stage-chip';
-}
-
-function calculateFactorAverage(factor: { items: Array<{ score: number }> }) {
-  const total = factor.items.reduce((sum, item) => sum + item.score, 0);
-  return total / factor.items.length;
-}
-
-function EvaluationFactorCard({
-  factor,
-  isExpanded,
-  onToggle,
-  onScoreChange,
-}: {
-  factor: { id: string; title: string; items: Array<{ id: string; label: string; score: number }> };
-  isExpanded: boolean;
-  onToggle: () => void;
-  onScoreChange: (itemId: string, score: number) => void;
-}) {
-  const subtotal = factor.items.reduce((sum, item) => sum + item.score, 0);
-  const average = calculateFactorAverage(factor);
-
-  return (
-    <section className="evaluation-detail__factor-card">
-      <button
-        type="button"
-        className="evaluation-detail__factor-header"
-        onClick={onToggle}
-      >
-        <div className="evaluation-detail__factor-title">
-          <span>{isExpanded ? '▼' : '▶'}</span>
-          <strong>{factor.title}</strong>
-        </div>
-
-        <div className="evaluation-detail__factor-metric">
-          <span>Média do fator</span>
-          <strong>{average.toFixed(1)}</strong>
-        </div>
-      </button>
-
-      {isExpanded ? (
-        <div className="evaluation-detail__factor-body">
-          {factor.items.map((item) => (
-            <div key={item.id} className="evaluation-detail__score-row">
-              <p>{item.label}</p>
-
-              <div className="evaluation-detail__score-input-wrap">
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={item.score}
-                  onChange={(event) => onScoreChange(item.id, Number(event.target.value || 0))}
-                />
-                <span>Nota</span>
-              </div>
-            </div>
-          ))}
-
-          <div className="evaluation-detail__factor-footer">
-            <div>
-              <span>Soma bruta subfatores</span>
-              <strong>{subtotal.toFixed(1)}</strong>
-            </div>
-            <div>
-              <span>Pontuação final do fator (média)</span>
-              <strong>{average.toFixed(1)}</strong>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </section>
-  );
 }
 
 export function SupervisorEvaluationWorkspace() {
