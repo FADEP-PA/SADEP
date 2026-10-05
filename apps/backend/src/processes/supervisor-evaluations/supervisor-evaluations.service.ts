@@ -16,6 +16,8 @@ import {
 import {
   AuditEventType,
   calculateEvaluationRatingsScore,
+  LEGACY_EVALUATION_SCORING_VERSION,
+  PERCENT_EVALUATION_SCORING_VERSION,
   ProcessAction,
   ProcessStatus,
   SupervisorEvaluationStatus,
@@ -227,6 +229,12 @@ export class SupervisorEvaluationsService {
     payload: UpsertSupervisorEvaluationDto,
   ): Promise<SupervisorEvaluationResponseDto> {
     const normalizedPayload = this.normalizePayload(payload);
+    if (
+      normalizedPayload.content.scoreScale === 'PERCENT_0_100' &&
+      !this.hasAllExpectedCriteria(normalizedPayload.content)
+    ) {
+      throw new BadRequestException('All 20 criteria must have a rating before submission');
+    }
 
     const result = await this.prismaService.$transaction(async (transaction) => {
       const { process, currentStage } = await this.assertCanWriteSupervisorEvaluation(
@@ -566,7 +574,10 @@ export class SupervisorEvaluationsService {
         Array.from({ length: 4 }, (_, item) => `${factor + 1}.${item + 1}`),
       ).flat().map((code) => content.criteria.find((criterion) => criterion.code === code));
       const complete = expectedCriteria.every((criterion) => criterion !== undefined);
-      const score = calculateEvaluationRatingsScore(expectedCriteria.flatMap((criterion) => criterion ? [criterion.rating] : []));
+      const score = calculateEvaluationRatingsScore(
+        expectedCriteria.flatMap((criterion) => criterion ? [criterion.rating] : []),
+        content.scoreScale === 'PERCENT_0_100' ? 'PERCENT_0_100' : 'LEGACY_1_5',
+      );
       const result = complete
         ? `Resultado final informado pela chefia: pontuação total ${score.totalStageScore}, média ${score.stageAverage}, conceito ${score.administrativeConcept}.`
         : '';
@@ -616,13 +627,34 @@ export class SupervisorEvaluationsService {
       throw new BadRequestException('Supervisor evaluation content must be an object');
     }
 
-    const criteria = (value as { criteria?: unknown }).criteria;
+    const candidateContent = value as {
+      criteria?: unknown;
+      scoreScale?: unknown;
+      scoringVersion?: unknown;
+    };
+    const criteria = candidateContent.criteria;
     if (!Array.isArray(criteria) || criteria.length === 0) {
       throw new BadRequestException('Supervisor evaluation content must include at least one criterion');
     }
 
+    const hasScale = candidateContent.scoreScale !== undefined || candidateContent.scoringVersion !== undefined;
+    const scoreScale = hasScale ? candidateContent.scoreScale : 'LEGACY_1_5';
+    const scoringVersion = hasScale ? candidateContent.scoringVersion : LEGACY_EVALUATION_SCORING_VERSION;
+    if (scoreScale !== 'LEGACY_1_5' && scoreScale !== 'PERCENT_0_100') {
+      throw new BadRequestException('Supervisor evaluation scoreScale must be LEGACY_1_5 or PERCENT_0_100');
+    }
+    if (scoringVersion !== LEGACY_EVALUATION_SCORING_VERSION && scoringVersion !== PERCENT_EVALUATION_SCORING_VERSION) {
+      throw new BadRequestException('Supervisor evaluation scoringVersion is invalid');
+    }
+    if (
+      (scoreScale === 'PERCENT_0_100' && scoringVersion !== PERCENT_EVALUATION_SCORING_VERSION) ||
+      (scoreScale === 'LEGACY_1_5' && scoringVersion !== LEGACY_EVALUATION_SCORING_VERSION)
+    ) {
+      throw new BadRequestException('Supervisor evaluation scoreScale and scoringVersion do not match');
+    }
     const textFields = this.normalizeTextFields((value as { textFields?: unknown }).textFields);
     return {
+      ...(hasScale ? { scoreScale, scoringVersion } : {}),
       ...(textFields ? { textFields } : {}),
       criteria: criteria.map((criterion, index) => {
         if (!criterion || typeof criterion !== 'object') {
@@ -647,11 +679,12 @@ export class SupervisorEvaluationsService {
         if (
           typeof candidate.rating !== 'number' ||
           !Number.isFinite(candidate.rating) ||
-          candidate.rating < 1 ||
-          candidate.rating > 5
+          !Number.isInteger(candidate.rating) ||
+          candidate.rating < (scoreScale === 'PERCENT_0_100' ? 0 : 1) ||
+          candidate.rating > (scoreScale === 'PERCENT_0_100' ? 100 : 5)
         ) {
           throw new BadRequestException(
-            `Supervisor evaluation criterion ${index} rating must be a number between 1 and 5`,
+            `Supervisor evaluation criterion ${index} rating must be a number between ${scoreScale === 'PERCENT_0_100' ? 0 : 1} and ${scoreScale === 'PERCENT_0_100' ? 100 : 5}`,
           );
         }
 
@@ -698,8 +731,17 @@ export class SupervisorEvaluationsService {
     };
   }
 
+  private hasAllExpectedCriteria(content: SupervisorEvaluationContentDto): boolean {
+    const expectedCodes = Array.from({ length: 5 }, (_, factor) =>
+      Array.from({ length: 4 }, (_, item) => `${factor + 1}.${item + 1}`),
+    ).flat();
+    return expectedCodes.every((code) => content.criteria.some((criterion) => criterion.code === code));
+  }
+
   private toPrismaJsonContent(content: SupervisorEvaluationContentDto): Prisma.InputJsonObject {
     return {
+      ...(content.scoreScale ? { scoreScale: content.scoreScale } : {}),
+      ...(content.scoringVersion ? { scoringVersion: content.scoringVersion } : {}),
       ...(content.textFields ? { textFields: { ...content.textFields, monthlyObservations: content.textFields.monthlyObservations.map((item) => ({ ...item })) } } : {}),
       criteria: content.criteria.map((criterion) => ({
         code: criterion.code,
@@ -722,6 +764,8 @@ export class SupervisorEvaluationsService {
     }
 
     return {
+      ...(content.scoreScale ? { scoreScale: content.scoreScale } : {}),
+      ...(content.scoringVersion ? { scoringVersion: content.scoringVersion } : {}),
       ...(content.textFields ? { textFields: content.textFields } : {}),
       criteria: content.criteria.map((criterion) => ({
         code: criterion.code,

@@ -17,7 +17,12 @@ describe('EvaluationProcessDocumentPdfRenderer', () => {
       documentType: DocumentType.SUPERVISOR_EVALUATION,
       title: 'Documento processual — avaliação da chefia',
       metadata: [['Processo', 'process-1'], ['Etapa', '4ª etapa'], ['Servidor', 'José da Silva']],
-      logicalContent: { summary: 'Resumo institucional', generalComments: 'Observações da chefia', content: { criteria } },
+      logicalContent: {
+        summary: 'Resumo institucional',
+        generalComments: 'Observações da chefia',
+        scoreScale: 'PERCENT_0_100',
+        content: { criteria },
+      },
       sections: [{ title: 'Assinaturas', rows: [['Usuário', 'Papel', 'Status', 'Data'], ['Servidor', 'INTERN_SERVER', 'PENDING', 'Pendente']] }],
       generatedAt: new Date('2026-10-05T10:00:00.000Z'),
     });
@@ -26,7 +31,7 @@ describe('EvaluationProcessDocumentPdfRenderer', () => {
     // encoded fragments instead of coupling the test to the binary layout.
     const encoded = pdf.toString('latin1');
     expect(encoded).toContain('446f63756d656e746f'); // Documento
-    expect(encoded).toContain('6f74616c20646173203230206e6f746173'); // otal das 20 notas
+    expect(encoded).toContain('4e6f7461202830'); // Nota (0–100)
     expect(encoded).toContain('656e64656e7465'); // endente
     expect(encoded).not.toContain('302d313030'); // legacy 0-100
     expect((encoded.match(/\/Type \/Page/g) ?? []).length).toBeGreaterThan(1);

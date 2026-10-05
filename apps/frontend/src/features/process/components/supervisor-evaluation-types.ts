@@ -1,3 +1,4 @@
+import type { EvaluationScoreScale, EvaluationScoringVersion } from '@sadep/contracts';
 import type { SupervisorEvaluationWorkspaceSnapshot } from '@/shared/api/services/processes-service';
 
 export type SupervisorDashboardStatus =
@@ -26,7 +27,7 @@ export type SupervisorDashboardRow = {
 export type EvaluationFactorItemDraft = {
   id: string;
   label: string;
-  score: number;
+  score: number | null;
   /** Display-only: distinguishes an untouched local default from a recorded rating. */
   hasRecordedScore?: boolean;
 };
@@ -55,6 +56,8 @@ export type EvaluationDraft = {
   monthlyObservations: MonthlyObservation[];
   factors: EvaluationFactorDraft[];
   expandedFactorIds: string[];
+  scoreScale: EvaluationScoreScale;
+  scoringVersion: EvaluationScoringVersion;
 };
 
 export type PreviousEvaluationItem = {

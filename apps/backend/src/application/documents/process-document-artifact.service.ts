@@ -203,7 +203,16 @@ export class ProcessDocumentArtifactService {
         select: { summary: true, generalComments: true, content: true, status: true, submittedAt: true },
       });
       if (!evaluation) throw new NotFoundException('Supervisor evaluation content not found');
-      logicalContent = { summary: evaluation.summary, generalComments: evaluation.generalComments, content: evaluation.content, status: evaluation.status, submittedAt: evaluation.submittedAt?.toISOString() ?? null };
+      logicalContent = {
+        summary: evaluation.summary,
+        generalComments: evaluation.generalComments,
+        content: evaluation.content,
+        scoreScale: typeof evaluation.content === 'object' && evaluation.content !== null && 'scoreScale' in evaluation.content
+          ? evaluation.content.scoreScale
+          : 'LEGACY_1_5',
+        status: evaluation.status,
+        submittedAt: evaluation.submittedAt?.toISOString() ?? null,
+      };
     } else if (document.documentType === PrismaDocumentType.SELF_EVALUATION) {
       if (!stage) throw new BadRequestException('Evaluation process document is not linked to a stage');
       const evaluation = await this.prismaService.selfEvaluation.findUnique({

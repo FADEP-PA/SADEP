@@ -5,6 +5,7 @@ import type {
   SupervisorEvaluationStatus,
   UserRole,
 } from '../enums';
+import type { EvaluationScoringVersion, EvaluationScoreScale } from '../evaluation-score';
 
 export interface SupervisorEvaluationCriterionInput {
   code: string;
@@ -15,6 +16,9 @@ export interface SupervisorEvaluationCriterionInput {
 
 export interface SupervisorEvaluationContentInput {
   criteria: SupervisorEvaluationCriterionInput[];
+  /** New evaluations must declare the 0–100 scoring model explicitly. */
+  scoreScale?: EvaluationScoreScale;
+  scoringVersion?: EvaluationScoringVersion;
   /** Structured user fields; summary remains a derived compatibility projection. */
   textFields?: SupervisorEvaluationTextFields;
 }
