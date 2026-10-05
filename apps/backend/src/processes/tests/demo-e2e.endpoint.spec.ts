@@ -121,6 +121,13 @@ export async function runDemoE2EEndpointTests() {
     const supervisorDocumentAfterSubmit = await context.prisma.processDocument.findFirstOrThrow({
       where: { evaluationProcessId: process.id, documentType: 'SUPERVISOR_EVALUATION' },
     });
+    if (!supervisorDocumentAfterSubmit.artifactPath) {
+      const artifactFailures = await context.prisma.auditEvent.findMany({
+        where: { evaluationProcessId: process.id, eventType: 'DOCUMENT_ARTIFACT_GENERATION_FAILED' },
+        select: { metadata: true },
+      });
+      assert.fail(`Supervisor artifact was not materialized: ${JSON.stringify(artifactFailures)}`);
+    }
     assert.notEqual(supervisorDocumentAfterSubmit.artifactPath, null);
     assert.notEqual(supervisorDocumentAfterSubmit.artifactChecksum, null);
 

@@ -7,5 +7,6 @@ import { ProcessDocumentsController } from './process-documents.controller';
 @Module({
   imports: [ApplicationProcessDocumentsModule, AuthModule],
   controllers: [ProcessDocumentsController],
+  exports: [ApplicationProcessDocumentsModule],
 })
 export class ProcessDocumentsModule {}
