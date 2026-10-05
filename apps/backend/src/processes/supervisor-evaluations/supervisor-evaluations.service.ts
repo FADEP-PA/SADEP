@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
   AuditEventType as PrismaAuditEventType,
@@ -28,6 +29,7 @@ import {
 } from '../process-type-mappers';
 import { ProcessesService, type PrismaTransactionClient } from '../processes.service';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
+import { ProcessDocumentArtifactService } from '../../application/documents/process-document-artifact.service';
 import type {
   SupervisorEvaluationContentDto,
   SupervisorEvaluationResponseDto,
@@ -45,6 +47,7 @@ export class SupervisorEvaluationsService {
     private readonly prismaService: PrismaService,
     private readonly processesService: ProcessesService,
     private readonly processDocumentsService: ProcessDocumentsService,
+    @Optional() private readonly processDocumentArtifactService?: ProcessDocumentArtifactService,
   ) {}
 
   async getByProcessId(
@@ -223,7 +226,7 @@ export class SupervisorEvaluationsService {
   ): Promise<SupervisorEvaluationResponseDto> {
     const normalizedPayload = this.normalizePayload(payload);
 
-    return this.prismaService.$transaction(async (transaction) => {
+    const result = await this.prismaService.$transaction(async (transaction) => {
       const { process, currentStage } = await this.assertCanWriteSupervisorEvaluation(
         transaction,
         processId,
@@ -347,8 +350,17 @@ export class SupervisorEvaluationsService {
         user,
       );
 
-      return this.toResponseDto(savedEvaluation);
+      return { response: this.toResponseDto(savedEvaluation), documentId };
     });
+
+    if (this.processDocumentArtifactService) {
+      try {
+        await this.processDocumentArtifactService.materializeAfterAuthorizedAction(result.documentId, user);
+      } catch {
+        // The logical submission is already committed; a physical retry remains safe.
+      }
+    }
+    return result.response;
   }
 
   async rectify(

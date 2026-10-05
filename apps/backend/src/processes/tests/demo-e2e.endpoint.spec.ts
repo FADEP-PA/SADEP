@@ -118,6 +118,25 @@ export async function runDemoE2EEndpointTests() {
     });
     assert.equal(afterSupervisorSubmit.status, ProcessStatus.AGUARDANDO_ASSINATURA);
 
+    const supervisorDocumentAfterSubmit = await context.prisma.processDocument.findFirstOrThrow({
+      where: { evaluationProcessId: process.id, documentType: 'SUPERVISOR_EVALUATION' },
+    });
+    assert.notEqual(supervisorDocumentAfterSubmit.artifactPath, null);
+    assert.notEqual(supervisorDocumentAfterSubmit.artifactChecksum, null);
+
+    const unauthorizedArtifactResponse = await fetch(
+      `${baseUrl}/processes/${process.id}/supervisor-evaluation/documents/${supervisorDocumentAfterSubmit.id}/artifact`,
+    );
+    assert.equal(unauthorizedArtifactResponse.status, 401);
+
+    const supervisorArtifactResponse = await fetch(
+      `${baseUrl}/processes/${process.id}/supervisor-evaluation/documents/${supervisorDocumentAfterSubmit.id}/artifact`,
+      { headers: authHeaders(serverSession.accessToken) },
+    );
+    assert.equal(supervisorArtifactResponse.status, 200);
+    assert.equal(supervisorArtifactResponse.headers.get('content-type'), 'application/pdf');
+    assert.equal((await supervisorArtifactResponse.arrayBuffer()).byteLength > 0, true);
+
     const internWorkspaceResponse = await fetch(
       `${baseUrl}/processes/${process.id}/intern-workspace`,
       {
@@ -143,6 +162,11 @@ export async function runDemoE2EEndpointTests() {
     );
     assert.equal(confirmScienceResponse.status, 201);
 
+    const supervisorDocumentAfterSign = await context.prisma.processDocument.findUniqueOrThrow({
+      where: { id: supervisorDocumentAfterSubmit.id },
+    });
+    assert.notEqual(supervisorDocumentAfterSign.artifactChecksum, null);
+
     const submitSelfEvaluationResponse = await fetch(
       `${baseUrl}/processes/${process.id}/self-evaluation/submit`,
       {
@@ -156,6 +180,12 @@ export async function runDemoE2EEndpointTests() {
       },
     );
     assert.equal(submitSelfEvaluationResponse.status, 201);
+
+    const selfDocumentAfterSubmit = await context.prisma.processDocument.findFirstOrThrow({
+      where: { evaluationProcessId: process.id, documentType: 'SELF_EVALUATION' },
+    });
+    assert.notEqual(selfDocumentAfterSubmit.artifactPath, null);
+    assert.notEqual(selfDocumentAfterSubmit.artifactChecksum, null);
 
     const supervisorSelfEvaluationResponse = await fetch(
       `${baseUrl}/processes/${process.id}/self-evaluation`,
@@ -178,6 +208,12 @@ export async function runDemoE2EEndpointTests() {
       },
     );
     assert.equal(confirmSelfEvaluationResponse.status, 201);
+
+    const selfDocumentAfterSign = await context.prisma.processDocument.findUniqueOrThrow({
+      where: { id: selfDocumentAfterSubmit.id },
+    });
+    assert.notEqual(selfDocumentAfterSign.artifactPath, null);
+    assert.notEqual(selfDocumentAfterSign.artifactChecksum, null);
 
     const processInCesad = await context.prisma.evaluationProcess.findUniqueOrThrow({
       where: { id: process.id },

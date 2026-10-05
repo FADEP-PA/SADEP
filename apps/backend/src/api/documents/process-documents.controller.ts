@@ -3,6 +3,7 @@ import { Controller, Get, Header, Optional, Param, Post, StreamableFile, Unautho
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
+import { DocumentType } from '@sadep/contracts';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import { ProcessDocumentArtifactService } from '../../application/documents/process-document-artifact.service';
 
@@ -49,6 +50,12 @@ export class ProcessDocumentsController {
     }
 
     await this.processDocumentsService.signSupervisorEvaluationDocument(id, user);
+    if (!this.artifactService) return { success: true };
+    try {
+      await this.artifactService.materializeLatestForProcess(id, DocumentType.SUPERVISOR_EVALUATION, user);
+    } catch {
+      // Signature/workflow action remains committed; artifact generation is safely retryable.
+    }
     return { success: true };
   }
 }

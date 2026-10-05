@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
   AuditEventType as PrismaAuditEventType,
@@ -23,6 +24,7 @@ import {
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
+import { ProcessDocumentArtifactService } from '../../application/documents/process-document-artifact.service';
 import { ProcessesService } from '../processes.service';
 import type {
   SignSelfEvaluationDto,
@@ -36,6 +38,7 @@ export class SelfEvaluationsService {
     private readonly prismaService: PrismaService,
     private readonly processesService: ProcessesService,
     private readonly processDocumentsService: ProcessDocumentsService,
+    @Optional() private readonly processDocumentArtifactService?: ProcessDocumentArtifactService,
   ) {}
 
   async getByProcessId(
@@ -210,7 +213,7 @@ export class SelfEvaluationsService {
   ): Promise<SelfEvaluationResponseDto> {
     const normalizedPayload = this.normalizePayload(payload, true);
 
-    return this.prismaService.$transaction(async (transaction) => {
+    const result = await this.prismaService.$transaction(async (transaction) => {
       const process = await this.assertOwnInternReadyForSelfEvaluation(transaction, processId, user);
       const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
       const existingEvaluation = await transaction.selfEvaluation.findUnique({
@@ -283,15 +286,27 @@ export class SelfEvaluationsService {
         user,
       );
 
-      return this.toResponseDto(
-        savedEvaluation,
-        await this.processDocumentsService.getSelfEvaluationDocumentContext(
-          transaction,
-          processId,
-          currentStage.id,
-        ) ?? undefined,
-      );
+      return {
+        response: this.toResponseDto(
+          savedEvaluation,
+          await this.processDocumentsService.getSelfEvaluationDocumentContext(
+            transaction,
+            processId,
+            currentStage.id,
+          ) ?? undefined,
+        ),
+        documentId,
+      };
     });
+
+    if (this.processDocumentArtifactService) {
+      try {
+        await this.processDocumentArtifactService.materializeAfterAuthorizedAction(result.documentId, user);
+      } catch {
+        // The logical submission is already committed; a physical retry remains safe.
+      }
+    }
+    return result.response;
   }
 
   async sign(
@@ -301,7 +316,7 @@ export class SelfEvaluationsService {
   ): Promise<SelfEvaluationResponseDto> {
     const comment = this.normalizeComment(payload?.comment);
 
-    return this.prismaService.$transaction(async (transaction) => {
+    const result = await this.prismaService.$transaction(async (transaction) => {
       const process = await this.assertExpectedSupervisorCanSignSelfEvaluation(transaction, processId, user);
       const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
       const evaluation = await transaction.selfEvaluation.findUnique({
@@ -316,7 +331,7 @@ export class SelfEvaluationsService {
         throw new BadRequestException('Only submitted self evaluation can be signed by the supervisor');
       }
 
-      await this.processDocumentsService.signSelfEvaluationDocument(
+      const { documentId } = await this.processDocumentsService.signSelfEvaluationDocument(
         transaction,
         processId,
         currentStage.id,
@@ -342,15 +357,27 @@ export class SelfEvaluationsService {
         );
       }
 
-      return this.toResponseDto(
-        evaluation,
-        await this.processDocumentsService.getSelfEvaluationDocumentContext(
-          transaction,
-          processId,
-          currentStage.id,
-        ) ?? undefined,
-      );
+      return {
+        response: this.toResponseDto(
+          evaluation,
+          await this.processDocumentsService.getSelfEvaluationDocumentContext(
+            transaction,
+            processId,
+            currentStage.id,
+          ) ?? undefined,
+        ),
+        documentId,
+      };
     });
+
+    if (this.processDocumentArtifactService && result.documentId) {
+      try {
+        await this.processDocumentArtifactService.materializeAfterAuthorizedAction(result.documentId, user);
+      } catch {
+        // The logical signature/workflow action is already committed; a physical retry remains safe.
+      }
+    }
+    return result.response;
   }
 
   private async assertOwnInternReadyForSelfEvaluation(

@@ -4,6 +4,7 @@ import { CesadModule } from '../../cesad/cesad.module';
 import { AppConfigService } from '../../config/app-config.service';
 import { DOCUMENT_ARTIFACT_STORAGE, FilesystemDocumentArtifactStorage, S3DocumentArtifactStorage } from '../../infrastructure/documents/document-artifact-storage';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { EvaluationProcessDocumentPdfRenderer } from '../../infrastructure/documents/evaluation-process-document-pdf-renderer';
 import { PROCESS_DOCUMENT_PDF_RENDERER, PdfKitProcessDocumentPdfRenderer } from '../../infrastructure/documents/process-document-pdf-renderer';
 import { ProcessStageService } from '../../processes/process-stage.service';
 import { ProcessesService } from '../../processes/processes.service';
@@ -18,6 +19,7 @@ import { ProcessDocumentArtifactService } from './process-document-artifact.serv
     ProcessDocumentArtifactService,
     AppConfigService,
     PdfKitProcessDocumentPdfRenderer,
+    EvaluationProcessDocumentPdfRenderer,
     FilesystemDocumentArtifactStorage,
     S3DocumentArtifactStorage,
     PrismaService,
@@ -26,7 +28,7 @@ import { ProcessDocumentArtifactService } from './process-document-artifact.serv
     StageClosureGuardService,
     {
       provide: PROCESS_DOCUMENT_PDF_RENDERER,
-      useExisting: PdfKitProcessDocumentPdfRenderer,
+      useExisting: EvaluationProcessDocumentPdfRenderer,
     },
     {
       provide: DOCUMENT_ARTIFACT_STORAGE,

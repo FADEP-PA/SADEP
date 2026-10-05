@@ -71,6 +71,19 @@ export class ProcessDocumentArtifactService {
     await this.materializeLoaded(document, user);
   }
 
+  async materializeLatestForProcess(
+    processId: string,
+    documentType: DocumentType,
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    const document = await this.prismaService.processDocument.findFirst({
+      where: { evaluationProcessId: processId, documentType: documentType as PrismaDocumentType },
+      orderBy: { updatedAt: 'desc' },
+    });
+    if (!document) throw new NotFoundException('Process document not found');
+    await this.materialize(processId, document.id, user);
+  }
+
   async download(
     processId: string,
     documentId: string,
@@ -211,6 +224,7 @@ export class ProcessDocumentArtifactService {
     };
     return {
       title: titleByType[document.documentType] ?? `Documento processual — ${document.documentType}`,
+      documentType: document.documentType,
       subtitle: 'Sistema de Avaliação de Desempenho de Estágio Probatório — SADEP',
       metadata: [
         ['Processo', document.evaluationProcessId],
