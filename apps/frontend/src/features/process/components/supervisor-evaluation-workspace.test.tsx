@@ -1,5 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
+  EVALUATION_TEXT_MAX_LENGTH,
+  EVALUATION_TEXT_LIMIT_MESSAGE,
+  SupervisorEvaluationStatus,
   DocumentStatus,
   DocumentType,
   ProcessStatus,
@@ -12,6 +15,8 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type SupervisorEvaluationWorkspaceSnapshot } from '@/shared/api/services/processes-service';
+
+import { HttpError } from '@/shared/api/http-error';
 
 import { SupervisorEvaluationWorkspace } from './supervisor-evaluation-workspace';
 
@@ -356,5 +361,71 @@ describe('SupervisorEvaluationWorkspace', () => {
     expect(
       await screen.findByRole('button', { name: 'Confirmar autoavaliação' }),
     ).toBeInTheDocument();
+  });
+});
+
+
+describe('limites de texto no workspace da chefia', () => {
+  function draftSnapshot(text = 'Competências') {
+    return createWorkspaceSnapshot({ supervisorEvaluation: {
+      id: 'draft-limit', processId: PROCESS_ID, processStageId: 'stage-1', evaluatorUserId: 'supervisor-user-id',
+      status: SupervisorEvaluationStatus.DRAFT, summary: text, generalComments: 'Comentário', submittedAt: null,
+      createdAt: '2026-09-16T12:00:00.000Z', updatedAt: '2026-09-16T12:00:00.000Z',
+      content: { criteria: Array.from({ length: 20 }, (_, i) => ({ code: (Math.floor(i / 4) + 1) + '.' + (i % 4 + 1), label: 'Critério', rating: 4 })),
+        textFields: { unitCompetencies: text, serverAssignments: 'Atribuições', generalComments: 'Comentário', monthlyObservations: [{ id: 'obs-1', monthLabel: '1º mês', description: 'Observação' }] } }
+    } });
+  }
+  beforeEach(() => {
+    vi.clearAllMocks(); api.getProcessList.mockResolvedValue(processList); api.getSelfEvaluation.mockResolvedValue(null);
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(draftSnapshot());
+    api.saveSupervisorEvaluationDraft.mockResolvedValue({}); api.submitSupervisorEvaluation.mockResolvedValue({});
+  });
+  async function open() {
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    return screen.findByLabelText('Competências da unidade');
+  }
+  it.each(['draft', 'submit'])('conta todos os campos e envia o limite estruturado no %s', async (action) => {
+    await open();
+    expect(screen.getByText('12 / ' + EVALUATION_TEXT_MAX_LENGTH)).toBeInTheDocument();
+    for (const label of ['Competências da unidade', 'Atribuições no período', 'Comentários gerais', 'Observação']) {
+      const input = screen.getByLabelText(label);
+      expect(input).toHaveAttribute('maxlength', String(EVALUATION_TEXT_MAX_LENGTH));
+      fireEvent.change(input, { target: { value: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH - 1) } });
+      expect(input).toHaveValue('a'.repeat(EVALUATION_TEXT_MAX_LENGTH - 1));
+      fireEvent.change(input, { target: { value: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH) } });
+      fireEvent.change(input, { target: { value: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH + 1) } });
+      expect(input).toHaveValue('a'.repeat(EVALUATION_TEXT_MAX_LENGTH));
+    }
+    expect(screen.getAllByText(EVALUATION_TEXT_MAX_LENGTH + ' / ' + EVALUATION_TEXT_MAX_LENGTH)).toHaveLength(4);
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: action === 'draft' ? 'Salvar rascunho' : 'Enviar para assinatura' })));
+    const request = action === 'draft' ? api.saveSupervisorEvaluationDraft : api.submitSupervisorEvaluation;
+    expect(request).toHaveBeenCalledWith(PROCESS_ID, expect.objectContaining({ content: expect.objectContaining({ textFields: {
+      unitCompetencies: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH), serverAssignments: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH), generalComments: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH),
+      monthlyObservations: [{ id: 'obs-1', monthLabel: '1º mês', description: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH) }]
+    } }) }));
+  });
+  it.each(['unitCompetencies', 'serverAssignments', 'generalComments', 'observation', 'legacy'] as const)('preserva %s acima do limite e bloqueia save/submit até corrigir', async (field) => {
+    const snapshot = draftSnapshot(); const evaluation = snapshot.supervisorEvaluation!;
+    const value = 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH + 2);
+    if (field === 'legacy') { delete evaluation.content.textFields; evaluation.summary = value; }
+    else if (field === 'observation') evaluation.content.textFields!.monthlyObservations[0]!.description = value;
+    else evaluation.content.textFields![field] = value;
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(snapshot);
+    await open();
+    const labels = { unitCompetencies: 'Competências da unidade', serverAssignments: 'Atribuições no período', generalComments: 'Comentários gerais', observation: 'Observação', legacy: 'Competências da unidade' };
+    const input = screen.getByLabelText(labels[field]); expect(input).toHaveValue(value);
+    const save = screen.getByRole('button', { name: 'Salvar rascunho' }); const submit = screen.getByRole('button', { name: 'Enviar para assinatura' });
+    expect(save).toBeDisabled(); expect(submit).toBeDisabled(); fireEvent.click(save); fireEvent.click(submit);
+    expect(api.saveSupervisorEvaluationDraft).not.toHaveBeenCalled(); expect(api.submitSupervisorEvaluation).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: value.slice(1) } }); expect(input).toHaveValue(value.slice(1)); expect(save).toBeDisabled();
+    fireEvent.change(input, { target: { value: 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH) } }); expect(save).toBeEnabled(); expect(submit).toBeEnabled();
+  });
+  it.each(['draft', 'submit'])('preserva dados e mostra erro backend no %s', async (action) => {
+    const request = action === 'draft' ? api.saveSupervisorEvaluationDraft : api.submitSupervisorEvaluation;
+    request.mockRejectedValueOnce(new HttpError(400, EVALUATION_TEXT_LIMIT_MESSAGE));
+    const input = await open();
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: action === 'draft' ? 'Salvar rascunho' : 'Enviar para assinatura' })));
+    expect(await screen.findByText(EVALUATION_TEXT_LIMIT_MESSAGE)).toBeInTheDocument(); expect(input).toHaveValue('Competências');
   });
 });

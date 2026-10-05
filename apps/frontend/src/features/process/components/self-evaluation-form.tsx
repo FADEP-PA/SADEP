@@ -1,5 +1,8 @@
 'use client';
 
+import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
+import { EvaluationTextarea } from '@/shared/ui/evaluation-textarea';
+
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { DetailList, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
@@ -42,6 +45,7 @@ export function SelfEvaluationFormView({
   onSaveDraft,
   onSubmit,
 }: Props) {
+  const exceedsTextLimit = Object.values(form).some((value) => !isEvaluationTextWithinLimit(value));
   return (
     <div className="self-evaluation-workspace">
       <button type="button" className="ghost-button work-back" onClick={onBack}>← Voltar à avaliação</button>
@@ -63,18 +67,18 @@ export function SelfEvaluationFormView({
         <div className="form-stack">
           <label className="field-group" htmlFor="self-evaluation-reflection">
             <span>Autoavaliação</span>
-            <textarea id="self-evaluation-reflection" rows={6} value={form.selfReflection} onChange={(event) => onChange((current) => ({ ...current, selfReflection: event.target.value }))} disabled={!canEdit || isBusy} />
+            <EvaluationTextarea aria-label="Autoavaliação" id="self-evaluation-reflection" rows={6} value={form.selfReflection} onChange={(event) => onChange((current) => ({ ...current, selfReflection: event.target.value }))} disabled={!canEdit || isBusy} />
           </label>
           <label className="field-group" htmlFor="self-evaluation-notes">
             <span>Observações adicionais</span>
-            <textarea id="self-evaluation-notes" rows={3} value={form.additionalNotes} onChange={(event) => onChange((current) => ({ ...current, additionalNotes: event.target.value }))} disabled={!canEdit || isBusy} />
+            <EvaluationTextarea aria-label="Observações adicionais" id="self-evaluation-notes" rows={3} value={form.additionalNotes} onChange={(event) => onChange((current) => ({ ...current, additionalNotes: event.target.value }))} disabled={!canEdit || isBusy} />
           </label>
         </div>
-        {canEdit && formIssues.length > 0 ? <p className="field-error">{formIssues[0]}</p> : null}
+        {canEdit && (exceedsTextLimit || formIssues.length > 0) ? <p className="field-error">{exceedsTextLimit ? EVALUATION_TEXT_LIMIT_MESSAGE : formIssues[0]}</p> : null}
         {!isSubmitted ? (
           <div className="form-actions">
-            <button type="button" className="secondary-button" onClick={onSaveDraft} disabled={!canEdit || isBusy}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
-            <button type="button" onClick={onSubmit} disabled={!canSubmit || isBusy || formIssues.length > 0}>{isSubmitting ? 'Enviando…' : 'Enviar autoavaliação'}</button>
+            <button type="button" className="secondary-button" onClick={onSaveDraft} disabled={!canEdit || isBusy || exceedsTextLimit}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
+            <button type="button" onClick={onSubmit} disabled={!canSubmit || isBusy || exceedsTextLimit || formIssues.length > 0}>{isSubmitting ? 'Enviando…' : 'Enviar autoavaliação'}</button>
           </div>
         ) : null}
       </WorkSection>

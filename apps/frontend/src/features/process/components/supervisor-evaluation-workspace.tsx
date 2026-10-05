@@ -1,5 +1,7 @@
 'use client';
 
+import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
+
 import {
   ProcessStatus,
   SelfEvaluationStatus,
@@ -206,6 +208,9 @@ function buildSupervisorEvaluationPayload(
   draft: EvaluationDraft,
   mode: OperationMode,
 ): UpsertSupervisorEvaluationInput {
+  if ([draft.unitCompetencies, draft.serverAssignments, draft.generalComments, ...draft.monthlyObservations.map((item) => item.description)].some((value) => !isEvaluationTextWithinLimit(value))) {
+    throw new Error(EVALUATION_TEXT_LIMIT_MESSAGE);
+  }
   const summaryParts = [draft.unitCompetencies.trim(), draft.serverAssignments.trim()].filter(Boolean);
   const summary = summaryParts.join('\n\n');
   const hasCompleteScores = draft.factors.every((factor) =>
