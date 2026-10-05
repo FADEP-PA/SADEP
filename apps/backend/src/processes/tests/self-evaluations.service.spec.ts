@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 import {
+  EVALUATION_TEXT_MAX_LENGTH,
   AuditEventType,
   DocumentStatus,
   DocumentType,
@@ -126,6 +127,28 @@ export async function runSelfEvaluationsTests() {
     const initialFetch = await context.selfEvaluationsService.getByProcessId(process.id, ownInternUser);
     assert.equal(initialFetch, null);
     assert.equal(await context.prisma.selfEvaluation.count({ where: { processStageId: process.defaultStageId } }), 0);
+
+    const limitsProcess = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id, supervisor.id);
+    await context.supervisorEvaluationsService.submit(limitsProcess.id, supervisorUser, buildSupervisorEvaluationPayload());
+    await context.processDocumentsService.signSupervisorEvaluationDocument(limitsProcess.id, ownInternUser);
+    for (const length of [EVALUATION_TEXT_MAX_LENGTH - 1, EVALUATION_TEXT_MAX_LENGTH]) {
+      const text = 'x'.repeat(length);
+      const payload = buildSelfEvaluationPayload({ selfReflection: text, additionalNotes: text, comment: text });
+      const saved = await context.selfEvaluationsService.saveDraft(limitsProcess.id, ownInternUser, payload);
+      assert.equal(saved.selfReflection, text);
+      assert.equal(saved.additionalNotes, text);
+      for (const field of ['selfReflection', 'additionalNotes', 'comment'] as const) {
+        for (const operation of ['saveDraft', 'submit'] as const) {
+          await assert.rejects(() => context.selfEvaluationsService[operation](limitsProcess.id, ownInternUser, { ...payload, [field]: 'x'.repeat(EVALUATION_TEXT_MAX_LENGTH + 1) }), /900 caracteres/);
+        }
+      }
+      assert.equal((await context.selfEvaluationsService.getByProcessId(limitsProcess.id, ownInternUser))?.selfReflection, text);
+    }
+    const legacyText = 'x'.repeat(EVALUATION_TEXT_MAX_LENGTH + 1);
+    await context.prisma.selfEvaluation.update({ where: { processStageId: limitsProcess.defaultStageId }, data: { selfReflection: legacyText } });
+    assert.equal((await context.selfEvaluationsService.getByProcessId(limitsProcess.id, ownInternUser))?.selfReflection, legacyText);
+    const submittedLimit = await context.selfEvaluationsService.submit(limitsProcess.id, ownInternUser, buildSelfEvaluationPayload({ selfReflection: 'x'.repeat(EVALUATION_TEXT_MAX_LENGTH), additionalNotes: 'x'.repeat(EVALUATION_TEXT_MAX_LENGTH) }));
+    assert.equal(submittedLimit.selfReflection.length, EVALUATION_TEXT_MAX_LENGTH);
 
     const createdDraft = await context.selfEvaluationsService.saveDraft(
       process.id,

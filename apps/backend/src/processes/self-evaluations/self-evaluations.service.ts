@@ -1,3 +1,4 @@
+import { validateEvaluationText } from '../evaluation-text-validation';
 import {
   BadRequestException,
   ForbiddenException,
@@ -497,6 +498,9 @@ export class SelfEvaluationsService {
       throw new BadRequestException('Self evaluation selfReflection must be a string');
     }
 
+    for (const field of ['selfReflection', 'additionalNotes', 'comment'] as const) {
+      validateEvaluationText(payload[field], field);
+    }
     const selfReflection = payload.selfReflection.trim();
     if (requireReflection && selfReflection.length === 0) {
       throw new BadRequestException('Self evaluation selfReflection is required for submit');
