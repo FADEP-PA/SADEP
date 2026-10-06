@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -492,7 +493,11 @@ describe('ProcessDocumentsService', () => {
               PrismaSignatureStatus.COMPLETED,
             ]).map((status) => ({ status })),
           ),
-          update: jest.fn().mockResolvedValue({}),
+          findUnique: jest.fn().mockResolvedValue({
+            status: PrismaSignatureStatus.COMPLETED,
+            acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED,
+          }),
+          updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         },
         auditEvent: {
           create: jest.fn().mockResolvedValue({}),
@@ -527,8 +532,12 @@ describe('ProcessDocumentsService', () => {
           signatureRecords: true,
         },
       });
-      expect(transaction.signatureRecord.update).toHaveBeenCalledWith({
-        where: { id: 'sig-1' },
+      expect(transaction.signatureRecord.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'sig-1',
+          status: 'PENDING',
+          acknowledgementMode: null,
+        },
         data: {
           status: 'COMPLETED',
           signedAt: expect.any(Date),
@@ -560,8 +569,12 @@ describe('ProcessDocumentsService', () => {
         AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION,
       );
 
-      expect(transaction.signatureRecord.update).toHaveBeenCalledWith({
-        where: { id: 'sig-1' },
+      expect(transaction.signatureRecord.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'sig-1',
+          status: 'PENDING',
+          acknowledgementMode: null,
+        },
         data: {
           status: 'COMPLETED',
           signedAt: expect.any(Date),
@@ -593,8 +606,34 @@ describe('ProcessDocumentsService', () => {
           internUser,
           AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION,
         ),
-      ).rejects.toThrow('Acknowledgement mode has already been recorded');
-      expect(transaction.signatureRecord.update).not.toHaveBeenCalled();
+      ).rejects.toThrow(ConflictException);
+      expect(transaction.signatureRecord.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('allows only the first concurrent acknowledgement and creates one audit event', async () => {
+      const transaction = mockTransactionForSigning();
+      transaction.signatureRecord.updateMany
+        .mockResolvedValueOnce({ count: 1 })
+        .mockResolvedValueOnce({ count: 0 });
+
+      const results = await Promise.allSettled([
+        service.signSupervisorEvaluationDocument(
+          'process-123',
+          internUser,
+          AcknowledgementMode.ACKNOWLEDGED,
+        ),
+        service.signSupervisorEvaluationDocument(
+          'process-123',
+          internUser,
+          AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION,
+        ),
+      ]);
+
+      expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+      const rejected = results.find((result) => result.status === 'rejected');
+      expect(rejected?.status === 'rejected' && rejected.reason).toBeInstanceOf(ConflictException);
+      expect(transaction.signatureRecord.updateMany).toHaveBeenCalledTimes(2);
+      expect(transaction.auditEvent.create).toHaveBeenCalledTimes(1);
     });
 
     it('keeps the process contract explicit by rejecting non-INTERN_SERVER signers', async () => {
@@ -642,7 +681,7 @@ describe('ProcessDocumentsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('rejects signing when there is no pending signature for the authenticated intern', async () => {
+    it('returns a conflict when the authenticated intern signature was already completed', async () => {
       mockTransactionForSigning({
         document: {
           id: 'doc-123',
@@ -659,7 +698,7 @@ describe('ProcessDocumentsService', () => {
 
       await expect(
         service.signSupervisorEvaluationDocument('process-123', internUser, AcknowledgementMode.ACKNOWLEDGED),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(ConflictException);
     });
   });
 
