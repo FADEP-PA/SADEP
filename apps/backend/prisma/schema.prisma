@@ -348,6 +348,7 @@ model ProcessDocument {
   artifactPath        String?
   artifactChecksum    String?
   artifactGeneratedAt DateTime?
+  artifactFrozenAt    DateTime?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   evaluationProcess   EvaluationProcess @relation(fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
