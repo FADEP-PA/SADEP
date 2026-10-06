@@ -135,6 +135,17 @@ function createSnapshot(options?: {
             acknowledgementMode: scienceConfirmed ? (options?.acknowledgementMode === undefined ? AcknowledgementMode.ACKNOWLEDGED : options.acknowledgementMode) : null,
           },
         ],
+        acknowledgement: scienceConfirmed
+          ? {
+              processId: PROCESS_ID,
+              processStageId: 'stage-1',
+              documentId: 'supervisor-document-1',
+              documentType: DocumentType.SUPERVISOR_EVALUATION,
+              actorUserId: 'server-user-id',
+              modality: AcknowledgementMode.ACKNOWLEDGED,
+              acknowledgedAt: SIGNED_AT,
+            }
+          : null,
       },
     },
     selfEvaluation: selfEvaluationStatus

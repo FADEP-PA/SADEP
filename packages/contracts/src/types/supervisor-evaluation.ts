@@ -7,6 +7,7 @@ import type {
   UserRole,
 } from '../enums';
 import type { EvaluationScoringVersion, EvaluationScoreScale } from '../evaluation-score';
+import type { EvaluationAcknowledgementRef } from './evaluation-acknowledgement';
 
 export interface SupervisorEvaluationCriterionInput {
   code: string;
@@ -59,6 +60,7 @@ export interface SupervisorEvaluationDocumentContextRef {
   hasArtifact: boolean;
   artifactPath: string | null;
   signatures: SupervisorEvaluationDocumentSignatureRef[];
+  acknowledgement: EvaluationAcknowledgementRef | null;
   internSignaturePending: boolean;
 }
 

@@ -143,6 +143,7 @@ describe('SupervisorEvaluationsService', () => {
             acknowledgementMode: null,
           },
         ],
+        acknowledgement: null,
         internSignaturePending: true,
       });
 
@@ -187,6 +188,7 @@ describe('SupervisorEvaluationsService', () => {
               acknowledgementMode: null,
             },
           ],
+          acknowledgement: null,
           internSignaturePending: true,
         },
       });
@@ -245,6 +247,7 @@ describe('SupervisorEvaluationsService', () => {
         hasArtifact: false,
         artifactPath: null,
         signatures: [],
+        acknowledgement: null,
         internSignaturePending: true,
       });
 

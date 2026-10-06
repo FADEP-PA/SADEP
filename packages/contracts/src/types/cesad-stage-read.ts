@@ -11,6 +11,7 @@ import type {
 import type { SelfEvaluationRef } from './self-evaluation';
 import type { SupervisorEvaluationRef } from './supervisor-evaluation';
 import type { CesadStageOpinionRef } from './cesad-stage-opinion';
+import type { EvaluationAcknowledgementRef } from './evaluation-acknowledgement';
 
 export interface CesadStageProcessRef {
   id: string;
@@ -57,6 +58,7 @@ export interface CesadStageDocumentRef {
   updatedAt: string | null;
   stageLinkMode: 'STAGE_BOUND' | 'PROCESS_SINGLE_STAGE_FALLBACK' | 'MISSING';
   signatures: CesadStageDocumentSignatureRef[];
+  serverAcknowledgement: EvaluationAcknowledgementRef | null;
   missingReason: string | null;
 }
 

@@ -26,6 +26,7 @@ import {
   CesadOpinionKind,
   type CesadFinalOpinionSignatureStatusRef,
   type CesadStageDocumentRef,
+  type EvaluationAcknowledgementRef,
   ProcessAction,
   ProcessStatus,
   DocumentType,
@@ -983,6 +984,7 @@ export class ProcessDocumentsService {
       signedAt: string | null;
       acknowledgementMode: AcknowledgementMode | null;
     }>;
+    acknowledgement: EvaluationAcknowledgementRef | null;
     internSignaturePending: boolean;
   } | null> {
     const document = await transaction.processDocument.findFirst({
@@ -1014,6 +1016,12 @@ export class ProcessDocumentsService {
     const internSignaturePending = signatures.some(
       (sig) => sig.signatoryRole === UserRole.INTERN_SERVER && sig.status === SignatureStatus.PENDING,
     );
+    const internSignature = document.signatureRecords.find(
+      (sig) =>
+        sig.signatoryRole === PrismaUserRole.INTERN_SERVER &&
+        sig.status === PrismaSignatureStatus.COMPLETED &&
+        sig.signedAt !== null,
+    );
 
     return {
       documentId: document.id,
@@ -1022,6 +1030,19 @@ export class ProcessDocumentsService {
       hasArtifact: artifactPath !== null,
       artifactPath,
       signatures,
+      acknowledgement: internSignature
+        ? {
+            processId,
+            processStageId,
+            documentId: document.id,
+            documentType: DocumentType.SUPERVISOR_EVALUATION,
+            actorUserId: internSignature.signatoryUserId,
+            modality: internSignature.acknowledgementMode
+              ? (internSignature.acknowledgementMode as AcknowledgementMode)
+              : null,
+            acknowledgedAt: internSignature.signedAt!.toISOString(),
+          }
+        : null,
       internSignaturePending,
     };
   }
@@ -1182,6 +1203,7 @@ export class ProcessDocumentsService {
           updatedAt: null,
           stageLinkMode,
           signatures: [],
+          serverAcknowledgement: null,
           missingReason:
             params.totalStages === 1
               ? 'Documento ainda não foi formalizado para a etapa.'
@@ -1190,6 +1212,12 @@ export class ProcessDocumentsService {
       }
 
       const artifactPath = this.normalizeArtifactPath(selectedDocument.artifactPath);
+      const internSignature = selectedDocument.signatureRecords.find(
+        (signature) =>
+          signature.signatoryRole === PrismaUserRole.INTERN_SERVER &&
+          signature.status === PrismaSignatureStatus.COMPLETED &&
+          signature.signedAt !== null,
+      );
 
       return {
         documentType,
@@ -1209,6 +1237,19 @@ export class ProcessDocumentsService {
           status: this.toContractSignatureStatus(signature.status),
           signedAt: signature.signedAt?.toISOString() ?? null,
         })),
+        serverAcknowledgement: internSignature
+          ? {
+              processId: params.processId,
+              processStageId: params.processStageId,
+              documentId: selectedDocument.id,
+              documentType,
+              actorUserId: internSignature.signatoryUserId,
+              modality: internSignature.acknowledgementMode
+                ? (internSignature.acknowledgementMode as AcknowledgementMode)
+                : null,
+              acknowledgedAt: internSignature.signedAt!.toISOString(),
+            }
+          : null,
         missingReason: null,
       } satisfies CesadStageDocumentRef;
     });

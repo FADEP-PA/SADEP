@@ -16,6 +16,7 @@ export * from './cesad-stage-read';
 export * from './cesad-stage-opinion';
 export * from './cesad-final-opinion';
 export * from './document-ref';
+export * from './evaluation-acknowledgement';
 export * from './intern-server-workspace';
 export * from './process-ref';
 export * from './signature-metadata';
