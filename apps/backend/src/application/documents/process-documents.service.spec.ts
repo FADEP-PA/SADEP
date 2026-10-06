@@ -724,6 +724,7 @@ describe('ProcessDocumentsService', () => {
               acknowledgementMode: null,
           },
         ],
+        acknowledgement: null,
         internSignaturePending: true,
       });
     });
@@ -738,6 +739,117 @@ describe('ProcessDocumentsService', () => {
       await expect(
         service.getSupervisorEvaluationDocumentContext(transaction, 'process-123', stageId),
       ).resolves.toBeNull();
+    });
+
+    it('projects ciente com ressalva with the source and timestamp', async () => {
+      const acknowledgedAt = new Date('2023-02-01T10:00:00.000Z');
+      const transaction = {
+        processDocument: {
+          findFirst: jest.fn().mockResolvedValue({
+            id: 'doc-123',
+            documentType: 'SUPERVISOR_EVALUATION',
+            documentStatus: 'SIGNED',
+            artifactPath: null,
+            signatureRecords: [
+              {
+                signatoryUserId: internUser.sub,
+                signatoryRole: 'INTERN_SERVER',
+                status: 'COMPLETED',
+                signedAt: acknowledgedAt,
+                acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION,
+              },
+            ],
+          }),
+        },
+      } as any;
+
+      const result = await service.getSupervisorEvaluationDocumentContext(
+        transaction,
+        'process-123',
+        stageId,
+      );
+
+      expect(result?.acknowledgement).toEqual({
+        processId: 'process-123',
+        processStageId: stageId,
+        documentId: 'doc-123',
+        documentType: DocumentType.SUPERVISOR_EVALUATION,
+        actorUserId: internUser.sub,
+        modality: AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION,
+        acknowledgedAt: acknowledgedAt.toISOString(),
+      });
+    });
+
+    it('projects legacy signed records with a neutral null modality', async () => {
+      const acknowledgedAt = new Date('2023-03-01T10:00:00.000Z');
+      const transaction = {
+        processDocument: {
+          findFirst: jest.fn().mockResolvedValue({
+            id: 'doc-legacy',
+            documentType: 'SUPERVISOR_EVALUATION',
+            documentStatus: 'SIGNED',
+            artifactPath: null,
+            signatureRecords: [{
+              signatoryUserId: internUser.sub,
+              signatoryRole: 'INTERN_SERVER',
+              status: 'COMPLETED',
+              signedAt: acknowledgedAt,
+              acknowledgementMode: null,
+            }],
+          }),
+        },
+      } as any;
+
+      const result = await service.getSupervisorEvaluationDocumentContext(
+        transaction,
+        'process-123',
+        stageId,
+      );
+
+      expect(result?.acknowledgement?.acknowledgedAt).toBe(acknowledgedAt.toISOString());
+      expect(result?.acknowledgement?.modality).toBeNull();
+    });
+
+    it('projects the server acknowledgement in the CESAD stage document read model', async () => {
+      const acknowledgedAt = new Date('2023-04-01T10:00:00.000Z');
+      const transaction = {
+        processDocument: {
+          findMany: jest.fn().mockResolvedValue([{
+            id: 'doc-cesad-read',
+            processStageId: stageId,
+            documentType: 'SUPERVISOR_EVALUATION',
+            documentStatus: 'SIGNED',
+            artifactPath: null,
+            createdAt: acknowledgedAt,
+            updatedAt: acknowledgedAt,
+            signatureRecords: [{
+              id: 'signature-intern',
+              signatoryUserId: internUser.sub,
+              signatoryRole: 'INTERN_SERVER',
+              provider: 'INTERNAL',
+              status: 'COMPLETED',
+              signedAt: acknowledgedAt,
+              acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED,
+            }],
+          }]),
+        },
+      } as any;
+
+      const documents = await service.getCesadStageDocumentReadModel(transaction, {
+        processId: 'process-123',
+        processStageId: stageId,
+        totalStages: 4,
+      });
+
+      expect(documents.find((document) => document.documentType === DocumentType.SUPERVISOR_EVALUATION)?.serverAcknowledgement).toEqual({
+        processId: 'process-123',
+        processStageId: stageId,
+        documentId: 'doc-cesad-read',
+        documentType: DocumentType.SUPERVISOR_EVALUATION,
+        actorUserId: internUser.sub,
+        modality: AcknowledgementMode.ACKNOWLEDGED,
+        acknowledgedAt: acknowledgedAt.toISOString(),
+      });
     });
   });
 

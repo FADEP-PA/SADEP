@@ -10,6 +10,7 @@ import {
   type SupervisorEvaluationTextFields,
   SupervisorEvaluationStatus,
   type SupervisorEvaluationRef,
+  type EvaluationAcknowledgementRef,
   ProcessStatus,
   DocumentType,
   DocumentStatus,
@@ -115,6 +116,7 @@ export interface SupervisorEvaluationDocumentContext {
     status: SignatureStatus;
     signedAt: string | null;
   }>;
+  acknowledgement: EvaluationAcknowledgementRef | null;
   internSignaturePending: boolean;
 }
 
