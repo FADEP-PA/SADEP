@@ -1,5 +1,5 @@
 import { UnauthorizedException } from '@nestjs/common';
-import { UserRole } from '@sadep/contracts';
+import { AcknowledgementMode, UserRole } from '@sadep/contracts';
 
 import { ProcessDocumentsController } from './process-documents.controller';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
@@ -29,16 +29,16 @@ describe('ProcessDocumentsController', () => {
 
       service.signSupervisorEvaluationDocument.mockResolvedValue();
 
-      const result = await controller.signDocument(processId, mockUser);
+      const result = await controller.signDocument(processId, { acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED }, mockUser);
 
-      expect(service.signSupervisorEvaluationDocument).toHaveBeenCalledWith(processId, mockUser);
+      expect(service.signSupervisorEvaluationDocument).toHaveBeenCalledWith(processId, mockUser, AcknowledgementMode.ACKNOWLEDGED);
       expect(result).toEqual({ success: true });
     });
 
     it('should throw UnauthorizedException when user not authenticated', async () => {
       const processId = 'process-123';
 
-      await expect(controller.signDocument(processId, undefined)).rejects.toThrow(
+      await expect(controller.signDocument(processId, undefined, undefined)).rejects.toThrow(
         UnauthorizedException,
       );
     });

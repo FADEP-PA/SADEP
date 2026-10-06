@@ -1,4 +1,5 @@
 export * from './audit-event-type';
+export * from './acknowledgement-mode';
 export * from './cesad-commission-act-type';
 export * from './cesad-commission-member-role-type';
 export * from './cesad-commission-status';

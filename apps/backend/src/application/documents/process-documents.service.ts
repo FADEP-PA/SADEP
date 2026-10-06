@@ -22,6 +22,7 @@ import {
 } from '@prisma/client';
 import {
   AuditEventType,
+  AcknowledgementMode,
   CesadOpinionKind,
   type CesadFinalOpinionSignatureStatusRef,
   type CesadStageDocumentRef,
@@ -452,7 +453,9 @@ export class ProcessDocumentsService {
   async signSupervisorEvaluationDocument(
     processId: string,
     user: AuthenticatedUser,
+    acknowledgementMode?: AcknowledgementMode,
   ): Promise<void> {
+    this.validateAcknowledgementMode(acknowledgementMode);
     return this.prismaService.$transaction(async (transaction) => {
       const currentStage = await this.processesService.resolveCurrentStageOrThrow(transaction, processId);
       const stageMetadata = {
@@ -496,12 +499,19 @@ export class ProcessDocumentsService {
       const internSignature = document.signatureRecords.find(
         (sig) =>
           sig.signatoryUserId === user.sub &&
-          sig.signatoryRole === PrismaUserRole.INTERN_SERVER &&
-          sig.status === PrismaSignatureStatus.PENDING,
+          sig.signatoryRole === PrismaUserRole.INTERN_SERVER,
       );
 
       if (!internSignature) {
         throw new BadRequestException('No pending signature found for this user');
+      }
+
+      if (internSignature.status !== PrismaSignatureStatus.PENDING) {
+        throw new BadRequestException('Supervisor evaluation signature has already been completed');
+      }
+
+      if (internSignature.acknowledgementMode !== null) {
+        throw new BadRequestException('Acknowledgement mode has already been recorded');
       }
 
       const now = new Date();
@@ -512,6 +522,7 @@ export class ProcessDocumentsService {
         data: {
           status: PrismaSignatureStatus.COMPLETED,
           signedAt: now,
+          acknowledgementMode,
         },
       });
 
@@ -544,6 +555,7 @@ export class ProcessDocumentsService {
             documentId: document.id,
             signatoryRole: UserRole.INTERN_SERVER,
             signatoryUserId: user.sub,
+            acknowledgementMode,
           },
         }),
       });
@@ -969,6 +981,7 @@ export class ProcessDocumentsService {
       signatoryRole: UserRole;
       status: SignatureStatus;
       signedAt: string | null;
+      acknowledgementMode: AcknowledgementMode | null;
     }>;
     internSignaturePending: boolean;
   } | null> {
@@ -993,6 +1006,9 @@ export class ProcessDocumentsService {
       signatoryRole: this.toContractUserRole(sig.signatoryRole),
       status: this.toContractSignatureStatus(sig.status),
       signedAt: sig.signedAt?.toISOString() ?? null,
+      acknowledgementMode: sig.acknowledgementMode
+        ? (sig.acknowledgementMode as AcknowledgementMode)
+        : null,
     }));
 
     const internSignaturePending = signatures.some(
@@ -1008,6 +1024,14 @@ export class ProcessDocumentsService {
       signatures,
       internSignaturePending,
     };
+  }
+
+  private validateAcknowledgementMode(value: unknown): asserts value is AcknowledgementMode {
+    if (!Object.values(AcknowledgementMode).includes(value as AcknowledgementMode)) {
+      throw new BadRequestException(
+        'Acknowledgement mode must be ACKNOWLEDGED or ACKNOWLEDGED_WITH_RESERVATION',
+      );
+    }
   }
 
   async getSelfEvaluationDocumentContext(

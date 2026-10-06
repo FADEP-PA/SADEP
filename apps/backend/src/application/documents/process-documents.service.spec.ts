@@ -9,6 +9,7 @@ import {
   UserRole as PrismaUserRole,
 } from '@prisma/client';
 import {
+  AcknowledgementMode,
   DocumentStatus,
   DocumentType,
   SignatureStatus,
@@ -458,6 +459,7 @@ describe('ProcessDocumentsService', () => {
       process?: Record<string, unknown>;
       document?: Record<string, unknown> | null;
       allSignatureStatuses?: PrismaSignatureStatus[];
+      acknowledgementMode?: AcknowledgementMode | null;
     }) {
       const process = {
         id: 'process-123',
@@ -473,6 +475,7 @@ describe('ProcessDocumentsService', () => {
             signatoryUserId: internUser.sub,
             signatoryRole: 'INTERN_SERVER',
             status: 'PENDING',
+            acknowledgementMode: overrides?.acknowledgementMode ?? null,
           },
         ],
       } : overrides.document;
@@ -508,7 +511,7 @@ describe('ProcessDocumentsService', () => {
     it('signs the pending intern signature and closes the document when all signatures are complete', async () => {
       const transaction = mockTransactionForSigning();
 
-      await service.signSupervisorEvaluationDocument('process-123', internUser);
+      await service.signSupervisorEvaluationDocument('process-123', internUser, AcknowledgementMode.ACKNOWLEDGED);
 
       expect(processesService.resolveCurrentStageOrThrow).toHaveBeenCalledWith(
         expect.any(Object),
@@ -529,6 +532,7 @@ describe('ProcessDocumentsService', () => {
         data: {
           status: 'COMPLETED',
           signedAt: expect.any(Date),
+          acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED,
         },
       });
       expect(transaction.processDocument.update).toHaveBeenCalledWith({
@@ -547,14 +551,60 @@ describe('ProcessDocumentsService', () => {
       });
     });
 
+    it('persists ciente com ressalva as an immutable acknowledgement choice', async () => {
+      const transaction = mockTransactionForSigning();
+
+      await service.signSupervisorEvaluationDocument(
+        'process-123',
+        internUser,
+        AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION,
+      );
+
+      expect(transaction.signatureRecord.update).toHaveBeenCalledWith({
+        where: { id: 'sig-1' },
+        data: {
+          status: 'COMPLETED',
+          signedAt: expect.any(Date),
+          acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION,
+        },
+      });
+      expect(transaction.auditEvent.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          metadata: expect.objectContaining({
+            acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION,
+          }),
+        }),
+      });
+    });
+
+    it('rejects an invalid acknowledgement mode in the service', async () => {
+      await expect(
+        service.signSupervisorEvaluationDocument('process-123', internUser, 'INVALID' as AcknowledgementMode),
+      ).rejects.toThrow(BadRequestException);
+      expect(prismaService.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('does not allow changing an acknowledgement already recorded', async () => {
+      const transaction = mockTransactionForSigning({ acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED });
+
+      await expect(
+        service.signSupervisorEvaluationDocument(
+          'process-123',
+          internUser,
+          AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION,
+        ),
+      ).rejects.toThrow('Acknowledgement mode has already been recorded');
+      expect(transaction.signatureRecord.update).not.toHaveBeenCalled();
+    });
+
     it('keeps the process contract explicit by rejecting non-INTERN_SERVER signers', async () => {
       mockTransactionForSigning();
 
       await expect(
-        service.signSupervisorEvaluationDocument('process-123', supervisorUser),
+        service.signSupervisorEvaluationDocument('process-123', supervisorUser, AcknowledgementMode.ACKNOWLEDGED),
       ).rejects.toThrow(ForbiddenException);
       await expect(
-        service.signSupervisorEvaluationDocument('process-123', supervisorUser),
+        service.signSupervisorEvaluationDocument('process-123', supervisorUser, AcknowledgementMode.ACKNOWLEDGED),
       ).rejects.toThrow('Only INTERN_SERVER can sign supervisor evaluation document');
     });
 
@@ -566,7 +616,7 @@ describe('ProcessDocumentsService', () => {
       });
 
       await expect(
-        service.signSupervisorEvaluationDocument('process-123', internUser),
+        service.signSupervisorEvaluationDocument('process-123', internUser, AcknowledgementMode.ACKNOWLEDGED),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -578,7 +628,7 @@ describe('ProcessDocumentsService', () => {
       });
 
       await expect(
-        service.signSupervisorEvaluationDocument('process-123', internUser),
+        service.signSupervisorEvaluationDocument('process-123', internUser, AcknowledgementMode.ACKNOWLEDGED),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -588,7 +638,7 @@ describe('ProcessDocumentsService', () => {
       });
 
       await expect(
-        service.signSupervisorEvaluationDocument('process-123', internUser),
+        service.signSupervisorEvaluationDocument('process-123', internUser, AcknowledgementMode.ACKNOWLEDGED),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -608,7 +658,7 @@ describe('ProcessDocumentsService', () => {
       });
 
       await expect(
-        service.signSupervisorEvaluationDocument('process-123', internUser),
+        service.signSupervisorEvaluationDocument('process-123', internUser, AcknowledgementMode.ACKNOWLEDGED),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -663,13 +713,15 @@ describe('ProcessDocumentsService', () => {
         signatures: [
           {
             signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
-            status: SignatureStatus.COMPLETED,
-            signedAt: '2023-01-01T00:00:00.000Z',
+              status: SignatureStatus.COMPLETED,
+              signedAt: '2023-01-01T00:00:00.000Z',
+              acknowledgementMode: null,
           },
           {
             signatoryRole: UserRole.INTERN_SERVER,
-            status: SignatureStatus.PENDING,
-            signedAt: null,
+              status: SignatureStatus.PENDING,
+              signedAt: null,
+              acknowledgementMode: null,
           },
         ],
         internSignaturePending: true,
