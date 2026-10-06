@@ -1,11 +1,18 @@
-import { Controller, Get, Header, Optional, Param, Post, StreamableFile, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, Optional, Param, Post, StreamableFile, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { IsEnum, IsNotEmpty } from 'class-validator';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
-import { DocumentType } from '@sadep/contracts';
+import { AcknowledgementMode, DocumentType } from '@sadep/contracts';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
 import { ProcessDocumentArtifactService } from '../../application/documents/process-document-artifact.service';
+
+export class SignSupervisorEvaluationDto {
+  @IsEnum(AcknowledgementMode)
+  @IsNotEmpty()
+  acknowledgementMode!: AcknowledgementMode;
+}
 
 @Controller('processes/:id/supervisor-evaluation')
 @UseGuards(JwtAuthGuard)
@@ -44,12 +51,16 @@ export class ProcessDocumentsController {
   }
 
   @Post('sign')
-  async signDocument(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+  async signDocument(
+    @Param('id') id: string,
+    @Body() body?: SignSupervisorEvaluationDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
     if (!user) {
       throw new UnauthorizedException('Authenticated user not found');
     }
 
-    await this.processDocumentsService.signSupervisorEvaluationDocument(id, user);
+    await this.processDocumentsService.signSupervisorEvaluationDocument(id, user, body?.acknowledgementMode);
     if (!this.artifactService) return { success: true };
     try {
       await this.artifactService.materializeLatestForProcess(id, DocumentType.SUPERVISOR_EVALUATION, user);

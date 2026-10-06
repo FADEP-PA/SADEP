@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 
 import { NestFactory } from '@nestjs/core';
-import { ProcessAction, ProcessStatus, UserRole } from '@sadep/contracts';
+import { AcknowledgementMode, ProcessAction, ProcessStatus, UserRole } from '@sadep/contracts';
 
 import { AppModule } from '../../app/app.module';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
@@ -164,7 +164,8 @@ export async function runDemoE2EEndpointTests() {
       `${baseUrl}/processes/${process.id}/supervisor-evaluation/sign`,
       {
         method: 'POST',
-        headers: authHeaders(serverSession.accessToken),
+        headers: authHeaders(serverSession.accessToken, true),
+        body: JSON.stringify({ acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED }),
       },
     );
     assert.equal(confirmScienceResponse.status, 201);

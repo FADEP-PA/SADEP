@@ -1,4 +1,5 @@
 import type {
+  AcknowledgementMode,
   DocumentStatus,
   DocumentType,
   SignatureStatus,
@@ -48,6 +49,7 @@ export interface SupervisorEvaluationDocumentSignatureRef {
   signatoryRole: UserRole;
   status: SignatureStatus;
   signedAt: string | null;
+  acknowledgementMode: AcknowledgementMode | null;
 }
 
 export interface SupervisorEvaluationDocumentContextRef {

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   EVALUATION_TEXT_MAX_LENGTH,
   AuditEventType,
+  AcknowledgementMode,
   DocumentStatus,
   DocumentType,
   ProcessAction,
@@ -117,7 +118,7 @@ export async function runSelfEvaluationsTests() {
       /Self evaluation can only start after the evaluated server signs the supervisor evaluation document/,
     );
 
-    await context.processDocumentsService.signSupervisorEvaluationDocument(process.id, ownInternUser);
+    await context.processDocumentsService.signSupervisorEvaluationDocument(process.id, ownInternUser, AcknowledgementMode.ACKNOWLEDGED);
 
     const processAfterSupervisorSignature = await context.prisma.evaluationProcess.findUniqueOrThrow({
       where: { id: process.id },
@@ -130,7 +131,7 @@ export async function runSelfEvaluationsTests() {
 
     const limitsProcess = await createProcess(context.prisma, ProcessStatus.EM_AVALIACAO, evaluatedUser.id, supervisor.id);
     await context.supervisorEvaluationsService.submit(limitsProcess.id, supervisorUser, buildSupervisorEvaluationPayload());
-    await context.processDocumentsService.signSupervisorEvaluationDocument(limitsProcess.id, ownInternUser);
+    await context.processDocumentsService.signSupervisorEvaluationDocument(limitsProcess.id, ownInternUser, AcknowledgementMode.ACKNOWLEDGED);
     for (const length of [EVALUATION_TEXT_MAX_LENGTH - 1, EVALUATION_TEXT_MAX_LENGTH]) {
       const text = 'x'.repeat(length);
       const payload = buildSelfEvaluationPayload({ selfReflection: text, additionalNotes: text, comment: text });
@@ -412,6 +413,7 @@ export async function runSelfEvaluationsTests() {
     await context.processDocumentsService.signSupervisorEvaluationDocument(
       noPendingSignatureProcess.id,
       ownInternUser,
+      AcknowledgementMode.ACKNOWLEDGED,
     );
     await context.selfEvaluationsService.submit(
       noPendingSignatureProcess.id,
@@ -465,6 +467,7 @@ export async function runSelfEvaluationsTests() {
     await context.processDocumentsService.signSupervisorEvaluationDocument(
       missingSelfEvaluationProcess.id,
       ownInternUser,
+      AcknowledgementMode.ACKNOWLEDGED,
     );
     await assert.rejects(
       () => context.selfEvaluationsService.sign(missingSelfEvaluationProcess.id, supervisorUser),
@@ -482,7 +485,7 @@ export async function runSelfEvaluationsTests() {
       supervisorUser,
       buildSupervisorEvaluationPayload(),
     );
-    await context.processDocumentsService.signSupervisorEvaluationDocument(draftOnlyProcess.id, ownInternUser);
+    await context.processDocumentsService.signSupervisorEvaluationDocument(draftOnlyProcess.id, ownInternUser, AcknowledgementMode.ACKNOWLEDGED);
     await context.selfEvaluationsService.saveDraft(
       draftOnlyProcess.id,
       ownInternUser,
@@ -507,6 +510,7 @@ export async function runSelfEvaluationsTests() {
     await context.processDocumentsService.signSupervisorEvaluationDocument(
       missingDocumentProcess.id,
       ownInternUser,
+      AcknowledgementMode.ACKNOWLEDGED,
     );
     await context.selfEvaluationsService.submit(
       missingDocumentProcess.id,
@@ -551,6 +555,7 @@ export async function runSelfEvaluationsTests() {
     await context.processDocumentsService.signSupervisorEvaluationDocument(
       incompleteStageProcess.id,
       ownInternUser,
+      AcknowledgementMode.ACKNOWLEDGED,
     );
     await context.selfEvaluationsService.submit(
       incompleteStageProcess.id,

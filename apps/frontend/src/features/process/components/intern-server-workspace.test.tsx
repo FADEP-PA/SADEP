@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
+  AcknowledgementMode,
   EVALUATION_TEXT_MAX_LENGTH,
   EVALUATION_TEXT_LIMIT_MESSAGE,
   DocumentStatus,
@@ -123,11 +124,13 @@ function createSnapshot(options?: {
             signatoryRole: UserRole.IMMEDIATE_SUPERVISOR,
             status: SignatureStatus.COMPLETED,
             signedAt: '2026-09-16T13:00:00.000Z',
+            acknowledgementMode: null,
           },
           {
             signatoryRole: UserRole.INTERN_SERVER,
             status: scienceConfirmed ? SignatureStatus.COMPLETED : SignatureStatus.PENDING,
             signedAt: scienceConfirmed ? SIGNED_AT : null,
+            acknowledgementMode: scienceConfirmed ? AcknowledgementMode.ACKNOWLEDGED : null,
           },
         ],
       },

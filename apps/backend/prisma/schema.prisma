@@ -118,6 +118,11 @@ enum SignatureProvider {
   OTHER
 }
 
+enum AcknowledgementMode {
+  ACKNOWLEDGED
+  ACKNOWLEDGED_WITH_RESERVATION
+}
+
 enum SignatureStatus {
   PENDING
   COMPLETED
@@ -661,6 +666,7 @@ model SignatureRecord {
   status                            SignatureStatus                  @default(PENDING)
   externalReference                 String?
   signedAt                          DateTime?
+  acknowledgementMode               AcknowledgementMode?
   cesadStageOpinionExpectedSignerId String?
   cesadFinalOpinionExpectedSignerId String?
   createdAt                         DateTime                         @default(now())
