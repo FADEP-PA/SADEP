@@ -229,6 +229,20 @@ describe('evaluation attachment file validation', () => {
     expect(detectEvaluationAttachmentMimeType(gifBuffer())).toBeNull();
   });
 
+  it('rejects a PNG with an incomplete signature', () => {
+    const buffer = pngBuffer();
+    buffer[4] = 0x00;
+
+    expect(detectEvaluationAttachmentMimeType(buffer)).toBeNull();
+    expect(() =>
+      validateEvaluationAttachmentFile({
+        originalname: 'imagem.png',
+        mimetype: 'image/png',
+        buffer,
+      }),
+    ).toThrow('magic bytes');
+  });
+
   it('extracts extensions only when they are real trailing segments', () => {
     expect(extractEvaluationAttachmentExtension('doc.pdf')).toBe('.pdf');
     expect(extractEvaluationAttachmentExtension('DOC.PDF')).toBe('.pdf');
