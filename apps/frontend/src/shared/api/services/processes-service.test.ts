@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { clearAccessToken, setAccessToken } from '@/shared/auth/access-token-store';
-import { ProcessAction } from '@sadep/contracts';
+import { AcknowledgementMode, ProcessAction } from '@sadep/contracts';
 import {
   getEvaluationDocumentPdf,
   completeCesadStageOpinion,
@@ -17,6 +17,7 @@ import {
   saveCesadStageOpinionDraft,
   signCesadStageOpinion,
   signSelfEvaluation,
+  signSupervisorEvaluation,
   submitSupervisorEvaluation,
   transitionWorkflow,
 } from './processes-service';
@@ -47,6 +48,15 @@ describe('processes-service', () => {
   afterEach(() => {
     clearAccessToken();
     vi.unstubAllGlobals();
+  });
+
+  it.each([AcknowledgementMode.ACKNOWLEDGED, AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION])('envia modalidade %s no endpoint de ciência', async (acknowledgementMode) => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {}));
+    await signSupervisorEvaluation(PROCESS_ID, acknowledgementMode);
+    expect(fetchMock).toHaveBeenCalledWith(API_BASE + '/processes/' + PROCESS_ID + '/supervisor-evaluation/sign', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ acknowledgementMode }),
+    }));
   });
 
   describe('getWorkflow', () => {
