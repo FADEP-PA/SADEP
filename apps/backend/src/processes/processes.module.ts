@@ -9,6 +9,8 @@ import { CesadFinalOpinionConsolidationService } from './cesad-final-opinions/ce
 import { CesadFinalOpinionEligibilityService } from './cesad-final-opinions/cesad-final-opinion-eligibility.service';
 import { CesadFinalOpinionsController } from './cesad-final-opinions/cesad-final-opinions.controller';
 import { CesadFinalOpinionsService } from './cesad-final-opinions/cesad-final-opinions.service';
+import { EvaluationAttachmentsController } from './evaluation-attachments/evaluation-attachments.controller';
+import { EvaluationAttachmentsService } from './evaluation-attachments/evaluation-attachments.service';
 import { HomologationController } from './homologation/homologation.controller';
 import { HomologationService } from './homologation/homologation.service';
 import { CesadStageOpinionsController } from './cesad-stage-opinions/cesad-stage-opinions.controller';
@@ -35,6 +37,7 @@ import { SupervisorEvaluationsService } from './supervisor-evaluations/superviso
     HomologationController,
     SupervisorEvaluationsController,
     SelfEvaluationsController,
+    EvaluationAttachmentsController,
   ],
   providers: [
     ProcessesService,
@@ -49,6 +52,7 @@ import { SupervisorEvaluationsService } from './supervisor-evaluations/superviso
     InternWorkspaceService,
     SupervisorEvaluationsService,
     SelfEvaluationsService,
+    EvaluationAttachmentsService,
     ProcessDocumentsService,
     PrismaService,
   ],

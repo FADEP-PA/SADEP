@@ -16,6 +16,11 @@ enum UserRole {
   ADMIN
 }
 
+enum EvaluationAttachmentOrigin {
+  SUPERVISOR_EVALUATION
+  SELF_EVALUATION
+}
+
 enum AuthAuditEventType {
   LOGIN_SUCCESS
   LOGIN_FAILURE
@@ -71,6 +76,8 @@ enum AuditEventType {
   ACKNOWLEDGEMENT_RECORDED
   PROCESS_CLOSED
   CESAD_COMMISSION_ROLLOVER_APPLIED
+  EVALUATION_ATTACHMENT_UPLOADED
+  EVALUATION_ATTACHMENT_REMOVED
 }
 
 enum CesadCommissionAuditEventType {
@@ -198,6 +205,7 @@ model User {
   homologationRecordsAsNotifier    HomologationRecord[]              @relation("HomologationRecordNotifiedBy")
   authAuditEvents                  AuthAuditEvent[]
   cesadCommissionAuditEvents       CesadCommissionAuditEvent[]
+  evaluationAttachments            EvaluationAttachment[]            @relation("EvaluationAttachmentUploader")
 }
 
 model UserSession {
@@ -279,6 +287,7 @@ model EvaluationProcess {
   cesadFinalOpinions    CesadFinalOpinion[]
   cesadStageAssignments CesadStageAssignment[]
   homologationRecord    HomologationRecord?
+  evaluationAttachments EvaluationAttachment[] @relation("EvaluationAttachmentEvaluationProcess")
 
   @@index([evaluatedUserId])
   @@index([status])
@@ -301,6 +310,7 @@ model ProcessStage {
   selfEvaluation              SelfEvaluation?
   cesadStageOpinions          CesadStageOpinion[]
   cesadStageAssignments       CesadStageAssignment[]
+  evaluationAttachments       EvaluationAttachment[] @relation("EvaluationAttachmentProcessStage")
 
   @@unique([evaluationProcessId, sequence])
   @@unique([evaluationProcessId, stageCode])
@@ -668,4 +678,28 @@ model SignatureRecord {
   @@index([cesadStageOpinionExpectedSignerId])
   @@index([cesadFinalOpinionExpectedSignerId])
   @@index([status])
+}
+
+model EvaluationAttachment {
+  id                  String                    @id @default(cuid())
+  evaluationProcessId String
+  processStageId      String
+  origin              EvaluationAttachmentOrigin
+  uploaderUserId      String
+  originalFilename    String
+  mimeType            String
+  sizeBytes           Int
+  storageKey          String
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+
+  evaluationProcess   EvaluationProcess         @relation("EvaluationAttachmentEvaluationProcess", fields: [evaluationProcessId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  processStage        ProcessStage              @relation("EvaluationAttachmentProcessStage", fields: [processStageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  uploader            User                      @relation("EvaluationAttachmentUploader", fields: [uploaderUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([evaluationProcessId])
+  @@index([processStageId])
+  @@index([origin])
+  @@index([uploaderUserId])
+  @@index([evaluationProcessId, processStageId, origin, uploaderUserId])
 }

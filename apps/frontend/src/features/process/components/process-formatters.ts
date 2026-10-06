@@ -88,6 +88,8 @@ const HISTORY_ACTION_LABELS: Record<ProcessAction, string> = {
   [ProcessAction.LINK_ORDINANCE]: 'Portaria vinculada',
   [ProcessAction.CLOSE_PROCESS]: 'Processo encerrado',
   [ProcessAction.GENERATE_DOCUMENT_ARTIFACT]: 'Documento PDF materializado',
+  [ProcessAction.UPLOAD_EVALUATION_ATTACHMENT]: 'Anexo de avaliação adicionado',
+  [ProcessAction.REMOVE_EVALUATION_ATTACHMENT]: 'Anexo de avaliação removido',
 };
 
 const ROLE_LABELS: Record<UserRole, string> = {

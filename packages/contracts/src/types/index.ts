@@ -1,5 +1,6 @@
 export * from './auth';
 export * from './audit-metadata';
+export * from './evaluation-attachment';
 export * from './base-entity-ref';
 export * from './cesad-commission-act';
 export * from './cesad-commission-member';

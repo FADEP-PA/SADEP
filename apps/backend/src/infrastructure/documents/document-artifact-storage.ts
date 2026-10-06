@@ -1,4 +1,4 @@
-import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
 import { promises as fs } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -13,7 +13,8 @@ export type ArtifactWriteMode = 'create' | 'replace';
 export interface DocumentArtifactStorage {
   exists(key: string): Promise<boolean>;
   read(key: string): Promise<Buffer>;
-  write(key: string, content: Buffer, mode: ArtifactWriteMode): Promise<void>;
+  write(key: string, content: Buffer, mode: ArtifactWriteMode, contentType?: string): Promise<void>;
+  delete(key: string): Promise<void>;
 }
 
 export function artifactContentHash(content: Buffer): string {
@@ -41,7 +42,7 @@ export class FilesystemDocumentArtifactStorage implements DocumentArtifactStorag
     return fs.readFile(this.resolve(key));
   }
 
-  async write(key: string, content: Buffer, mode: ArtifactWriteMode): Promise<void> {
+  async write(key: string, content: Buffer, mode: ArtifactWriteMode, _contentType?: string): Promise<void> {
     const target = this.resolve(key);
     await fs.mkdir(dirname(target), { recursive: true });
     if (mode === 'create' && await this.exists(key)) return;
@@ -61,6 +62,10 @@ export class FilesystemDocumentArtifactStorage implements DocumentArtifactStorag
     } finally {
       await fs.rm(temporary, { force: true });
     }
+  }
+
+  async delete(key: string): Promise<void> {
+    await fs.rm(this.resolve(key), { force: true });
   }
 
   private resolve(key: string): string {
@@ -106,14 +111,14 @@ export class S3DocumentArtifactStorage implements DocumentArtifactStorage {
     return Buffer.from(await result.Body.transformToByteArray());
   }
 
-  async write(key: string, content: Buffer, mode: ArtifactWriteMode): Promise<void> {
+  async write(key: string, content: Buffer, mode: ArtifactWriteMode, contentType?: string): Promise<void> {
     if (mode === 'create' && await this.exists(key)) return;
     try {
       await this.client.send(new PutObjectCommand({
         Bucket: this.config.artifactStorageS3Bucket,
         Key: key,
         Body: content,
-        ContentType: 'application/pdf',
+        ContentType: contentType ?? 'application/pdf',
         ...(mode === 'create' ? { IfNoneMatch: '*' } : {}),
       }));
     } catch (error) {
@@ -121,5 +126,12 @@ export class S3DocumentArtifactStorage implements DocumentArtifactStorage {
       if (mode === 'create' && statusCode === 412 && await this.exists(key)) return;
       throw error;
     }
+  }
+
+  async delete(key: string): Promise<void> {
+    await this.client.send(new DeleteObjectCommand({
+      Bucket: this.config.artifactStorageS3Bucket,
+      Key: key,
+    }));
   }
 }

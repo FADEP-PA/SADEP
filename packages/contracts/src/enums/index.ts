@@ -9,6 +9,7 @@ export * from './cesad-stage-opinion-status';
 export * from './cesad-final-opinion-status';
 export * from './document-status';
 export * from './document-type';
+export * from './evaluation-attachment-origin';
 export * from './process-action';
 export * from './process-status';
 export * from './signature-provider';
