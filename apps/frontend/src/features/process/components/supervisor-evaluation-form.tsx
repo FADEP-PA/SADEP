@@ -24,6 +24,8 @@ type Props = {
   feedbackMessage: string | null;
   actionErrorMessage: string | null;
   leadingContent?: ReactNode;
+  attachmentsContent?: ReactNode;
+  isAttachmentsBusy?: boolean;
   onChange: (updater: (current: EvaluationDraft) => EvaluationDraft) => void;
   onBack: () => void;
   onSaveDraft: () => void;
@@ -40,6 +42,8 @@ export function EvaluationDetailView({
   feedbackMessage,
   actionErrorMessage,
   leadingContent,
+  attachmentsContent,
+  isAttachmentsBusy = false,
   onChange,
   onBack,
   onSaveDraft,
@@ -90,7 +94,7 @@ export function EvaluationDetailView({
 
   return (
     <div className="work-page evaluation-workspace">
-      <button type="button" className="ghost-button work-back" onClick={onBack}>← Voltar às avaliações</button>
+      <button type="button" className="ghost-button work-back" disabled={isAttachmentsBusy} onClick={onBack}>← Voltar às avaliações</button>
       <WorkPageHeader
         title="Avaliação de desempenho"
         description={`${evaluation.row.stageLabel} · ${evaluation.row.serverName}`}
@@ -155,6 +159,8 @@ export function EvaluationDetailView({
         )}
       </WorkSection> : null}
 
+      {attachmentsContent}
+
       <WorkSection title="Resumo" className="evaluation-workspace__summary">
         <div className="score-summary">
           <div><span>Pontuação</span><strong>{hasCompleteScores ? evaluation.totalStageScore : '—'}</strong></div>
@@ -166,8 +172,8 @@ export function EvaluationDetailView({
         {actionErrorMessage ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={actionErrorMessage} /> : null}
         {editable ? (
           <div className="form-actions">
-            <button type="button" className="secondary-button" disabled={exceedsTextLimit || isSavingDraft || isSubmittingEvaluation || !canSaveActiveDraft} onClick={onSaveDraft}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
-            <button type="button" disabled={exceedsTextLimit || isSubmittingEvaluation || isSavingDraft || !canSubmitActiveEvaluation} onClick={onSubmit}>{isSubmittingEvaluation ? 'Enviando…' : submitButtonLabel}</button>
+            <button type="button" className="secondary-button" disabled={isAttachmentsBusy || exceedsTextLimit || isSavingDraft || isSubmittingEvaluation || !canSaveActiveDraft} onClick={onSaveDraft}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
+            <button type="button" disabled={isAttachmentsBusy || exceedsTextLimit || isSubmittingEvaluation || isSavingDraft || !canSubmitActiveEvaluation} onClick={onSubmit}>{isSubmittingEvaluation ? 'Enviando…' : submitButtonLabel}</button>
           </div>
         ) : null}
       </WorkSection>

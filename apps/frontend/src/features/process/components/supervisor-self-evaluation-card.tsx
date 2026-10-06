@@ -2,6 +2,7 @@
 
 import {
   ProcessStatus,
+  EvaluationAttachmentOrigin,
   SelfEvaluationStatus,
   SignatureStatus,
   UserRole,
@@ -13,6 +14,7 @@ import { StatusBadge } from '@/shared/ui/status-badge';
 import { WorkSection } from '@/shared/ui/work-patterns';
 
 import { EvaluationPdfViewer } from './evaluation-pdf-viewer';
+import { EvaluationAttachments } from './evaluation-attachments';
 
 import { formatDateTime } from './process-formatters';
 
@@ -67,6 +69,7 @@ export function SupervisorSelfEvaluationCard({
           </p>
         ) : null}
       </div>
+      <EvaluationAttachments processId={selfEvaluation.processId} stageId={selfEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} />
     </WorkSection>
   );
 }
