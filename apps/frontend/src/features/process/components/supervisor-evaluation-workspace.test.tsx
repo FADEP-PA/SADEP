@@ -1,6 +1,8 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   AcknowledgementMode,
+  LEGACY_EVALUATION_SCORING_VERSION,
+  PERCENT_EVALUATION_SCORING_VERSION,
   EVALUATION_TEXT_MAX_LENGTH,
   EVALUATION_TEXT_LIMIT_MESSAGE,
   SupervisorEvaluationStatus,
@@ -12,6 +14,7 @@ import {
   SignatureStatus,
   UserRole,
   type ProcessListRef,
+  type SupervisorEvaluationContentInput,
   type SelfEvaluationWithDocumentContextRef,
 } from '@sadep/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -395,6 +398,114 @@ describe('SupervisorEvaluationWorkspace', () => {
   });
 });
 
+
+describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
+  function scoreSnapshot(markers: Pick<SupervisorEvaluationContentInput, 'scoreScale' | 'scoringVersion'> = {}) {
+    return createWorkspaceSnapshot({ supervisorEvaluation: {
+      id: 'evaluation-score', processId: PROCESS_ID, processStageId: 'stage-1', evaluatorUserId: 'supervisor-user-id',
+      status: SupervisorEvaluationStatus.DRAFT, summary: 'Avaliação persistida', generalComments: 'Comentário', submittedAt: null,
+      createdAt: '2026-09-16T12:00:00.000Z', updatedAt: '2026-09-16T12:00:00.000Z',
+      content: { ...markers, criteria: Array.from({ length: 20 }, (_, i) => ({ code: `${Math.floor(i / 4) + 1}.${i % 4 + 1}`, label: 'Critério', rating: 5 })) },
+    } });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.getProcessList.mockResolvedValue(processList);
+    api.getSelfEvaluation.mockResolvedValue(null);
+    api.saveSupervisorEvaluationDraft.mockResolvedValue({});
+    api.rectifySupervisorEvaluation.mockResolvedValue({});
+    api.submitSupervisorEvaluation.mockResolvedValue({});
+    attachmentsApi.listEvaluationAttachments.mockResolvedValue({ attachments: [] });
+  });
+
+  async function openScores() {
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    await screen.findByLabelText('Competências da unidade');
+    for (const name of ['Assiduidade', 'Disciplina', 'Capacidade de iniciativa', 'Produtividade', 'Responsabilidade']) {
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(name) }));
+    }
+    return screen.getAllByRole('spinbutton');
+  }
+
+  const scales = [
+    { name: 'legado sem marcadores', markers: {}, scale: 'LEGACY_1_5', version: LEGACY_EVALUATION_SCORING_VERSION, min: '1', max: '5', total: '100.0', concept: 'Excelente' },
+    { name: 'legado explícito', markers: { scoreScale: 'LEGACY_1_5', scoringVersion: LEGACY_EVALUATION_SCORING_VERSION }, scale: 'LEGACY_1_5', version: LEGACY_EVALUATION_SCORING_VERSION, min: '1', max: '5', total: '100.0', concept: 'Excelente' },
+    { name: 'registro 0–100', markers: { scoreScale: 'PERCENT_0_100', scoringVersion: PERCENT_EVALUATION_SCORING_VERSION }, scale: 'PERCENT_0_100', version: PERCENT_EVALUATION_SCORING_VERSION, min: '0', max: '100', total: '5.0', concept: 'Insuficiente' },
+  ] as const;
+
+  it.each(scales)('$name preserva inputs e semântica dos cálculos', async ({ markers, min, max, total, concept }) => {
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(scoreSnapshot(markers));
+    const inputs = await openScores();
+    expect(inputs).toHaveLength(20);
+    for (const input of inputs) {
+      expect(input).toHaveAttribute('min', min);
+      expect(input).toHaveAttribute('max', max);
+      expect(input).toHaveValue(5);
+    }
+    const summary = within(screen.getByRole('heading', { name: 'Resumo' }).closest('section')!);
+    expect(summary.getByText(concept)).toBeInTheDocument();
+    expect(summary.getAllByText(total).length).toBeGreaterThan(0);
+    if (max === '5') {
+      expect(summary.getByText('5.0')).toBeInTheDocument();
+      expect(screen.queryByText('5/100')).not.toBeInTheDocument();
+    }
+  });
+
+  it('avaliação nova começa vazia em 0–100 e envia versão 2', async () => {
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot());
+    const inputs = await openScores();
+    for (const input of inputs) {
+      expect(input).toHaveAttribute('min', '0');
+      expect(input).toHaveAttribute('max', '100');
+      expect(input).toHaveValue(null);
+    }
+    fireEvent.change(screen.getByLabelText('Competências da unidade'), { target: { value: 'Nova avaliação' } });
+    fireEvent.change(inputs[0]!, { target: { value: '100' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
+    await waitFor(() => expect(api.saveSupervisorEvaluationDraft).toHaveBeenCalledWith(PROCESS_ID, expect.objectContaining({ content: expect.objectContaining({ scoreScale: 'PERCENT_0_100', scoringVersion: PERCENT_EVALUATION_SCORING_VERSION, criteria: [expect.objectContaining({ rating: 100 })] }) })));
+  });
+
+  it('reload de legado continua em 1–5 sem converter a nota 5', async () => {
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(scoreSnapshot());
+    await openScores();
+    fireEvent.click(screen.getByRole('button', { name: /Voltar às avaliações/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    await screen.findByLabelText('Competências da unidade');
+    fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
+    for (const input of screen.getAllByRole('spinbutton')) {
+      expect(input).toHaveAttribute('min', '1');
+      expect(input).toHaveAttribute('max', '5');
+      expect(input).toHaveValue(5);
+    }
+    expect(api.getSupervisorEvaluationWorkspaceSnapshot).toHaveBeenCalledTimes(2);
+  });
+
+  describe.each(['save', 'rectify'] as const)('%s preserva escala e versão', (action) => {
+    it.each(scales)('$name mantém as notas e os marcadores no payload', async ({ markers, scale, version }) => {
+      const snapshot = scoreSnapshot(markers);
+      if (action === 'rectify') {
+        snapshot.supervisorEvaluation!.status = SupervisorEvaluationStatus.SUBMITTED;
+        snapshot.canEditDraft = false;
+        snapshot.canSubmit = false;
+        snapshot.canRectify = true;
+      }
+      api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(snapshot);
+      await openScores();
+      fireEvent.click(screen.getByRole('button', { name: action === 'save' ? 'Salvar rascunho' : 'Retificar avaliação' }));
+      const request = action === 'save' ? api.saveSupervisorEvaluationDraft : api.rectifySupervisorEvaluation;
+      await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
+      const payload = request.mock.calls[0]![1];
+      expect(payload.content).toMatchObject({ scoreScale: scale, scoringVersion: version });
+      expect(payload.content.criteria).toHaveLength(20);
+      expect(payload.content.criteria.map((criterion: { rating: number }) => criterion.rating)).toEqual(Array(20).fill(5));
+      expect(await screen.findByText(action === 'save' ? 'Rascunho salvo.' : 'Avaliação retificada com sucesso.')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
+      expect(screen.getAllByRole('spinbutton')[0]).toHaveAttribute('max', scale === 'LEGACY_1_5' ? '5' : '100');
+    });
+  });
+});
 
 describe('limites de texto no workspace da chefia', () => {
   function draftSnapshot(text = 'Competências') {

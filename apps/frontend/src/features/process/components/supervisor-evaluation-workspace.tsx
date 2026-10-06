@@ -183,7 +183,9 @@ function createEvaluationDraft(
   evaluation?: SupervisorEvaluationWithDocumentContextRef | null,
 ): EvaluationDraft {
   const storedCriteria = evaluation?.content.criteria ?? [];
-  const scoreScale: EvaluationScoreScale = evaluation?.content.scoreScale ?? 'PERCENT_0_100';
+  const scoreScale: EvaluationScoreScale = evaluation
+    ? evaluation.content.scoreScale ?? 'LEGACY_1_5'
+    : 'PERCENT_0_100';
   const scoringVersion = evaluation?.content.scoringVersion ?? (
     scoreScale === 'LEGACY_1_5' ? LEGACY_EVALUATION_SCORING_VERSION : PERCENT_EVALUATION_SCORING_VERSION
   );
