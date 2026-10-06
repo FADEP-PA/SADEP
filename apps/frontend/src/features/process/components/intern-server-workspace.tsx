@@ -2,8 +2,8 @@
 
 import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
 
-import { SelfEvaluationStatus, UserRole, type InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AcknowledgementMode, SignatureStatus, SelfEvaluationStatus, UserRole, type InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { HttpError, getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
 import {
@@ -50,6 +50,8 @@ export function InternServerWorkspace() {
   const [showSelfEvaluation, setShowSelfEvaluation] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [operation, setOperation] = useState<Operation>(null);
+  const [acknowledgementMode, setAcknowledgementMode] = useState<AcknowledgementMode | null>(null);
+  const operationLock = useRef(false);
   const [errorTitle, setErrorTitle] = useState('Não foi possível carregar');
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
@@ -58,6 +60,7 @@ export function InternServerWorkspace() {
   const loadSnapshot = useCallback(async (processId: string) => {
     const next = await getInternWorkspaceSnapshot(processId);
     setSnapshot(next);
+    setAcknowledgementMode(null);
     setForm(createForm(next));
     setShowSelfEvaluation(Boolean(next.selfEvaluation));
   }, []);
@@ -85,6 +88,9 @@ export function InternServerWorkspace() {
   }, [loadSnapshot]);
 
   const capabilities = snapshot?.capabilities;
+  const internSignature = snapshot?.supervisorEvaluation?.documentContext?.signatures.find(
+    (signature) => signature.signatoryRole === UserRole.INTERN_SERVER && signature.status === SignatureStatus.COMPLETED,
+  );
   const canConfirmScience = capabilities?.canSignSupervisorEvaluation ?? false;
   const canEditSelfEvaluation = capabilities?.canEditSelfEvaluation ?? false;
   const canSubmitSelfEvaluation = capabilities?.canSubmitSelfEvaluation ?? false;
@@ -100,7 +106,9 @@ export function InternServerWorkspace() {
   const formIssues = useMemo(() => form.selfReflection.trim() ? [] : ['Preencha a autoavaliação antes de enviar.'], [form.selfReflection]);
 
   async function run(action: Exclude<Operation, null>) {
-    if (!snapshot || operation) return;
+    if (!snapshot || operationLock.current) return;
+    if (action === 'science' && (!acknowledgementMode || !canConfirmScience || internSignature)) return;
+    operationLock.current = true;
     setOperation(action);
     setErrorTitle('Não foi possível concluir');
     setError(null);
@@ -108,7 +116,7 @@ export function InternServerWorkspace() {
     setFeedback(null);
     try {
       if (action === 'science') {
-        await signSupervisorEvaluation(snapshot.process.id);
+        await signSupervisorEvaluation(snapshot.process.id, acknowledgementMode!);
         setFeedback('Sua confirmação foi registrada.');
       } else {
         if (Object.values(form).some((value) => !isEvaluationTextWithinLimit(value))) throw new Error(EVALUATION_TEXT_LIMIT_MESSAGE);
@@ -138,6 +146,7 @@ export function InternServerWorkspace() {
       setError(getRequestErrorMessage(requestError, 'Não foi possível concluir a ação. Tente novamente.'));
       setErrorDetails(getHttpErrorDetails(requestError instanceof HttpError ? requestError.payload : undefined));
     } finally {
+      operationLock.current = false;
       setOperation(null);
     }
   }
@@ -167,15 +176,42 @@ export function InternServerWorkspace() {
         {error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}
         {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
 
+        {internSignature ? (
+          <WorkSection title="Ciência registrada">
+            <p>{internSignature.acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED
+              ? 'Ciente'
+              : internSignature.acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION
+                ? 'Ciente com ressalva'
+                : 'Ciência registrada — modalidade não informada (registro anterior)'}</p>
+            <p>Data/hora: {formatDateTime(internSignature.signedAt)}</p>
+          </WorkSection>
+        ) : null}
+
         {snapshot && !showSelfEvaluation ? (
           <>
-            {canConfirmScience ? (
+            {canConfirmScience && !internSignature ? (
+              <>
+              <WorkSection title="Registrar ciência">
+                <p>A ciência confirma o recebimento e a leitura da avaliação. Ela não representa, por si só, concordância com o conteúdo.</p>
+                <fieldset disabled={operation !== null}>
+                  <legend>Escolha a modalidade de ciência</legend>
+                  <label className="field-group">
+                    <span><input type="radio" name="acknowledgement-mode" checked={acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED} onChange={() => setAcknowledgementMode(AcknowledgementMode.ACKNOWLEDGED)} /> Ciente</span>
+                    <span>Confirmo que tomei conhecimento da avaliação.</span>
+                  </label>
+                  <label className="field-group">
+                    <span><input type="radio" name="acknowledgement-mode" checked={acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION} onChange={() => setAcknowledgementMode(AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION)} /> Ciente com ressalva</span>
+                    <span>Confirmo que tomei conhecimento da avaliação, mas registro que não concordo com seu conteúdo.</span>
+                  </label>
+                </fieldset>
+              </WorkSection>
               <NextAction
                 title="Sua confirmação é necessária"
                 description="Confirme que você leu a avaliação para liberar a autoavaliação."
                 tone="warning"
-                action={<button type="button" disabled={operation !== null} onClick={() => void run('science')}>{operation === 'science' ? 'Confirmando…' : 'Confirmar ciência'}</button>}
+                action={<button type="button" disabled={operation !== null || acknowledgementMode === null} onClick={() => void run('science')}>{operation === 'science' ? 'Confirmando…' : 'Confirmar ciência'}</button>}
               />
+              </>
             ) : canEditSelfEvaluation ? (
               <NextAction title={snapshot.selfEvaluation ? 'Continue sua autoavaliação' : 'Preencha sua autoavaliação'} action={<button type="button" onClick={() => setShowSelfEvaluation(true)}>{snapshot.selfEvaluation ? 'Continuar preenchimento' : 'Preencher autoavaliação'}</button>} />
             ) : <NextAction title="Nenhuma ação necessária no momento" tone="success" />}

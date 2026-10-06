@@ -17,6 +17,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HttpError } from '@/shared/api/http-error';
 
+import { formatDateTime } from './process-formatters';
 import { InternServerWorkspace } from './intern-server-workspace';
 
 const api = vi.hoisted(() => ({
@@ -71,6 +72,7 @@ const processList: ProcessListRef = {
 
 function createSnapshot(options?: {
   scienceConfirmed?: boolean;
+  acknowledgementMode?: AcknowledgementMode | null;
   selfEvaluationStatus?: SelfEvaluationStatus;
 }): InternServerWorkspaceSnapshotRef {
   const scienceConfirmed = options?.scienceConfirmed ?? false;
@@ -130,7 +132,7 @@ function createSnapshot(options?: {
             signatoryRole: UserRole.INTERN_SERVER,
             status: scienceConfirmed ? SignatureStatus.COMPLETED : SignatureStatus.PENDING,
             signedAt: scienceConfirmed ? SIGNED_AT : null,
-            acknowledgementMode: scienceConfirmed ? AcknowledgementMode.ACKNOWLEDGED : null,
+            acknowledgementMode: scienceConfirmed ? (options?.acknowledgementMode === undefined ? AcknowledgementMode.ACKNOWLEDGED : options.acknowledgementMode) : null,
           },
         ],
       },
@@ -221,10 +223,11 @@ describe('InternServerWorkspace', () => {
     expect(await screen.findByTitle('PDF da avaliação da Chefia')).toHaveAttribute('src', 'blob:intern-pdf');
     expect(api.getEvaluationDocumentPdf).toHaveBeenCalledWith(PROCESS_ID, 'supervisor-document-1', expect.any(AbortSignal));
     expect(screen.queryByText('Desempenho satisfatório no período.')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Confirmar ciência' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Confirmar ciência' })).toBeDisabled();
     expect(document.body.innerHTML).not.toContain('private/storage.pdf');
+    fireEvent.click(screen.getByRole('radio', { name: /^Ciente\s*Confirmo/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
-    await waitFor(() => expect(api.signSupervisorEvaluation).toHaveBeenCalledWith(PROCESS_ID));
+    await waitFor(() => expect(api.signSupervisorEvaluation).toHaveBeenCalledWith(PROCESS_ID, AcknowledgementMode.ACKNOWLEDGED));
     expect(await screen.findByTitle('PDF da avaliação da Chefia')).toBeInTheDocument();
   });
 
@@ -238,7 +241,7 @@ describe('InternServerWorkspace', () => {
     expect(screen.queryByText('Boa frequência.')).not.toBeInTheDocument();
     expect(screen.queryByText('Ver avaliação completa')).not.toBeInTheDocument();
     expect(screen.getByText('PDF em preparação ou aguardando geração.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Confirmar ciência' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Confirmar ciência' })).toBeDisabled();
     expect(screen.queryByText(PROCESS_ID)).not.toBeInTheDocument();
     expect(
       screen.getByText('Confirme que você leu a avaliação para liberar a autoavaliação.'),
@@ -246,6 +249,36 @@ describe('InternServerWorkspace', () => {
     expect(screen.queryByLabelText('Autoavaliação')).not.toBeInTheDocument();
   });
 
+
+  it('starts without selection', async () => {
+    renderWorkspace();
+    const radios = await screen.findAllByRole('radio');
+    for (const radio of radios) expect(radio).not.toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
+    expect(api.signSupervisorEvaluation).not.toHaveBeenCalled();
+  });
+  it.each([AcknowledgementMode.ACKNOWLEDGED, AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION, null])('reloads persisted mode %s', async (mode) => {
+    renderWorkspace(createSnapshot({ scienceConfirmed: true, acknowledgementMode: mode }));
+    expect(await screen.findByText(mode === null ? 'Ciência registrada — modalidade não informada (registro anterior)' : mode === AcknowledgementMode.ACKNOWLEDGED ? 'Ciente' : 'Ciente com ressalva')).toBeInTheDocument();
+    expect(screen.getByText('Data/hora:', { exact: false })).toHaveTextContent(formatDateTime(SIGNED_AT));
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Preencher autoavaliação' })).toBeEnabled();
+    expect(api.signSupervisorEvaluation).not.toHaveBeenCalled();
+  });
+  it('keeps selection on failure and retries', async () => {
+    api.signSupervisorEvaluation.mockRejectedValueOnce(new Error('Temporary failure')).mockResolvedValueOnce({});
+    api.getProcessList.mockResolvedValue(processList);
+    api.getInternWorkspaceSnapshot.mockResolvedValueOnce(createSnapshot()).mockResolvedValueOnce(createSnapshot({ scienceConfirmed: true, acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION }));
+    render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole('radio', { name: /^Ciente com ressalva\s*Confirmo/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
+    expect(await screen.findByText('Temporary failure')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /^Ciente com ressalva\s*Confirmo/ })).toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
+    expect(await screen.findByRole('button', { name: 'Preencher autoavaliação' })).toBeEnabled();
+    expect(api.signSupervisorEvaluation).toHaveBeenCalledTimes(2);
+    expect(api.signSupervisorEvaluation).toHaveBeenNthCalledWith(2, PROCESS_ID, AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION);
+  });
   it('mostra estado vazio institucional quando o servidor não possui processos', async () => {
     api.getProcessList.mockResolvedValue({ items: [], total: 0 });
 
@@ -275,17 +308,18 @@ describe('InternServerWorkspace', () => {
     });
   });
 
-  it('confirma ciência e libera a autoavaliação', async () => {
+  it.each([AcknowledgementMode.ACKNOWLEDGED, AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION])('confirma %s e libera autoavaliacao', async (mode) => {
     api.getProcessList.mockResolvedValue(processList);
     api.getWorkflowHistory.mockResolvedValue({ items: [], meta: { total: 0 } });
     api.getInternWorkspaceSnapshot
       .mockResolvedValueOnce(createSnapshot())
-      .mockResolvedValueOnce(createSnapshot({ scienceConfirmed: true }));
+      .mockResolvedValueOnce(createSnapshot({ scienceConfirmed: true, acknowledgementMode: mode }));
 
     render(<InternServerWorkspace />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar ciência' }));
+    fireEvent.click(await screen.findByRole('radio', { name: mode === AcknowledgementMode.ACKNOWLEDGED ? /^Ciente\s*Confirmo/ : /^Ciente com ressalva\s*Confirmo/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
 
-    await waitFor(() => expect(api.signSupervisorEvaluation).toHaveBeenCalledWith(PROCESS_ID));
+    await waitFor(() => expect(api.signSupervisorEvaluation).toHaveBeenCalledWith(PROCESS_ID, mode));
     expect(await screen.findByText('Sua confirmação foi registrada.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Preencher autoavaliação' })).toBeEnabled();
   });
@@ -304,7 +338,8 @@ describe('InternServerWorkspace', () => {
     );
 
     render(<InternServerWorkspace />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar ciência' }));
+    fireEvent.click(await screen.findByRole('radio', { name: /^Ciente\s*Confirmo/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
 
     expect(await screen.findByRole('button', { name: 'Confirmando…' })).toBeDisabled();
     expect(api.signSupervisorEvaluation).toHaveBeenCalledTimes(1);
@@ -450,7 +485,8 @@ describe('InternServerWorkspace', () => {
     );
 
     render(<InternServerWorkspace />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar ciência' }));
+    fireEvent.click(await screen.findByRole('radio', { name: /^Ciente\s*Confirmo/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
 
     expect(await screen.findByText('Não foi possível confirmar a ciência')).toBeInTheDocument();
     expect(screen.getByText('A avaliação já foi confirmada em outra sessão.')).toBeInTheDocument();
@@ -465,7 +501,8 @@ describe('InternServerWorkspace', () => {
     );
 
     render(<InternServerWorkspace />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar ciência' }));
+    fireEvent.click(await screen.findByRole('radio', { name: /^Ciente\s*Confirmo/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
 
     expect(await screen.findByText('Não foi possível confirmar a ciência')).toBeInTheDocument();
     expect(screen.getByText('Seu perfil não pode confirmar esta avaliação.')).toBeInTheDocument();

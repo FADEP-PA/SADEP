@@ -7,6 +7,7 @@ import type {
   WorkflowResponse,
 } from '@/features/dashboard/types/process-dashboard-types';
 import {
+  type AcknowledgementMode,
   CesadStageOpinionInput,
   CesadStageOpinionRef,
   CesadStageOpinionSignatureStatusRef,
@@ -285,12 +286,13 @@ export async function rectifySupervisorEvaluation(
   );
 }
 
-export async function signSupervisorEvaluation(processId: string) {
+export async function signSupervisorEvaluation(processId: string, acknowledgementMode: AcknowledgementMode) {
   return httpRequest<DocumentSignatureResponse>(
     `/processes/${processId}/supervisor-evaluation/sign`,
     {
       ...AUTHENTICATED_REQUEST,
       method: 'POST',
+      body: { acknowledgementMode },
     },
   );
 }
