@@ -2,7 +2,7 @@
 
 import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
 
-import { AcknowledgementMode, SignatureStatus, SelfEvaluationStatus, UserRole, type InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
+import { AcknowledgementMode, SelfEvaluationStatus, UserRole, type InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { HttpError, getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
@@ -23,6 +23,7 @@ import { NextAction, WorkPageHeader, WorkSection } from '@/shared/ui/work-patter
 
 import { formatDateTime } from './process-formatters';
 import { EvaluationPdfViewer } from './evaluation-pdf-viewer';
+import { EvaluationAcknowledgement } from './evaluation-acknowledgement';
 import { SelfEvaluationFormView, type SelfEvaluationFormState } from './self-evaluation-form';
 
 const ALLOWED_ROLES = [UserRole.INTERN_SERVER];
@@ -88,9 +89,7 @@ export function InternServerWorkspace() {
   }, [loadSnapshot]);
 
   const capabilities = snapshot?.capabilities;
-  const internSignature = snapshot?.supervisorEvaluation?.documentContext?.signatures.find(
-    (signature) => signature.signatoryRole === UserRole.INTERN_SERVER && signature.status === SignatureStatus.COMPLETED,
-  );
+  const acknowledgement = snapshot?.supervisorEvaluation?.documentContext?.acknowledgement;
   const canConfirmScience = capabilities?.canSignSupervisorEvaluation ?? false;
   const canEditSelfEvaluation = capabilities?.canEditSelfEvaluation ?? false;
   const canSubmitSelfEvaluation = capabilities?.canSubmitSelfEvaluation ?? false;
@@ -107,7 +106,7 @@ export function InternServerWorkspace() {
 
   async function run(action: Exclude<Operation, null>) {
     if (!snapshot || operationLock.current) return;
-    if (action === 'science' && (!acknowledgementMode || !canConfirmScience || internSignature)) return;
+    if (action === 'science' && (!acknowledgementMode || !canConfirmScience || acknowledgement)) return;
     operationLock.current = true;
     setOperation(action);
     setErrorTitle('Não foi possível concluir');
@@ -176,20 +175,11 @@ export function InternServerWorkspace() {
         {error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}
         {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
 
-        {internSignature ? (
-          <WorkSection title="Ciência registrada">
-            <p>{internSignature.acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED
-              ? 'Ciente'
-              : internSignature.acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION
-                ? 'Ciente com ressalva'
-                : 'Ciência registrada — modalidade não informada (registro anterior)'}</p>
-            <p>Data/hora: {formatDateTime(internSignature.signedAt)}</p>
-          </WorkSection>
-        ) : null}
+        <EvaluationAcknowledgement acknowledgement={acknowledgement} />
 
         {snapshot && !showSelfEvaluation ? (
           <>
-            {canConfirmScience && !internSignature ? (
+            {canConfirmScience && !acknowledgement ? (
               <>
               <WorkSection title="Registrar ciência">
                 <p>A ciência confirma o recebimento e a leitura da avaliação. Ela não representa, por si só, concordância com o conteúdo.</p>

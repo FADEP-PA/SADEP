@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
+  AcknowledgementMode,
   EVALUATION_TEXT_MAX_LENGTH,
   EVALUATION_TEXT_LIMIT_MESSAGE,
   SupervisorEvaluationStatus,
@@ -19,6 +20,7 @@ import { type SupervisorEvaluationWorkspaceSnapshot } from '@/shared/api/service
 import { HttpError } from '@/shared/api/http-error';
 
 import { SupervisorEvaluationWorkspace } from './supervisor-evaluation-workspace';
+import { formatDateTime } from './process-formatters';
 
 const api = vi.hoisted(() => ({
   getProcessList: vi.fn(),
@@ -129,6 +131,31 @@ describe('SupervisorEvaluationWorkspace', () => {
     api.saveSupervisorEvaluationDraft.mockResolvedValue({});
     api.submitSupervisorEvaluation.mockResolvedValue({});
     api.signSelfEvaluation.mockResolvedValue({});
+  });
+
+  it.each([AcknowledgementMode.ACKNOWLEDGED, AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION, null])('exibe ciência %s da Chefia após reabrir avaliação', async (modality) => {
+    const acknowledgedAt = '2026-10-06T12:00:00.000Z';
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot({
+      process: { id: PROCESS_ID, status: ProcessStatus.EM_ANALISE_CESAD },
+      canEditDraft: false, canSubmit: false, canRectify: false,
+      documentContext: {
+        documentId: 'evaluation-document', documentType: DocumentType.SUPERVISOR_EVALUATION,
+        documentStatus: DocumentStatus.SIGNED, hasArtifact: false, artifactPath: null,
+        internSignaturePending: false, signatures: [],
+        acknowledgement: { processId: PROCESS_ID, processStageId: 'stage-1', documentId: 'evaluation-document', documentType: DocumentType.SUPERVISOR_EVALUATION, actorUserId: 'server-user', modality, acknowledgedAt },
+      },
+    }));
+    const label = modality === null ? 'Ciência registrada — modalidade não informada (registro anterior)' : modality === AcknowledgementMode.ACKNOWLEDGED ? 'Ciente' : 'Ciente com ressalva';
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    expect(await screen.findByText(label)).toBeInTheDocument();
+    expect(screen.getByText(/Data\/hora:/)).toHaveTextContent(formatDateTime(acknowledgedAt));
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+    if (modality === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION) expect(screen.getByText(/O servidor registrou ciência da avaliação com ressalva/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Voltar às avaliações/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    expect(await screen.findByText(label)).toBeInTheDocument();
+    expect(api.getSupervisorEvaluationWorkspaceSnapshot).toHaveBeenCalledTimes(2);
   });
 
   it('carrega a lista real de processos ao montar', async () => {

@@ -1,5 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
+  AcknowledgementMode,
+  DocumentStatus,
+  DocumentType,
+  type CesadStageReadSnapshotRef,
   AuditEventType,
   CesadStageOpinionStatus,
   ProcessAction,
@@ -10,6 +14,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CesadStageReadWorkspace } from './cesad-stage-read-workspace';
+import { formatDateTime } from '@/features/process/components/process-formatters';
 
 const api = vi.hoisted(() => ({
   completeCesadStageOpinion: vi.fn(),
@@ -195,6 +200,33 @@ describe('CesadStageReadWorkspace', () => {
     api.prepareCesadStageOpinionSignatures.mockResolvedValue(createSignatureStatus());
     api.saveCesadStageOpinionDraft.mockResolvedValue({});
     api.signCesadStageOpinion.mockResolvedValue(createSignatureStatus());
+  });
+
+  it.each([AcknowledgementMode.ACKNOWLEDGED, AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION, null])('exibe ciência %s da etapa concluída e preserva após reload', async (modality) => {
+    const acknowledgedAt = '2026-10-06T12:00:00.000Z';
+    const documents: CesadStageReadSnapshotRef['documents'] = [{
+      documentType: DocumentType.SUPERVISOR_EVALUATION, exists: true,
+      documentId: 'evaluation-document', documentStatus: DocumentStatus.SIGNED,
+      hasArtifact: false, artifactPath: null, createdAt: acknowledgedAt, updatedAt: acknowledgedAt,
+      stageLinkMode: 'STAGE_BOUND', signatures: [], missingReason: null,
+      serverAcknowledgement: { processId: PROCESS_ID, processStageId: 'stage-1', documentId: 'evaluation-document', documentType: DocumentType.SUPERVISOR_EVALUATION, actorUserId: 'server-user', modality, acknowledgedAt },
+    }];
+    api.getCesadStageReadSnapshot.mockResolvedValue({ ...createSnapshot({ processStatus: ProcessStatus.PARECER_EMITIDO, opinionCompleted: true }), documents });
+    const label = modality === null ? 'Ciência registrada — modalidade não informada (registro anterior)' : modality === AcknowledgementMode.ACKNOWLEDGED ? 'Ciente' : 'Ciente com ressalva';
+    render(<CesadStageReadWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Analisar' }));
+    expect(await screen.findByText(label)).toBeInTheDocument();
+    expect(screen.getByText(/Data\/hora:/)).toHaveTextContent(formatDateTime(acknowledgedAt));
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+    if (modality === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION) expect(screen.getByText(/O servidor registrou ciência da avaliação com ressalva/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Documentos' }));
+    expect(screen.getByText(label)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Histórico' }));
+    expect(screen.getByText(label)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Voltar aos processos/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Analisar' }));
+    expect(await screen.findByText(label)).toBeInTheDocument();
+    expect(api.getCesadStageReadSnapshot).toHaveBeenCalledTimes(2);
   });
 
   it('mostra a fila sem expor UUID e abre o processo pela ação da linha', async () => {
