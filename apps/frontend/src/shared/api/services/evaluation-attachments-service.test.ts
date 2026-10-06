@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { clearAccessToken, setAccessToken } from '@/shared/auth/access-token-store';
 import { HttpError } from '@/shared/api/http-error';
-import { downloadEvaluationAttachment, listEvaluationAttachments, removeSupervisorEvaluationAttachment, uploadSupervisorEvaluationAttachment } from './evaluation-attachments-service';
+import { downloadEvaluationAttachment, listEvaluationAttachments, removeSelfEvaluationAttachment, removeSupervisorEvaluationAttachment, uploadSelfEvaluationAttachment, uploadSupervisorEvaluationAttachment } from './evaluation-attachments-service';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 const PATH = `${API_BASE}/processes/process/stages/stage/evaluation-attachments`;
@@ -20,18 +20,25 @@ describe('evaluation attachments API', () => {
   });
   afterEach(() => { clearAccessToken(); vi.unstubAllGlobals(); });
 
-  it('envia arquivo multipart autenticado, sem serialização JSON ou Content-Type fixo', async () => {
+  it.each([
+    { origin: EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, upload: uploadSupervisorEvaluationAttachment, remove: removeSupervisorEvaluationAttachment },
+    { origin: EvaluationAttachmentOrigin.SELF_EVALUATION, upload: uploadSelfEvaluationAttachment, remove: removeSelfEvaluationAttachment },
+  ])('envia e remove $origin em multipart/DELETE autenticados', async ({ origin, upload, remove }) => {
     const response = { attachment: { id: 'persisted-id', originalFilename: 'evidence.pdf' } };
     fetchMock.mockResolvedValueOnce(jsonResponse(201, response));
     const file = new File(['%PDF-test'], 'evidence.pdf', { type: 'application/pdf' });
-    expect(await uploadSupervisorEvaluationAttachment('process', 'stage', file)).toEqual(response);
+    expect(await upload('process', 'stage', file)).toEqual(response);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe(`${PATH}/SUPERVISOR_EVALUATION`);
+    expect(url).toBe(`${PATH}/${origin}`);
     expect(init.method).toBe('POST');
     expect(init.headers.Authorization).toBe('Bearer token');
     expect(init.headers['Content-Type']).toBeUndefined();
     expect(init.body).toBeInstanceOf(FormData);
     expect(init.body.get('file')).toBe(file);
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { attachmentId: 'persisted-id', removed: true }));
+    expect(await remove('process', 'stage', 'persisted-id')).toEqual({ attachmentId: 'persisted-id', removed: true });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, `${PATH}/${origin}/persisted-id`, expect.objectContaining({ method: 'DELETE' }));
   });
 
   it.each([EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, EvaluationAttachmentOrigin.SELF_EVALUATION])('lista e baixa %s pelo endpoint autorizado', async (origin) => {
@@ -41,12 +48,6 @@ describe('evaluation attachments API', () => {
     fetchMock.mockResolvedValueOnce({ ok: true, blob: async () => blob });
     expect(await downloadEvaluationAttachment('process', 'stage', origin, 'attachment')).toBe(blob);
     expect(fetchMock).toHaveBeenNthCalledWith(2, `${PATH}/${origin}/attachment`, expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer token' }), cache: 'no-store' }));
-  });
-
-  it('remove somente na origem da Chefia', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(200, { attachmentId: 'attachment', removed: true }));
-    expect(await removeSupervisorEvaluationAttachment('process', 'stage', 'attachment')).toEqual({ attachmentId: 'attachment', removed: true });
-    expect(fetchMock).toHaveBeenCalledWith(`${PATH}/SUPERVISOR_EVALUATION/attachment`, expect.objectContaining({ method: 'DELETE' }));
   });
 
   it('mantém FormData ao renovar sessão e tentar novamente', async () => {

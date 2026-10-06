@@ -29,6 +29,20 @@ export function removeSupervisorEvaluationAttachment(processId: string, stageId:
   });
 }
 
+export function uploadSelfEvaluationAttachment(processId: string, stageId: string, file: File) {
+  const body = new FormData();
+  body.append('file', file);
+  return httpRequest<UploadAttachmentResponse>(scopePath(processId, stageId, EvaluationAttachmentOrigin.SELF_EVALUATION), {
+    useStoredAccessToken: true, method: 'POST', body,
+  });
+}
+
+export function removeSelfEvaluationAttachment(processId: string, stageId: string, attachmentId: string) {
+  return httpRequest<RemoveAttachmentResponse>(`${scopePath(processId, stageId, EvaluationAttachmentOrigin.SELF_EVALUATION)}/${encodeURIComponent(attachmentId)}`, {
+    useStoredAccessToken: true, method: 'DELETE',
+  });
+}
+
 export function downloadEvaluationAttachment(processId: string, stageId: string, origin: EvaluationAttachmentOrigin, attachmentId: string) {
   return httpRequest<Blob>(`${scopePath(processId, stageId, origin)}/${encodeURIComponent(attachmentId)}`, {
     useStoredAccessToken: true, responseType: 'blob',

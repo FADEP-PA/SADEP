@@ -7,7 +7,9 @@ import { HttpError, getRequestErrorMessage } from '@/shared/api/http-error';
 import {
   downloadEvaluationAttachment,
   listEvaluationAttachments,
+  removeSelfEvaluationAttachment,
   removeSupervisorEvaluationAttachment,
+  uploadSelfEvaluationAttachment,
   uploadSupervisorEvaluationAttachment,
 } from '@/shared/api/services/evaluation-attachments-service';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
@@ -42,13 +44,14 @@ type Props = {
   editable?: boolean;
   disabled?: boolean;
   onBusyChange?: (busy: boolean) => void;
+  title?: string;
 };
 
 export function EvaluationAttachments(props: Props) {
   return <AttachmentsContent key={`${props.processId}:${props.stageId}:${props.origin}`} {...props} />;
 }
 
-function AttachmentsContent({ processId, stageId, origin, editable = false, disabled = false, onBusyChange }: Props) {
+function AttachmentsContent({ processId, stageId, origin, editable = false, disabled = false, onBusyChange, title }: Props) {
   const [attachments, setAttachments] = useState<EvaluationAttachmentRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);
@@ -61,8 +64,20 @@ function AttachmentsContent({ processId, stageId, origin, editable = false, disa
   const lock = useRef(false);
   const objectUrl = useRef<string | null>(null);
   const mounted = useRef(true);
-  const canManage = editable && origin === EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION;
+  const canManage = editable;
   const blocked = disabled || loading || busy !== null || !loaded;
+
+  function uploadFile(file: File) {
+    return origin === EvaluationAttachmentOrigin.SELF_EVALUATION
+      ? uploadSelfEvaluationAttachment(processId, stageId, file)
+      : uploadSupervisorEvaluationAttachment(processId, stageId, file);
+  }
+
+  function removeFile(attachmentId: string) {
+    return origin === EvaluationAttachmentOrigin.SELF_EVALUATION
+      ? removeSelfEvaluationAttachment(processId, stageId, attachmentId)
+      : removeSupervisorEvaluationAttachment(processId, stageId, attachmentId);
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -133,7 +148,7 @@ function AttachmentsContent({ processId, stageId, origin, editable = false, disa
       while (remaining.length > 0) {
         const file = remaining[0]!;
         setBusy(`Enviando ${file.name}…`);
-        const result = await uploadSupervisorEvaluationAttachment(processId, stageId, file);
+        const result = await uploadFile(file);
         if (!mounted.current) return;
         setAttachments((current) => [...current, result.attachment]);
         remaining = remaining.slice(1);
@@ -145,7 +160,7 @@ function AttachmentsContent({ processId, stageId, origin, editable = false, disa
   function remove(attachment: EvaluationAttachmentRef) {
     if (!canManage || blocked) return;
     void run(`Removendo ${attachment.originalFilename}…`, async () => {
-      const result = await removeSupervisorEvaluationAttachment(processId, stageId, attachment.id);
+      const result = await removeFile(attachment.id);
       if (!mounted.current) return;
       if (!result.removed) throw new Error('Não foi possível remover o anexo.');
       setAttachments((current) => current.filter((item) => item.id !== result.attachmentId));
@@ -173,7 +188,7 @@ function AttachmentsContent({ processId, stageId, origin, editable = false, disa
   }
 
   return (
-    <WorkSection title={origin === EvaluationAttachmentOrigin.SELF_EVALUATION ? 'Anexos do Servidor' : 'Anexos da avaliação'}>
+    <WorkSection title={title ?? (origin === EvaluationAttachmentOrigin.SELF_EVALUATION ? 'Anexos do Servidor' : 'Anexos da avaliação')}>
       {canManage ? <div className="form-stack" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); upload(Array.from(event.dataTransfer.files)); }}>
         <label className="field-group">
           <span>Selecionar arquivos</span>

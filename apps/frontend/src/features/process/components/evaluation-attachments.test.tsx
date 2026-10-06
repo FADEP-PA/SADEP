@@ -7,7 +7,8 @@ import { EvaluationAttachments } from './evaluation-attachments';
 
 const api = vi.hoisted(() => ({
   listEvaluationAttachments: vi.fn(), uploadSupervisorEvaluationAttachment: vi.fn(),
-  removeSupervisorEvaluationAttachment: vi.fn(), downloadEvaluationAttachment: vi.fn(),
+  removeSupervisorEvaluationAttachment: vi.fn(), uploadSelfEvaluationAttachment: vi.fn(),
+  removeSelfEvaluationAttachment: vi.fn(), downloadEvaluationAttachment: vi.fn(),
 }));
 vi.mock('@/shared/api/services/evaluation-attachments-service', () => api);
 
@@ -26,7 +27,9 @@ describe('EvaluationAttachments', () => {
     vi.resetAllMocks();
     api.listEvaluationAttachments.mockResolvedValue({ attachments: [] });
     api.uploadSupervisorEvaluationAttachment.mockResolvedValue({ attachment });
+    api.uploadSelfEvaluationAttachment.mockResolvedValue({ attachment });
     api.removeSupervisorEvaluationAttachment.mockResolvedValue({ attachmentId: attachment.id, removed: true });
+    api.removeSelfEvaluationAttachment.mockResolvedValue({ attachmentId: attachment.id, removed: true });
     api.downloadEvaluationAttachment.mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }));
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:attachment');
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
@@ -117,17 +120,36 @@ describe('EvaluationAttachments', () => {
 
   it('anexos do Servidor são consultados e visualizados somente por endpoint autorizado', async () => {
     api.listEvaluationAttachments.mockResolvedValue({ attachments: [{ ...attachment, origin: EvaluationAttachmentOrigin.SELF_EVALUATION }] });
-    const view = render(<EvaluationAttachments {...props} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} editable />);
+    const view = render(<EvaluationAttachments {...props} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} editable={false} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Visualizar evidence.pdf' }));
     expect(await screen.findByTitle('Anexo evidence.pdf')).toHaveAttribute('src', 'blob:attachment');
     expect(api.listEvaluationAttachments).toHaveBeenCalledWith('process', 'stage', EvaluationAttachmentOrigin.SELF_EVALUATION, expect.any(AbortSignal));
     expect(api.downloadEvaluationAttachment).toHaveBeenCalledWith('process', 'stage', EvaluationAttachmentOrigin.SELF_EVALUATION, attachment.id);
     expect(screen.queryByLabelText('Selecionar arquivos')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Remover/ })).not.toBeInTheDocument();
-    expect(api.uploadSupervisorEvaluationAttachment).not.toHaveBeenCalled();
-    expect(api.removeSupervisorEvaluationAttachment).not.toHaveBeenCalled();
+    expect(api.uploadSelfEvaluationAttachment).not.toHaveBeenCalled();
+    expect(api.removeSelfEvaluationAttachment).not.toHaveBeenCalled();
     view.unmount();
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:attachment');
+  });
+
+  it('autoavaliação editável envia e remove anexos pelos endpoints SELF_EVALUATION', async () => {
+    render(<EvaluationAttachments {...props} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} editable />);
+    await screen.findByText('Nenhum anexo enviado.');
+    select([pdf()]);
+    expect(await screen.findByText('evidence.pdf')).toBeInTheDocument();
+    expect(api.uploadSelfEvaluationAttachment).toHaveBeenCalledWith('process', 'stage', expect.any(File));
+    expect(api.uploadSupervisorEvaluationAttachment).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Remover evidence.pdf' }));
+    expect(await screen.findByText('Anexo removido.')).toBeInTheDocument();
+    expect(api.removeSelfEvaluationAttachment).toHaveBeenCalledWith('process', 'stage', attachment.id);
+    expect(api.removeSupervisorEvaluationAttachment).not.toHaveBeenCalled();
+    expect(screen.queryByText('evidence.pdf')).not.toBeInTheDocument();
+  });
+
+  it('usa o título informado para a área de anexos', async () => {
+    render(<EvaluationAttachments {...props} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} editable title="Anexos da autoavaliação" />);
+    expect(await screen.getByRole('heading', { name: 'Anexos da autoavaliação' })).toBeInTheDocument();
   });
 
   it.each([new HttpError(403, 'Forbidden'), new Error('Falha de rede')])('mostra erro de listagem e permite retry', async (error) => {
@@ -153,5 +175,41 @@ describe('EvaluationAttachments', () => {
     expect(await screen.findByText('second.pdf')).toBeInTheDocument();
     expect(api.uploadSupervisorEvaluationAttachment).toHaveBeenNthCalledWith(3, 'process', 'stage', second);
     expect(api.uploadSupervisorEvaluationAttachment).toHaveBeenCalledTimes(3);
+  });
+
+  it('exibe estado de carregamento enquanto a lista é consultada', async () => {
+    let resolveList!: (value: { attachments: EvaluationAttachmentRef[] }) => void;
+    api.listEvaluationAttachments.mockReturnValue(new Promise((done) => { resolveList = done; }));
+    render(<EvaluationAttachments {...props} />);
+    expect(screen.getByText('Carregando anexos…')).toBeInTheDocument();
+    expect(screen.queryByText('Nenhum anexo enviado.')).not.toBeInTheDocument();
+    await act(async () => resolveList({ attachments: [] }));
+    expect(await screen.findByText('Nenhum anexo enviado.')).toBeInTheDocument();
+  });
+
+  it('mostra mensagem de autorização quando a listagem é negada', async () => {
+    api.listEvaluationAttachments.mockRejectedValue(new HttpError(403, 'Forbidden'));
+    render(<EvaluationAttachments {...props} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} />);
+    expect(await screen.findByText('Você não tem autorização para realizar esta ação nos anexos.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeInTheDocument();
+  });
+
+  it('mostra erro de autorização quando o upload é recusado e não persiste o arquivo', async () => {
+    api.uploadSupervisorEvaluationAttachment.mockRejectedValueOnce(new HttpError(403, 'Forbidden'));
+    render(<EvaluationAttachments {...props} />);
+    await screen.findByText('Nenhum anexo enviado.');
+    select([pdf()]);
+    expect(await screen.findByText('Você não tem autorização para realizar esta ação nos anexos.')).toBeInTheDocument();
+    expect(screen.queryByText('evidence.pdf')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Selecionar arquivos')).toBeEnabled();
+  });
+
+  it('mantém o anexo na lista quando a remoção falha', async () => {
+    api.listEvaluationAttachments.mockResolvedValue({ attachments: [attachment] });
+    api.removeSupervisorEvaluationAttachment.mockRejectedValueOnce(new Error('Falha de remoção.'));
+    render(<EvaluationAttachments {...props} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Remover evidence.pdf' }));
+    expect(await screen.findByText('Falha de remoção.')).toBeInTheDocument();
+    expect(screen.getByText('evidence.pdf')).toBeInTheDocument();
   });
 });

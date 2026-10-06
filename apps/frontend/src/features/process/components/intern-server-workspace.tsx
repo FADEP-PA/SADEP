@@ -2,7 +2,7 @@
 
 import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
 
-import { AcknowledgementMode, SelfEvaluationStatus, UserRole, type InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
+import { AcknowledgementMode, EvaluationAttachmentOrigin, SelfEvaluationStatus, SupervisorEvaluationStatus, UserRole, type InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { HttpError, getHttpErrorDetails, getRequestErrorMessage } from '@/shared/api/http-error';
@@ -22,6 +22,7 @@ import { EmptyState } from '@/shared/ui/operational-states';
 import { NextAction, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
 import { formatDateTime } from './process-formatters';
+import { EvaluationAttachments } from './evaluation-attachments';
 import { EvaluationPdfViewer } from './evaluation-pdf-viewer';
 import { EvaluationAcknowledgement } from './evaluation-acknowledgement';
 import { SelfEvaluationFormView, type SelfEvaluationFormState } from './self-evaluation-form';
@@ -218,6 +219,16 @@ export function InternServerWorkspace() {
               ) : <EmptyState title="Avaliação ainda não enviada" description="Aguarde a chefia concluir o preenchimento." />}
             </WorkSection>
 
+            {snapshot.supervisorEvaluation?.status === SupervisorEvaluationStatus.SUBMITTED ? (
+              <EvaluationAttachments
+                processId={snapshot.process.id}
+                stageId={snapshot.supervisorEvaluation.processStageId}
+                origin={EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION}
+                editable={false}
+                title="Anexos da Chefia"
+              />
+            ) : null}
+
             {snapshot.selfEvaluation ? (
               <WorkSection title="Autoavaliação">
                 <p>{snapshot.selfEvaluation.selfReflection}</p>
@@ -230,6 +241,8 @@ export function InternServerWorkspace() {
         {snapshot && showSelfEvaluation ? (
           <SelfEvaluationFormView
             form={form}
+            processId={snapshot.process.id}
+            stageId={snapshot.currentStage.stageId}
             currentStageSequence={snapshot.currentStage.sequence}
             currentStagePeriod={formatStagePeriod(snapshot)}
             canEdit={canEditSelfEvaluation}
