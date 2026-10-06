@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -508,24 +509,46 @@ export class ProcessDocumentsService {
       }
 
       if (internSignature.status !== PrismaSignatureStatus.PENDING) {
-        throw new BadRequestException('Supervisor evaluation signature has already been completed');
+        throw new ConflictException('Supervisor evaluation acknowledgement has already been recorded');
       }
 
       if (internSignature.acknowledgementMode !== null) {
-        throw new BadRequestException('Acknowledgement mode has already been recorded');
+        throw new ConflictException('Supervisor evaluation acknowledgement has already been recorded');
       }
 
       const now = new Date();
 
-      // Update signature to completed
-      await transaction.signatureRecord.update({
-        where: { id: internSignature.id },
+      // Atomically claim the pending acknowledgement. Only the transaction that
+      // changes PENDING + NULL can produce the completion side effects below.
+      const transition = await transaction.signatureRecord.updateMany({
+        where: {
+          id: internSignature.id,
+          status: PrismaSignatureStatus.PENDING,
+          acknowledgementMode: null,
+        },
         data: {
           status: PrismaSignatureStatus.COMPLETED,
           signedAt: now,
           acknowledgementMode,
         },
       });
+
+      if (transition.count !== 1) {
+        const currentSignature = await transaction.signatureRecord.findUnique({
+          where: { id: internSignature.id },
+          select: { status: true, acknowledgementMode: true },
+        });
+
+        if (
+          currentSignature?.status === PrismaSignatureStatus.COMPLETED ||
+          (currentSignature?.acknowledgementMode !== null &&
+            currentSignature?.acknowledgementMode !== undefined)
+        ) {
+          throw new ConflictException('Supervisor evaluation acknowledgement has already been recorded');
+        }
+
+        throw new ConflictException('Supervisor evaluation signature is no longer pending');
+      }
 
       // Check if all signatures are completed
       const allSignatures = await transaction.signatureRecord.findMany({
