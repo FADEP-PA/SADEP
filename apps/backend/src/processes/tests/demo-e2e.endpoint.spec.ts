@@ -147,8 +147,7 @@ export async function runDemoE2EEndpointTests() {
     const internWorkspaceResponse = await fetch(
       `${baseUrl}/processes/${process.id}/intern-workspace`,
       {
-        headers: authHeaders(serverSession.accessToken, true),
-        body: JSON.stringify({ acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED }),
+        headers: authHeaders(serverSession.accessToken),
       },
     );
     assert.equal(internWorkspaceResponse.status, 200);
@@ -165,7 +164,8 @@ export async function runDemoE2EEndpointTests() {
       `${baseUrl}/processes/${process.id}/supervisor-evaluation/sign`,
       {
         method: 'POST',
-        headers: authHeaders(serverSession.accessToken),
+        headers: authHeaders(serverSession.accessToken, true),
+        body: JSON.stringify({ acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED }),
       },
     );
     assert.equal(confirmScienceResponse.status, 201);
