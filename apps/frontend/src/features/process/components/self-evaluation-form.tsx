@@ -1,17 +1,20 @@
 'use client';
 
-import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
+import { EVALUATION_TEXT_LIMIT_MESSAGE, EvaluationAttachmentOrigin, isEvaluationTextWithinLimit } from '@sadep/contracts';
 import { EvaluationTextarea } from '@/shared/ui/evaluation-textarea';
 
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { DetailList, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
+import { EvaluationAttachments } from './evaluation-attachments';
 import { formatDateTime } from './process-formatters';
 
 export type SelfEvaluationFormState = { selfReflection: string; additionalNotes: string; comment: string };
 
 type Props = {
   form: SelfEvaluationFormState;
+  processId: string;
+  stageId: string;
   currentStageSequence: number;
   currentStagePeriod: string;
   canEdit: boolean;
@@ -30,6 +33,8 @@ type Props = {
 
 export function SelfEvaluationFormView({
   form,
+  processId,
+  stageId,
   currentStageSequence,
   currentStagePeriod,
   canEdit,
@@ -82,6 +87,15 @@ export function SelfEvaluationFormView({
           </div>
         ) : null}
       </WorkSection>
+
+      <EvaluationAttachments
+        processId={processId}
+        stageId={stageId}
+        origin={EvaluationAttachmentOrigin.SELF_EVALUATION}
+        editable={canEdit}
+        disabled={isBusy}
+        title="Anexos da autoavaliação"
+      />
     </div>
   );
 }

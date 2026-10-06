@@ -5,11 +5,13 @@ import {
   EVALUATION_TEXT_LIMIT_MESSAGE,
   DocumentStatus,
   DocumentType,
+  EvaluationAttachmentOrigin,
   ProcessStatus,
   SelfEvaluationStatus,
   SignatureStatus,
   SupervisorEvaluationStatus,
   UserRole,
+  type EvaluationAttachmentRef,
   type InternServerWorkspaceSnapshotRef,
   type ProcessListRef,
 } from '@sadep/contracts';
@@ -42,6 +44,16 @@ const auth = vi.hoisted(() => ({
 }));
 
 vi.mock('@/shared/api/services/processes-service', () => api);
+
+const attachmentsApi = vi.hoisted(() => ({
+  listEvaluationAttachments: vi.fn(),
+  downloadEvaluationAttachment: vi.fn(),
+  uploadSelfEvaluationAttachment: vi.fn(),
+  removeSelfEvaluationAttachment: vi.fn(),
+  uploadSupervisorEvaluationAttachment: vi.fn(),
+  removeSupervisorEvaluationAttachment: vi.fn(),
+}));
+vi.mock('@/shared/api/services/evaluation-attachments-service', () => attachmentsApi);
 
 vi.mock('@/shared/auth/auth-context', () => ({
   useAuth: () => auth,
@@ -221,6 +233,7 @@ describe('InternServerWorkspace', () => {
     api.saveSelfEvaluationDraft.mockResolvedValue({});
     api.signSupervisorEvaluation.mockResolvedValue({});
     api.submitSelfEvaluation.mockResolvedValue({});
+    attachmentsApi.listEvaluationAttachments.mockResolvedValue({ attachments: [] });
   });
 
 
@@ -585,6 +598,7 @@ describe('limites de texto no workspace do servidor', () => {
     vi.clearAllMocks();
     api.saveSelfEvaluationDraft.mockResolvedValue({});
     api.submitSelfEvaluation.mockResolvedValue({});
+    attachmentsApi.listEvaluationAttachments.mockResolvedValue({ attachments: [] });
   });
 
   it.each(['draft', 'submit'])('mantém contadores e envia exatamente o limite no %s', async (action) => {
@@ -633,5 +647,68 @@ describe('limites de texto no workspace do servidor', () => {
     fireEvent.click(screen.getByRole('button', { name: action === 'draft' ? 'Salvar rascunho' : 'Enviar autoavaliação' }));
     expect(await screen.findByText(EVALUATION_TEXT_LIMIT_MESSAGE)).toBeInTheDocument();
     expect(input).toHaveValue('Texto preservado.');
+  });
+});
+
+describe('anexos da avaliação recebida da Chefia', () => {
+  const chefiaAttachment: EvaluationAttachmentRef = {
+    id: 'chefia-attachment', evaluationProcessId: PROCESS_ID, processStageId: 'stage-1',
+    origin: EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, uploaderUserId: 'supervisor-user-id',
+    originalFilename: 'evidencia-chefia.pdf', mimeType: 'application/pdf', sizeBytes: 2048,
+    createdAt: '2026-09-16T14:00:00.000Z', updatedAt: '2026-09-16T14:00:00.000Z',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.saveSelfEvaluationDraft.mockResolvedValue({});
+    api.signSupervisorEvaluation.mockResolvedValue({});
+    api.submitSelfEvaluation.mockResolvedValue({});
+    attachmentsApi.listEvaluationAttachments.mockResolvedValue({ attachments: [chefiaAttachment] });
+    attachmentsApi.downloadEvaluationAttachment.mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }));
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:chefia-attachment');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+  });
+
+  it('lista os anexos da Chefia em somente leitura após a submissão da avaliação', async () => {
+    renderWorkspace();
+    expect(await screen.findByRole('heading', { name: 'Anexos da Chefia' })).toBeInTheDocument();
+    expect(await screen.findByText('evidencia-chefia.pdf')).toBeInTheDocument();
+    expect(screen.getByText('application/pdf · 2 KB')).toBeInTheDocument();
+    expect(attachmentsApi.listEvaluationAttachments).toHaveBeenCalledWith(
+      PROCESS_ID, 'stage-1', EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, expect.any(AbortSignal),
+    );
+    expect(screen.queryByLabelText('Selecionar arquivos')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Remover/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Somente leitura.')).toBeInTheDocument();
+    expect(attachmentsApi.uploadSupervisorEvaluationAttachment).not.toHaveBeenCalled();
+    expect(attachmentsApi.removeSupervisorEvaluationAttachment).not.toHaveBeenCalled();
+  });
+
+  it('visualiza o anexo da Chefia pelo endpoint autorizado sem expor caminho privado', async () => {
+    renderWorkspace();
+    fireEvent.click(await screen.findByRole('button', { name: 'Visualizar evidencia-chefia.pdf' }));
+    expect(await screen.findByTitle('Anexo evidencia-chefia.pdf')).toHaveAttribute('src', 'blob:chefia-attachment');
+    expect(attachmentsApi.downloadEvaluationAttachment).toHaveBeenCalledWith(
+      PROCESS_ID, 'stage-1', EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, chefiaAttachment.id,
+    );
+    expect(document.body.innerHTML).not.toContain('storageKey');
+  });
+
+  it('exibe estado vazio quando a Chefia não enviou anexos', async () => {
+    attachmentsApi.listEvaluationAttachments.mockResolvedValue({ attachments: [] });
+    renderWorkspace();
+    expect(await screen.findByRole('heading', { name: 'Anexos da Chefia' })).toBeInTheDocument();
+    expect(await screen.findByText('Nenhum anexo enviado.')).toBeInTheDocument();
+  });
+
+  it('não consulta anexos da Chefia enquanto a avaliação não foi submetida', async () => {
+    const snapshot = createSnapshot();
+    snapshot.supervisorEvaluation!.status = SupervisorEvaluationStatus.DRAFT;
+    snapshot.supervisorEvaluation!.submittedAt = null;
+    renderWorkspace(snapshot);
+    expect(await screen.findByText('Em elaboração')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Anexos da Chefia' })).not.toBeInTheDocument();
+    expect(screen.queryByText('evidencia-chefia.pdf')).not.toBeInTheDocument();
+    expect(attachmentsApi.listEvaluationAttachments).not.toHaveBeenCalled();
   });
 });
