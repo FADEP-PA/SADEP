@@ -1,8 +1,9 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 import {
   DocumentStatus,
+  EvaluationAttachmentOrigin,
   ProcessStatus,
   SelfEvaluationStatus,
   SignatureStatus,
@@ -13,6 +14,8 @@ import {
 
 const api = vi.hoisted(() => ({ getEvaluationDocumentPdf: vi.fn() }));
 vi.mock('@/shared/api/services/processes-service', () => api);
+const attachmentsApi = vi.hoisted(() => ({ listEvaluationAttachments: vi.fn(), downloadEvaluationAttachment: vi.fn(), uploadSupervisorEvaluationAttachment: vi.fn(), removeSupervisorEvaluationAttachment: vi.fn() }));
+vi.mock('@/shared/api/services/evaluation-attachments-service', () => attachmentsApi);
 
 import { SupervisorSelfEvaluationCard } from './supervisor-self-evaluation-card';
 
@@ -60,6 +63,25 @@ describe('SupervisorSelfEvaluationCard', () => {
 
   beforeEach(() => {
     onConfirm = vi.fn();
+    attachmentsApi.listEvaluationAttachments.mockReset().mockResolvedValue({ attachments: [] });
+    attachmentsApi.uploadSupervisorEvaluationAttachment.mockClear();
+    attachmentsApi.removeSupervisorEvaluationAttachment.mockClear();
+  });
+
+  it('lista anexos da autoavaliação submetida sem oferecer alterações à Chefia', async () => {
+    attachmentsApi.listEvaluationAttachments.mockResolvedValue({ attachments: [{
+      id: 'server-attachment', evaluationProcessId: BASE_SELF_EVALUATION.processId, processStageId: BASE_SELF_EVALUATION.processStageId,
+      origin: EvaluationAttachmentOrigin.SELF_EVALUATION, uploaderUserId: 'server', originalFilename: 'servidor.png', mimeType: 'image/png', sizeBytes: 1024,
+      createdAt: BASE_SELF_EVALUATION.createdAt, updatedAt: BASE_SELF_EVALUATION.updatedAt,
+    }] });
+    render(<SupervisorSelfEvaluationCard selfEvaluation={BASE_SELF_EVALUATION} documentContext={createDocumentContext({ supervisorSigned: true })} userName="Chefia" processStatus={ProcessStatus.EM_ANALISE_CESAD} isConfirming={false} onConfirm={onConfirm} />);
+    expect(await screen.findByText('servidor.png')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Anexos do Servidor' })).toBeInTheDocument();
+    await waitFor(() => expect(attachmentsApi.listEvaluationAttachments).toHaveBeenCalledWith(BASE_SELF_EVALUATION.processId, BASE_SELF_EVALUATION.processStageId, EvaluationAttachmentOrigin.SELF_EVALUATION, expect.any(AbortSignal)));
+    expect(screen.queryByLabelText('Selecionar arquivos')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Remover/ })).not.toBeInTheDocument();
+    expect(attachmentsApi.uploadSupervisorEvaluationAttachment).not.toHaveBeenCalled();
+    expect(attachmentsApi.removeSupervisorEvaluationAttachment).not.toHaveBeenCalled();
   });
 
 

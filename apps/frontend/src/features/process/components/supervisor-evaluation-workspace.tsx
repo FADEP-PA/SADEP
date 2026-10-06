@@ -4,6 +4,8 @@ import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sad
 
 import {
   ProcessStatus,
+  EvaluationAttachmentOrigin,
+  SupervisorEvaluationStatus,
   SelfEvaluationStatus,
   SignatureStatus,
   UserRole,
@@ -32,10 +34,11 @@ import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
-import { WorkPageHeader } from '@/shared/ui/work-patterns';
+import { WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
 import { SupervisorDashboardTable } from './supervisor-dashboard-table';
 import { EvaluationAcknowledgement } from './evaluation-acknowledgement';
+import { EvaluationAttachments } from './evaluation-attachments';
 import { EvaluationDetailView } from './supervisor-evaluation-form';
 import { calculateEvaluationScore, clampCriterionRating } from './supervisor-evaluation-scoring';
 import { SupervisorSelfEvaluationCard } from './supervisor-self-evaluation-card';
@@ -328,6 +331,7 @@ export function SupervisorEvaluationWorkspace() {
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmittingEvaluation, setIsSubmittingEvaluation] = useState(false);
+  const [isAttachmentsBusy, setIsAttachmentsBusy] = useState(false);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
@@ -441,7 +445,7 @@ export function SupervisorEvaluationWorkspace() {
   }
 
   async function handleSaveDraft() {
-    if (!activeEvaluation) return;
+    if (!activeEvaluation || isAttachmentsBusy) return;
 
     setIsSavingDraft(true);
     setFeedbackMessage(null);
@@ -468,7 +472,7 @@ export function SupervisorEvaluationWorkspace() {
   }
 
   async function handleSubmitEvaluation() {
-    if (!activeEvaluation) return;
+    if (!activeEvaluation || isAttachmentsBusy) return;
 
     setIsSubmittingEvaluation(true);
     setFeedbackMessage(null);
@@ -572,6 +576,17 @@ export function SupervisorEvaluationWorkspace() {
               submitButtonLabel={submitButtonLabel}
               feedbackMessage={feedbackMessage}
               actionErrorMessage={actionErrorMessage}
+              isAttachmentsBusy={isAttachmentsBusy}
+              attachmentsContent={workspaceSnapshot?.supervisorEvaluation ? (
+                <EvaluationAttachments
+                  processId={workspaceSnapshot.process.id}
+                  stageId={workspaceSnapshot.supervisorEvaluation.processStageId}
+                  origin={EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION}
+                  editable={workspaceSnapshot.canEditDraft && workspaceSnapshot.supervisorEvaluation.status === SupervisorEvaluationStatus.DRAFT}
+                  disabled={isSavingDraft || isSubmittingEvaluation || isLoadingWorkspace}
+                  onBusyChange={setIsAttachmentsBusy}
+                />
+              ) : <WorkSection title="Anexos da avaliação"><p>Salve o rascunho da avaliação antes de adicionar anexos.</p></WorkSection>}
               leadingContent={showSelfEvaluationCard ? (
                 <SupervisorSelfEvaluationCard
                   selfEvaluation={selfEvaluation}

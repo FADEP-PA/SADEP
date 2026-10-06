@@ -6,6 +6,7 @@ import {
   SupervisorEvaluationStatus,
   DocumentStatus,
   DocumentType,
+  EvaluationAttachmentOrigin,
   ProcessStatus,
   SelfEvaluationStatus,
   SignatureStatus,
@@ -45,6 +46,8 @@ const auth = vi.hoisted(() => ({
 }));
 
 vi.mock('@/shared/api/services/processes-service', () => api);
+const attachmentsApi = vi.hoisted(() => ({ listEvaluationAttachments: vi.fn().mockResolvedValue({ attachments: [] }), downloadEvaluationAttachment: vi.fn(), uploadSupervisorEvaluationAttachment: vi.fn(), removeSupervisorEvaluationAttachment: vi.fn() }));
+vi.mock('@/shared/api/services/evaluation-attachments-service', () => attachmentsApi);
 vi.mock('@/shared/auth/auth-context', () => ({
   useAuth: () => auth,
 }));
@@ -413,6 +416,37 @@ describe('limites de texto no workspace da chefia', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
     return screen.findByLabelText('Competências da unidade');
   }
+  it('integra upload e bloqueia salvar/enviar enquanto persiste o anexo', async () => {
+    let resolve!: (value: unknown) => void;
+    attachmentsApi.uploadSupervisorEvaluationAttachment.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+    await open();
+    await screen.findByText('Nenhum anexo enviado.');
+    const file = new File(['%PDF-test'], 'evidence.pdf', { type: 'application/pdf' });
+    fireEvent.change(screen.getByLabelText('Selecionar arquivos'), { target: { files: [file] } });
+    expect(screen.getByRole('button', { name: 'Salvar rascunho' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Enviar para assinatura' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Voltar às avaliações/ })).toBeDisabled();
+    expect(attachmentsApi.uploadSupervisorEvaluationAttachment).toHaveBeenCalledWith(PROCESS_ID, 'stage-1', file);
+    await act(async () => resolve({ attachment: { id: 'persisted', evaluationProcessId: PROCESS_ID, processStageId: 'stage-1', origin: EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, uploaderUserId: 'supervisor-user-id', originalFilename: 'evidence.pdf', mimeType: 'application/pdf', sizeBytes: file.size, createdAt: '2026-10-06T12:00:00.000Z', updatedAt: '2026-10-06T12:00:00.000Z' } }));
+    expect(await screen.findByText('evidence.pdf')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enviar para assinatura' })).toBeEnabled();
+  });
+
+  it('avaliação submetida mantém anexos somente leitura mesmo com retificação liberada', async () => {
+    const snapshot = draftSnapshot();
+    snapshot.supervisorEvaluation!.status = SupervisorEvaluationStatus.SUBMITTED;
+    snapshot.canRectify = true;
+    snapshot.canEditDraft = false;
+    snapshot.canSubmit = false;
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(snapshot);
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    expect(await screen.findByText('Nenhum anexo enviado.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Anexos da avaliação' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Selecionar arquivos')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Remover/ })).not.toBeInTheDocument();
+  });
+
   it.each(['draft', 'submit'])('conta todos os campos e envia o limite estruturado no %s', async (action) => {
     await open();
     expect(screen.getByText('12 / ' + EVALUATION_TEXT_MAX_LENGTH)).toBeInTheDocument();

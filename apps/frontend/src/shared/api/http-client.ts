@@ -150,14 +150,15 @@ async function fetchJson<T>(
   },
 ) {
   const { body, headers, params, token, redirectOnUnauthorized, responseType, ...rest } = options;
+  const isMultipart = body instanceof FormData;
   const response = await fetch(buildUrl(path, params), {
     ...rest,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isMultipart ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: isMultipart ? body : body === undefined ? undefined : JSON.stringify(body),
     cache: 'no-store',
   });
 
