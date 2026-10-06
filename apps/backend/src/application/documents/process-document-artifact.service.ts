@@ -95,8 +95,10 @@ export class ProcessDocumentArtifactService {
     if (!document.artifactPath || !(await this.storage.exists(document.artifactPath))) {
       throw new NotFoundException('Document artifact not found');
     }
+    const content = await this.storage.read(document.artifactPath);
+    this.assertArtifactIntegrity(document, content);
     return {
-      content: await this.storage.read(document.artifactPath),
+      content,
       filename: `${document.documentType.toLowerCase()}-${document.id}.pdf`,
     };
   }
@@ -121,17 +123,43 @@ export class ProcessDocumentArtifactService {
 
       if (document.artifactPath && await this.storage.exists(document.artifactPath)) {
         const currentContent = await this.storage.read(document.artifactPath);
-        const currentChecksum = document.artifactChecksum ?? artifactContentHash(currentContent);
-        if (currentChecksum === checksum) {
+        const currentChecksum = artifactContentHash(currentContent);
+        this.assertArtifactIntegrity(
+          document,
+          currentContent,
+          document.documentStatus === PrismaDocumentStatus.SIGNED && !document.artifactFrozenAt
+            ? checksum
+            : undefined,
+        );
+        if (
+          currentChecksum === checksum &&
+          (document.artifactChecksum === checksum ||
+            document.documentStatus !== PrismaDocumentStatus.SIGNED ||
+            Boolean(document.artifactFrozenAt))
+        ) {
+          if (document.documentStatus === PrismaDocumentStatus.SIGNED && !document.artifactFrozenAt) {
+            await this.freezeArtifact(document, checksum);
+          }
           return { documentId: document.id, artifactPath: key, generated: false };
         }
-        if (document.documentStatus === PrismaDocumentStatus.SIGNED) {
+        if (document.documentStatus === PrismaDocumentStatus.SIGNED && document.artifactFrozenAt) {
           throw new ForbiddenException('Signed process document artifact is immutable');
         }
       }
 
+      if (
+        document.documentStatus === PrismaDocumentStatus.SIGNED &&
+        document.artifactFrozenAt &&
+        document.artifactChecksum !== checksum
+      ) {
+        throw new ForbiddenException('Signed process document artifact is immutable');
+      }
+
       await this.storage.write(key, content, document.artifactPath ? 'replace' : 'create');
-      const generatedAt = document.artifactGeneratedAt ?? document.updatedAt;
+      const generatedAt = new Date();
+      const frozenAt = document.documentStatus === PrismaDocumentStatus.SIGNED
+        ? document.artifactFrozenAt ?? generatedAt
+        : null;
       const updated = await this.prismaService.processDocument.updateMany({
         where: {
           id: document.id,
@@ -140,7 +168,12 @@ export class ProcessDocumentArtifactService {
             { artifactChecksum: { not: checksum } },
           ],
         },
-        data: { artifactPath: key, artifactChecksum: checksum, artifactGeneratedAt: generatedAt },
+        data: {
+          artifactPath: key,
+          artifactChecksum: checksum,
+          artifactGeneratedAt: generatedAt,
+          artifactFrozenAt: frozenAt,
+        },
       });
 
       if (updated.count === 1) {
@@ -148,6 +181,7 @@ export class ProcessDocumentArtifactService {
           artifactPath: key,
           artifactChecksum: checksum,
           artifactGeneratedAt: generatedAt.toISOString(),
+          artifactFrozenAt: frozenAt?.toISOString() ?? null,
           replaced: Boolean(document.artifactPath),
         });
         return { documentId: document.id, artifactPath: key, generated: true };
@@ -155,18 +189,62 @@ export class ProcessDocumentArtifactService {
 
       const current = await this.prismaService.processDocument.findUnique({
         where: { id: document.id },
-        select: { artifactPath: true, artifactChecksum: true, documentStatus: true },
+        select: { artifactPath: true, artifactChecksum: true, artifactFrozenAt: true, documentStatus: true },
       });
       if (current?.artifactPath !== key || current.artifactChecksum !== checksum) {
-        if (current?.documentStatus === PrismaDocumentStatus.SIGNED) {
+        if (current?.documentStatus === PrismaDocumentStatus.SIGNED && current.artifactFrozenAt) {
           throw new ForbiddenException('Signed process document artifact is immutable');
         }
         throw new Error('Artifact was persisted but could not be linked consistently');
+      }
+      if (current.documentStatus === PrismaDocumentStatus.SIGNED && !current.artifactFrozenAt) {
+        await this.freezeArtifact(document, checksum);
       }
       return { documentId: document.id, artifactPath: key, generated: false };
     } catch (error) {
       await this.recordAuditFailure(document, user, error);
       throw error;
+    }
+  }
+
+  private async freezeArtifact(document: ProcessDocumentSnapshot, checksum: string): Promise<void> {
+    const frozenAt = new Date();
+    const updated = await this.prismaService.processDocument.updateMany({
+      where: {
+        id: document.id,
+        documentStatus: PrismaDocumentStatus.SIGNED,
+        artifactChecksum: checksum,
+        artifactFrozenAt: null,
+      },
+      data: { artifactFrozenAt: frozenAt },
+    });
+    if (updated.count === 0) {
+      const current = await this.prismaService.processDocument.findUnique({
+        where: { id: document.id },
+        select: { artifactChecksum: true, artifactFrozenAt: true, documentStatus: true },
+      });
+      if (
+        current?.documentStatus !== PrismaDocumentStatus.SIGNED ||
+        current.artifactChecksum !== checksum ||
+        !current.artifactFrozenAt
+      ) {
+        throw new Error('Signed process document artifact could not be frozen consistently');
+      }
+    }
+  }
+
+  private assertArtifactIntegrity(
+    document: ProcessDocumentSnapshot,
+    content: Buffer,
+    allowedRecoveryChecksum?: string,
+  ): void {
+    const actualChecksum = artifactContentHash(content);
+    if (
+      document.artifactChecksum &&
+      actualChecksum !== document.artifactChecksum &&
+      actualChecksum !== allowedRecoveryChecksum
+    ) {
+      throw new BadRequestException('Stored process document artifact checksum mismatch');
     }
   }
 

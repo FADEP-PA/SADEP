@@ -1,8 +1,9 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { DocumentStatus, DocumentType, UserRole } from '@sadep/contracts';
 
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
 import { ProcessDocumentArtifactService } from './process-document-artifact.service';
+import { artifactContentHash } from '../../infrastructure/documents/document-artifact-storage';
 
 describe('ProcessDocumentArtifactService', () => {
   const user: AuthenticatedUser = {
@@ -71,6 +72,23 @@ describe('ProcessDocumentArtifactService', () => {
     expect(prisma.processDocument.updateMany).not.toHaveBeenCalled();
   });
 
+  it('recovers on retry after a transient storage write failure', async () => {
+    const storage = {
+      exists: jest.fn().mockResolvedValue(false),
+      read: jest.fn(),
+      write: jest.fn()
+        .mockRejectedValueOnce(new Error('temporary storage failure'))
+        .mockResolvedValueOnce(undefined),
+    };
+    const { service, prisma } = setup({ storage });
+
+    await expect(service.materialize('process-1', 'document-1', user)).rejects.toThrow('temporary storage failure');
+    await expect(service.materialize('process-1', 'document-1', user)).resolves.toMatchObject({ generated: true });
+
+    expect(storage.write).toHaveBeenCalledTimes(2);
+    expect(prisma.processDocument.updateMany).toHaveBeenCalledTimes(1);
+  });
+
   it('is idempotent when retry sees the same persisted artifact', async () => {
     const key = 'processes/process-1/documents/document-1/v1.pdf';
     const firstDocument = document;
@@ -83,6 +101,105 @@ describe('ProcessDocumentArtifactService', () => {
     await expect(service.materialize('process-1', 'document-1', user)).resolves.toEqual({ documentId: 'document-1', artifactPath: key, generated: false });
     expect(renderer.render).toHaveBeenCalledTimes(2);
     expect(storage.write).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces a pre-signature artifact after the last signature and freezes the final PDF', async () => {
+    const key = 'processes/process-1/documents/document-1/v1.pdf';
+    const pendingContent = Buffer.from('%PDF-1.4 pending signature');
+    const finalContent = Buffer.from('%PDF-1.4 all signatures completed');
+    const signedDocument = {
+      ...document,
+      documentStatus: DocumentStatus.SIGNED,
+      artifactPath: key,
+      artifactChecksum: artifactContentHash(pendingContent),
+      artifactFrozenAt: null,
+    };
+    const storage = {
+      exists: jest.fn().mockResolvedValue(true),
+      read: jest.fn().mockResolvedValue(pendingContent),
+      write: jest.fn().mockResolvedValue(undefined),
+    };
+    const renderer = { render: jest.fn().mockResolvedValue(finalContent) };
+    const { service, prisma } = setup({ document: signedDocument, renderer, storage });
+
+    await expect(service.materializeAfterAuthorizedAction('document-1', user)).resolves.toBeUndefined();
+
+    expect(storage.write).toHaveBeenCalledWith(key, finalContent, 'replace');
+    expect(prisma.processDocument.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        artifactChecksum: artifactContentHash(finalContent),
+        artifactFrozenAt: expect.any(Date),
+      }),
+    }));
+  });
+
+  it('rejects a changed signed artifact after it has been frozen', async () => {
+    const key = 'processes/process-1/documents/document-1/v1.pdf';
+    const currentContent = Buffer.from('%PDF-1.4 final');
+    const signedDocument = {
+      ...document,
+      documentStatus: DocumentStatus.SIGNED,
+      artifactPath: key,
+      artifactChecksum: artifactContentHash(currentContent),
+      artifactFrozenAt: new Date('2026-10-06T12:00:00.000Z'),
+    };
+    const storage = {
+      exists: jest.fn().mockResolvedValue(true),
+      read: jest.fn().mockResolvedValue(currentContent),
+      write: jest.fn().mockResolvedValue(undefined),
+    };
+    const renderer = { render: jest.fn().mockResolvedValue(Buffer.from('%PDF-1.4 changed')) };
+    const { service, prisma } = setup({ document: signedDocument, renderer, storage });
+
+    await expect(service.materializeAfterAuthorizedAction('document-1', user)).rejects.toBeInstanceOf(ForbiddenException);
+    expect(storage.write).not.toHaveBeenCalled();
+    expect(prisma.processDocument.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('repairs a signed artifact whose storage write succeeded before the DB link was committed', async () => {
+    const key = 'processes/process-1/documents/document-1/v1.pdf';
+    const finalContent = Buffer.from('%PDF-1.4 all signatures completed');
+    const signedDocument = {
+      ...document,
+      documentStatus: DocumentStatus.SIGNED,
+      artifactPath: key,
+      artifactChecksum: artifactContentHash(Buffer.from('%PDF-1.4 pending signature')),
+      artifactFrozenAt: null,
+    };
+    const storage = {
+      exists: jest.fn().mockResolvedValue(true),
+      read: jest.fn().mockResolvedValue(finalContent),
+      write: jest.fn().mockResolvedValue(undefined),
+    };
+    const renderer = { render: jest.fn().mockResolvedValue(finalContent) };
+    const { service, prisma } = setup({ document: signedDocument, renderer, storage });
+
+    await expect(service.materializeAfterAuthorizedAction('document-1', user)).resolves.toBeUndefined();
+    expect(storage.write).toHaveBeenCalledWith(key, finalContent, 'replace');
+    expect(prisma.processDocument.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ artifactChecksum: artifactContentHash(finalContent) }),
+    }));
+  });
+
+  it('detects physical tampering before trusting the persisted checksum', async () => {
+    const key = 'processes/process-1/documents/document-1/v1.pdf';
+    const persistedContent = Buffer.from('%PDF-1.4 persisted');
+    const tamperedContent = Buffer.from('%PDF-1.4 tampered');
+    const documentWithChecksum = {
+      ...document,
+      artifactPath: key,
+      artifactChecksum: artifactContentHash(persistedContent),
+    };
+    const storage = {
+      exists: jest.fn().mockResolvedValue(true),
+      read: jest.fn().mockResolvedValue(tamperedContent),
+      write: jest.fn().mockResolvedValue(undefined),
+    };
+    const { service, prisma } = setup({ document: documentWithChecksum, storage });
+
+    await expect(service.materialize('process-1', 'document-1', user)).rejects.toBeInstanceOf(BadRequestException);
+    expect(storage.write).not.toHaveBeenCalled();
+    expect(prisma.processDocument.updateMany).not.toHaveBeenCalled();
   });
 
   it('rejects a document from another process before authorization or rendering', async () => {
