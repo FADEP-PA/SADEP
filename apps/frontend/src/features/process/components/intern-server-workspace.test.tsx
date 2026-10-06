@@ -142,7 +142,7 @@ function createSnapshot(options?: {
               documentId: 'supervisor-document-1',
               documentType: DocumentType.SUPERVISOR_EVALUATION,
               actorUserId: 'server-user-id',
-              modality: AcknowledgementMode.ACKNOWLEDGED,
+              modality: options?.acknowledgementMode === undefined ? AcknowledgementMode.ACKNOWLEDGED : options.acknowledgementMode,
               acknowledgedAt: SIGNED_AT,
             }
           : null,
@@ -212,7 +212,7 @@ function renderWorkspace(snapshot = createSnapshot()) {
   api.getInternWorkspaceSnapshot.mockResolvedValue(snapshot);
   api.getWorkflowHistory.mockResolvedValue({ items: [], meta: { total: 0 } });
 
-  render(<InternServerWorkspace />);
+  return render(<InternServerWorkspace />);
 }
 
 describe('InternServerWorkspace', () => {
@@ -269,12 +269,29 @@ describe('InternServerWorkspace', () => {
     expect(api.signSupervisorEvaluation).not.toHaveBeenCalled();
   });
   it.each([AcknowledgementMode.ACKNOWLEDGED, AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION, null])('reloads persisted mode %s', async (mode) => {
-    renderWorkspace(createSnapshot({ scienceConfirmed: true, acknowledgementMode: mode }));
-    expect(await screen.findByText(mode === null ? 'Ciência registrada — modalidade não informada (registro anterior)' : mode === AcknowledgementMode.ACKNOWLEDGED ? 'Ciente' : 'Ciente com ressalva')).toBeInTheDocument();
+    const snapshot = createSnapshot({ scienceConfirmed: true, acknowledgementMode: mode });
+    snapshot.supervisorEvaluation!.documentContext!.signatures[1]!.acknowledgementMode = AcknowledgementMode.ACKNOWLEDGED;
+    const view = renderWorkspace(snapshot);
+    const label = mode === null ? 'Ciência registrada — modalidade não informada (registro anterior)' : mode === AcknowledgementMode.ACKNOWLEDGED ? 'Ciente' : 'Ciente com ressalva';
+    expect(await screen.findByText(label)).toBeInTheDocument();
     expect(screen.getByText('Data/hora:', { exact: false })).toHaveTextContent(formatDateTime(SIGNED_AT));
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Preencher autoavaliação' })).toBeEnabled();
     expect(api.signSupervisorEvaluation).not.toHaveBeenCalled();
+    if (mode === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION) expect(screen.getByText(/O servidor registrou ciência da avaliação com ressalva/)).toBeInTheDocument();
+    view.unmount();
+    renderWorkspace(snapshot);
+    expect(await screen.findByText(label)).toBeInTheDocument();
+    expect(api.getInternWorkspaceSnapshot).toHaveBeenCalledTimes(2);
+  });
+
+  it('não deduz manifestação de assinatura completa sem read model', async () => {
+    const snapshot = createSnapshot({ scienceConfirmed: true });
+    snapshot.supervisorEvaluation!.documentContext!.acknowledgement = null;
+    renderWorkspace(snapshot);
+    expect(await screen.findByRole('button', { name: 'Preencher autoavaliação' })).toBeEnabled();
+    expect(screen.queryByText('Ciente')).not.toBeInTheDocument();
+    expect(screen.queryByText(/modalidade não informada/)).not.toBeInTheDocument();
   });
   it('keeps selection on failure and retries', async () => {
     api.signSupervisorEvaluation.mockRejectedValueOnce(new Error('Temporary failure')).mockResolvedValueOnce({});

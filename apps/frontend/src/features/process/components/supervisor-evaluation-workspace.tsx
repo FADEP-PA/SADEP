@@ -35,6 +35,7 @@ import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { WorkPageHeader } from '@/shared/ui/work-patterns';
 
 import { SupervisorDashboardTable } from './supervisor-dashboard-table';
+import { EvaluationAcknowledgement } from './evaluation-acknowledgement';
 import { EvaluationDetailView } from './supervisor-evaluation-form';
 import { calculateEvaluationScore, clampCriterionRating } from './supervisor-evaluation-scoring';
 import { SupervisorSelfEvaluationCard } from './supervisor-self-evaluation-card';
@@ -561,6 +562,7 @@ export function SupervisorEvaluationWorkspace() {
 
         {activeEvaluation ? (
           <>
+            <EvaluationAcknowledgement acknowledgement={workspaceSnapshot?.documentContext?.acknowledgement} />
             <EvaluationDetailView
               evaluation={activeEvaluation}
               isSavingDraft={isSavingDraft}
