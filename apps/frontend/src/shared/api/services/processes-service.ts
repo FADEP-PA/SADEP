@@ -29,6 +29,7 @@ import {
   type ApproveHomologationRequest,
   type HomologationQueueRef,
   type HomologationStatusRef,
+  type NotifyResultRequest,
   type ReturnForRegularizationRequest,
 } from '@sadep/contracts';
 
@@ -117,6 +118,11 @@ export async function approveHomologation(processId: string, body: ApproveHomolo
 
 export async function returnHomologationForRegularization(processId: string, body: ReturnForRegularizationRequest) {
   return httpRequest<{ processId: string; processStatus: ProcessStatus }>(`/processes/${encodeURIComponent(processId)}/homologation/return-for-regularization`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST', body });
+}
+
+export async function notifyHomologationResult(processId: string, body: NotifyResultRequest) {
+  return httpRequest<HomologationStatusRef>(`/processes/${encodeURIComponent(processId)}/homologation/notify`,
     { ...AUTHENTICATED_REQUEST, method: 'POST', body });
 }
 

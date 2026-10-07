@@ -20,6 +20,7 @@ import {
   getHomologationQueue,
   getHomologationStatus,
   getInternWorkspaceSnapshot,
+  notifyHomologationResult,
   getProcessList,
   getSelfEvaluation,
   getSupervisorEvaluationWorkspaceSnapshot,
@@ -595,6 +596,55 @@ describe('processes-service', () => {
       );
 
       await expect(approveHomologation(PROCESS_ID, {})).rejects.toMatchObject({ status: 409 });
+    });
+  });
+
+  describe('notifyHomologationResult', () => {
+    it('faz POST /processes/:id/homologation/notify com as observacoes', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, {
+          processId: PROCESS_ID,
+          processStatus: 'NOTIFICADO',
+          homologatedAt: '2026-10-06T10:00:00.000Z',
+          homologatedByUserId: 'authority-1',
+          homologationRemarks: null,
+          notifiedAt: '2026-10-06T11:00:00.000Z',
+          notifiedByUserId: 'authority-1',
+          acknowledgedAt: null,
+        }),
+      );
+
+      const result = await notifyHomologationResult(PROCESS_ID, {
+        notificationRemarks: 'Notificado ao servidor.',
+      });
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/homologation/notify`);
+      expect(init.method).toBe('POST');
+      expect(init.body).toBe(JSON.stringify({ notificationRemarks: 'Notificado ao servidor.' }));
+      expect(result).toMatchObject({ processStatus: 'NOTIFICADO' });
+    });
+
+    it('lanca HttpError 409 quando a notificacao ja foi gerada', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(409, { message: 'Result notification has already been sent' }),
+      );
+
+      await expect(notifyHomologationResult(PROCESS_ID, {})).rejects.toMatchObject({
+        status: 409,
+      });
+    });
+
+    it('lanca HttpError 400 quando o processo nao esta homologado', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(400, {
+          message: 'Process must be in HOMOLOGADO status to send result notification',
+        }),
+      );
+
+      await expect(notifyHomologationResult(PROCESS_ID, {})).rejects.toMatchObject({
+        status: 400,
+      });
     });
   });
 
