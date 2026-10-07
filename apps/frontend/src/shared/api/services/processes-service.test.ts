@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearAccessToken, setAccessToken } from '@/shared/auth/access-token-store';
 import { AcknowledgementMode, ProcessAction } from '@sadep/contracts';
 import {
+  approveHomologation,
   getEvaluationDocumentPdf,
   completeCesadStageOpinion,
   getCesadStageOpinion,
@@ -16,6 +17,8 @@ import {
   signCesadFinalOpinion,
   sendCesadFinalOpinionToHomologation,
   getCesadStageOpinionSignatureStatus,
+  getHomologationQueue,
+  getHomologationStatus,
   getInternWorkspaceSnapshot,
   getProcessList,
   getSelfEvaluation,
@@ -23,6 +26,7 @@ import {
   getWorkflow,
   getWorkflowHistory,
   prepareCesadStageOpinionSignatures,
+  returnHomologationForRegularization,
   saveCesadStageOpinionDraft,
   signCesadStageOpinion,
   signSelfEvaluation,
@@ -510,6 +514,116 @@ describe('processes-service', () => {
       fetchMock.mockResolvedValueOnce(jsonResponse(409, { error: 'Conflict' }));
 
       await expect(signSelfEvaluation(PROCESS_ID)).rejects.toThrow();
+    });
+  });
+
+  describe('getHomologationStatus', () => {
+    it('faz GET /processes/:id/homologation com Authorization Bearer', async () => {
+      const payload = {
+        processId: PROCESS_ID,
+        processStatus: 'PARECER_EMITIDO',
+        homologatedAt: null,
+        homologatedByUserId: null,
+        homologationRemarks: null,
+        notifiedAt: null,
+        notifiedByUserId: null,
+        acknowledgedAt: null,
+      };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await getHomologationStatus(PROCESS_ID);
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/homologation`);
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result).toMatchObject({ processId: PROCESS_ID, processStatus: 'PARECER_EMITIDO' });
+    });
+
+    it('lanca HttpError quando API retorna 403', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(403, { error: 'Forbidden' }));
+
+      await expect(getHomologationStatus(PROCESS_ID)).rejects.toThrow();
+    });
+  });
+
+  describe('getHomologationQueue', () => {
+    it('faz GET /processes/homologation/queue e retorna items e total', async () => {
+      const payload = {
+        items: [
+          {
+            id: PROCESS_ID,
+            status: 'PARECER_EMITIDO',
+            evaluatedUserName: 'Servidor Ana',
+            evaluatedUserEmail: 'ana@sadep.local',
+            currentStageSequence: 4,
+            createdAt: '2026-10-01T10:00:00.000Z',
+            sentToHomologationAt: '2026-10-05T10:00:00.000Z',
+          },
+        ],
+        total: 1,
+      };
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, payload));
+
+      const result = await getHomologationQueue();
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/homologation/queue`);
+      expect(init.method).toBe('GET');
+      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
+      expect(result.total).toBe(1);
+      expect(result.items[0]).toMatchObject({ id: PROCESS_ID, status: 'PARECER_EMITIDO' });
+    });
+  });
+
+  describe('approveHomologation', () => {
+    it('faz POST /processes/:id/homologation/approve com as observações', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, { processId: PROCESS_ID, processStatus: 'HOMOLOGADO' }),
+      );
+
+      await approveHomologation(PROCESS_ID, { homologationRemarks: 'De acordo.' });
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${API_BASE}/processes/${PROCESS_ID}/homologation/approve`);
+      expect(init.method).toBe('POST');
+      expect(init.body).toBe(JSON.stringify({ homologationRemarks: 'De acordo.' }));
+    });
+
+    it('lanca HttpError 409 quando o processo ja foi homologado', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(409, { message: 'Process has already been homologated' }),
+      );
+
+      await expect(approveHomologation(PROCESS_ID, {})).rejects.toMatchObject({ status: 409 });
+    });
+  });
+
+  describe('returnHomologationForRegularization', () => {
+    it('faz POST /processes/:id/homologation/return-for-regularization com as observações', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, { processId: PROCESS_ID, processStatus: 'EM_AVALIACAO' }),
+      );
+
+      await returnHomologationForRegularization(PROCESS_ID, {
+        returnRemarks: 'Corrigir anexos.',
+      });
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(
+        `${API_BASE}/processes/${PROCESS_ID}/homologation/return-for-regularization`,
+      );
+      expect(init.method).toBe('POST');
+      expect(init.body).toBe(JSON.stringify({ returnRemarks: 'Corrigir anexos.' }));
+    });
+
+    it('lanca HttpError 422 quando o processo nao esta apto para devolucao', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(422, { message: 'Process must be in PARECER_EMITIDO status' }),
+      );
+
+      await expect(returnHomologationForRegularization(PROCESS_ID, {})).rejects.toMatchObject({
+        status: 422,
+      });
     });
   });
 });

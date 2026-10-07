@@ -13,6 +13,7 @@ import { CesadFinalOpinionsService } from './cesad-final-opinions/cesad-final-op
 import { EvaluationAttachmentsController } from './evaluation-attachments/evaluation-attachments.controller';
 import { EvaluationAttachmentsService } from './evaluation-attachments/evaluation-attachments.service';
 import { HomologationController } from './homologation/homologation.controller';
+import { HomologationQueueController } from './homologation/homologation-queue.controller';
 import { HomologationService } from './homologation/homologation.service';
 import { CesadStageOpinionsController } from './cesad-stage-opinions/cesad-stage-opinions.controller';
 import { CesadStageOpinionsService } from './cesad-stage-opinions/cesad-stage-opinions.service';
@@ -36,6 +37,7 @@ import { SupervisorEvaluationsService } from './supervisor-evaluations/superviso
     CesadStageReadController,
     CesadFinalOpinionsController,
     HomologationController,
+    HomologationQueueController,
     SupervisorEvaluationsController,
     SelfEvaluationsController,
     EvaluationAttachmentsController,

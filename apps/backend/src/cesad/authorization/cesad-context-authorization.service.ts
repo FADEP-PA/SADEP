@@ -50,7 +50,7 @@ export class CesadContextAuthorizationService {
   }): Promise<void> {
     const user = this.ensureAuthenticatedUser(params.user);
 
-    if (user.role === UserRole.ADMIN) {
+    if (user.role === UserRole.ADMIN || user.role === UserRole.HOMOLOGATION_AUTHORITY) {
       return;
     }
 

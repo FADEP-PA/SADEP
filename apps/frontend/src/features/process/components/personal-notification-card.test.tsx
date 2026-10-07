@@ -4,13 +4,13 @@ import { ProcessStatus } from '@sadep/contracts';
 import { PersonalNotificationCard } from './personal-notification-card';
 import * as api from '@/shared/api/services/processes-service';
 
-vi.mock('@/shared/api/services/processes-service', () => ({ getPersonalNotificationStatus: vi.fn(), getPersonalNotificationPdf: vi.fn(), acknowledgePersonalNotification: vi.fn() }));
+vi.mock('@/shared/api/services/processes-service', () => ({ getHomologationStatus: vi.fn(), getPersonalNotificationPdf: vi.fn(), acknowledgePersonalNotification: vi.fn() }));
 const status = { processId: 'process-1', processStatus: ProcessStatus.NOTIFICADO, homologatedAt: '2026-10-07T12:00:00Z', homologatedByUserId: 'authority', homologationRemarks: null,
   notifiedAt: '2026-10-07T13:00:00Z', notifiedByUserId: 'authority', acknowledgedAt: null,
   notificationDocument: { documentId: 'notification', hasArtifact: true, viewedAt: null, canAcknowledge: false } };
 describe('Personal notification', () => {
   beforeEach(() => {
-    vi.resetAllMocks(); vi.mocked(api.getPersonalNotificationStatus).mockResolvedValue(status);
+    vi.resetAllMocks(); vi.mocked(api.getHomologationStatus).mockResolvedValue(status);
     vi.mocked(api.getPersonalNotificationPdf).mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }));
     URL.createObjectURL = vi.fn(() => 'blob:official-notification'); URL.revokeObjectURL = vi.fn();
   });
@@ -18,11 +18,11 @@ describe('Personal notification', () => {
     const { unmount } = render(<PersonalNotificationCard processId="process-1" />);
     const confirm = screen.getByRole('button', { name: 'Confirmar ciência da Notificação Pessoal' }); expect(confirm).toBeDisabled();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Visualizar Notificação Pessoal' })).toBeEnabled());
-    vi.mocked(api.getPersonalNotificationStatus).mockResolvedValue({ ...status, notificationDocument: { ...status.notificationDocument, viewedAt: '2026-10-07T14:00:00Z', canAcknowledge: true } });
+    vi.mocked(api.getHomologationStatus).mockResolvedValue({ ...status, notificationDocument: { ...status.notificationDocument, viewedAt: '2026-10-07T14:00:00Z', canAcknowledge: true } });
     fireEvent.click(screen.getByRole('button', { name: 'Visualizar Notificação Pessoal' }));
     expect(await screen.findByTitle('Notificação Pessoal oficial')).toHaveAttribute('src', 'blob:official-notification');
     await waitFor(() => expect(confirm).toBeEnabled());
-    vi.mocked(api.getPersonalNotificationStatus).mockResolvedValue({ ...status, processStatus: ProcessStatus.CIENTE, acknowledgedAt: '2026-10-07T14:01:00Z' });
+    vi.mocked(api.getHomologationStatus).mockResolvedValue({ ...status, processStatus: ProcessStatus.CIENTE, acknowledgedAt: '2026-10-07T14:01:00Z' });
     vi.mocked(api.acknowledgePersonalNotification).mockResolvedValue({ ...status, processStatus: ProcessStatus.CIENTE });
     fireEvent.click(confirm);
     expect(await screen.findByText(/Ciência registrada em/)).toBeInTheDocument();

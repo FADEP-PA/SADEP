@@ -1010,6 +1010,34 @@ export async function runCesadFinalOpinionsServiceTests() {
       /already been sent to homologation/,
     );
 
+    // Homologation queue: only processes actually sent by CESAD are listed for the authority.
+    const homologationQueueService = new HomologationService(
+      context.prisma as never,
+      new ProcessStageService(context.prisma as never),
+    );
+    const authorityQueueUser = authenticatedUser(
+      homologationAuthority.id,
+      homologationAuthority.role,
+    );
+    const queueBeforeDecision = await homologationQueueService.listQueue(authorityQueueUser);
+    const sentQueueItem = queueBeforeDecision.items.find((item) => item.id === ready.processId);
+    assert.ok(sentQueueItem, 'process sent to homologation must appear in the authority queue');
+    assert.equal(sentQueueItem.status, ProcessStatus.PARECER_EMITIDO);
+    assert.equal(typeof sentQueueItem.evaluatedUserName, 'string');
+    assert.notEqual(sentQueueItem.evaluatedUserName, '');
+    assert.equal(sentQueueItem.currentStageSequence, 4);
+    assert.equal(typeof sentQueueItem.sentToHomologationAt, 'string');
+    assert.equal(
+      queueBeforeDecision.items.some((item) => item.id === activeStageProcess.id),
+      false,
+      'a process never sent by CESAD must not appear in the authority queue',
+    );
+    await assert.rejects(
+      () =>
+        homologationQueueService.listQueue(authenticatedUser(cesadMember.id, cesadMember.role)),
+      /Only HOMOLOGATION_AUTHORITY or ADMIN/,
+    );
+
     const formalPostFinalDocuments = await context.prisma.processDocument.findMany({
       where: {
         evaluationProcessId: ready.processId,
@@ -1119,6 +1147,18 @@ export async function runCesadFinalOpinionsServiceTests() {
       buildPayload(),
     );
     assert.equal(adminCompleted.status, CesadFinalOpinionStatus.COMPLETED);
+
+    // Homologation authority reads the final opinion (read-only) while remaining blocked from writing it
+    const authorityOpinion = await services.service.getByProcess(
+      authReady.processId,
+      authenticatedUser(homologationAuthority.id, homologationAuthority.role),
+    );
+    assert.equal(authorityOpinion?.status, CesadFinalOpinionStatus.COMPLETED);
+    const authorityEligibility = await services.service.getEligibility(
+      authReady.processId,
+      authenticatedUser(homologationAuthority.id, homologationAuthority.role),
+    );
+    assert.equal(typeof authorityEligibility.isEligible, 'boolean');
 
     // Assistant CAN read eligibility on yet another fully-completed process where they're in commission
     const readReady = await buildFullyCompletedProcess(context, {
@@ -1494,7 +1534,15 @@ export async function runCesadFinalOpinionsServiceTests() {
     const internUser = authenticatedUser(evaluatedUser.id, evaluatedUser.role);
     await assert.rejects(() => homologation.notify(ready.processId, authorityUser, {}), /must be in HOMOLOGADO/);
     await homologation.approve(ready.processId, authorityUser, { homologationRemarks: 'Homologo o resultado do parecer conclusivo.' });
+    const queueAfterHomologation = await homologation.listQueue(authorityUser);
+    const homologatedQueueItem = queueAfterHomologation.items.find((item) => item.id === ready.processId);
+    assert.ok(homologatedQueueItem);
+    assert.equal(homologatedQueueItem.status, ProcessStatus.HOMOLOGADO);
     await homologation.notify(ready.processId, authorityUser, {});
+    const queueAfterNotification = await homologation.listQueue(authorityUser);
+    const notifiedQueueItem = queueAfterNotification.items.find((item) => item.id === ready.processId);
+    assert.ok(notifiedQueueItem, 'notified process stays visible in the authority queue');
+    assert.equal(notifiedQueueItem.status, ProcessStatus.NOTIFICADO);
     const notification = await context.prisma.processDocument.findFirstOrThrow({ where: { evaluationProcessId: ready.processId, documentType: 'RESULT_NOTIFICATION' } });
     assert.ok(notification.artifactPath); assert.ok(notification.artifactFrozenAt);
     const notificationBytes = await artifactStorage.read(notification.artifactPath);

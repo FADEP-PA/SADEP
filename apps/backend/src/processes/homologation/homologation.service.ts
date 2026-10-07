@@ -18,6 +18,7 @@ import {
   AuditEventType,
   ProcessAction,
   ProcessStatus,
+  type HomologationQueueRef,
   type HomologationStatusRef,
   UserRole,
   DocumentType,
@@ -80,6 +81,58 @@ export class HomologationService {
         canAcknowledge: process.status === PrismaProcessStatus.NOTIFICADO && Boolean(viewedAt && document.artifactPath && document.artifactFrozenAt) && !record?.acknowledgedAt,
       } : null,
     };
+  }
+
+  async listQueue(user: AuthenticatedUser): Promise<HomologationQueueRef> {
+    this.ensureIsHomologationAuthority(user);
+
+    const processes = await this.prismaService.evaluationProcess.findMany({
+      where: {
+        status: {
+          in: [
+            PrismaProcessStatus.PARECER_EMITIDO,
+            PrismaProcessStatus.HOMOLOGADO,
+            PrismaProcessStatus.NOTIFICADO,
+            PrismaProcessStatus.CIENTE,
+            PrismaProcessStatus.ENCERRADO,
+          ],
+        },
+        cesadFinalOpinions: { some: { sentToHomologationAt: { not: null } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        evaluatedUser: { select: { name: true, email: true } },
+        cesadFinalOpinions: { select: { sentToHomologationAt: true }, take: 1 },
+        stages: {
+          where: { startedAt: { not: null } },
+          orderBy: { sequence: 'desc' },
+          take: 1,
+          select: { sequence: true },
+        },
+      },
+    });
+
+    const items = processes.flatMap((process) => {
+      const sentToHomologationAt = process.cesadFinalOpinions[0]?.sentToHomologationAt;
+
+      if (!sentToHomologationAt) {
+        return [];
+      }
+
+      return [
+        {
+          id: process.id,
+          status: toContractProcessStatus(process.status),
+          evaluatedUserName: process.evaluatedUser.name,
+          evaluatedUserEmail: process.evaluatedUser.email,
+          currentStageSequence: process.stages[0]?.sequence ?? 1,
+          createdAt: process.createdAt.toISOString(),
+          sentToHomologationAt: sentToHomologationAt.toISOString(),
+        },
+      ];
+    });
+
+    return { items, total: items.length };
   }
 
   async approve(

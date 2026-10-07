@@ -60,7 +60,7 @@ describe('HomologationService', () => {
           useValue: {
             $transaction: jest.fn(),
             homologationRecord: { findUnique: jest.fn() },
-            evaluationProcess: { findUnique: jest.fn() },
+            evaluationProcess: { findUnique: jest.fn(), findMany: jest.fn() },
           },
         },
         {
@@ -96,6 +96,70 @@ describe('HomologationService', () => {
       await expect(service.getStatus(PROCESS_ID, CESAD_USER)).rejects.toBeInstanceOf(
         ForbiddenException,
       );
+    });
+  });
+
+  describe('listQueue', () => {
+    const sentAt = new Date('2026-10-01T10:00:00.000Z');
+
+    function makeQueueRow(overrides: Record<string, unknown> = {}) {
+      return {
+        id: PROCESS_ID,
+        status: 'PARECER_EMITIDO',
+        createdAt: new Date('2026-09-01T10:00:00.000Z'),
+        evaluatedUser: { name: 'Servidor Enviado', email: 'enviado@test.local' },
+        cesadFinalOpinions: [{ sentToHomologationAt: sentAt }],
+        stages: [{ sequence: 4 }],
+        ...overrides,
+      };
+    }
+
+    it('throws ForbiddenException for roles without homologation authority', async () => {
+      await expect(service.listQueue(CESAD_USER)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.listQueue(INTERN_USER)).rejects.toBeInstanceOf(ForbiddenException);
+      expect(prismaService.evaluationProcess.findMany).not.toHaveBeenCalled();
+    });
+
+    it('queries only processes actually sent to homologation and maps queue items', async () => {
+      (prismaService.evaluationProcess.findMany as jest.Mock).mockResolvedValue([
+        makeQueueRow(),
+        makeQueueRow({ id: 'proc-never-sent', cesadFinalOpinions: [{ sentToHomologationAt: null }] }),
+      ]);
+
+      const queue = await service.listQueue(AUTHORITY_USER);
+
+      expect(prismaService.evaluationProcess.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: {
+              in: ['PARECER_EMITIDO', 'HOMOLOGADO', 'NOTIFICADO', 'CIENTE', 'ENCERRADO'],
+            },
+            cesadFinalOpinions: { some: { sentToHomologationAt: { not: null } } },
+          }),
+        }),
+      );
+      expect(queue.items).toHaveLength(1);
+      expect(queue.items[0]).toEqual({
+        id: PROCESS_ID,
+        status: ProcessStatus.PARECER_EMITIDO,
+        evaluatedUserName: 'Servidor Enviado',
+        evaluatedUserEmail: 'enviado@test.local',
+        currentStageSequence: 4,
+        createdAt: '2026-09-01T10:00:00.000Z',
+        sentToHomologationAt: sentAt.toISOString(),
+      });
+      expect(queue.total).toBe(1);
+    });
+
+    it('allows the admin profile to read the homologation queue', async () => {
+      (prismaService.evaluationProcess.findMany as jest.Mock).mockResolvedValue([]);
+
+      const queue = await service.listQueue({
+        ...AUTHORITY_USER,
+        role: UserRole.ADMIN,
+      });
+
+      expect(queue).toEqual({ items: [], total: 0 });
     });
   });
 
