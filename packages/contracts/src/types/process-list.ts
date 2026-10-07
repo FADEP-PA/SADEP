@@ -6,6 +6,7 @@ export interface ProcessListItemRef {
   evaluatedUserName: string;
   evaluatedUserEmail: string;
   currentStageSequence: number;
+  hasActiveStage?: boolean;
   responsibleSupervisorName: string | null;
   selfEvaluationStatus: SelfEvaluationStatus | null;
   createdAt: string;
