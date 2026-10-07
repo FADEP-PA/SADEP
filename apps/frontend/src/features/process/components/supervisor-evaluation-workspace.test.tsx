@@ -80,7 +80,7 @@ function createWorkspaceSnapshot(
   overrides?: Partial<SupervisorEvaluationWorkspaceSnapshot>,
 ): SupervisorEvaluationWorkspaceSnapshot {
   return {
-    process: { id: PROCESS_ID, status: ProcessStatus.EM_AVALIACAO },
+    process: { id: PROCESS_ID, status: ProcessStatus.EM_AVALIACAO, currentStageSequence: 1 },
     supervisorEvaluation: null,
     documentContext: null,
     canEditDraft: true,
@@ -142,7 +142,7 @@ describe('SupervisorEvaluationWorkspace', () => {
   it.each([AcknowledgementMode.ACKNOWLEDGED, AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION, null])('exibe ciência %s da Chefia após reabrir avaliação', async (modality) => {
     const acknowledgedAt = '2026-10-06T12:00:00.000Z';
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot({
-      process: { id: PROCESS_ID, status: ProcessStatus.EM_ANALISE_CESAD },
+      process: { id: PROCESS_ID, status: ProcessStatus.EM_ANALISE_CESAD, currentStageSequence: 1 },
       canEditDraft: false, canSubmit: false, canRectify: false,
       documentContext: {
         documentId: 'evaluation-document', documentType: DocumentType.SUPERVISOR_EVALUATION,
@@ -162,6 +162,46 @@ describe('SupervisorEvaluationWorkspace', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
     expect(await screen.findByText(label)).toBeInTheDocument();
     expect(api.getSupervisorEvaluationWorkspaceSnapshot).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([[1, 1, 6], [2, 7, 12], [3, 13, 24], [4, 25, 32]])('usa a sequência %s do backend para os períodos, inclusive após reload', async (sequence, first, last) => {
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot({
+      process: { id: PROCESS_ID, status: ProcessStatus.EM_AVALIACAO, currentStageSequence: sequence },
+    }));
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    await screen.findByLabelText('Competências da unidade');
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar observação' }));
+    const expected = Array.from({ length: last - first + 1 }, (_, index) => `${first + index}º mês`);
+    expect(within(screen.getByRole('combobox')).getAllByRole('option').map((option) => option.textContent)).toEqual(expected);
+    expect(screen.getByRole('combobox')).toHaveValue(`${first}º mês`);
+    fireEvent.click(screen.getByRole('button', { name: /Voltar às avaliações/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    await screen.findByLabelText('Competências da unidade');
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar observação' }));
+    expect(within(screen.getByRole('combobox')).getAllByRole('option').map((option) => option.textContent)).toEqual(expected);
+  });
+
+  it('preserva observação anterior fora do período sem oferecê-la como opção normal', async () => {
+    const observation = { id: 'old-observation', monthLabel: '33º mês', description: 'Histórico preservado' };
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot({
+      process: { id: PROCESS_ID, status: ProcessStatus.EM_AVALIACAO, currentStageSequence: 4 },
+      supervisorEvaluation: {
+        id: 'evaluation-old', processId: PROCESS_ID, processStageId: 'stage-4', evaluatorUserId: 'supervisor-user-id',
+        status: SupervisorEvaluationStatus.DRAFT, summary: 'Resumo', generalComments: 'Comentário', submittedAt: null,
+        createdAt: '2026-09-16T12:00:00.000Z', updatedAt: '2026-09-16T12:00:00.000Z',
+        content: { criteria: [{ code: '1.1', label: 'Critério', rating: 4 }], textFields: { unitCompetencies: 'Unidade', serverAssignments: '', generalComments: '', monthlyObservations: [observation] } },
+      },
+    }));
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    await screen.findByLabelText('Competências da unidade');
+    expect(screen.getByRole('combobox')).toHaveValue('33º mês');
+    expect(screen.getByRole('option', { name: '33º mês (registro anterior)' })).toBeDisabled();
+    expect(screen.getByLabelText('Observação')).toHaveValue(observation.description);
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
+    await waitFor(() => expect(api.saveSupervisorEvaluationDraft).toHaveBeenCalledTimes(1));
+    expect(api.saveSupervisorEvaluationDraft.mock.calls[0]![1].content.textFields.monthlyObservations).toEqual([observation]);
   });
 
   it('carrega a lista real de processos ao montar', async () => {
@@ -190,7 +230,7 @@ describe('SupervisorEvaluationWorkspace', () => {
       canRectify: false,
     });
     const afterSubmitSnapshot = createWorkspaceSnapshot({
-      process: { id: PROCESS_ID, status: ProcessStatus.AGUARDANDO_ASSINATURA },
+      process: { id: PROCESS_ID, status: ProcessStatus.AGUARDANDO_ASSINATURA, currentStageSequence: 1 },
       canEditDraft: false,
       canSubmit: false,
       canRectify: false,
@@ -297,7 +337,7 @@ describe('SupervisorEvaluationWorkspace', () => {
   it('exibe card de autoavaliação quando SUBMITTED e processo em AGUARDANDO_ASSINATURA', async () => {
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(
       createWorkspaceSnapshot({
-        process: { id: PROCESS_ID, status: ProcessStatus.AGUARDANDO_ASSINATURA },
+        process: { id: PROCESS_ID, status: ProcessStatus.AGUARDANDO_ASSINATURA, currentStageSequence: 1 },
         canEditDraft: false,
         canSubmit: false,
       }),
@@ -316,14 +356,14 @@ describe('SupervisorEvaluationWorkspace', () => {
 
   it('chama signSelfEvaluation ao confirmar recebimento da autoavaliação', async () => {
     const afterSignSnapshot = createWorkspaceSnapshot({
-      process: { id: PROCESS_ID, status: ProcessStatus.EM_ANALISE_CESAD },
+      process: { id: PROCESS_ID, status: ProcessStatus.EM_ANALISE_CESAD, currentStageSequence: 1 },
       canEditDraft: false,
       canSubmit: false,
     });
     api.getSupervisorEvaluationWorkspaceSnapshot
       .mockResolvedValueOnce(
         createWorkspaceSnapshot({
-          process: { id: PROCESS_ID, status: ProcessStatus.AGUARDANDO_ASSINATURA },
+          process: { id: PROCESS_ID, status: ProcessStatus.AGUARDANDO_ASSINATURA, currentStageSequence: 1 },
           canEditDraft: false,
           canSubmit: false,
         }),

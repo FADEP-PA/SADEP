@@ -77,6 +77,7 @@ function fromApiItem(item: ProcessListItemRef): SupervisorDashboardRow {
     exerciseStart: '',
     status: dashboardStatus,
     stageLabel: `${item.currentStageSequence}ª etapa`,
+    currentStageSequence: item.currentStageSequence,
     deadline: '',
     canReviewPrevious: false,
     actionLabel,
@@ -167,7 +168,8 @@ function createRealDashboardRow(snapshot: SupervisorEvaluationWorkspaceSnapshot)
     role: '',
     exerciseStart: '',
     status: toDashboardStatus(snapshot.process.status),
-    stageLabel: 'Etapa atual',
+    stageLabel: `${snapshot.process.currentStageSequence}ª etapa`,
+    currentStageSequence: snapshot.process.currentStageSequence,
     deadline: '',
     canReviewPrevious: false,
     actionLabel,
@@ -443,7 +445,7 @@ export function SupervisorEvaluationWorkspace() {
 
     const snapshot = await loadSupervisorWorkspace(row.id);
     if (snapshot && snapshot.process.id === row.id) {
-      setActiveEvaluation(createEvaluationDraft(row, snapshot.supervisorEvaluation));
+      setActiveEvaluation(createEvaluationDraft({ ...row, currentStageSequence: snapshot.process.currentStageSequence, stageLabel: `${snapshot.process.currentStageSequence}ª etapa` }, snapshot.supervisorEvaluation));
     } else {
       setActiveEvaluation(createEvaluationDraft(row));
     }

@@ -129,6 +129,7 @@ export interface SupervisorEvaluationWorkspaceSnapshotDto {
   process: {
     id: string;
     status: ProcessStatus;
+    currentStageSequence: number;
   };
   supervisorEvaluation: SupervisorEvaluationResponseDto | null;
   documentContext: SupervisorEvaluationDocumentContext | null;
