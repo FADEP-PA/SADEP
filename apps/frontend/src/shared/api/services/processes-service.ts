@@ -14,6 +14,7 @@ import {
   CesadStageReadSnapshotRef,
   CesadFinalOpinionEligibilityRef,
   CesadFinalOpinionRef,
+  CesadFinalOpinionInput,
   InternServerWorkspaceSnapshotRef,
   ProcessStatus,
   ProcessAction,
@@ -176,6 +177,27 @@ export async function getCesadFinalOpinion(processId: string) {
   return httpRequest<CesadFinalOpinionRef | null>(
     `/processes/${processId}/cesad-final-opinion`,
     { ...AUTHENTICATED_REQUEST, method: 'GET' },
+  );
+}
+
+export async function startCesadFinalOpinion(processId: string, comment?: string) {
+  return httpRequest<CesadFinalOpinionRef>(
+    `/processes/${processId}/cesad-final-opinion/start`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST', body: comment ? { comment } : {} },
+  );
+}
+
+export async function saveCesadFinalOpinionDraft(processId: string, body: CesadFinalOpinionInput) {
+  return httpRequest<CesadFinalOpinionRef>(
+    `/processes/${processId}/cesad-final-opinion/draft`,
+    { ...AUTHENTICATED_REQUEST, method: 'PUT', body },
+  );
+}
+
+export async function completeCesadFinalOpinion(processId: string, body: CesadFinalOpinionInput) {
+  return httpRequest<CesadFinalOpinionRef>(
+    `/processes/${processId}/cesad-final-opinion/complete`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST', body },
   );
 }
 

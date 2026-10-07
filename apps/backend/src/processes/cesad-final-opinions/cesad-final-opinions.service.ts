@@ -113,7 +113,13 @@ export class CesadFinalOpinionsService {
       where: { processId },
     });
 
-    return opinion ? this.toResponseDto(opinion) : null;
+    if (!opinion) return null;
+
+    const response = this.toResponseDto(opinion);
+    if (opinion.status === PrismaCesadFinalOpinionStatus.DRAFT && response.consolidatedSnapshot === null) {
+      response.consolidatedSnapshot = await this.consolidationService.buildSnapshot(processId);
+    }
+    return response;
   }
 
   async start(

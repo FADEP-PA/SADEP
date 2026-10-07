@@ -6,6 +6,11 @@ import {
   getEvaluationDocumentPdf,
   completeCesadStageOpinion,
   getCesadStageOpinion,
+  getCesadFinalOpinionEligibility,
+  getCesadFinalOpinion,
+  startCesadFinalOpinion,
+  saveCesadFinalOpinionDraft,
+  completeCesadFinalOpinion,
   getCesadStageOpinionSignatureStatus,
   getInternWorkspaceSnapshot,
   getProcessList,
@@ -188,6 +193,33 @@ describe('processes-service', () => {
       fetchMock.mockResolvedValueOnce(jsonResponse(404, { error: 'Not Found' }));
 
       await expect(getCesadStageOpinion(PROCESS_ID, 2)).rejects.toThrow();
+    });
+  });
+
+  describe('cesad final opinion', () => {
+    const body = { reportText: 'Relatório', finalConclusion: 'Conclusão' };
+
+    it('lê elegibilidade e parecer final process-wide', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, { processId: PROCESS_ID, isEligible: true }))
+        .mockResolvedValueOnce(jsonResponse(200, null));
+      await getCesadFinalOpinionEligibility(PROCESS_ID);
+      await getCesadFinalOpinion(PROCESS_ID);
+      expect(fetchMock.mock.calls[0]![0]).toBe(`${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion/eligibility`);
+      expect(fetchMock.mock.calls[1]![0]).toBe(`${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion`);
+    });
+
+    it('integra iniciar, salvar rascunho e concluir', async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { id: 'final-1', status: 'DRAFT' }));
+      await startCesadFinalOpinion(PROCESS_ID);
+      await saveCesadFinalOpinionDraft(PROCESS_ID, body);
+      await completeCesadFinalOpinion(PROCESS_ID, body);
+      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+        `${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion/start`,
+        `${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion/draft`,
+        `${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion/complete`,
+      ]);
+      expect(fetchMock.mock.calls[1]![1]).toMatchObject({ method: 'PUT', body: JSON.stringify(body) });
+      expect(fetchMock.mock.calls[2]![1]).toMatchObject({ method: 'POST', body: JSON.stringify(body) });
     });
   });
 
