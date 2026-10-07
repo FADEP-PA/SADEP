@@ -340,7 +340,8 @@ export class ProcessDocumentArtifactService {
         ],
       }],
       logicalContent,
-      generatedAt: document.artifactGeneratedAt ?? document.updatedAt,
+      // Physical persistence timestamps must not change the logical PDF on retry.
+      generatedAt: document.createdAt,
       presentation: {
         serverName: document.evaluationProcess.evaluatedUser.name,
         supervisorName: stage?.responsibleSupervisor?.name,
