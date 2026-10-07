@@ -1,6 +1,6 @@
 'use client';
 
-import type { EvaluationScoreScale } from '@sadep/contracts';
+import { isValidEvaluationRating, type EvaluationScoreScale } from '@sadep/contracts';
 import type { EvaluationFactorDraft } from './supervisor-evaluation-types';
 
 function calculateFactorAverage(factor: EvaluationFactorDraft): number | null {
@@ -58,13 +58,18 @@ export function EvaluationFactorCard({
                   type="number"
                   min={scoreScale === 'PERCENT_0_100' ? 0 : 1}
                   max={scoreScale === 'PERCENT_0_100' ? 100 : 5}
-                  step={1}
+                  step={scoreScale === 'PERCENT_0_100' ? 10 : 1}
+                  aria-invalid={item.score !== null && !isValidEvaluationRating(item.score, scoreScale)}
+                  aria-describedby={`score-help-${factor.id}-${item.id}`}
                   value={
                     item.score === null ? '' : item.score
                   }
                   onChange={(event) => onScoreChange(item.id, event.target.value === '' ? null : Number(event.target.value))}
                 />
                 <span>Nota</span>
+                <small id={`score-help-${factor.id}-${item.id}`}>
+                  {scoreScale === 'PERCENT_0_100' ? 'Informe uma nota de 0 a 100, em passos de 10.' : 'Informe uma nota inteira de 1 a 5.'}
+                </small>
               </div>
             </div>
           ))}
