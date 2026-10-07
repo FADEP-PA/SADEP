@@ -92,7 +92,8 @@ describe('ProcessDocumentArtifactService', () => {
   it('is idempotent when retry sees the same persisted artifact', async () => {
     const key = 'processes/process-1/documents/document-1/v1.pdf';
     const firstDocument = document;
-    const secondDocument = { ...document, artifactPath: key, artifactChecksum: require('node:crypto').createHash('sha256').update(content).digest('hex') };
+    const secondDocument = { ...document, artifactPath: key, artifactGeneratedAt: new Date('2026-10-07T12:00:00Z'),
+      updatedAt: new Date('2026-10-07T12:00:00Z'), artifactChecksum: require('node:crypto').createHash('sha256').update(content).digest('hex') };
     const storage = { exists: jest.fn().mockResolvedValue(true), read: jest.fn().mockResolvedValue(content), write: jest.fn().mockResolvedValue(undefined) };
     const { service, prisma, renderer } = setup({ storage });
     prisma.processDocument.findUnique.mockResolvedValueOnce(firstDocument).mockResolvedValueOnce(secondDocument);
@@ -100,6 +101,7 @@ describe('ProcessDocumentArtifactService', () => {
     await expect(service.materialize('process-1', 'document-1', user)).resolves.toMatchObject({ generated: true });
     await expect(service.materialize('process-1', 'document-1', user)).resolves.toEqual({ documentId: 'document-1', artifactPath: key, generated: false });
     expect(renderer.render).toHaveBeenCalledTimes(2);
+    expect(renderer.render.mock.calls[0][0].generatedAt).toEqual(renderer.render.mock.calls[1][0].generatedAt);
     expect(storage.write).toHaveBeenCalledTimes(1);
   });
 
