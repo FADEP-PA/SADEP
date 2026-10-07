@@ -4,7 +4,7 @@ import { CesadFinalOpinionStatus, DocumentStatus, SignatureStatus, type CesadFin
 import { useCallback, useEffect, useState } from 'react';
 
 import { getRequestErrorMessage, HttpError } from '@/shared/api/http-error';
-import { completeCesadFinalOpinion, getCesadFinalOpinion, getCesadFinalOpinionEligibility, getCesadFinalOpinionSignatureStatus, prepareCesadFinalOpinionSignatures, saveCesadFinalOpinionDraft, signCesadFinalOpinion, startCesadFinalOpinion } from '@/shared/api/services/processes-service';
+import { completeCesadFinalOpinion, getCesadFinalOpinion, getCesadFinalOpinionEligibility, getCesadFinalOpinionSignatureStatus, prepareCesadFinalOpinionSignatures, saveCesadFinalOpinionDraft, sendCesadFinalOpinionToHomologation, signCesadFinalOpinion, startCesadFinalOpinion } from '@/shared/api/services/processes-service';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { useAuth } from '@/shared/auth/auth-context';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
@@ -24,6 +24,7 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
   const [isStarting, setIsStarting] = useState(false);
   const [signatureStatus, setSignatureStatus] = useState<CesadFinalOpinionSignatureStatusRef | null>(null);
   const [isSignatureBusy, setIsSignatureBusy] = useState(false);
+  const [isSendingToHomologation, setIsSendingToHomologation] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -66,6 +67,7 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
   const currentSigner = signatureStatus?.expectedSigners.find((signer) => signer.actingUserId === session?.user.sub);
   const canPrepareSignatures = session?.user.role === UserRole.CESAD_MEMBER && readOnly && signatureStatus !== null && !signatureStatus.allExpectedSignersSigned && signatureStatus.document === null;
   const canSign = session?.user.role === UserRole.CESAD_MEMBER && readOnly && currentSigner?.signatureStatus === SignatureStatus.PENDING && signatureStatus?.document?.documentStatus === DocumentStatus.READY_FOR_SIGNATURE;
+  const canSendToHomologation = session?.user.role === UserRole.CESAD_MEMBER && readOnly && signatureStatus?.allExpectedSignersSigned === true && opinion?.sentToHomologationAt === null;
 
   async function handleSignatureAction() {
     setIsSignatureBusy(true); setError(null);
@@ -76,6 +78,15 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
       const status = requestError instanceof HttpError ? requestError.status : null;
       setError(status === 403 ? 'Você não possui permissão para esta assinatura.' : status === 409 ? 'O estado das assinaturas mudou. Recarregue o processo.' : status === 422 ? getRequestErrorMessage(requestError, 'O parecer final ainda não pode receber esta ação.') : getRequestErrorMessage(requestError, 'Não foi possível atualizar as assinaturas.'));
     } finally { setIsSignatureBusy(false); }
+  }
+
+  async function handleSendToHomologation() {
+    setIsSendingToHomologation(true); setError(null);
+    try { await sendCesadFinalOpinionToHomologation(processId); await load(); }
+    catch (requestError) {
+      const status = requestError instanceof HttpError ? requestError.status : null;
+      setError(status === 403 ? 'Você não possui permissão para enviar o parecer à homologação.' : status === 409 ? 'O parecer já foi enviado ou o estado mudou. Recarregue o processo.' : status === 422 ? getRequestErrorMessage(requestError, 'O parecer final ainda não pode ser enviado à homologação.') : getRequestErrorMessage(requestError, 'Não foi possível enviar o parecer à homologação.'));
+    } finally { setIsSendingToHomologation(false); }
   }
 
   return (
@@ -105,6 +116,9 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
             <p className={signatureStatus.allExpectedSignersSigned ? 'success-copy' : 'muted-copy'}>{signatureStatus.allExpectedSignersSigned ? 'Todas as assinaturas obrigatórias foram concluídas.' : 'Ainda há assinaturas obrigatórias pendentes.'}</p>
             {canPrepareSignatures || canSign ? <button type="button" disabled={isSignatureBusy} onClick={() => void handleSignatureAction()}>{isSignatureBusy ? 'Processando…' : canPrepareSignatures ? 'Preparar assinaturas' : 'Assinar parecer final'}</button> : null}
           </> : <p className="muted-copy">Status de assinaturas indisponível para este perfil.</p>}
+        </WorkSection> : null}
+        {opinion && readOnly ? <WorkSection title="Handoff para homologação">
+          {opinion.sentToHomologationAt ? <p className="success-copy">Enviado à homologação em {new Date(opinion.sentToHomologationAt).toLocaleString('pt-BR')}.</p> : canSendToHomologation ? <button type="button" disabled={isSendingToHomologation} onClick={() => void handleSendToHomologation()}>{isSendingToHomologation ? 'Enviando…' : 'Enviar à homologação'}</button> : <p className="muted-copy">O envio fica disponível após a conclusão de todas as assinaturas obrigatórias.</p>}
         </WorkSection> : null}
         {opinion?.consolidatedSnapshot ? (
           <WorkSection title="Histórico das quatro etapas">

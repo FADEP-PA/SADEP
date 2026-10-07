@@ -14,6 +14,7 @@ import {
   prepareCesadFinalOpinionSignatures,
   getCesadFinalOpinionSignatureStatus,
   signCesadFinalOpinion,
+  sendCesadFinalOpinionToHomologation,
   getCesadStageOpinionSignatureStatus,
   getInternWorkspaceSnapshot,
   getProcessList,
@@ -235,6 +236,12 @@ describe('processes-service', () => {
         [`${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion/signatures`, 'GET'],
         [`${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion/sign`, 'POST'],
       ]);
+    });
+
+    it('integra o envio persistente à homologação', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, { processId: PROCESS_ID, sentToHomologationAt: '2026-10-07T10:00:00.000Z' }));
+      await sendCesadFinalOpinionToHomologation(PROCESS_ID);
+      expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion/send-to-homologation`, expect.objectContaining({ method: 'POST', body: JSON.stringify({}) }));
     });
   });
 
