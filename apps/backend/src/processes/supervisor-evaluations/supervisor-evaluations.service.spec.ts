@@ -124,6 +124,14 @@ describe('SupervisorEvaluationsService', () => {
     },
   );
 
+  it.each([1, 2, 3, 4])('returns the resolved stage sequence %s in the workspace', async (sequence) => {
+    processesService.resolveCurrentStageOrThrow.mockResolvedValue({ ...currentStage, sequence } as any);
+    supervisorEvaluationRepo.findUnique.mockResolvedValue(null);
+    processDocumentsService.getSupervisorEvaluationDocumentContext.mockResolvedValue(null);
+    const snapshot = await service.getWorkspaceByProcessId('process-123', mockUser);
+    expect(snapshot.process.currentStageSequence).toBe(sequence);
+  });
+
   describe('getByProcessId', () => {
     it('returns documentContext with the stable shape when the evaluation is submitted', async () => {
       const processId = 'process-123';

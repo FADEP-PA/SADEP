@@ -11,8 +11,7 @@ import { DetailList, WorkPageHeader, WorkSection } from '@/shared/ui/work-patter
 import { EvaluationFactorCard } from './evaluation-factor-card';
 import { calculateEvaluationScore, clampCriterionRating } from './supervisor-evaluation-scoring';
 import type { EvaluationDraft, MonthlyObservation } from './supervisor-evaluation-types';
-
-const MONTHS = ['1º mês', '2º mês', '3º mês', '4º mês', '5º mês', '6º mês', '7º mês', '8º mês', '9º mês', '10º mês', '11º mês', '12º mês'];
+import { getStageObservationMonths } from './supervisor-evaluation-period';
 
 type Props = {
   evaluation: EvaluationDraft;
@@ -49,6 +48,7 @@ export function EvaluationDetailView({
   onSaveDraft,
   onSubmit,
 }: Props) {
+  const months = getStageObservationMonths(evaluation.row.currentStageSequence);
   function toggleFactor(factorId: string) {
     onChange((current) => ({
       ...current,
@@ -73,11 +73,12 @@ export function EvaluationDetailView({
   }
 
   function addObservation() {
+    if (months.length === 0) return;
     onChange((current) => ({
       ...current,
       monthlyObservations: [...current.monthlyObservations, {
         id: `obs-${current.monthlyObservations.length + 1}`,
-        monthLabel: MONTHS[current.monthlyObservations.length] ?? 'Período',
+        monthLabel: months[current.monthlyObservations.length % months.length]!,
         description: '',
         attachmentName: '',
       }],
@@ -149,11 +150,11 @@ export function EvaluationDetailView({
         </details>
       </WorkSection>
 
-      {editable || evaluation.monthlyObservations.length > 0 ? <WorkSection title="Observações mensais" className="evaluation-workspace__observations" action={editable ? <button type="button" className="secondary-button" onClick={addObservation}>Adicionar observação</button> : null}>
+      {editable || evaluation.monthlyObservations.length > 0 ? <WorkSection title="Observações mensais" className="evaluation-workspace__observations" action={editable ? <button type="button" className="secondary-button" disabled={months.length === 0} onClick={addObservation}>Adicionar observação</button> : null}>
         {evaluation.monthlyObservations.length === 0 ? <p className="muted-copy">Não há observações registradas.</p> : (
           <div className="observation-list">{evaluation.monthlyObservations.map((observation) => (
             <div key={observation.id} className="observation-item">
-              <label className="field-group"><span>Período</span><select value={observation.monthLabel} disabled={!editable} onChange={(event) => updateObservation(observation.id, { monthLabel: event.target.value })}>{MONTHS.map((month) => <option key={month}>{month}</option>)}</select></label>
+              <label className="field-group"><span>Período</span><select value={observation.monthLabel} disabled={!editable} onChange={(event) => updateObservation(observation.id, { monthLabel: event.target.value })}>{!months.includes(observation.monthLabel) ? <option value={observation.monthLabel} disabled>{observation.monthLabel} (registro anterior)</option> : null}{months.map((month) => <option key={month}>{month}</option>)}</select></label>
               <label className="field-group"><span>Observação</span><EvaluationTextarea aria-label="Observação" rows={2} value={observation.description} disabled={!editable} onChange={(event) => updateObservation(observation.id, { description: event.target.value })} /></label>
             </div>
           ))}</div>

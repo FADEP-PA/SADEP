@@ -136,6 +136,7 @@ export class SupervisorEvaluationsService {
       process: {
         id: process.id,
         status: processStatus,
+        currentStageSequence: currentStage.sequence,
       },
       supervisorEvaluation,
       documentContext,

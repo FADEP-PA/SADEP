@@ -212,6 +212,7 @@ export async function runSupervisorEvaluationsServiceTests() {
       process: {
         id: process.id,
         status: ProcessStatus.EM_AVALIACAO,
+        currentStageSequence: 1,
       },
       supervisorEvaluation: null,
       documentContext: null,

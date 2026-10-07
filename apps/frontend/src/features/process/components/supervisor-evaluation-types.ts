@@ -15,6 +15,7 @@ export type SupervisorDashboardRow = {
   exerciseStart: string;
   status: SupervisorDashboardStatus;
   stageLabel: string;
+  currentStageSequence: number;
   deadline: string;
   canReviewPrevious: boolean;
   actionLabel: string;
