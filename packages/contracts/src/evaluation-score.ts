@@ -6,6 +6,15 @@ export type EvaluationScoringVersion =
 
 export type EvaluationScoreScale = 'LEGACY_1_5' | 'PERCENT_0_100';
 
+export function isValidEvaluationRating(
+  value: unknown,
+  scale: EvaluationScoreScale,
+): value is number {
+  if (typeof value !== 'number' || !Number.isInteger(value)) return false;
+  if (scale === 'PERCENT_0_100') return value >= 0 && value <= 100 && value % 10 === 0;
+  return scale === 'LEGACY_1_5' && value >= 1 && value <= 5;
+}
+
 export function getAdministrativeConcept(finalAverage: number): string {
   if (finalAverage < 50) return 'Insuficiente';
   if (finalAverage < 70) return 'Regular';

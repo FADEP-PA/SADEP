@@ -16,6 +16,7 @@ import {
 import {
   AuditEventType,
   calculateEvaluationRatingsScore,
+  isValidEvaluationRating,
   LEGACY_EVALUATION_SCORING_VERSION,
   PERCENT_EVALUATION_SCORING_VERSION,
   ProcessAction,
@@ -676,15 +677,9 @@ export class SupervisorEvaluationsService {
           throw new BadRequestException(`Supervisor evaluation criterion ${index} must include a label`);
         }
 
-        if (
-          typeof candidate.rating !== 'number' ||
-          !Number.isFinite(candidate.rating) ||
-          !Number.isInteger(candidate.rating) ||
-          candidate.rating < (scoreScale === 'PERCENT_0_100' ? 0 : 1) ||
-          candidate.rating > (scoreScale === 'PERCENT_0_100' ? 100 : 5)
-        ) {
+        if (!isValidEvaluationRating(candidate.rating, scoreScale)) {
           throw new BadRequestException(
-            `Supervisor evaluation criterion ${index} rating must be a number between ${scoreScale === 'PERCENT_0_100' ? 0 : 1} and ${scoreScale === 'PERCENT_0_100' ? 100 : 5}`,
+            `Supervisor evaluation criterion ${index} rating must be an integer between ${scoreScale === 'PERCENT_0_100' ? 0 : 1} and ${scoreScale === 'PERCENT_0_100' ? '100 in steps of 10' : 5}`,
           );
         }
 

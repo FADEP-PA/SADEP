@@ -75,6 +75,32 @@ export async function runSupervisorEvaluationsServiceTests() {
     assert.equal(percentDraft.content.criteria[0].rating, 0);
     assert.equal(percentDraft.content.scoreScale, 'PERCENT_0_100');
     assert.equal(percentDraft.content.scoringVersion, 2);
+    for (const rating of [0, 10, 50, 90, 100]) {
+      const saved = await context.supervisorEvaluationsService.saveDraft(
+        percentProcess.id, authenticatedUser(supervisor.id, supervisor.role), {
+          ...percentPayload,
+          content: { ...percentPayload.content, criteria: [{ ...percentCriteria[0], rating }] },
+        },
+      );
+      assert.equal(saved.content.criteria[0].rating, rating);
+    }
+    for (const rating of [1, 9, 11, 55, 99]) {
+      for (const operation of ['saveDraft', 'submit', 'rectify'] as const) {
+        await assert.rejects(
+          () => context.supervisorEvaluationsService[operation](
+            percentProcess.id, authenticatedUser(supervisor.id, supervisor.role), {
+              ...percentPayload,
+              content: { ...percentPayload.content, criteria: [{ ...percentCriteria[0], rating }] },
+            },
+          ),
+          /steps of 10/,
+        );
+      }
+      const unchanged = await context.supervisorEvaluationsService.getByProcessId(
+        percentProcess.id, authenticatedUser(supervisor.id, supervisor.role),
+      );
+      assert.equal(unchanged?.content.criteria[0].rating, 100);
+    }
     await assert.rejects(
       () => context.supervisorEvaluationsService.saveDraft(percentProcess.id, authenticatedUser(supervisor.id, supervisor.role), {
         ...percentPayload,
