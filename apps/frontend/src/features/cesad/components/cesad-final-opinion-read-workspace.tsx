@@ -1,10 +1,10 @@
 'use client';
 
-import { type CesadFinalOpinionEligibilityRef, type CesadFinalOpinionRef, UserRole } from '@sadep/contracts';
+import { CesadFinalOpinionStatus, DocumentStatus, SignatureStatus, type CesadFinalOpinionEligibilityRef, type CesadFinalOpinionRef, type CesadFinalOpinionSignatureStatusRef, UserRole } from '@sadep/contracts';
 import { useCallback, useEffect, useState } from 'react';
 
 import { getRequestErrorMessage, HttpError } from '@/shared/api/http-error';
-import { completeCesadFinalOpinion, getCesadFinalOpinion, getCesadFinalOpinionEligibility, saveCesadFinalOpinionDraft, startCesadFinalOpinion } from '@/shared/api/services/processes-service';
+import { completeCesadFinalOpinion, getCesadFinalOpinion, getCesadFinalOpinionEligibility, getCesadFinalOpinionSignatureStatus, prepareCesadFinalOpinionSignatures, saveCesadFinalOpinionDraft, signCesadFinalOpinion, startCesadFinalOpinion } from '@/shared/api/services/processes-service';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { useAuth } from '@/shared/auth/auth-context';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
@@ -22,6 +22,8 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
   const [opinion, setOpinion] = useState<CesadFinalOpinionRef | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
+  const [signatureStatus, setSignatureStatus] = useState<CesadFinalOpinionSignatureStatusRef | null>(null);
+  const [isSignatureBusy, setIsSignatureBusy] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -32,6 +34,10 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
       ]);
       setEligibility(nextEligibility);
       setOpinion(nextOpinion);
+      if (nextOpinion?.status === CesadFinalOpinionStatus.COMPLETED) {
+        try { setSignatureStatus(await getCesadFinalOpinionSignatureStatus(processId)); }
+        catch { setSignatureStatus(null); }
+      } else setSignatureStatus(null);
     } catch (requestError) {
       setError(getRequestErrorMessage(requestError, 'Não foi possível abrir o parecer conclusivo final.'));
     }
@@ -57,6 +63,20 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
     recommendation: opinion.recommendation ?? '',
   } : null;
   const readOnly = opinion?.status === 'COMPLETED';
+  const currentSigner = signatureStatus?.expectedSigners.find((signer) => signer.actingUserId === session?.user.sub);
+  const canPrepareSignatures = session?.user.role === UserRole.CESAD_MEMBER && readOnly && signatureStatus !== null && !signatureStatus.allExpectedSignersSigned && signatureStatus.document === null;
+  const canSign = session?.user.role === UserRole.CESAD_MEMBER && readOnly && currentSigner?.signatureStatus === SignatureStatus.PENDING && signatureStatus?.document?.documentStatus === DocumentStatus.READY_FOR_SIGNATURE;
+
+  async function handleSignatureAction() {
+    setIsSignatureBusy(true); setError(null);
+    try {
+      const next = canPrepareSignatures ? await prepareCesadFinalOpinionSignatures(processId) : await signCesadFinalOpinion(processId);
+      setSignatureStatus(next);
+    } catch (requestError) {
+      const status = requestError instanceof HttpError ? requestError.status : null;
+      setError(status === 403 ? 'Você não possui permissão para esta assinatura.' : status === 409 ? 'O estado das assinaturas mudou. Recarregue o processo.' : status === 422 ? getRequestErrorMessage(requestError, 'O parecer final ainda não pode receber esta ação.') : getRequestErrorMessage(requestError, 'Não foi possível atualizar as assinaturas.'));
+    } finally { setIsSignatureBusy(false); }
+  }
 
   return (
     <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]}>
@@ -79,6 +99,13 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
             <p><strong>Conclusão final</strong></p><p>{opinion.finalConclusion || 'Não informada.'}</p>
           </WorkSection>
         ) : null}
+        {opinion && readOnly ? <WorkSection title="Assinaturas colegiadas">
+          {signatureStatus ? <>
+            <ul className="signature-list">{signatureStatus.expectedSigners.map((signer) => <li key={signer.expectedSignerId}><span>{signer.nameSnapshot}</span><StatusBadge label={signer.signatureStatus === SignatureStatus.COMPLETED ? 'Assinado' : signer.signatureStatus === SignatureStatus.PENDING ? 'Pendente' : signer.signatureStatus ?? 'Não atribuído'} tone={signer.signatureStatus === SignatureStatus.COMPLETED ? 'success' : signer.signatureStatus === SignatureStatus.PENDING ? 'warning' : 'neutral'} />{signer.signedAt ? <small>{new Date(signer.signedAt).toLocaleString('pt-BR')}</small> : null}</li>)}</ul>
+            <p className={signatureStatus.allExpectedSignersSigned ? 'success-copy' : 'muted-copy'}>{signatureStatus.allExpectedSignersSigned ? 'Todas as assinaturas obrigatórias foram concluídas.' : 'Ainda há assinaturas obrigatórias pendentes.'}</p>
+            {canPrepareSignatures || canSign ? <button type="button" disabled={isSignatureBusy} onClick={() => void handleSignatureAction()}>{isSignatureBusy ? 'Processando…' : canPrepareSignatures ? 'Preparar assinaturas' : 'Assinar parecer final'}</button> : null}
+          </> : <p className="muted-copy">Status de assinaturas indisponível para este perfil.</p>}
+        </WorkSection> : null}
         {opinion?.consolidatedSnapshot ? (
           <WorkSection title="Histórico das quatro etapas">
             <div className="task-table" role="table" aria-label="Consolidação histórica das etapas">

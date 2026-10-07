@@ -15,6 +15,7 @@ import {
   CesadFinalOpinionEligibilityRef,
   CesadFinalOpinionRef,
   CesadFinalOpinionInput,
+  CesadFinalOpinionSignatureStatusRef,
   InternServerWorkspaceSnapshotRef,
   ProcessStatus,
   ProcessAction,
@@ -198,6 +199,27 @@ export async function completeCesadFinalOpinion(processId: string, body: CesadFi
   return httpRequest<CesadFinalOpinionRef>(
     `/processes/${processId}/cesad-final-opinion/complete`,
     { ...AUTHENTICATED_REQUEST, method: 'POST', body },
+  );
+}
+
+export async function prepareCesadFinalOpinionSignatures(processId: string) {
+  return httpRequest<CesadFinalOpinionSignatureStatusRef>(
+    `/processes/${processId}/cesad-final-opinion/signatures/prepare`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST' },
+  );
+}
+
+export async function getCesadFinalOpinionSignatureStatus(processId: string) {
+  return httpRequest<CesadFinalOpinionSignatureStatusRef>(
+    `/processes/${processId}/cesad-final-opinion/signatures`,
+    { ...AUTHENTICATED_REQUEST, method: 'GET' },
+  );
+}
+
+export async function signCesadFinalOpinion(processId: string) {
+  return httpRequest<CesadFinalOpinionSignatureStatusRef>(
+    `/processes/${processId}/cesad-final-opinion/sign`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST' },
   );
 }
 
