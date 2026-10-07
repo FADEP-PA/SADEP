@@ -21,6 +21,8 @@ import {
   type ProcessDocumentPdfRenderer,
 } from '../../infrastructure/documents/process-document-pdf-renderer';
 import { ProcessesService } from '../../processes/processes.service';
+import { evaluationFactorScores } from '../../domain/evaluations/evaluation-factor-scores';
+import type { CesadFinalOpinionConsolidatedSnapshotRef } from '@sadep/contracts';
 
 type ProcessDocumentSnapshot = Prisma.ProcessDocumentGetPayload<{
   include: {
@@ -279,6 +281,8 @@ export class ProcessDocumentArtifactService {
 
   private async buildInput(document: ProcessDocumentSnapshot): Promise<ProcessDocumentPdfInput> {
     const stage = document.processStage;
+    let supervisorName = stage?.responsibleSupervisor?.name;
+    const signerNames = new Map<string, string>();
     let logicalContent: Record<string, unknown> = {};
     if (document.documentType === PrismaDocumentType.SUPERVISOR_EVALUATION) {
       if (!stage) throw new BadRequestException('Evaluation process document is not linked to a stage');
@@ -305,6 +309,37 @@ export class ProcessDocumentArtifactService {
       });
       if (!evaluation) throw new NotFoundException('Self evaluation content not found');
       logicalContent = { selfReflection: evaluation.selfReflection, additionalNotes: evaluation.additionalNotes, status: evaluation.status, submittedAt: evaluation.submittedAt?.toISOString() ?? null };
+    } else if (document.documentType === PrismaDocumentType.CESAD_OPINION && document.opinionKind === 'FINAL_CONCLUSIVE') {
+      const opinion = await this.prismaService.cesadFinalOpinion.findUnique({
+        where: { processId: document.evaluationProcessId },
+        include: { expectedSigners: { orderBy: { createdAt: 'asc' } } },
+      });
+      if (!opinion || opinion.status !== 'COMPLETED' || !opinion.consolidatedSnapshot) {
+        throw new BadRequestException('Completed final opinion and consolidated snapshot are required');
+      }
+      const snapshot = opinion.consolidatedSnapshot as unknown as CesadFinalOpinionConsolidatedSnapshotRef;
+      // Old snapshots lack scores. Read their exact immutable evaluations without changing the stored snapshot.
+      const missing = snapshot.stages.filter(item => item.supervisorEvaluation && !item.supervisorEvaluation.factorScores);
+      const evaluations = missing.length ? await this.prismaService.supervisorEvaluation.findMany({
+        where: { id: { in: missing.map(item => item.supervisorEvaluation!.id) }, processId: document.evaluationProcessId },
+        select: { id: true, content: true },
+      }) : [];
+      const consolidatedSnapshot = { ...snapshot, stages: snapshot.stages.map(item => ({ ...item,
+        supervisorEvaluation: item.supervisorEvaluation ? { ...item.supervisorEvaluation,
+          ...(!item.supervisorEvaluation.factorScores ? evaluationFactorScores(evaluations.find(evaluation => evaluation.id === item.supervisorEvaluation!.id)?.content) ?? {} : {}),
+        } : null,
+      })) };
+      logicalContent = { reportText: opinion.reportText, legalBasis: opinion.legalBasis,
+        finalConclusion: opinion.finalConclusion, finalResult: opinion.finalResult, finalConcept: opinion.finalConcept,
+        recommendation: opinion.recommendation, consolidatedSnapshot,
+        expectedSigners: opinion.expectedSigners.map(signer => ({ name: signer.nameSnapshot, userId: signer.actingUserId })),
+      };
+      for (const signer of opinion.expectedSigners) signerNames.set(signer.actingUserId, signer.nameSnapshot);
+      const finalStage = await this.prismaService.processStage.findFirst({
+        where: { evaluationProcessId: document.evaluationProcessId, sequence: 4 },
+        select: { responsibleSupervisor: { select: { name: true } } },
+      });
+      supervisorName = finalStage?.responsibleSupervisor?.name;
     }
     const titleByType: Partial<Record<PrismaDocumentType, string>> = {
       [PrismaDocumentType.SUPERVISOR_EVALUATION]: 'Documento processual — avaliação da chefia',
@@ -318,6 +353,7 @@ export class ProcessDocumentArtifactService {
     return {
       title: titleByType[document.documentType] ?? `Documento processual — ${document.documentType}`,
       documentType: document.documentType,
+      opinionKind: document.opinionKind,
       stageSequence: stage?.sequence,
       subtitle: 'Sistema de Avaliação de Desempenho de Estágio Probatório — SADEP',
       metadata: [
@@ -344,9 +380,9 @@ export class ProcessDocumentArtifactService {
       generatedAt: document.createdAt,
       presentation: {
         serverName: document.evaluationProcess.evaluatedUser.name,
-        supervisorName: stage?.responsibleSupervisor?.name,
+        supervisorName,
         version: document.version,
-        signatures: document.signatureRecords.map(signature => ({ name: signature.signatoryUser.name,
+        signatures: document.signatureRecords.map(signature => ({ name: signerNames.get(signature.signatoryUserId) ?? signature.signatoryUser.name,
           role: signature.signatoryRole, status: signature.status, signedAt: signature.signedAt?.toISOString() ?? null })),
       },
     };

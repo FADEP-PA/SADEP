@@ -1,4 +1,11 @@
 import assert from 'node:assert/strict';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { ProcessDocumentArtifactService } from '../../application/documents/process-document-artifact.service';
+import { EvaluationProcessDocumentPdfRenderer } from '../../infrastructure/documents/evaluation-process-document-pdf-renderer';
+import { PdfKitProcessDocumentPdfRenderer } from '../../infrastructure/documents/process-document-pdf-renderer';
+import { artifactContentHash, FilesystemDocumentArtifactStorage } from '../../infrastructure/documents/document-artifact-storage';
 
 import {
   AuditEventType as PrismaAuditEventType,
@@ -568,6 +575,12 @@ export async function runCesadFinalOpinionsServiceTests() {
     );
 
     // === CONSOLIDATION TESTS ===
+    await context.prisma.supervisorEvaluation.updateMany({
+      where: { processId: ready.processId },
+      data: { content: { scoreScale: 'PERCENT_0_100', criteria: Array.from({ length: 20 }, (_, index) => ({
+        code: `${Math.floor(index / 4) + 1}.${index % 4 + 1}`, label: 'Subfator da avaliação', rating: 80,
+      })) } },
+    });
     const snapshot = await services.consolidation.buildSnapshot(ready.processId);
     assert.equal(snapshot.processId, ready.processId);
     assert.equal(snapshot.stageCount, 4);
@@ -580,6 +593,9 @@ export async function runCesadFinalOpinionsServiceTests() {
     snapshot.stages.forEach((stage) => {
       assert.equal(stage.isComplete, true);
       assert.ok(stage.supervisorEvaluation, 'supervisorEvaluation present');
+      assert.deepEqual(stage.supervisorEvaluation?.factorScores, [80, 80, 80, 80, 80]);
+      assert.equal(stage.supervisorEvaluation?.stageAverage, 80);
+      assert.equal(stage.supervisorEvaluation?.scoreScale, 'PERCENT_0_100');
       assert.ok(stage.selfEvaluation, 'selfEvaluation present');
       assert.ok(stage.cesadStageOpinion, 'cesadStageOpinion present');
       assert.equal(stage.cesadStageOpinion?.stageConcept, 'Satisfatório');
@@ -805,6 +821,15 @@ export async function runCesadFinalOpinionsServiceTests() {
     );
     assert.equal(prepared.allExpectedSignersSigned, false);
 
+    const artifactStorage = new FilesystemDocumentArtifactStorage({ artifactStorageRoot: await mkdtemp(join(tmpdir(), 'sadep-final-opinion-')) } as never);
+    const artifactService = new ProcessDocumentArtifactService(context.prisma as never, context.service,
+      new EvaluationProcessDocumentPdfRenderer(new PdfKitProcessDocumentPdfRenderer()), artifactStorage);
+    await artifactService.materializeAfterAuthorizedAction(prepared.document!.documentId, authenticatedUser(cesadMember.id, cesadMember.role));
+    const draftArtifact = await context.prisma.processDocument.findUniqueOrThrow({ where: { id: prepared.document!.documentId } });
+    assert.ok(draftArtifact.artifactPath);
+    assert.equal(draftArtifact.artifactFrozenAt, null);
+    assert.equal(artifactContentHash(await artifactStorage.read(draftArtifact.artifactPath)), draftArtifact.artifactChecksum);
+
     const finalDocument = await context.prisma.processDocument.findUniqueOrThrow({
       where: { id: prepared.document!.documentId },
       include: { signatureRecords: true },
@@ -930,6 +955,19 @@ export async function runCesadFinalOpinionsServiceTests() {
     );
     assert.equal(completedSignature.document?.documentStatus, DocumentStatus.SIGNED);
     assert.equal(completedSignature.allExpectedSignersSigned, true);
+    await artifactService.materializeAfterAuthorizedAction(prepared.document!.documentId, authenticatedUser(secondCesadSigner.id, secondCesadSigner.role));
+    const frozenArtifact = await context.prisma.processDocument.findUniqueOrThrow({ where: { id: prepared.document!.documentId } });
+    assert.ok(frozenArtifact.artifactFrozenAt);
+    const officialPdf = await artifactStorage.read(frozenArtifact.artifactPath!);
+    assert.equal(artifactContentHash(officialPdf), frozenArtifact.artifactChecksum);
+    const officialText = [...officialPdf.toString('latin1').matchAll(/<([0-9a-f]+)>/g)].map(match => Buffer.from(match[1]!, 'hex').toString('latin1')).join('').replace(/\s/g, '');
+    assert.ok(officialText.includes('PARECERCONCLUSIVO'));
+    assert.ok(officialText.includes('80.0'));
+    assert.ok(!officialText.includes(ready.processId));
+    assert.ok(!officialText.includes('FINAL_CONCLUSIVE'));
+    await artifactService.materializeAfterAuthorizedAction(prepared.document!.documentId, authenticatedUser(secondCesadSigner.id, secondCesadSigner.role));
+    assert.deepEqual(await artifactStorage.read(frozenArtifact.artifactPath!), officialPdf);
+    await artifactStorage.delete(frozenArtifact.artifactPath!);
 
     const processAfterFinalSignatures = await context.prisma.evaluationProcess.findUniqueOrThrow({
       where: { id: ready.processId },

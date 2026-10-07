@@ -4,6 +4,7 @@ import type {
   DocumentStatus,
   DocumentType,
 } from '../enums';
+import type { EvaluationScoreScale } from '../evaluation-score';
 
 export interface CesadFinalOpinionConsolidatedStageRef {
   stageId: string;
@@ -17,6 +18,10 @@ export interface CesadFinalOpinionConsolidatedStageRef {
     status: string;
     submittedAt: string | null;
     summary: string | null;
+    /** Scores captured at consolidation; absent in older snapshots. */
+    factorScores?: number[];
+    scoreScale?: EvaluationScoreScale;
+    stageAverage?: number;
   } | null;
   selfEvaluation: {
     id: string;
