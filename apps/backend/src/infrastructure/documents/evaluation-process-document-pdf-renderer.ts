@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { renderOfficialSupervisorEvaluation } from './official-supervisor-evaluation-renderer';
+import { renderOfficialSelfEvaluation } from './official-self-evaluation-renderer';
 import { DocumentType } from '@sadep/contracts';
 
 import {
@@ -18,21 +19,9 @@ export class EvaluationProcessDocumentPdfRenderer implements ProcessDocumentPdfR
       return renderOfficialSupervisorEvaluation(input);
     }
     if (input.documentType === DocumentType.SELF_EVALUATION) {
-      return this.baseRenderer.render(this.selfEvaluationDocument(input));
+      return renderOfficialSelfEvaluation(input);
     }
     return this.baseRenderer.render(input);
-  }
-
-  private selfEvaluationDocument(input: ProcessDocumentPdfInput): ProcessDocumentPdfInput {
-    const logicalContent = input.logicalContent ?? {};
-    return {
-      ...input,
-      sections: [
-        { title: 'Reflexão do servidor', paragraphs: [String(logicalContent.selfReflection ?? '')] },
-        { title: 'Observações adicionais', paragraphs: [String(logicalContent.additionalNotes ?? 'Não informado')] },
-        ...(input.sections.find((section) => section.title === 'Assinaturas') ? [input.sections.find((section) => section.title === 'Assinaturas')!] : []),
-      ],
-    };
   }
 
 }

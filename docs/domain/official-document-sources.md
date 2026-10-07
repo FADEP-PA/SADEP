@@ -17,3 +17,7 @@ As questões persistidas apresentam redações diferentes de alguns subfatores o
 O art. 11 do Decreto 249/2011 condiciona a homologação à ficha complementar. O fluxo atual ainda não implementa Anexo III/revisão da média; esta entrega documental não modifica esse fluxo nem afirma que a média provisória foi confirmada.
 
 Artefatos congelados são lidos com verificação SHA-256 e não são regenerados por alterações de template. Dados, assinatura, versão e auditoria continuam no pipeline existente.
+
+## Anexo V — autoavaliação
+
+Fonte: Anexo V substituído pelo Decreto 1.338/2015 e formulário do Caso 2. O texto de orientação oficial acompanha a AUTOAVALIAÇÃO. SelfEvaluation.selfReflection é apresentado integralmente; additionalNotes compõe OUTRAS OBSERVAÇÕES somente quando preenchido. Não há notas ou conceito na autoavaliação oficial. Identificação, período, versão e assinaturas usam as mesmas fontes reais da avaliação da Chefia. A assinatura inicial do servidor e a assinatura posterior da chefia continuam no serviço existente; a conclusão das assinaturas congela o artefato. As lacunas cadastrais descritas acima também se aplicam ao Anexo V.
