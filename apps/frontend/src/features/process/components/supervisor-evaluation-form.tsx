@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit, isValidEvaluationRating } from '@sadep/contracts';
+import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit, isValidEvaluationRating, isProvisionalStageResult, STAGE_4_PROVISIONAL_RESULT_NOTICE } from '@sadep/contracts';
 import { EvaluationTextarea } from '@/shared/ui/evaluation-textarea';
 
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
@@ -49,6 +49,7 @@ export function EvaluationDetailView({
   onSubmit,
 }: Props) {
   const months = getStageObservationMonths(evaluation.row.currentStageSequence);
+  const provisional = isProvisionalStageResult(evaluation.row.currentStageSequence);
   function toggleFactor(factorId: string) {
     onChange((current) => ({
       ...current,
@@ -139,7 +140,7 @@ export function EvaluationDetailView({
       <WorkSection title="Fatores de desempenho" className="evaluation-workspace__factors">
         <div className="evaluation-detail__factor-stack">
           {evaluation.factors.map((factor) => (
-            <EvaluationFactorCard key={factor.id} factor={factor} scoreScale={evaluation.scoreScale} isExpanded={evaluation.expandedFactorIds.includes(factor.id)} onToggle={() => toggleFactor(factor.id)} onScoreChange={(itemId, score) => updateFactorScore(factor.id, itemId, score)} />
+            <EvaluationFactorCard key={factor.id} factor={factor} provisional={provisional} scoreScale={evaluation.scoreScale} isExpanded={evaluation.expandedFactorIds.includes(factor.id)} onToggle={() => toggleFactor(factor.id)} onScoreChange={(itemId, score) => updateFactorScore(factor.id, itemId, score)} />
           ))}
         </div>
         <details className="compact-disclosure">
@@ -163,11 +164,12 @@ export function EvaluationDetailView({
 
       {attachmentsContent}
 
-      <WorkSection title="Resumo" className="evaluation-workspace__summary">
+      <WorkSection title={provisional ? 'Resumo provisório' : 'Resumo'} className="evaluation-workspace__summary">
+        {provisional ? <p className="muted-copy">{STAGE_4_PROVISIONAL_RESULT_NOTICE}</p> : null}
         <div className="score-summary">
-          <div><span>Pontuação</span><strong>{hasCompleteScores ? evaluation.totalStageScore : '—'}</strong></div>
-          <div><span>Média</span><strong>{hasCompleteScores ? evaluation.stageAverage : '—'}</strong></div>
-          <div><span>Conceito</span><strong>{hasCompleteScores ? evaluation.administrativeConcept : '—'}</strong></div>
+          <div><span>{provisional ? 'Pontuação provisória' : 'Pontuação'}</span><strong>{hasCompleteScores ? evaluation.totalStageScore : '—'}</strong></div>
+          <div><span>{provisional ? 'Média provisória' : 'Média'}</span><strong>{hasCompleteScores ? evaluation.stageAverage : '—'}</strong></div>
+          <div><span>{provisional ? 'Conceito provisório' : 'Conceito'}</span><strong>{hasCompleteScores ? evaluation.administrativeConcept : '—'}</strong></div>
         </div>
         {editable && exceedsTextLimit ? <p className="field-error">{EVALUATION_TEXT_LIMIT_MESSAGE}</p> : null}
         {editable && hasInvalidScores ? <p className="field-error" role="alert">{evaluation.scoreScale === 'PERCENT_0_100' ? 'Informe notas de 0 a 100, em passos de 10.' : 'Informe notas inteiras de 1 a 5.'}</p> : null}

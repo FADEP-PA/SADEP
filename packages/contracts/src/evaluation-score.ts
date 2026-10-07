@@ -6,6 +6,13 @@ export type EvaluationScoringVersion =
 
 export type EvaluationScoreScale = 'LEGACY_1_5' | 'PERCENT_0_100';
 
+export const STAGE_4_PROVISIONAL_RESULT_NOTICE =
+  'Resultado provisório da 4ª etapa, sujeito à confirmação ou revisão no período do 33º ao 36º mês.';
+
+export function isProvisionalStageResult(sequence: number | undefined): boolean {
+  return sequence === 4;
+}
+
 export function isValidEvaluationRating(
   value: unknown,
   scale: EvaluationScoreScale,

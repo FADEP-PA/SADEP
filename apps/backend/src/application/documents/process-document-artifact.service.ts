@@ -113,6 +113,14 @@ export class ProcessDocumentArtifactService {
   ): Promise<{ documentId: string; artifactPath: string; generated: boolean }> {
     const key = this.artifactKey(document.evaluationProcessId, document.id, document.version);
     try {
+      // Closed stage-four PDFs remain the original artifact across template changes.
+      if (document.documentType === PrismaDocumentType.SUPERVISOR_EVALUATION &&
+          document.processStage?.sequence === 4 &&
+          document.documentStatus === PrismaDocumentStatus.SIGNED && document.artifactFrozenAt &&
+          document.artifactPath === key && await this.storage.exists(key)) {
+        this.assertArtifactIntegrity(document, await this.storage.read(key));
+        return { documentId: document.id, artifactPath: key, generated: false };
+      }
       const input = await this.buildInput(document);
       const content = await this.renderer.render(input);
       const checksum = artifactContentHash(content);
@@ -312,6 +320,7 @@ export class ProcessDocumentArtifactService {
     return {
       title: titleByType[document.documentType] ?? `Documento processual — ${document.documentType}`,
       documentType: document.documentType,
+      stageSequence: stage?.sequence,
       subtitle: 'Sistema de Avaliação de Desempenho de Estágio Probatório — SADEP',
       metadata: [
         ['Processo', document.evaluationProcessId],

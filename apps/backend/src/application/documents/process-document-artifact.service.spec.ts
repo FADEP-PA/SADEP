@@ -156,6 +156,37 @@ describe('ProcessDocumentArtifactService', () => {
     expect(prisma.processDocument.updateMany).not.toHaveBeenCalled();
   });
 
+  it.each([false, true])('preserves closed historical stage-four PDFs and checks stored integrity (tampered=%s)', async (tampered) => {
+    const key = 'processes/process-1/documents/document-1/v1.pdf';
+    const original = Buffer.from('%PDF-1.4 historical stage-four result');
+    const closedDocument = {
+      ...document, documentType: DocumentType.SUPERVISOR_EVALUATION,
+      processStageId: 'stage-4', processStage: { id: 'stage-4', sequence: 4, stageCode: 'ETAPA_4' },
+      documentStatus: DocumentStatus.SIGNED, artifactPath: key,
+      artifactChecksum: artifactContentHash(original), artifactFrozenAt: new Date('2026-10-06T12:00:00.000Z'),
+    };
+    const storage = { exists: jest.fn().mockResolvedValue(true), read: jest.fn().mockResolvedValue(tampered ? Buffer.from('%PDF-1.4 tampered') : original), write: jest.fn() };
+    const { service, prisma, renderer } = setup({ document: closedDocument, storage });
+    if (tampered) await expect(service.materialize('process-1', 'document-1', user)).rejects.toThrow(/checksum mismatch/);
+    else {
+      await expect(service.materialize('process-1', 'document-1', user)).resolves.toMatchObject({ generated: false });
+      expect((await service.download('process-1', 'document-1', user)).content).toEqual(original);
+    }
+    expect(renderer.render).not.toHaveBeenCalled();
+    expect(storage.write).not.toHaveBeenCalled();
+    expect(prisma.processDocument.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('passes the real stage sequence to the PDF renderer for new evaluations', async () => {
+    const { service, prisma, renderer } = setup({ document: {
+      ...document, documentType: DocumentType.SUPERVISOR_EVALUATION,
+      processStageId: 'stage-4', processStage: { id: 'stage-4', sequence: 4, stageCode: 'ETAPA_4' },
+    } });
+    prisma.supervisorEvaluation.findUnique.mockResolvedValue({ summary: 'Resumo', generalComments: 'Observação', content: { criteria: [] }, status: 'SUBMITTED', submittedAt: new Date('2026-10-07T12:00:00.000Z') });
+    await service.materialize('process-1', 'document-1', user);
+    expect(renderer.render).toHaveBeenCalledWith(expect.objectContaining({ stageSequence: 4 }));
+  });
+
   it('repairs a signed artifact whose storage write succeeded before the DB link was committed', async () => {
     const key = 'processes/process-1/documents/document-1/v1.pdf';
     const finalContent = Buffer.from('%PDF-1.4 all signatures completed');

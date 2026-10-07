@@ -14,12 +14,14 @@ export function EvaluationFactorCard({
   onToggle,
   onScoreChange,
   scoreScale = 'PERCENT_0_100',
+  provisional = false,
 }: {
   factor: EvaluationFactorDraft;
   isExpanded: boolean;
   onToggle: () => void;
   onScoreChange: (itemId: string, score: number | null) => void;
   scoreScale?: EvaluationScoreScale;
+  provisional?: boolean;
 }) {
   const subtotal = factor.items.reduce((sum, item) => sum + (item.score ?? 0), 0);
   const average = calculateFactorAverage(factor);
@@ -38,7 +40,7 @@ export function EvaluationFactorCard({
         </div>
 
         <div className="evaluation-detail__factor-metric">
-          <span>Média</span>
+          <span>{provisional ? 'Média provisória' : 'Média'}</span>
           <strong>{average === null ? '—' : average.toFixed(1)}</strong>
         </div>
         <svg className="evaluation-detail__factor-chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -80,7 +82,7 @@ export function EvaluationFactorCard({
               <strong>{average === null ? '—' : subtotal.toFixed(1)}</strong>
             </div>
             <div>
-              <span>Pontuação final do fator (média)</span>
+              <span>{provisional ? 'Pontuação provisória do fator (média)' : 'Pontuação final do fator (média)'}</span>
               <strong>{average === null ? '—' : average.toFixed(1)}</strong>
             </div>
           </div>
