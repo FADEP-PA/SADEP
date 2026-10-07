@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { isValidEvaluationRating } from '@sadep/contracts';
 
 import type { EvaluationFactorDraft } from './supervisor-evaluation-types';
 import {
@@ -51,13 +52,20 @@ describe('supervisor evaluation scoring', () => {
     expect(calculateEvaluationScore(buildFactors(100), 'PERCENT_0_100').administrativeConcept).toBe('Excelente');
   });
 
-  it('normalizes new criterion input to an integer between 0 and 100', () => {
-    expect(clampCriterionRating(-1)).toBe(0);
-    expect(clampCriterionRating(0)).toBe(0);
-    expect(clampCriterionRating(1)).toBe(1);
-    expect(clampCriterionRating(50.4)).toBe(50);
-    expect(clampCriterionRating(99)).toBe(99);
-    expect(clampCriterionRating(99.6)).toBe(100);
-    expect(clampCriterionRating(101)).toBe(100);
+  it('uses the contracts rule for percent input without rounding invalid scores', () => {
+    for (const rating of [0, 10, 50, 90, 100]) expect(isValidEvaluationRating(rating, 'PERCENT_0_100')).toBe(true);
+    for (const rating of [1, 9, 11, 55, 99]) expect(isValidEvaluationRating(rating, 'PERCENT_0_100')).toBe(false);
+  });
+
+  it('preserves historical input normalization', () => {
+    expect(clampCriterionRating(0, 'LEGACY_1_5')).toBe(1);
+    expect(clampCriterionRating(3.4, 'LEGACY_1_5')).toBe(3);
+    expect(clampCriterionRating(6, 'LEGACY_1_5')).toBe(5);
+  });
+
+  it('does not round the average of legal ratings to a step of ten', () => {
+    const factors = buildFactors(50);
+    factors[0]!.items[0]!.score = 0;
+    expect(calculateEvaluationScore(factors, 'PERCENT_0_100').stageAverage).toBe('47.5');
   });
 });

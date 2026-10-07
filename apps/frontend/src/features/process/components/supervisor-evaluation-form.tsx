@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
+import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit, isValidEvaluationRating } from '@sadep/contracts';
 import { EvaluationTextarea } from '@/shared/ui/evaluation-textarea';
 
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
@@ -64,7 +64,7 @@ export function EvaluationDetailView({
         ...factor,
         items: factor.items.map((item) => item.id === itemId ? {
           ...item,
-          score: score === null ? null : clampCriterionRating(score, current.scoreScale),
+          score: score === null ? null : current.scoreScale === 'LEGACY_1_5' ? clampCriterionRating(score, current.scoreScale) : score,
           hasRecordedScore: score !== null,
         } : item),
       } : factor);
@@ -89,8 +89,9 @@ export function EvaluationDetailView({
   }
 
   const exceedsTextLimit = [evaluation.unitCompetencies, evaluation.serverAssignments, evaluation.generalComments, ...evaluation.monthlyObservations.map((item) => item.description)].some((value) => !isEvaluationTextWithinLimit(value));
+  const hasInvalidScores = evaluation.factors.some((factor) => factor.items.some((item) => item.score !== null && !isValidEvaluationRating(item.score, evaluation.scoreScale)));
   const editable = canSaveActiveDraft || canSubmitActiveEvaluation;
-  const hasCompleteScores = evaluation.factors.every((factor) => factor.items.every((item) => item.score !== null));
+  const hasCompleteScores = !hasInvalidScores && evaluation.factors.every((factor) => factor.items.every((item) => item.score !== null));
 
   return (
     <div className="work-page evaluation-workspace">
@@ -168,12 +169,13 @@ export function EvaluationDetailView({
           <div><span>Conceito</span><strong>{hasCompleteScores ? evaluation.administrativeConcept : '—'}</strong></div>
         </div>
         {editable && exceedsTextLimit ? <p className="field-error">{EVALUATION_TEXT_LIMIT_MESSAGE}</p> : null}
+        {editable && hasInvalidScores ? <p className="field-error" role="alert">{evaluation.scoreScale === 'PERCENT_0_100' ? 'Informe notas de 0 a 100, em passos de 10.' : 'Informe notas inteiras de 1 a 5.'}</p> : null}
         {feedbackMessage ? <FeedbackAlert title="Avaliação atualizada" tone="success" description={feedbackMessage} /> : null}
         {actionErrorMessage ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={actionErrorMessage} /> : null}
         {editable ? (
           <div className="form-actions">
-            <button type="button" className="secondary-button" disabled={isAttachmentsBusy || exceedsTextLimit || isSavingDraft || isSubmittingEvaluation || !canSaveActiveDraft} onClick={onSaveDraft}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
-            <button type="button" disabled={isAttachmentsBusy || exceedsTextLimit || isSubmittingEvaluation || isSavingDraft || !canSubmitActiveEvaluation} onClick={onSubmit}>{isSubmittingEvaluation ? 'Enviando…' : submitButtonLabel}</button>
+            <button type="button" className="secondary-button" disabled={isAttachmentsBusy || exceedsTextLimit || hasInvalidScores || isSavingDraft || isSubmittingEvaluation || !canSaveActiveDraft} onClick={onSaveDraft}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
+            <button type="button" disabled={isAttachmentsBusy || exceedsTextLimit || hasInvalidScores || isSubmittingEvaluation || isSavingDraft || !canSubmitActiveEvaluation} onClick={onSubmit}>{isSubmittingEvaluation ? 'Enviando…' : submitButtonLabel}</button>
           </div>
         ) : null}
       </WorkSection>

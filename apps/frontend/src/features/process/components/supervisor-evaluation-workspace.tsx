@@ -1,6 +1,6 @@
 'use client';
 
-import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
+import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit, isValidEvaluationRating } from '@sadep/contracts';
 
 import {
   ProcessStatus,
@@ -40,7 +40,7 @@ import { SupervisorDashboardTable } from './supervisor-dashboard-table';
 import { EvaluationAcknowledgement } from './evaluation-acknowledgement';
 import { EvaluationAttachments } from './evaluation-attachments';
 import { EvaluationDetailView } from './supervisor-evaluation-form';
-import { calculateEvaluationScore, clampCriterionRating } from './supervisor-evaluation-scoring';
+import { calculateEvaluationScore } from './supervisor-evaluation-scoring';
 import { SupervisorSelfEvaluationCard } from './supervisor-self-evaluation-card';
 import type {
   EvaluationDraft,
@@ -227,6 +227,9 @@ function buildSupervisorEvaluationPayload(
     throw new Error(EVALUATION_TEXT_LIMIT_MESSAGE);
   }
   const summaryParts = [draft.unitCompetencies.trim(), draft.serverAssignments.trim()].filter(Boolean);
+  if (draft.factors.some((factor) => factor.items.some((item) => item.score !== null && !isValidEvaluationRating(item.score, draft.scoreScale)))) {
+    throw new Error(draft.scoreScale === 'PERCENT_0_100' ? 'Informe notas de 0 a 100, em passos de 10.' : 'Informe notas inteiras de 1 a 5.');
+  }
   const summary = summaryParts.join('\n\n');
   const hasCompleteScores = draft.factors.every((factor) => factor.items.every((item) => item.score !== null));
   const recordedCriteria = draft.factors.flatMap((factor) =>
@@ -235,7 +238,7 @@ function buildSupervisorEvaluationPayload(
       .map((item) => ({
         code: item.id,
         label: item.label,
-        rating: clampCriterionRating(item.score as number, draft.scoreScale),
+        rating: item.score as number,
       })),
   );
   const userGeneralComments = draft.generalComments;

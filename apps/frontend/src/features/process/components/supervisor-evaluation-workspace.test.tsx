@@ -223,7 +223,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     }
 
     for (const scoreInput of screen.getAllByRole('spinbutton')) {
-      fireEvent.change(scoreInput, { target: { value: '4' } });
+      fireEvent.change(scoreInput, { target: { value: '40' } });
     }
 
     const submitButton = screen.getByRole('button', { name: /Enviar para assinatura/i });
@@ -237,7 +237,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     expect(submittedBody).toMatchObject({ summary: expect.stringContaining('Competências testadas') });
     expect(submittedBody.content.criteria).toHaveLength(20);
     expect(
-      submittedBody.content.criteria.every((criterion: { rating: number }) => criterion.rating === 4),
+      submittedBody.content.criteria.every((criterion: { rating: number }) => criterion.rating === 40),
     ).toBe(true);
   });
 
@@ -255,7 +255,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: /Assiduidade/i }));
 
     const [firstScoreInput] = screen.getAllByRole('spinbutton');
-    fireEvent.change(firstScoreInput, { target: { value: '4' } });
+    fireEvent.change(firstScoreInput, { target: { value: '40' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Salvar rascunho/i }));
@@ -265,7 +265,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     const [savedId, savedBody] = api.saveSupervisorEvaluationDraft.mock.calls[0];
     expect(savedId).toBe(PROCESS_ID);
     expect(savedBody.content.criteria).toHaveLength(1);
-    expect(savedBody.content.criteria[0]).toMatchObject({ rating: 4 });
+    expect(savedBody.content.criteria[0]).toMatchObject({ rating: 40 });
     expect(savedBody.generalComments).not.toContain('Resultado final informado pela chefia');
   });
 
@@ -282,7 +282,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /Assiduidade/i }));
     const [firstScoreInput] = screen.getAllByRole('spinbutton');
-    fireEvent.change(firstScoreInput, { target: { value: '4' } });
+    fireEvent.change(firstScoreInput, { target: { value: '40' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Enviar para assinatura/i }));
@@ -405,7 +405,7 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
       id: 'evaluation-score', processId: PROCESS_ID, processStageId: 'stage-1', evaluatorUserId: 'supervisor-user-id',
       status: SupervisorEvaluationStatus.DRAFT, summary: 'Avaliação persistida', generalComments: 'Comentário', submittedAt: null,
       createdAt: '2026-09-16T12:00:00.000Z', updatedAt: '2026-09-16T12:00:00.000Z',
-      content: { ...markers, criteria: Array.from({ length: 20 }, (_, i) => ({ code: `${Math.floor(i / 4) + 1}.${i % 4 + 1}`, label: 'Critério', rating: 5 })) },
+      content: { ...markers, criteria: Array.from({ length: 20 }, (_, i) => ({ code: `${Math.floor(i / 4) + 1}.${i % 4 + 1}`, label: 'Critério', rating: markers.scoreScale === 'PERCENT_0_100' ? 50 : 5 })) },
     } });
   }
 
@@ -432,7 +432,7 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
   const scales = [
     { name: 'legado sem marcadores', markers: {}, scale: 'LEGACY_1_5', version: LEGACY_EVALUATION_SCORING_VERSION, min: '1', max: '5', total: '100.0', concept: 'Excelente' },
     { name: 'legado explícito', markers: { scoreScale: 'LEGACY_1_5', scoringVersion: LEGACY_EVALUATION_SCORING_VERSION }, scale: 'LEGACY_1_5', version: LEGACY_EVALUATION_SCORING_VERSION, min: '1', max: '5', total: '100.0', concept: 'Excelente' },
-    { name: 'registro 0–100', markers: { scoreScale: 'PERCENT_0_100', scoringVersion: PERCENT_EVALUATION_SCORING_VERSION }, scale: 'PERCENT_0_100', version: PERCENT_EVALUATION_SCORING_VERSION, min: '0', max: '100', total: '5.0', concept: 'Insuficiente' },
+    { name: 'registro 0–100', markers: { scoreScale: 'PERCENT_0_100', scoringVersion: PERCENT_EVALUATION_SCORING_VERSION }, scale: 'PERCENT_0_100', version: PERCENT_EVALUATION_SCORING_VERSION, min: '0', max: '100', total: '50.0', concept: 'Regular' },
   ] as const;
 
   it.each(scales)('$name preserva inputs e semântica dos cálculos', async ({ markers, min, max, total, concept }) => {
@@ -442,7 +442,8 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
     for (const input of inputs) {
       expect(input).toHaveAttribute('min', min);
       expect(input).toHaveAttribute('max', max);
-      expect(input).toHaveValue(5);
+      expect(input).toHaveAttribute('step', max === '100' ? '10' : '1');
+      expect(input).toHaveValue(max === '100' ? 50 : 5);
     }
     const summary = within(screen.getByRole('heading', { name: 'Resumo' }).closest('section')!);
     expect(summary.getByText(concept)).toBeInTheDocument();
@@ -459,12 +460,50 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
     for (const input of inputs) {
       expect(input).toHaveAttribute('min', '0');
       expect(input).toHaveAttribute('max', '100');
+      expect(input).toHaveAttribute('step', '10');
       expect(input).toHaveValue(null);
     }
     fireEvent.change(screen.getByLabelText('Competências da unidade'), { target: { value: 'Nova avaliação' } });
     fireEvent.change(inputs[0]!, { target: { value: '100' } });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
     await waitFor(() => expect(api.saveSupervisorEvaluationDraft).toHaveBeenCalledWith(PROCESS_ID, expect.objectContaining({ content: expect.objectContaining({ scoreScale: 'PERCENT_0_100', scoringVersion: PERCENT_EVALUATION_SCORING_VERSION, criteria: [expect.objectContaining({ rating: 100 })] }) })));
+  });
+
+  it.each([1, 9, 11, 55, 99, -10, 110, 1.5])('bloqueia salvar e enviar a nota inválida %s sem arredondar', async (rating) => {
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(scoreSnapshot({ scoreScale: 'PERCENT_0_100', scoringVersion: 2 }));
+    const inputs = await openScores();
+    fireEvent.change(inputs[0]!, { target: { value: String(rating) } });
+    expect(inputs[0]).toHaveValue(rating);
+    expect(inputs[0]).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('alert')).toHaveTextContent('Informe notas de 0 a 100, em passos de 10.');
+    const save = screen.getByRole('button', { name: 'Salvar rascunho' });
+    const submit = screen.getByRole('button', { name: 'Enviar para assinatura' });
+    expect(save).toBeDisabled();
+    expect(submit).toBeDisabled();
+    fireEvent.click(save);
+    fireEvent.click(submit);
+    expect(api.saveSupervisorEvaluationDraft).not.toHaveBeenCalled();
+    expect(api.submitSupervisorEvaluation).not.toHaveBeenCalled();
+    fireEvent.change(inputs[0]!, { target: { value: '10' } });
+    expect(save).toBeEnabled();
+    expect(submit).toBeEnabled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('preserva zero, notas legais e critérios vazios no reload', async () => {
+    const snapshot = scoreSnapshot({ scoreScale: 'PERCENT_0_100', scoringVersion: 2 });
+    snapshot.supervisorEvaluation!.content.criteria = [0, 10, 50, 90, 100].map((rating, i) => ({ code: `${Math.floor(i / 4) + 1}.${i % 4 + 1}`, label: 'Critério', rating }));
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(snapshot);
+    const inputs = await openScores();
+    expect(inputs.map((input) => (input as HTMLInputElement).value)).toEqual(['0', '10', '50', '90', '100', ...Array(15).fill('')]);
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
+    await waitFor(() => expect(api.saveSupervisorEvaluationDraft).toHaveBeenCalledTimes(1));
+    expect(api.saveSupervisorEvaluationDraft.mock.calls[0]![1].content.criteria.map((criterion: { rating: number }) => criterion.rating)).toEqual([0, 10, 50, 90, 100]);
+    fireEvent.click(screen.getByRole('button', { name: /Voltar às avaliações/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    await screen.findByLabelText('Competências da unidade');
+    fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
+    expect(screen.getAllByRole('spinbutton').map((input) => (input as HTMLInputElement).value)).toEqual(['0', '10', '50', '90']);
   });
 
   it('reload de legado continua em 1–5 sem converter a nota 5', async () => {
@@ -499,7 +538,7 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
       const payload = request.mock.calls[0]![1];
       expect(payload.content).toMatchObject({ scoreScale: scale, scoringVersion: version });
       expect(payload.content.criteria).toHaveLength(20);
-      expect(payload.content.criteria.map((criterion: { rating: number }) => criterion.rating)).toEqual(Array(20).fill(5));
+      expect(payload.content.criteria.map((criterion: { rating: number }) => criterion.rating)).toEqual(Array(20).fill(scale === 'PERCENT_0_100' ? 50 : 5));
       expect(await screen.findByText(action === 'save' ? 'Rascunho salvo.' : 'Avaliação retificada com sucesso.')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
       expect(screen.getAllByRole('spinbutton')[0]).toHaveAttribute('max', scale === 'LEGACY_1_5' ? '5' : '100');
