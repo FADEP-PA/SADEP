@@ -6,6 +6,8 @@ import { ProcessDocumentArtifactService } from '../../application/documents/proc
 import { EvaluationProcessDocumentPdfRenderer } from '../../infrastructure/documents/evaluation-process-document-pdf-renderer';
 import { PdfKitProcessDocumentPdfRenderer } from '../../infrastructure/documents/process-document-pdf-renderer';
 import { artifactContentHash, FilesystemDocumentArtifactStorage } from '../../infrastructure/documents/document-artifact-storage';
+import { HomologationService } from '../homologation/homologation.service';
+import { ProcessStageService } from '../process-stage.service';
 
 import {
   AuditEventType as PrismaAuditEventType,
@@ -1485,6 +1487,36 @@ export async function runCesadFinalOpinionsServiceTests() {
     assert.equal(sentMetadata.completedSignatureCount, 2);
     assert.equal(sentMetadata.comment, 'Encaminhamento formal à homologação.');
     assert.equal(typeof sentMetadata.sentToHomologationAt, 'string');
+
+    // Official notification smoke: valid homologation -> frozen PDF -> own view -> science.
+    const homologation = new HomologationService(context.prisma as never, new ProcessStageService(context.prisma as never), artifactService);
+    const authorityUser = authenticatedUser(homologationAuthority.id, homologationAuthority.role);
+    const internUser = authenticatedUser(evaluatedUser.id, evaluatedUser.role);
+    await assert.rejects(() => homologation.notify(ready.processId, authorityUser, {}), /must be in HOMOLOGADO/);
+    await homologation.approve(ready.processId, authorityUser, { homologationRemarks: 'Homologo o resultado do parecer conclusivo.' });
+    await homologation.notify(ready.processId, authorityUser, {});
+    const notification = await context.prisma.processDocument.findFirstOrThrow({ where: { evaluationProcessId: ready.processId, documentType: 'RESULT_NOTIFICATION' } });
+    assert.ok(notification.artifactPath); assert.ok(notification.artifactFrozenAt);
+    const notificationBytes = await artifactStorage.read(notification.artifactPath);
+    assert.equal(artifactContentHash(notificationBytes), notification.artifactChecksum);
+    await assert.rejects(() => homologation.acknowledge(ready.processId, internUser), /must view/);
+    await assert.rejects(() => homologation.downloadNotification(ready.processId, authenticatedUser(supervisor.id, supervisor.role)), /Insufficient permissions/);
+    const unrelatedIntern = await createUser(context.prisma, UserRole.INTERN_SERVER, 'unrelated-notice@test.local', 'Outro servidor');
+    await assert.rejects(() => homologation.downloadNotification(ready.processId, authenticatedUser(unrelatedIntern.id, unrelatedIntern.role)), /Only the evaluated server/);
+    const received = await homologation.downloadNotification(ready.processId, internUser);
+    assert.deepEqual(received.content, notificationBytes);
+    const receiptStatus = await homologation.getStatus(ready.processId, internUser);
+    assert.ok(receiptStatus.notificationDocument?.viewedAt); assert.equal(receiptStatus.notificationDocument?.canAcknowledge, true);
+    const personalText = [...received.content.toString('latin1').matchAll(/<([0-9a-f]+)>/g)].map(match => Buffer.from(match[1]!, 'hex').toString('latin1')).join('').replace(/\s/g, '');
+    assert.ok(personalText.includes('NOTIFICAÇÃOPESSOAL')); assert.ok(personalText.includes('5(cinco)dias'));
+    assert.ok(!personalText.includes(ready.processId)); assert.ok(!personalText.includes('Assinadoem'));
+    const science = await homologation.acknowledge(ready.processId, internUser);
+    assert.equal(science.processStatus, ProcessStatus.CIENTE); assert.ok(science.acknowledgedAt);
+    assert.deepEqual((await homologation.downloadNotification(ready.processId, internUser)).content, notificationBytes);
+    const viewEvents = await context.prisma.auditEvent.findMany({ where: { evaluationProcessId: ready.processId, eventType: 'NOTIFICATION_VIEWED' } });
+    assert.ok(viewEvents.length >= 1);
+    assert.equal((viewEvents[0]!.metadata as Record<string, unknown>).documentId, notification.id);
+    await artifactStorage.delete(notification.artifactPath);
 
     // === EXTRA CHECK: completion blocked if process status is not PARECER_EMITIDO ===
     const noPareceProcess = await createProcess(

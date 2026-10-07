@@ -25,6 +25,7 @@ import {
   SupervisorEvaluationWithDocumentContextRef,
   SelfEvaluationWithDocumentContextRef,
   UserRole,
+  type HomologationStatusRef,
 } from '@sadep/contracts';
 
 export type { ProcessListRef };
@@ -80,6 +81,22 @@ export async function getEvaluationDocumentPdf(processId: string, documentId: st
     throw new Error('O documento PDF está indisponível.');
   }
   return pdf;
+}
+
+export async function getPersonalNotificationStatus(processId: string) {
+  return httpRequest<HomologationStatusRef>(`/processes/${encodeURIComponent(processId)}/homologation`, AUTHENTICATED_REQUEST);
+}
+
+export async function getPersonalNotificationPdf(processId: string) {
+  const pdf = await httpRequest<Blob>(`/processes/${encodeURIComponent(processId)}/homologation/notification/artifact`,
+    { ...AUTHENTICATED_REQUEST, responseType: 'blob' });
+  if (pdf.type.split(';')[0] !== 'application/pdf' || pdf.size === 0) throw new Error('A Notificação Pessoal está indisponível.');
+  return pdf;
+}
+
+export async function acknowledgePersonalNotification(processId: string) {
+  return httpRequest<HomologationStatusRef>(`/processes/${encodeURIComponent(processId)}/homologation/acknowledge`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST' });
 }
 
 export async function getProcessList() {

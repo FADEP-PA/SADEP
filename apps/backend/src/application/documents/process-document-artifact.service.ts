@@ -114,6 +114,8 @@ export class ProcessDocumentArtifactService {
     user: AuthenticatedUser,
   ): Promise<{ documentId: string; artifactPath: string; generated: boolean }> {
     const key = this.artifactKey(document.evaluationProcessId, document.id, document.version);
+    const shouldFreeze = document.documentStatus === PrismaDocumentStatus.SIGNED ||
+      (document.documentType === PrismaDocumentType.RESULT_NOTIFICATION && document.documentStatus === PrismaDocumentStatus.CONSOLIDATED);
     try {
       // Every closed artifact remains authoritative across template and data changes.
       if (document.artifactFrozenAt &&
@@ -145,18 +147,17 @@ export class ProcessDocumentArtifactService {
             document.documentStatus !== PrismaDocumentStatus.SIGNED ||
             Boolean(document.artifactFrozenAt))
         ) {
-          if (document.documentStatus === PrismaDocumentStatus.SIGNED && !document.artifactFrozenAt) {
+          if (shouldFreeze && !document.artifactFrozenAt) {
             await this.freezeArtifact(document, checksum);
           }
           return { documentId: document.id, artifactPath: key, generated: false };
         }
-        if (document.documentStatus === PrismaDocumentStatus.SIGNED && document.artifactFrozenAt) {
+        if (document.artifactFrozenAt) {
           throw new ForbiddenException('Signed process document artifact is immutable');
         }
       }
 
       if (
-        document.documentStatus === PrismaDocumentStatus.SIGNED &&
         document.artifactFrozenAt &&
         document.artifactChecksum !== checksum
       ) {
@@ -165,7 +166,7 @@ export class ProcessDocumentArtifactService {
 
       await this.storage.write(key, content, document.artifactPath ? 'replace' : 'create');
       const generatedAt = new Date();
-      const frozenAt = document.documentStatus === PrismaDocumentStatus.SIGNED
+      const frozenAt = shouldFreeze
         ? document.artifactFrozenAt ?? generatedAt
         : null;
       const updated = await this.prismaService.processDocument.updateMany({
@@ -200,12 +201,12 @@ export class ProcessDocumentArtifactService {
         select: { artifactPath: true, artifactChecksum: true, artifactFrozenAt: true, documentStatus: true },
       });
       if (current?.artifactPath !== key || current.artifactChecksum !== checksum) {
-        if (current?.documentStatus === PrismaDocumentStatus.SIGNED && current.artifactFrozenAt) {
+        if (current?.artifactFrozenAt) {
           throw new ForbiddenException('Signed process document artifact is immutable');
         }
         throw new Error('Artifact was persisted but could not be linked consistently');
       }
-      if (current.documentStatus === PrismaDocumentStatus.SIGNED && !current.artifactFrozenAt) {
+      if (shouldFreeze && !current.artifactFrozenAt) {
         await this.freezeArtifact(document, checksum);
       }
       return { documentId: document.id, artifactPath: key, generated: false };
@@ -220,7 +221,7 @@ export class ProcessDocumentArtifactService {
     const updated = await this.prismaService.processDocument.updateMany({
       where: {
         id: document.id,
-        documentStatus: PrismaDocumentStatus.SIGNED,
+        documentStatus: document.documentStatus,
         artifactChecksum: checksum,
         artifactFrozenAt: null,
       },
@@ -232,7 +233,7 @@ export class ProcessDocumentArtifactService {
         select: { artifactChecksum: true, artifactFrozenAt: true, documentStatus: true },
       });
       if (
-        current?.documentStatus !== PrismaDocumentStatus.SIGNED ||
+        current?.documentStatus !== document.documentStatus ||
         current.artifactChecksum !== checksum ||
         !current.artifactFrozenAt
       ) {
@@ -340,6 +341,18 @@ export class ProcessDocumentArtifactService {
         select: { responsibleSupervisor: { select: { name: true } } },
       });
       supervisorName = finalStage?.responsibleSupervisor?.name;
+    } else if (document.documentType === PrismaDocumentType.RESULT_NOTIFICATION) {
+      const record = await this.prismaService.homologationRecord.findUnique({
+        where: { processId: document.evaluationProcessId },
+        include: { homologatedByUser: { select: { name: true } } },
+      });
+      const opinion = await this.prismaService.cesadFinalOpinion.findUnique({ where: { processId: document.evaluationProcessId } });
+      if (!record?.notifiedAt || !opinion || opinion.status !== 'COMPLETED' || !opinion.sentToHomologationAt) {
+        throw new BadRequestException('Valid notified homologation and completed final opinion are required');
+      }
+      logicalContent = { homologatedAt: record.homologatedAt.toISOString(), notifiedAt: record.notifiedAt.toISOString(),
+        authorityName: record.homologatedByUser.name, homologationRemarks: record.homologationRemarks,
+        finalResult: opinion.finalResult, finalConcept: opinion.finalConcept };
     }
     const titleByType: Partial<Record<PrismaDocumentType, string>> = {
       [PrismaDocumentType.SUPERVISOR_EVALUATION]: 'Documento processual — avaliação da chefia',
@@ -389,6 +402,17 @@ export class ProcessDocumentArtifactService {
   }
 
   private async ensureCanReadDocument(document: ProcessDocumentSnapshot, user: AuthenticatedUser): Promise<void> {
+    if (document.documentType === PrismaDocumentType.RESULT_NOTIFICATION) {
+      if (![ProcessStatus.NOTIFICADO, ProcessStatus.CIENTE, ProcessStatus.ENCERRADO].includes(document.evaluationProcess.status as ProcessStatus)) {
+        throw new ForbiddenException('Personal notification is not available before notification of the homologated result');
+      }
+      if (user.role === 'INTERN_SERVER' && document.evaluationProcess.evaluatedUserId === user.sub) return;
+      if (user.role === 'ADMIN' || user.role === 'HOMOLOGATION_AUTHORITY') {
+        const record = await this.prismaService.homologationRecord.findUnique({ where: { processId: document.evaluationProcessId } });
+        if (record?.notifiedAt && (user.role === 'ADMIN' || record.homologatedByUserId === user.sub || record.notifiedByUserId === user.sub)) return;
+      }
+      throw new ForbiddenException('Authenticated user cannot access this personal notification');
+    }
     if (user.role === 'IMMEDIATE_SUPERVISOR') {
       if (!document.processStage || document.processStage.responsibleSupervisor?.id !== user.sub) {
         throw new ForbiddenException('Authenticated supervisor is not responsible for this process stage');

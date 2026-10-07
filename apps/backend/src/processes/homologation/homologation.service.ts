@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
   AuditEventType as PrismaAuditEventType,
@@ -19,6 +20,7 @@ import {
   ProcessStatus,
   type HomologationStatusRef,
   UserRole,
+  DocumentType,
 } from '@sadep/contracts';
 
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
@@ -31,6 +33,8 @@ import {
   type PrismaTransactionClient,
 } from '../process-type-mappers';
 import { ProcessStageService } from '../process-stage.service';
+import { ProcessDocumentArtifactService } from '../../application/documents/process-document-artifact.service';
+import { artifactContentHash } from '../../infrastructure/documents/document-artifact-storage';
 import type {
   ApproveHomologationDto,
   NotifyResultDto,
@@ -42,6 +46,7 @@ export class HomologationService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly processStageService: ProcessStageService,
+    @Optional() private readonly artifactService?: ProcessDocumentArtifactService,
   ) {}
 
   async getStatus(processId: string, user: AuthenticatedUser): Promise<HomologationStatusRef> {
@@ -55,6 +60,11 @@ export class HomologationService {
     const record = await this.prismaService.homologationRecord.findUnique({
       where: { processId },
     });
+    if (user.role === UserRole.INTERN_SERVER && process.evaluatedUserId !== user.sub) {
+      throw new ForbiddenException('Only the evaluated server can access this personal notification');
+    }
+    const document = record?.notifiedAt ? await this.findNotificationDocument(this.prismaService, processId) : null;
+    const viewedAt = document ? await this.findNotificationView(this.prismaService, processId, process.evaluatedUserId, document.id, document.artifactChecksum) : null;
 
     return {
       processId,
@@ -65,6 +75,10 @@ export class HomologationService {
       notifiedAt: record?.notifiedAt?.toISOString() ?? null,
       notifiedByUserId: record?.notifiedByUserId ?? null,
       acknowledgedAt: record?.acknowledgedAt?.toISOString() ?? null,
+      notificationDocument: document ? { documentId: document.id, hasArtifact: Boolean(document.artifactPath),
+        viewedAt: viewedAt?.occurredAt.toISOString() ?? null,
+        canAcknowledge: process.status === PrismaProcessStatus.NOTIFICADO && Boolean(viewedAt && document.artifactPath && document.artifactFrozenAt) && !record?.acknowledgedAt,
+      } : null,
     };
   }
 
@@ -207,7 +221,7 @@ export class HomologationService {
   ): Promise<HomologationStatusRef> {
     this.ensureIsHomologationAuthority(user);
 
-    return this.prismaService.$transaction(async (tx) => {
+    const result = await this.prismaService.$transaction(async (tx) => {
       const process = await this.processStageService.findProcessOrThrow(tx, processId);
       const processStatus = toContractProcessStatus(process.status);
 
@@ -272,6 +286,33 @@ export class HomologationService {
         acknowledgedAt: null,
       };
     });
+    if (this.artifactService) {
+      try {
+        const document = await this.findNotificationDocument(this.prismaService, processId);
+        if (document) await this.artifactService.materializeAfterAuthorizedAction(document.id, user);
+      }
+      catch { /* Notification is committed; generation is audited and retried on authorized retrieval. */ }
+    }
+    return result;
+  }
+
+  async downloadNotification(processId: string, user: AuthenticatedUser): Promise<{ content: Buffer; filename: string }> {
+    const status = await this.getStatus(processId, user);
+    if (![ProcessStatus.NOTIFICADO, ProcessStatus.CIENTE, ProcessStatus.ENCERRADO].includes(status.processStatus) || !status.notificationDocument) {
+      throw new BadRequestException('Personal notification is available only after a valid notified homologation');
+    }
+    if (!this.artifactService) throw new Error('Document artifact service is not configured');
+    const documentId = status.notificationDocument.documentId;
+    await this.artifactService.materializeAfterAuthorizedAction(documentId, user);
+    const artifact = await this.artifactService.download(processId, documentId, user);
+    if (user.role === UserRole.INTERN_SERVER) {
+      await this.prismaService.auditEvent.create({ data: this.buildAuditEvent({ processId, user,
+        eventType: AuditEventType.NOTIFICATION_VIEWED, action: ProcessAction.VIEW_NOTIFICATION,
+        beforeStatus: status.processStatus, afterStatus: status.processStatus, occurredAt: new Date(),
+        extra: { documentId, documentType: DocumentType.RESULT_NOTIFICATION, artifactChecksum: artifactContentHash(artifact.content) },
+      }) });
+    }
+    return { ...artifact, filename: 'notificacao-pessoal.pdf' };
   }
 
   async acknowledge(processId: string, user: AuthenticatedUser): Promise<HomologationStatusRef> {
@@ -296,6 +337,12 @@ export class HomologationService {
 
       if (record.acknowledgedAt !== null) {
         throw new ConflictException('Acknowledgement has already been recorded');
+      }
+
+      const notification = await this.findNotificationDocument(tx, processId);
+      const view = notification ? await this.findNotificationView(tx, processId, user.sub, notification.id, notification.artifactChecksum) : null;
+      if (!notification?.artifactPath || !notification.artifactFrozenAt || !view) {
+        throw new BadRequestException('The evaluated server must view the official personal notification before recording acknowledgement');
       }
 
       const now = new Date();
@@ -328,7 +375,8 @@ export class HomologationService {
           beforeStatus: processStatus,
           afterStatus: ProcessStatus.CIENTE,
           occurredAt: now,
-          extra: { homologationRecordId: record.id },
+          extra: { homologationRecordId: record.id, notificationDocumentId: notification.id,
+            notificationChecksum: notification.artifactChecksum, notificationViewedAt: view.occurredAt.toISOString() },
         }),
       });
 
@@ -354,6 +402,21 @@ export class HomologationService {
     if (!allowed.includes(user.role)) {
       throw new ForbiddenException('Insufficient permissions to access homologation data');
     }
+  }
+
+  private findNotificationDocument(client: PrismaTransactionClient, processId: string) {
+    return client.processDocument.findFirst({ where: { evaluationProcessId: processId,
+      documentType: PrismaDocumentType.RESULT_NOTIFICATION, documentStatus: { not: PrismaDocumentStatus.INVALIDATED_OR_SUPERSEDED } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  private findNotificationView(client: PrismaTransactionClient, processId: string, userId: string, documentId: string, checksum: string | null) {
+    if (!checksum) return Promise.resolve(null);
+    return client.auditEvent.findFirst({ where: { evaluationProcessId: processId, actorUserId: userId,
+      eventType: PrismaAuditEventType.NOTIFICATION_VIEWED,
+      AND: [{ metadata: { path: ['documentId'], equals: documentId } }, { metadata: { path: ['artifactChecksum'], equals: checksum } }],
+    }, orderBy: { occurredAt: 'asc' } });
   }
 
   private ensureIsHomologationAuthority(user: AuthenticatedUser): void {

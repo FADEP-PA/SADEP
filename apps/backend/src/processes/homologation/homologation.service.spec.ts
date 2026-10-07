@@ -40,8 +40,8 @@ function makeTx(overrides: Record<string, unknown> = {}) {
     evaluationProcess: { findUnique: jest.fn(), update: jest.fn() },
     cesadFinalOpinion: { findUnique: jest.fn() },
     homologationRecord: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
-    processDocument: { create: jest.fn() },
-    auditEvent: { create: jest.fn() },
+    processDocument: { create: jest.fn(), findFirst: jest.fn() },
+    auditEvent: { create: jest.fn(), findFirst: jest.fn() },
     ...overrides,
   };
 }
@@ -228,6 +228,19 @@ describe('HomologationService', () => {
   });
 
   describe('notify', () => {
+    it('automatically materializes the official document after the authorized notification is committed', async () => {
+      const tx = makeTx(); const now = new Date();
+      processStageService.findProcessOrThrow.mockResolvedValue(makeProcess('HOMOLOGADO') as any);
+      tx.homologationRecord.findUnique.mockResolvedValue({ id: 'record', notifiedAt: null });
+      tx.homologationRecord.update.mockResolvedValue({ homologatedAt: now, homologatedByUserId: AUTHORITY_USER.sub, homologationRemarks: null });
+      (prismaService.$transaction as jest.Mock).mockImplementation(cb => cb(tx));
+      (prismaService as any).processDocument = { findFirst: jest.fn().mockResolvedValue({ id: 'notification-1' }) };
+      const artifacts = { materializeAfterAuthorizedAction: jest.fn().mockResolvedValue(undefined) };
+      const officialService = new HomologationService(prismaService, processStageService, artifacts as any);
+      await officialService.notify(PROCESS_ID, AUTHORITY_USER, {});
+      expect(artifacts.materializeAfterAuthorizedAction).toHaveBeenCalledWith('notification-1', AUTHORITY_USER);
+      expect(tx.processDocument.create).toHaveBeenCalled();
+    });
     it('updates HomologationRecord and transitions to NOTIFICADO', async () => {
       const tx = makeTx();
       const now = new Date();
@@ -292,6 +305,8 @@ describe('HomologationService', () => {
     it('records acknowledgement and transitions to CIENTE', async () => {
       const tx = makeTx();
       const now = new Date();
+      tx.processDocument.findFirst.mockResolvedValue({ id: 'notification-1', artifactPath: 'official.pdf', artifactChecksum: 'checksum', artifactFrozenAt: now });
+      tx.auditEvent.findFirst.mockResolvedValue({ occurredAt: now });
       const record = {
         id: 'hr-1',
         processId: PROCESS_ID,
@@ -316,6 +331,18 @@ describe('HomologationService', () => {
         expect.objectContaining({ data: expect.objectContaining({ documentType: 'ACKNOWLEDGEMENT_RECORD' }) }),
       );
       expect(result.processStatus).toBe(ProcessStatus.CIENTE);
+    });
+
+    it('blocks acknowledgement before the evaluated server views the exact official artifact', async () => {
+      const tx = makeTx();
+      processStageService.findProcessOrThrow.mockResolvedValue(makeProcess('NOTIFICADO') as any);
+      tx.homologationRecord.findUnique.mockResolvedValue({ acknowledgedAt: null });
+      tx.processDocument.findFirst.mockResolvedValue({ id: 'notification', artifactPath: 'official.pdf', artifactChecksum: 'checksum', artifactFrozenAt: new Date() });
+      tx.auditEvent.findFirst.mockResolvedValue(null);
+      (prismaService.$transaction as jest.Mock).mockImplementation(cb => cb(tx));
+      await expect(service.acknowledge(PROCESS_ID, INTERN_USER)).rejects.toThrow(/must view/);
+      expect(tx.homologationRecord.update).not.toHaveBeenCalled();
+      expect(tx.evaluationProcess.update).not.toHaveBeenCalled();
     });
 
     it('throws ForbiddenException when caller is not the evaluated server', async () => {

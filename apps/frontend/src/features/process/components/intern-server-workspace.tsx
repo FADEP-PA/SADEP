@@ -1,6 +1,6 @@
 'use client';
 
-import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit } from '@sadep/contracts';
+import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit, ProcessStatus } from '@sadep/contracts';
 
 import { AcknowledgementMode, EvaluationAttachmentOrigin, SelfEvaluationStatus, SupervisorEvaluationStatus, UserRole, type InternServerWorkspaceSnapshotRef } from '@sadep/contracts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -25,6 +25,7 @@ import { formatDateTime } from './process-formatters';
 import { EvaluationAttachments } from './evaluation-attachments';
 import { EvaluationPdfViewer } from './evaluation-pdf-viewer';
 import { EvaluationAcknowledgement } from './evaluation-acknowledgement';
+import { PersonalNotificationCard } from './personal-notification-card';
 import { SelfEvaluationFormView, type SelfEvaluationFormState } from './self-evaluation-form';
 
 const ALLOWED_ROLES = [UserRole.INTERN_SERVER];
@@ -177,6 +178,8 @@ export function InternServerWorkspace() {
         {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
 
         <EvaluationAcknowledgement acknowledgement={acknowledgement} />
+        {snapshot && [ProcessStatus.NOTIFICADO, ProcessStatus.CIENTE, ProcessStatus.ENCERRADO].includes(snapshot.process.status)
+          ? <PersonalNotificationCard key={snapshot.process.id} processId={snapshot.process.id} /> : null}
 
         {snapshot && !showSelfEvaluation ? (
           <>

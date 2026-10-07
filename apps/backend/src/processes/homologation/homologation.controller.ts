@@ -2,10 +2,12 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Param,
   Post,
   UnauthorizedException,
   UseGuards,
+  StreamableFile,
 } from '@nestjs/common';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -58,6 +60,13 @@ export class HomologationController {
   @Post('acknowledge')
   async acknowledge(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
     return this.service.acknowledge(id, this.ensureUser(user));
+  }
+
+  @Get('notification/artifact')
+  @Header('Cache-Control', 'private, no-store')
+  async downloadNotification(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    const artifact = await this.service.downloadNotification(id, this.ensureUser(user));
+    return new StreamableFile(artifact.content, { type: 'application/pdf', disposition: `inline; filename="${artifact.filename}"` });
   }
 
   private ensureUser(user?: AuthenticatedUser): AuthenticatedUser {
