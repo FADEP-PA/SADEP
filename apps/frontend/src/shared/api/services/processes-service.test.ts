@@ -11,6 +11,9 @@ import {
   startCesadFinalOpinion,
   saveCesadFinalOpinionDraft,
   completeCesadFinalOpinion,
+  prepareCesadFinalOpinionSignatures,
+  getCesadFinalOpinionSignatureStatus,
+  signCesadFinalOpinion,
   getCesadStageOpinionSignatureStatus,
   getInternWorkspaceSnapshot,
   getProcessList,
@@ -220,6 +223,18 @@ describe('processes-service', () => {
       ]);
       expect(fetchMock.mock.calls[1]![1]).toMatchObject({ method: 'PUT', body: JSON.stringify(body) });
       expect(fetchMock.mock.calls[2]![1]).toMatchObject({ method: 'POST', body: JSON.stringify(body) });
+    });
+
+    it('integra preparar, consultar e assinar sem estado local', async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { processId: PROCESS_ID, allExpectedSignersSigned: false }));
+      await prepareCesadFinalOpinionSignatures(PROCESS_ID);
+      await getCesadFinalOpinionSignatureStatus(PROCESS_ID);
+      await signCesadFinalOpinion(PROCESS_ID);
+      expect(fetchMock.mock.calls.map(([url, init]) => [url, (init as RequestInit).method])).toEqual([
+        [`${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion/signatures/prepare`, 'POST'],
+        [`${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion/signatures`, 'GET'],
+        [`${API_BASE}/processes/${PROCESS_ID}/cesad-final-opinion/sign`, 'POST'],
+      ]);
     });
   });
 
