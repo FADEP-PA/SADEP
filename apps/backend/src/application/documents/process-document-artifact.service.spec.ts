@@ -162,11 +162,12 @@ describe('ProcessDocumentArtifactService', () => {
   it.each([
     [DocumentType.SUPERVISOR_EVALUATION, false], [DocumentType.SUPERVISOR_EVALUATION, true],
     [DocumentType.SELF_EVALUATION, false], [DocumentType.SELF_EVALUATION, true],
+    [DocumentType.CESAD_OPINION, false], [DocumentType.CESAD_OPINION, true],
   ])('preserves closed historical %s PDFs and checks integrity (tampered=%s)', async (documentType, tampered) => {
     const key = 'processes/process-1/documents/document-1/v1.pdf';
     const original = Buffer.from('%PDF-1.4 historical stage-four result');
     const closedDocument = {
-      ...document, documentType,
+      ...document, documentType, opinionKind: documentType === DocumentType.CESAD_OPINION ? 'FINAL_CONCLUSIVE' : null,
       processStageId: 'stage-4', processStage: { id: 'stage-4', sequence: 4, stageCode: 'ETAPA_4' },
       documentStatus: DocumentStatus.SIGNED, artifactPath: key,
       artifactChecksum: artifactContentHash(original), artifactFrozenAt: new Date('2026-10-06T12:00:00.000Z'),

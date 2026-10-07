@@ -17,6 +17,7 @@ import {
 } from '@sadep/contracts';
 
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { evaluationFactorScores } from '../../domain/evaluations/evaluation-factor-scores';
 import { isCompletedProcessStage } from '../process-stages.constants';
 import type { PrismaTransactionClient } from '../processes.service';
 
@@ -47,6 +48,7 @@ export class CesadFinalOpinionConsolidationService {
                 status: true,
                 submittedAt: true,
                 summary: true,
+                content: true,
               },
             },
             selfEvaluation: {
@@ -126,6 +128,7 @@ export class CesadFinalOpinionConsolidationService {
               status: this.toContractSupervisorEvaluationStatus(supervisorEvaluation.status),
               submittedAt: supervisorEvaluation.submittedAt?.toISOString() ?? null,
               summary: supervisorEvaluation.summary ?? null,
+              ...(evaluationFactorScores(supervisorEvaluation.content) ?? {}),
             }
           : null,
         selfEvaluation: selfEvaluation

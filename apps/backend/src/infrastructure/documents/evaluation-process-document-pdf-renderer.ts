@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { renderOfficialSupervisorEvaluation } from './official-supervisor-evaluation-renderer';
 import { renderOfficialSelfEvaluation } from './official-self-evaluation-renderer';
+import { renderOfficialFinalOpinion } from './official-final-opinion-renderer';
 import { DocumentType } from '@sadep/contracts';
 
 import {
@@ -20,6 +21,9 @@ export class EvaluationProcessDocumentPdfRenderer implements ProcessDocumentPdfR
     }
     if (input.documentType === DocumentType.SELF_EVALUATION) {
       return renderOfficialSelfEvaluation(input);
+    }
+    if (input.documentType === DocumentType.CESAD_OPINION && input.opinionKind === 'FINAL_CONCLUSIVE') {
+      return renderOfficialFinalOpinion(input);
     }
     return this.baseRenderer.render(input);
   }

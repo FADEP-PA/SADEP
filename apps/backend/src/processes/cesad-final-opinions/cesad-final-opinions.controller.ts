@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Optional,
   Post,
   Put,
   UnauthorizedException,
@@ -13,6 +14,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface';
 import { ProcessDocumentsService } from '../../application/documents/process-documents.service';
+import { ProcessDocumentArtifactService } from '../../application/documents/process-document-artifact.service';
 import { CesadFinalOpinionsService } from './cesad-final-opinions.service';
 import {
   SendCesadFinalOpinionToHomologationDto,
@@ -26,6 +28,7 @@ export class CesadFinalOpinionsController {
   constructor(
     private readonly service: CesadFinalOpinionsService,
     private readonly processDocumentsService: ProcessDocumentsService,
+    @Optional() private readonly artifactService?: ProcessDocumentArtifactService,
   ) {}
 
   @Get('eligibility')
@@ -76,10 +79,13 @@ export class CesadFinalOpinionsController {
 
   @Post('signatures/prepare')
   async prepareSignatures(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
-    return this.processDocumentsService.prepareCesadFinalOpinionSignatures(
+    const authenticatedUser = this.ensureUser(user);
+    const result = await this.processDocumentsService.prepareCesadFinalOpinionSignatures(
       id,
-      this.ensureUser(user),
+      authenticatedUser,
     );
+    await this.materialize(result.document?.documentId, authenticatedUser);
+    return result;
   }
 
   @Get('signatures')
@@ -92,10 +98,19 @@ export class CesadFinalOpinionsController {
 
   @Post('sign')
   async signOpinion(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
-    return this.processDocumentsService.signCesadFinalOpinionDocument(
+    const authenticatedUser = this.ensureUser(user);
+    const result = await this.processDocumentsService.signCesadFinalOpinionDocument(
       id,
-      this.ensureUser(user),
+      authenticatedUser,
     );
+    await this.materialize(result.document?.documentId, authenticatedUser);
+    return result;
+  }
+
+  private async materialize(documentId: string | undefined, user: AuthenticatedUser): Promise<void> {
+    if (!documentId || !this.artifactService) return;
+    try { await this.artifactService.materializeAfterAuthorizedAction(documentId, user); }
+    catch { /* The formal action is committed; generation failure is audited and safely retryable. */ }
   }
 
   private ensureUser(user?: AuthenticatedUser): AuthenticatedUser {

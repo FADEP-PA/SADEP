@@ -13,6 +13,7 @@ export interface PdfDocumentSection {
 
 export interface ProcessDocumentPdfInput {
   documentType?: string;
+  opinionKind?: string | null;
   stageSequence?: number;
   title: string;
   subtitle?: string;
