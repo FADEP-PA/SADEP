@@ -9,6 +9,12 @@ export interface HomologationStatusRef {
   notifiedAt: string | null;
   notifiedByUserId: string | null;
   acknowledgedAt: string | null;
+  notificationDocument?: {
+    documentId: string;
+    hasArtifact: boolean;
+    viewedAt: string | null;
+    canAcknowledge: boolean;
+  } | null;
 }
 
 export interface ApproveHomologationRequest {

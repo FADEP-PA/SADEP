@@ -29,6 +29,8 @@ describe('ProcessDocumentArtifactService', () => {
       },
       supervisorEvaluation: { findUnique: jest.fn() },
       selfEvaluation: { findUnique: jest.fn() },
+      homologationRecord: { findUnique: jest.fn() },
+      cesadFinalOpinion: { findUnique: jest.fn() },
       auditEvent: { create: jest.fn().mockResolvedValue({}) },
     } as any;
     const processes = { ensureUserHasProcessAccess: jest.fn().mockResolvedValue(undefined) } as any;
@@ -163,13 +165,15 @@ describe('ProcessDocumentArtifactService', () => {
     [DocumentType.SUPERVISOR_EVALUATION, false], [DocumentType.SUPERVISOR_EVALUATION, true],
     [DocumentType.SELF_EVALUATION, false], [DocumentType.SELF_EVALUATION, true],
     [DocumentType.CESAD_OPINION, false], [DocumentType.CESAD_OPINION, true],
+    [DocumentType.RESULT_NOTIFICATION, false], [DocumentType.RESULT_NOTIFICATION, true],
   ])('preserves closed historical %s PDFs and checks integrity (tampered=%s)', async (documentType, tampered) => {
     const key = 'processes/process-1/documents/document-1/v1.pdf';
     const original = Buffer.from('%PDF-1.4 historical stage-four result');
     const closedDocument = {
       ...document, documentType, opinionKind: documentType === DocumentType.CESAD_OPINION ? 'FINAL_CONCLUSIVE' : null,
+      evaluationProcess: { ...document.evaluationProcess, status: documentType === DocumentType.RESULT_NOTIFICATION ? 'NOTIFICADO' : 'EM_AVALIACAO' },
       processStageId: 'stage-4', processStage: { id: 'stage-4', sequence: 4, stageCode: 'ETAPA_4' },
-      documentStatus: DocumentStatus.SIGNED, artifactPath: key,
+      documentStatus: documentType === DocumentType.RESULT_NOTIFICATION ? DocumentStatus.CONSOLIDATED : DocumentStatus.SIGNED, artifactPath: key,
       artifactChecksum: artifactContentHash(original), artifactFrozenAt: new Date('2026-10-06T12:00:00.000Z'),
     };
     const storage = { exists: jest.fn().mockResolvedValue(true), read: jest.fn().mockResolvedValue(tampered ? Buffer.from('%PDF-1.4 tampered') : original), write: jest.fn() };
@@ -192,6 +196,34 @@ describe('ProcessDocumentArtifactService', () => {
     prisma.supervisorEvaluation.findUnique.mockResolvedValue({ summary: 'Resumo', generalComments: 'Observação', content: { criteria: [] }, status: 'SUBMITTED', submittedAt: new Date('2026-10-07T12:00:00.000Z') });
     await service.materialize('process-1', 'document-1', user);
     expect(renderer.render).toHaveBeenCalledWith(expect.objectContaining({ stageSequence: 4 }));
+  });
+
+  it('materializes and freezes a personal notification using only the valid real acts and final decision', async () => {
+    const { service, prisma, renderer } = setup({ document: { ...document, evaluationProcess: { ...document.evaluationProcess, status: 'NOTIFICADO' }, documentType: DocumentType.RESULT_NOTIFICATION, documentStatus: DocumentStatus.CONSOLIDATED } });
+    prisma.homologationRecord.findUnique.mockResolvedValue({ homologatedAt: document.createdAt, notifiedAt: document.createdAt,
+      homologatedByUser: { name: 'Autoridade real' }, homologationRemarks: 'Homologo o resultado.' });
+    prisma.cesadFinalOpinion.findUnique.mockResolvedValue({ status: 'COMPLETED', sentToHomologationAt: document.createdAt, finalResult: 'APTO', finalConcept: 'Bom' });
+    await service.materialize('process-1', 'document-1', user);
+    expect(renderer.render).toHaveBeenCalledWith(expect.objectContaining({ documentType: DocumentType.RESULT_NOTIFICATION,
+      logicalContent: expect.objectContaining({ authorityName: 'Autoridade real', finalResult: 'APTO', finalConcept: 'Bom' }) }));
+    expect(prisma.processDocument.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ artifactFrozenAt: expect.any(Date) }) }));
+  });
+
+  it('does not render a notification without valid homologation and notification', async () => {
+    const { service, prisma, renderer } = setup({ document: { ...document, evaluationProcess: { ...document.evaluationProcess, status: 'NOTIFICADO' }, documentType: DocumentType.RESULT_NOTIFICATION } });
+    prisma.homologationRecord.findUnique.mockResolvedValue(null); prisma.cesadFinalOpinion.findUnique.mockResolvedValue(null);
+    await expect(service.materialize('process-1', 'document-1', user)).rejects.toThrow(/Valid notified homologation/);
+    expect(renderer.render).not.toHaveBeenCalled();
+  });
+
+  it('permits the notified owner to read after all stages close, and rejects another server', async () => {
+    const key = 'processes/process-1/documents/document-1/v1.pdf';
+    const { service, processes } = setup({ document: { ...document, documentType: DocumentType.RESULT_NOTIFICATION,
+      evaluationProcess: { ...document.evaluationProcess, status: 'CIENTE' }, artifactPath: key, artifactChecksum: artifactContentHash(content), artifactFrozenAt: new Date() },
+      storage: { exists: jest.fn().mockResolvedValue(true), read: jest.fn().mockResolvedValue(content), write: jest.fn() } });
+    await expect(service.download('process-1', 'document-1', user)).resolves.toMatchObject({ content });
+    expect(processes.ensureUserHasProcessAccess).not.toHaveBeenCalled();
+    await expect(service.download('process-1', 'document-1', { ...user, sub: 'other-server' })).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('repairs a signed artifact whose storage write succeeded before the DB link was committed', async () => {
