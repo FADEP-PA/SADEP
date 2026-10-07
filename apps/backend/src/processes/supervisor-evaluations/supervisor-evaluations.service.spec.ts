@@ -106,6 +106,24 @@ describe('SupervisorEvaluationsService', () => {
     processesService.resolveCurrentStageOrThrow.mockResolvedValue(currentStage as any);
   });
 
+  it.each([1, 9, 11, 55, 99, -10, 110, 1.5, NaN, Infinity])(
+    'rejects percent rating %s before persistence for every write operation', async (rating) => {
+      const payload = {
+        ...validPayload,
+        content: {
+          scoreScale: 'PERCENT_0_100' as const, scoringVersion: 2 as const,
+          criteria: [{ code: '1.1', label: 'Criterion', rating }],
+        },
+      };
+      for (const operation of ['saveDraft', 'submit', 'rectify'] as const) {
+        await expect(service[operation]('process-123', mockUser, payload)).rejects.toThrow(/steps of 10/);
+      }
+      expect(prismaService.$transaction).not.toHaveBeenCalled();
+      expect(supervisorEvaluationRepo.create).not.toHaveBeenCalled();
+      expect(supervisorEvaluationRepo.update).not.toHaveBeenCalled();
+    },
+  );
+
   describe('getByProcessId', () => {
     it('returns documentContext with the stable shape when the evaluation is submitted', async () => {
       const processId = 'process-123';

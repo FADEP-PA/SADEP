@@ -2,6 +2,7 @@ import { IsArray, IsInt, IsIn, IsNotEmpty, IsOptional, IsString, Max, Min, MaxLe
 import { Type } from 'class-transformer';
 import {
   EVALUATION_TEXT_MAX_LENGTH,
+  isValidEvaluationRating,
   EVALUATION_TEXT_LIMIT_MESSAGE,
   PERCENT_EVALUATION_SCORING_VERSION,
   LEGACY_EVALUATION_SCORING_VERSION,
@@ -154,11 +155,7 @@ export function isSupervisorEvaluationCriterionDto(
     candidate.code.trim().length > 0 &&
     typeof candidate.label === 'string' &&
     candidate.label.trim().length > 0 &&
-    typeof candidate.rating === 'number' &&
-    Number.isFinite(candidate.rating) &&
-    Number.isInteger(candidate.rating) &&
-    candidate.rating >= (scale === 'PERCENT_0_100' ? 0 : 1) &&
-    candidate.rating <= (scale === 'PERCENT_0_100' ? 100 : 5) &&
+    isValidEvaluationRating(candidate.rating, scale) &&
     (candidate.comment === undefined || typeof candidate.comment === 'string')
   );
 }
