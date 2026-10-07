@@ -16,6 +16,7 @@ import {
   CesadFinalOpinionRef,
   CesadFinalOpinionInput,
   CesadFinalOpinionSignatureStatusRef,
+  CesadFinalOpinionSendToHomologationRef,
   InternServerWorkspaceSnapshotRef,
   ProcessStatus,
   ProcessAction,
@@ -237,6 +238,13 @@ export async function signCesadFinalOpinion(processId: string) {
   return httpRequest<CesadFinalOpinionSignatureStatusRef>(
     `/processes/${processId}/cesad-final-opinion/sign`,
     { ...AUTHENTICATED_REQUEST, method: 'POST' },
+  );
+}
+
+export async function sendCesadFinalOpinionToHomologation(processId: string, comment?: string) {
+  return httpRequest<CesadFinalOpinionSendToHomologationRef>(
+    `/processes/${processId}/cesad-final-opinion/send-to-homologation`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST', body: comment ? { comment } : {} },
   );
 }
 
