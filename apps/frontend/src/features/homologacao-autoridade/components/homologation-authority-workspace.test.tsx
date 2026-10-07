@@ -19,6 +19,7 @@ const api = vi.hoisted(() => ({
   getCesadFinalOpinionSignatureStatus: vi.fn(),
   getHomologationQueue: vi.fn(),
   getHomologationStatus: vi.fn(),
+  notifyHomologationResult: vi.fn(),
   returnHomologationForRegularization: vi.fn(),
 }));
 
@@ -135,6 +136,7 @@ describe('HomologationAuthorityWorkspace', () => {
     api.getCesadFinalOpinion.mockResolvedValue(createFinalOpinion());
     api.getCesadFinalOpinionSignatureStatus.mockResolvedValue(createSignatureStatus());
     api.approveHomologation.mockResolvedValue(createStatus());
+    api.notifyHomologationResult.mockResolvedValue(createStatus());
     api.returnHomologationForRegularization.mockResolvedValue({
       processId: PROCESS_ID,
       processStatus: ProcessStatus.EM_AVALIACAO,
@@ -161,6 +163,7 @@ describe('HomologationAuthorityWorkspace', () => {
       await screen.findByText('Todas as assinaturas obrigatórias foram concluídas.'),
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Observações da decisão')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Gerar notificação' })).not.toBeInTheDocument();
   });
 
   it('mostra estado vazio quando a fila está vazia', async () => {
@@ -323,5 +326,119 @@ describe('HomologationAuthorityWorkspace', () => {
     expect(screen.queryByRole('button', { name: 'Homologar resultado' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Devolver para regularização' })).not.toBeInTheDocument();
     expect(api.getCesadFinalOpinionSignatureStatus).not.toHaveBeenCalled();
+  });
+
+  it('expõe a notificação do resultado apenas para processo homologado', async () => {
+    api.getHomologationQueue.mockResolvedValue({
+      items: [createQueueItem({ status: ProcessStatus.HOMOLOGADO })],
+      total: 1,
+    });
+    api.getHomologationStatus.mockResolvedValue(
+      createStatus({
+        processStatus: ProcessStatus.HOMOLOGADO,
+        homologatedAt: '2026-10-06T10:00:00.000Z',
+        homologatedByUserId: 'authority-user-1',
+        homologationRemarks: 'De acordo.',
+      }),
+    );
+
+    render(<HomologationAuthorityWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Abrir' }));
+
+    expect(await screen.findByRole('button', { name: 'Gerar notificação' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Homologar resultado' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Devolver para regularização' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Observações da notificação')).toBeInTheDocument();
+  });
+
+  it('gera a notificação e o estado permanece após recarregar a página', async () => {
+    const homologated = createStatus({
+      processStatus: ProcessStatus.HOMOLOGADO,
+      homologatedAt: '2026-10-06T10:00:00.000Z',
+      homologatedByUserId: 'authority-user-1',
+      homologationRemarks: 'De acordo.',
+    });
+    const notified = createStatus({
+      processStatus: ProcessStatus.NOTIFICADO,
+      homologatedAt: '2026-10-06T10:00:00.000Z',
+      homologatedByUserId: 'authority-user-1',
+      homologationRemarks: 'De acordo.',
+      notifiedAt: '2026-10-06T11:00:00.000Z',
+      notifiedByUserId: 'authority-user-1',
+    });
+    api.getHomologationQueue
+      .mockResolvedValueOnce({ items: [createQueueItem({ status: ProcessStatus.HOMOLOGADO })], total: 1 })
+      .mockResolvedValueOnce({ items: [createQueueItem({ status: ProcessStatus.NOTIFICADO })], total: 1 });
+    api.getHomologationStatus.mockResolvedValueOnce(homologated).mockResolvedValueOnce(notified);
+    api.notifyHomologationResult.mockResolvedValue(notified);
+
+    const view = render(<HomologationAuthorityWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Abrir' }));
+    const notifyButton = await screen.findByRole('button', { name: 'Gerar notificação' });
+
+    fireEvent.change(screen.getByLabelText('Observações da notificação'), {
+      target: { value: 'Notificado ao servidor.' },
+    });
+    fireEvent.click(notifyButton);
+
+    expect(await screen.findByText('Notificação do resultado gerada.')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(api.notifyHomologationResult).toHaveBeenCalledWith(PROCESS_ID, {
+        notificationRemarks: 'Notificado ao servidor.',
+      }),
+    );
+    await waitFor(() => expect(api.getHomologationStatus).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(api.getHomologationQueue).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText(/Notificação gerada em/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Gerar notificação' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Não foi possível concluir')).not.toBeInTheDocument();
+
+    view.unmount();
+    api.getHomologationQueue.mockResolvedValue({
+      items: [createQueueItem({ status: ProcessStatus.NOTIFICADO })],
+      total: 1,
+    });
+    api.getHomologationStatus.mockResolvedValue(notified);
+
+    render(<HomologationAuthorityWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Abrir' }));
+
+    expect(await screen.findByText(/Notificação gerada em/)).toBeInTheDocument();
+    expect(await screen.findByText(/Situação atual: Notificado/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Gerar notificação' })).not.toBeInTheDocument();
+  });
+
+  it('trata a segunda notificação indevida com 409 sem simular sucesso', async () => {
+    api.getHomologationQueue.mockResolvedValue({
+      items: [createQueueItem({ status: ProcessStatus.HOMOLOGADO })],
+      total: 1,
+    });
+    api.getHomologationStatus.mockResolvedValue(
+      createStatus({
+        processStatus: ProcessStatus.HOMOLOGADO,
+        homologatedAt: '2026-10-06T10:00:00.000Z',
+        homologatedByUserId: 'authority-user-1',
+        homologationRemarks: 'De acordo.',
+      }),
+    );
+    api.notifyHomologationResult.mockRejectedValueOnce(
+      new HttpError(409, 'Result notification has already been sent'),
+    );
+
+    render(<HomologationAuthorityWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Abrir' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Gerar notificação' }));
+
+    expect(
+      await screen.findByText(
+        'O processo já foi alterado por outra ação. Os dados foram recarregados; confira a situação atual.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Notificação do resultado gerada.')).not.toBeInTheDocument();
+    await waitFor(() => expect(api.getHomologationStatus).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(api.getHomologationQueue).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('button', { name: 'Gerar notificação' })).toBeInTheDocument();
   });
 });

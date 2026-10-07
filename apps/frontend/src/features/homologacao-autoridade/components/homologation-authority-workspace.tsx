@@ -24,6 +24,7 @@ import {
   getCesadFinalOpinionSignatureStatus,
   getHomologationQueue,
   getHomologationStatus,
+  notifyHomologationResult,
   returnHomologationForRegularization,
 } from '@/shared/api/services/processes-service';
 import { AuthGuard } from '@/shared/auth/auth-guard';
@@ -48,6 +49,10 @@ function describeActionError(error: unknown, fallback: string) {
     if (error.status === 400 || error.status === 422) {
       return 'O processo não está apto para esta ação. Confira a situação atual exibida.';
     }
+
+    if (error.status === 404) {
+      return 'O processo ou o registro de homologação não está disponível.';
+    }
   }
 
   return getRequestErrorMessage(error, fallback);
@@ -65,6 +70,7 @@ export function HomologationAuthorityWorkspace() {
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [remarks, setRemarks] = useState('');
+  const [notificationRemarks, setNotificationRemarks] = useState('');
 
   const loadQueue = useCallback(async () => {
     try {
@@ -115,6 +121,7 @@ export function HomologationAuthorityWorkspace() {
     setSelected(item);
     setFeedback(null);
     setRemarks('');
+    setNotificationRemarks('');
     await loadDetail(item);
   }, [loadDetail]);
 
@@ -125,6 +132,7 @@ export function HomologationAuthorityWorkspace() {
     setSignatureStatus(null);
     setError(null);
     setRemarks('');
+    setNotificationRemarks('');
   }, []);
 
   const reconcile = useCallback(async (item: HomologationQueueItemRef) => {
@@ -173,6 +181,28 @@ export function HomologationAuthorityWorkspace() {
       await reconcile(selected);
     } catch (requestError) {
       setError(describeActionError(requestError, 'Não foi possível devolver o processo para regularização.'));
+      await reconcile(selected);
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleNotify() {
+    if (!selected) return;
+
+    setIsBusy(true);
+    setError(null);
+    setFeedback(null);
+
+    try {
+      await notifyHomologationResult(selected.id, {
+        notificationRemarks: notificationRemarks.trim() || undefined,
+      });
+      setFeedback('Notificação do resultado gerada.');
+      setNotificationRemarks('');
+      await reconcile(selected);
+    } catch (requestError) {
+      setError(describeActionError(requestError, 'Não foi possível gerar a notificação do resultado.'));
       await reconcile(selected);
     } finally {
       setIsBusy(false);
@@ -235,6 +265,8 @@ export function HomologationAuthorityWorkspace() {
   const displayStatus = status?.processStatus ?? selected.status;
   const canDecide = displayStatus === ProcessStatus.PARECER_EMITIDO;
   const isHomologated = Boolean(status?.homologatedAt);
+  const isNotified = Boolean(status?.notifiedAt);
+  const canNotify = status !== null && displayStatus === ProcessStatus.HOMOLOGADO && !isNotified;
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
@@ -382,6 +414,39 @@ export function HomologationAuthorityWorkspace() {
                 </p>
                 <p>
                   Observações: {status?.homologationRemarks || 'Sem observações.'}
+                </p>
+              </WorkSection>
+            ) : null}
+
+            {canNotify ? (
+              <WorkSection title="Notificação do resultado" description="Secretário Adjunto">
+                <p>
+                  O resultado homologado será notificado ao servidor e o processo passará para o
+                  estado Notificado.
+                </p>
+                <label className="field-group" htmlFor="homologation-notification-remarks">
+                  Observações da notificação
+                  <textarea
+                    id="homologation-notification-remarks"
+                    rows={3}
+                    value={notificationRemarks}
+                    onChange={(event) => setNotificationRemarks(event.target.value)}
+                  />
+                </label>
+                <div className="task-table__action">
+                  <button type="button" disabled={isBusy} onClick={() => void handleNotify()}>
+                    {isBusy ? 'Processando…' : 'Gerar notificação'}
+                  </button>
+                </div>
+              </WorkSection>
+            ) : null}
+
+            {isNotified ? (
+              <WorkSection title="Notificação do resultado">
+                <p>Notificação gerada em {formatDateTime(status?.notifiedAt ?? null)}.</p>
+                <p>
+                  Situação atual: {formatProcessStatus(displayStatus)}. O servidor visualiza a
+                  Notificação Pessoal a partir deste estado.
                 </p>
               </WorkSection>
             ) : null}
