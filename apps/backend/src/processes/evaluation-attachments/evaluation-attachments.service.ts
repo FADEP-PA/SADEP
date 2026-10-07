@@ -20,6 +20,7 @@ import {
   ProcessAction,
   ProcessStatus,
   RemoveAttachmentResponse,
+  StorageCleanupOrigin,
   UploadAttachmentResponse,
   UserRole,
 } from '@sadep/contracts';
@@ -30,6 +31,7 @@ import {
   DOCUMENT_ARTIFACT_STORAGE,
   type DocumentArtifactStorage,
 } from '../../infrastructure/documents/document-artifact-storage';
+import { StorageCleanupService } from '../../infrastructure/storage/storage-cleanup.service';
 import { ProcessesService } from '../processes.service';
 import {
   toContractProcessStatus,
@@ -64,6 +66,7 @@ export class EvaluationAttachmentsService {
     private readonly prismaService: PrismaService,
     private readonly processesService: ProcessesService,
     @Inject(DOCUMENT_ARTIFACT_STORAGE) private readonly storage: DocumentArtifactStorage,
+    private readonly storageCleanupService: StorageCleanupService,
   ) {}
 
   buildStorageKey(processId: string, processStageId: string, attachmentId: string): string {
@@ -136,11 +139,20 @@ export class EvaluationAttachmentsService {
         return created;
       });
     } catch (error) {
-      // The stored file is only referenced after the transaction commits; compensate best effort.
+      // The stored file is only referenced after the transaction commits; compensate now.
+      // If the physical delete also fails, the failure is persisted for retry-safe cleanup.
       try {
         await this.storage.delete(storageKey);
-      } catch {
-        // Compensation must not mask the original upload failure.
+      } catch (deleteError) {
+        try {
+          await this.storageCleanupService.registerFailedDelete({
+            storageKey,
+            originContext: StorageCleanupOrigin.UPLOAD_COMPENSATION,
+            error: deleteError,
+          });
+        } catch {
+          // Cleanup registration failure must not mask the original upload failure.
+        }
       }
       throw error;
     }
@@ -252,12 +264,21 @@ export class EvaluationAttachmentsService {
       return true;
     });
 
-    // The database removal is authoritative; a failed physical delete leaves an
-    // unreachable object that can never bypass authorization or audit again.
+    // The database removal is authoritative; a failed physical delete is persisted
+    // for retry-safe cleanup and never masks the committed removal.
     try {
       await this.storage.delete(attachment.storageKey);
-    } catch {
-      // Storage cleanup must not mask the committed removal.
+    } catch (deleteError) {
+      try {
+        await this.storageCleanupService.registerFailedDelete({
+          storageKey: attachment.storageKey,
+          originContext: StorageCleanupOrigin.REMOVAL,
+          relatedAttachmentId: attachment.id,
+          error: deleteError,
+        });
+      } catch {
+        // Cleanup registration failure must not mask the committed removal.
+      }
     }
 
     return { attachmentId: attachment.id, removed };

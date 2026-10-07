@@ -1,0 +1,5 @@
+export enum StorageCleanupStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED_PERMANENTLY = 'FAILED_PERMANENTLY',
+}

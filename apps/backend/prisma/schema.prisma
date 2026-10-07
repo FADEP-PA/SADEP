@@ -81,6 +81,22 @@ enum AuditEventType {
   EVALUATION_ATTACHMENT_REMOVED
 }
 
+enum StorageCleanupStatus {
+  PENDING
+  COMPLETED
+  FAILED_PERMANENTLY
+}
+
+enum StorageCleanupOrigin {
+  UPLOAD_COMPENSATION
+  REMOVAL
+}
+
+enum StorageDriver {
+  FILESYSTEM
+  S3
+}
+
 enum CesadCommissionAuditEventType {
   CESAD_COMMISSION_CREATED
   CESAD_COMMISSION_UPDATED
@@ -710,4 +726,22 @@ model EvaluationAttachment {
   @@index([origin])
   @@index([uploaderUserId])
   @@index([evaluationProcessId, processStageId, origin, uploaderUserId])
+}
+
+model StorageCleanupPending {
+  id                  String                 @id @default(cuid())
+  storageKey          String                 @unique
+  storageDriver       StorageDriver
+  originContext       StorageCleanupOrigin
+  relatedAttachmentId String?
+  errorMessage        String?
+  errorAt             DateTime               @default(now())
+  retryCount          Int                    @default(0)
+  lastRetryAt         DateTime?
+  status              StorageCleanupStatus   @default(PENDING)
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  @@index([status, createdAt])
+  @@index([relatedAttachmentId])
 }

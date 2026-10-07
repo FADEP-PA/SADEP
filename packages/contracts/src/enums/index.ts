@@ -15,6 +15,9 @@ export * from './process-action';
 export * from './process-status';
 export * from './signature-provider';
 export * from './signature-status';
+export * from './storage-cleanup-origin';
+export * from './storage-cleanup-status';
+export * from './storage-driver';
 export * from './user-role';
 
 export * from './self-evaluation-status';

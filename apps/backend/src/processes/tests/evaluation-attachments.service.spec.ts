@@ -14,6 +14,7 @@ import {
 
 import { AppConfigService } from '../../config/app-config.service';
 import { FilesystemDocumentArtifactStorage } from '../../infrastructure/documents/document-artifact-storage';
+import { StorageCleanupService } from '../../infrastructure/storage/storage-cleanup.service';
 import type { EvaluationAttachmentUploadInput } from '../evaluation-attachments/evaluation-attachment-file-validation';
 import { EvaluationAttachmentsService } from '../evaluation-attachments/evaluation-attachments.service';
 import {
@@ -63,10 +64,16 @@ export async function runEvaluationAttachmentsServiceTests() {
   const storage = new FilesystemDocumentArtifactStorage({
     artifactStorageRoot: storageRoot,
   } as unknown as AppConfigService);
+  const cleanupService = new StorageCleanupService(
+    context.prisma as never,
+    { artifactStorageDriver: 'filesystem' } as unknown as AppConfigService,
+    storage as never,
+  );
   const service = new EvaluationAttachmentsService(
     context.prisma as never,
     context.service,
     storage,
+    cleanupService,
   );
   const { prisma } = context;
 
