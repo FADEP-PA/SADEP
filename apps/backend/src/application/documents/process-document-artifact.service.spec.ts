@@ -133,7 +133,7 @@ describe('ProcessDocumentArtifactService', () => {
     }));
   });
 
-  it('rejects a changed signed artifact after it has been frozen', async () => {
+  it('returns the authoritative frozen artifact without rendering a changed template', async () => {
     const key = 'processes/process-1/documents/document-1/v1.pdf';
     const currentContent = Buffer.from('%PDF-1.4 final');
     const signedDocument = {
@@ -151,7 +151,8 @@ describe('ProcessDocumentArtifactService', () => {
     const renderer = { render: jest.fn().mockResolvedValue(Buffer.from('%PDF-1.4 changed')) };
     const { service, prisma } = setup({ document: signedDocument, renderer, storage });
 
-    await expect(service.materializeAfterAuthorizedAction('document-1', user)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(service.materializeAfterAuthorizedAction('document-1', user)).resolves.toBeUndefined();
+    expect(renderer.render).not.toHaveBeenCalled();
     expect(storage.write).not.toHaveBeenCalled();
     expect(prisma.processDocument.updateMany).not.toHaveBeenCalled();
   });

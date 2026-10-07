@@ -8,6 +8,7 @@ export interface PdfDocumentSection {
   title: string;
   paragraphs?: string[];
   rows?: Array<Array<PdfDocumentValue>>;
+  columnWeights?: number[];
 }
 
 export interface ProcessDocumentPdfInput {
@@ -19,6 +20,12 @@ export interface ProcessDocumentPdfInput {
   sections: PdfDocumentSection[];
   logicalContent?: Record<string, unknown>;
   generatedAt: Date;
+  presentation?: {
+    serverName: string;
+    supervisorName?: string;
+    version: number;
+    signatures: Array<{ name: string; role: string; status: string; signedAt: string | null }>;
+  };
 }
 
 export const PROCESS_DOCUMENT_PDF_RENDERER = Symbol('PROCESS_DOCUMENT_PDF_RENDERER');

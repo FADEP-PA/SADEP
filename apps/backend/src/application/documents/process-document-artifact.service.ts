@@ -113,10 +113,8 @@ export class ProcessDocumentArtifactService {
   ): Promise<{ documentId: string; artifactPath: string; generated: boolean }> {
     const key = this.artifactKey(document.evaluationProcessId, document.id, document.version);
     try {
-      // Closed stage-four PDFs remain the original artifact across template changes.
-      if (document.documentType === PrismaDocumentType.SUPERVISOR_EVALUATION &&
-          document.processStage?.sequence === 4 &&
-          document.documentStatus === PrismaDocumentStatus.SIGNED && document.artifactFrozenAt &&
+      // Every closed artifact remains authoritative across template and data changes.
+      if (document.artifactFrozenAt &&
           document.artifactPath === key && await this.storage.exists(key)) {
         this.assertArtifactIntegrity(document, await this.storage.read(key));
         return { documentId: document.id, artifactPath: key, generated: false };
@@ -343,6 +341,13 @@ export class ProcessDocumentArtifactService {
       }],
       logicalContent,
       generatedAt: document.artifactGeneratedAt ?? document.updatedAt,
+      presentation: {
+        serverName: document.evaluationProcess.evaluatedUser.name,
+        supervisorName: stage?.responsibleSupervisor?.name,
+        version: document.version,
+        signatures: document.signatureRecords.map(signature => ({ name: signature.signatoryUser.name,
+          role: signature.signatoryRole, status: signature.status, signedAt: signature.signedAt?.toISOString() ?? null })),
+      },
     };
   }
 
