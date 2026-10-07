@@ -12,6 +12,7 @@ export interface PdfDocumentSection {
 
 export interface ProcessDocumentPdfInput {
   documentType?: string;
+  stageSequence?: number;
   title: string;
   subtitle?: string;
   metadata: Array<[string, PdfDocumentValue]>;

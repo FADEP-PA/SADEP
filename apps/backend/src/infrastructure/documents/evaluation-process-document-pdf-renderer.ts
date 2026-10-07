@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { calculateEvaluationRatingsScore, DocumentType, type EvaluationScoreScale } from '@sadep/contracts';
+import { calculateEvaluationRatingsScore, DocumentType, isProvisionalStageResult, STAGE_4_PROVISIONAL_RESULT_NOTICE, type EvaluationScoreScale } from '@sadep/contracts';
 
 import {
   PdfKitProcessDocumentPdfRenderer,
@@ -25,7 +25,8 @@ export class EvaluationProcessDocumentPdfRenderer implements ProcessDocumentPdfR
 
   private supervisorEvaluationDocument(input: ProcessDocumentPdfInput): ProcessDocumentPdfInput {
     const logicalContent = input.logicalContent ?? {};
-    const content = (logicalContent.content ?? {}) as { criteria?: unknown };
+    const content = (logicalContent.content ?? {}) as { criteria?: unknown; textFields?: { generalComments?: string } };
+    const provisional = isProvisionalStageResult(input.stageSequence);
     const criteria = Array.isArray(content.criteria) ? content.criteria.filter(this.isCriterion) : [];
     const scoreScale: EvaluationScoreScale = logicalContent.scoreScale === 'PERCENT_0_100'
       ? 'PERCENT_0_100'
@@ -39,13 +40,14 @@ export class EvaluationProcessDocumentPdfRenderer implements ProcessDocumentPdfR
     for (const criterion of criteria) rows.push([criterion.code, criterion.label, criterion.rating, criterion.comment ?? '']);
     const summaries = [
       `Resumo: ${String(logicalContent.summary ?? '')}`,
-      `Observações: ${String(logicalContent.generalComments ?? '')}`,
+      `Observações: ${String((provisional ? content.textFields?.generalComments : undefined) ?? logicalContent.generalComments ?? '')}`,
     ];
+    if (provisional) summaries.push(STAGE_4_PROVISIONAL_RESULT_NOTICE);
     if (criteria.length === 20) {
       const score = calculateEvaluationRatingsScore(criteria.map((criterion) => criterion.rating), scoreScale);
-      summaries.push(`Pontuação da etapa: ${score.totalStageScore} (${scoreScale === 'PERCENT_0_100' ? 'escala 0–100' : 'escala histórica 1–5'})`);
-      summaries.push(`Média final da etapa: ${score.stageAverage}`);
-      summaries.push(`Conceito administrativo: ${score.administrativeConcept}`);
+      summaries.push(`${provisional ? 'Pontuação provisória da etapa' : 'Pontuação da etapa'}: ${score.totalStageScore} (${scoreScale === 'PERCENT_0_100' ? 'escala 0–100' : 'escala histórica 1–5'})`);
+      summaries.push(`${provisional ? 'Média provisória da etapa' : 'Média final da etapa'}: ${score.stageAverage}`);
+      summaries.push(`${provisional ? 'Conceito administrativo provisório' : 'Conceito administrativo'}: ${score.administrativeConcept}`);
     } else {
       summaries.push(`Critérios registrados: ${criteria.length}. O backend não fornece consolidação administrativa para este conteúdo.`);
     }

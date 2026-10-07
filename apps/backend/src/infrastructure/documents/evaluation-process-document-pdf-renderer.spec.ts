@@ -1,10 +1,49 @@
-import { DocumentType } from '@sadep/contracts';
+import { DocumentType, STAGE_4_PROVISIONAL_RESULT_NOTICE } from '@sadep/contracts';
 
 import { EvaluationProcessDocumentPdfRenderer } from './evaluation-process-document-pdf-renderer';
 import { PdfKitProcessDocumentPdfRenderer } from './process-document-pdf-renderer';
 
 describe('EvaluationProcessDocumentPdfRenderer', () => {
   const renderer = new EvaluationProcessDocumentPdfRenderer(new PdfKitProcessDocumentPdfRenderer());
+
+  it.each([1, 2, 3, 4])('labels only stage four as provisional (sequence %s)', async (stageSequence) => {
+    const base = new PdfKitProcessDocumentPdfRenderer();
+    const spy = jest.spyOn(base, 'render');
+    const stageRenderer = new EvaluationProcessDocumentPdfRenderer(base);
+    const criteria = Array.from({ length: 20 }, (_, index) => ({ code: `C${index + 1}`, label: 'Critério', rating: 50 }));
+    const pdf = await stageRenderer.render({
+      documentType: DocumentType.SUPERVISOR_EVALUATION, stageSequence,
+      title: 'Avaliação da chefia', metadata: [],
+      logicalContent: { scoreScale: 'PERCENT_0_100', summary: 'Resumo', generalComments: 'Resultado final informado pela chefia: projeção anterior', content: { criteria, textFields: { generalComments: 'Observação original' } } },
+      sections: [], generatedAt: new Date('2026-10-07T12:00:00.000Z'),
+    });
+    const paragraphs = spy.mock.calls[0]![0].sections[0]!.paragraphs!;
+    if (stageSequence === 4) {
+      expect(paragraphs).toContain(STAGE_4_PROVISIONAL_RESULT_NOTICE);
+      expect(paragraphs).toContain('Média provisória da etapa: 50.0');
+      expect(paragraphs).toContain('Conceito administrativo provisório: Regular');
+      expect(paragraphs.some((text) => text.includes('Resultado final') || text.includes('Média final'))).toBe(false);
+      expect(paragraphs).toContain('Observações: Observação original');
+      const decodedText = [...pdf.toString('latin1').matchAll(/<([0-9a-f]+)>/g)]
+        .map((match) => Buffer.from(match[1]!, 'hex').toString('latin1')).join('');
+      expect(decodedText).toContain('Média provisória da etapa: 50.0');
+    } else {
+      expect(paragraphs).toContain('Média final da etapa: 50.0');
+      expect(paragraphs).not.toContain(STAGE_4_PROVISIONAL_RESULT_NOTICE);
+      expect(paragraphs.some((text) => text.includes('provisóri'))).toBe(false);
+    }
+  });
+
+  it('includes the stage-four notice even with incomplete criteria', async () => {
+    const base = new PdfKitProcessDocumentPdfRenderer();
+    const spy = jest.spyOn(base, 'render');
+    await new EvaluationProcessDocumentPdfRenderer(base).render({
+      documentType: DocumentType.SUPERVISOR_EVALUATION, stageSequence: 4,
+      title: 'Avaliação', metadata: [], logicalContent: { content: { criteria: [] } },
+      sections: [], generatedAt: new Date('2026-10-07T12:00:00.000Z'),
+    });
+    expect(spy.mock.calls[0]![0].sections[0]!.paragraphs).toContain(STAGE_4_PROVISIONAL_RESULT_NOTICE);
+  });
 
   it('renders the supervisor criteria, notes, 20-item total and signatures without legacy 0-100 recalculation', async () => {
     const criteria = Array.from({ length: 20 }, (_, index) => ({

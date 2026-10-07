@@ -5,6 +5,7 @@ import {
   PERCENT_EVALUATION_SCORING_VERSION,
   EVALUATION_TEXT_MAX_LENGTH,
   EVALUATION_TEXT_LIMIT_MESSAGE,
+  STAGE_4_PROVISIONAL_RESULT_NOTICE,
   SupervisorEvaluationStatus,
   DocumentStatus,
   DocumentType,
@@ -202,6 +203,27 @@ describe('SupervisorEvaluationWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
     await waitFor(() => expect(api.saveSupervisorEvaluationDraft).toHaveBeenCalledTimes(1));
     expect(api.saveSupervisorEvaluationDraft.mock.calls[0]![1].content.textFields.monthlyObservations).toEqual([observation]);
+  });
+
+  it.each([1, 2, 3, 4])('identifica resultado provisório somente na 4ª etapa (sequência %s)', async (sequence) => {
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot({
+      process: { id: PROCESS_ID, status: ProcessStatus.EM_AVALIACAO, currentStageSequence: sequence },
+    }));
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    await screen.findByLabelText('Competências da unidade');
+    fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
+    if (sequence === 4) {
+      expect(screen.getByText(STAGE_4_PROVISIONAL_RESULT_NOTICE)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Resumo provisório' })).toBeInTheDocument();
+      expect(screen.getAllByText('Média provisória').length).toBeGreaterThan(0);
+      expect(screen.getByText('Pontuação provisória do fator (média)')).toBeInTheDocument();
+      expect(screen.queryByText('Pontuação final do fator (média)')).not.toBeInTheDocument();
+    } else {
+      expect(screen.queryByText(STAGE_4_PROVISIONAL_RESULT_NOTICE)).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Resumo' })).toBeInTheDocument();
+      expect(screen.getByText('Pontuação final do fator (média)')).toBeInTheDocument();
+    }
   });
 
   it('carrega a lista real de processos ao montar', async () => {
