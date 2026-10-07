@@ -10,6 +10,7 @@ import {
   CesadStageAssignmentStatus as PrismaCesadStageAssignmentStatus,
   DocumentType as PrismaDocumentType,
   Prisma,
+  ProcessStatus as PrismaProcessStatus,
   SupervisorEvaluationStatus as PrismaSupervisorEvaluationStatus,
   UserRole as PrismaUserRole,
 } from '@prisma/client';
@@ -138,26 +139,53 @@ export class ProcessesService {
           ? { stages: { some: { responsibleSupervisorUserId: user.sub } } }
           : user.role === UserRole.CESAD_MEMBER || user.role === UserRole.COMMISSION_ASSISTANT
             ? {
-                stages: {
-                  some: {
-                    startedAt: { not: null },
-                    endedAt: null,
-                    cesadStageAssignments: {
+                OR: [
+                  {
+                    stages: {
                       some: {
-                        status: PrismaCesadStageAssignmentStatus.ACTIVE,
-                        commission: {
-                          members: {
-                            some: {
-                              userId: user.sub,
-                              startDate: { lte: referenceDate },
-                              OR: [{ endDate: null }, { endDate: { gte: referenceDate } }],
+                        startedAt: { not: null },
+                        endedAt: null,
+                        cesadStageAssignments: {
+                          some: {
+                            status: PrismaCesadStageAssignmentStatus.ACTIVE,
+                            commission: {
+                              members: {
+                                some: {
+                                  userId: user.sub,
+                                  startDate: { lte: referenceDate },
+                                  OR: [{ endDate: null }, { endDate: { gte: referenceDate } }],
+                                },
+                              },
                             },
                           },
                         },
                       },
                     },
                   },
-                },
+                  {
+                    status: PrismaProcessStatus.PARECER_EMITIDO,
+                    stages: {
+                      some: {
+                        sequence: 4,
+                        endedAt: { not: null },
+                        cesadStageAssignments: {
+                          some: {
+                            status: PrismaCesadStageAssignmentStatus.ACTIVE,
+                            commission: {
+                              members: {
+                                some: {
+                                  userId: user.sub,
+                                  startDate: { lte: referenceDate },
+                                  OR: [{ endDate: null }, { endDate: { gte: referenceDate } }],
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                ],
               }
             : {};
 
@@ -167,8 +195,8 @@ export class ProcessesService {
       include: {
         evaluatedUser: { select: { name: true, email: true } },
         stages: {
-          where: { startedAt: { not: null }, endedAt: null },
-          orderBy: { sequence: 'asc' },
+          where: { startedAt: { not: null } },
+          orderBy: { sequence: 'desc' },
           take: 1,
           include: {
             responsibleSupervisor: { select: { name: true } },
@@ -187,6 +215,7 @@ export class ProcessesService {
           evaluatedUserName: p.evaluatedUser.name,
           evaluatedUserEmail: p.evaluatedUser.email,
           currentStageSequence: activeStage?.sequence ?? 1,
+          hasActiveStage: activeStage?.endedAt === null,
           responsibleSupervisorName: activeStage?.responsibleSupervisor?.name ?? null,
           selfEvaluationStatus: (activeStage?.selfEvaluation?.status as SelfEvaluationStatus) ?? null,
           createdAt: p.createdAt.toISOString(),

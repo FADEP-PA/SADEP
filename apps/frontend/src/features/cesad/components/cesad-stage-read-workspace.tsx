@@ -21,6 +21,7 @@ import {
   completeCesadStageOpinion,
   getCesadStageOpinionSignatureStatus,
   getCesadStageReadSnapshot,
+  getCesadFinalOpinionEligibility,
   getProcessList,
   getWorkflow,
   prepareCesadStageOpinionSignatures,
@@ -39,6 +40,7 @@ import { NextAction, WorkPageHeader, WorkSection, WorkTabs } from '@/shared/ui/w
 import { CesadStageOpinionEditor } from './cesad-stage-opinion-editor';
 import { getCesadStageSignatureActions, getCesadStageSignatureBadge } from './cesad-stage-signature-ui';
 import { ReadOnlyOpinionShell } from './read-only-opinion-shell';
+import { CesadFinalOpinionReadWorkspace } from './cesad-final-opinion-read-workspace';
 
 type TabId = 'analysis' | 'documents' | 'history';
 
@@ -47,6 +49,7 @@ function isCesadQueueStatus(status: ProcessStatus) {
 }
 
 function getQueueStatus(item: ProcessListItemRef) {
+  if (item.status === ProcessStatus.PARECER_EMITIDO && item.hasActiveStage === false) return 'Parecer final';
   return item.status === ProcessStatus.PARECER_EMITIDO ? 'Parecer emitido' : 'Aguardando parecer';
 }
 
@@ -72,6 +75,8 @@ export function CesadStageReadWorkspace() {
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [completedStageMessage, setCompletedStageMessage] = useState<string | null>(null);
+  const [finalProcessId, setFinalProcessId] = useState<string | null>(null);
+  const [finalProcessIds, setFinalProcessIds] = useState<Set<string>>(new Set());
 
   const isCesadMember = session?.user.role === UserRole.CESAD_MEMBER;
   const opinionIsEditable = isCesadMember && snapshot && (!snapshot.cesadStageOpinion || snapshot.cesadStageOpinion.status === CesadStageOpinionStatus.DRAFT);
@@ -119,7 +124,18 @@ export function CesadStageReadWorkspace() {
   useEffect(() => {
     let active = true;
     getProcessList()
-      .then((result) => { if (active) setProcesses(result.items.filter((item) => isCesadQueueStatus(item.status))); })
+      .then(async (result) => {
+        const queue = result.items.filter((item) => isCesadQueueStatus(item.status));
+        const finalEligibility = await Promise.all(queue.map(async (item) => {
+          if (item.status !== ProcessStatus.PARECER_EMITIDO) return [item.id, false] as const;
+          try { return [item.id, (await getCesadFinalOpinionEligibility(item.id)).isEligible] as const; }
+          catch { return [item.id, false] as const; }
+        }));
+        if (active) {
+          setFinalProcessIds(new Set(finalEligibility.filter(([, eligible]) => eligible).map(([id]) => id)));
+          setProcesses(queue);
+        }
+      })
       .catch((requestError) => active && setError(getRequestErrorMessage(requestError, 'Não foi possível carregar os processos.')))
       .finally(() => active && setIsLoading(false));
     return () => { active = false; };
@@ -157,6 +173,9 @@ export function CesadStageReadWorkspace() {
   }
 
   if (!snapshot) {
+    if (finalProcessId) {
+      return <CesadFinalOpinionReadWorkspace processId={finalProcessId} onBack={() => setFinalProcessId(null)} />;
+    }
     return (
       <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]}>
         <div className="work-page">
@@ -171,7 +190,7 @@ export function CesadStageReadWorkspace() {
                 <div className="task-table__person"><strong>{item.evaluatedUserName}</strong></div>
                 <div data-label="Etapa">{item.currentStageSequence}ª etapa</div>
                 <div data-label="Situação"><StatusBadge label={getQueueStatus(item)} tone={item.status === ProcessStatus.PARECER_EMITIDO ? 'success' : 'warning'} /></div>
-                <div className="task-table__action"><button type="button" onClick={() => void loadProcess(item)}>{isCesadMember && item.status === ProcessStatus.EM_ANALISE_CESAD ? 'Analisar' : 'Abrir'}</button></div>
+                <div className="task-table__action">{item.hasActiveStage === false && !finalProcessIds.has(item.id) ? <span className="muted-copy">Inelegível</span> : <button type="button" onClick={() => finalProcessIds.has(item.id) ? setFinalProcessId(item.id) : void loadProcess(item)}>{finalProcessIds.has(item.id) ? 'Parecer final' : isCesadMember && item.status === ProcessStatus.EM_ANALISE_CESAD ? 'Analisar' : 'Abrir'}</button>}</div>
               </div>)}
             </div>
           ) : null}

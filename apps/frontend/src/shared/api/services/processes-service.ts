@@ -12,6 +12,8 @@ import {
   CesadStageOpinionRef,
   CesadStageOpinionSignatureStatusRef,
   CesadStageReadSnapshotRef,
+  CesadFinalOpinionEligibilityRef,
+  CesadFinalOpinionRef,
   InternServerWorkspaceSnapshotRef,
   ProcessStatus,
   ProcessAction,
@@ -159,6 +161,20 @@ export async function getCesadStageReadSnapshot(
 export async function getCesadStageOpinion(processId: string, stageSequence: number) {
   return httpRequest<CesadStageOpinionRef | null>(
     `/processes/${processId}/stages/${stageSequence}/cesad-stage-opinion`,
+    { ...AUTHENTICATED_REQUEST, method: 'GET' },
+  );
+}
+
+export async function getCesadFinalOpinionEligibility(processId: string) {
+  return httpRequest<CesadFinalOpinionEligibilityRef>(
+    `/processes/${processId}/cesad-final-opinion/eligibility`,
+    { ...AUTHENTICATED_REQUEST, method: 'GET' },
+  );
+}
+
+export async function getCesadFinalOpinion(processId: string) {
+  return httpRequest<CesadFinalOpinionRef | null>(
+    `/processes/${processId}/cesad-final-opinion`,
     { ...AUTHENTICATED_REQUEST, method: 'GET' },
   );
 }
