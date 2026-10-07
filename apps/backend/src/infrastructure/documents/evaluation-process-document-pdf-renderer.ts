@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { renderOfficialSupervisorEvaluation } from './official-supervisor-evaluation-renderer';
-import { renderOfficialSelfEvaluation } from './official-self-evaluation-renderer';
-import { renderOfficialFinalOpinion } from './official-final-opinion-renderer';
-import { renderOfficialNotification } from './official-result-notification-renderer';
+import { renderOriginalAnnex, renderOriginalDocx } from './original-template-renderer';
 import { DocumentType } from '@sadep/contracts';
 
 import {
@@ -18,15 +15,15 @@ export class EvaluationProcessDocumentPdfRenderer implements ProcessDocumentPdfR
 
   render(input: ProcessDocumentPdfInput): Promise<Buffer> {
     if (input.documentType === DocumentType.SUPERVISOR_EVALUATION) {
-      return renderOfficialSupervisorEvaluation(input);
+      return renderOriginalAnnex(input, false);
     }
     if (input.documentType === DocumentType.SELF_EVALUATION) {
-      return renderOfficialSelfEvaluation(input);
+      return renderOriginalAnnex(input, true);
     }
     if (input.documentType === DocumentType.CESAD_OPINION && input.opinionKind === 'FINAL_CONCLUSIVE') {
-      return renderOfficialFinalOpinion(input);
+      return renderOriginalDocx(input, false);
     }
-    if (input.documentType === DocumentType.RESULT_NOTIFICATION) return renderOfficialNotification(input);
+    if (input.documentType === DocumentType.RESULT_NOTIFICATION) return renderOriginalDocx(input, true);
     return this.baseRenderer.render(input);
   }
 

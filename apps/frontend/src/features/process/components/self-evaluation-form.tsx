@@ -2,6 +2,7 @@
 
 import { EVALUATION_TEXT_LIMIT_MESSAGE, EvaluationAttachmentOrigin, isEvaluationTextWithinLimit } from '@sadep/contracts';
 import { EvaluationTextarea } from '@/shared/ui/evaluation-textarea';
+import { useState } from 'react';
 
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { DetailList, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
@@ -29,6 +30,7 @@ type Props = {
   onBack: () => void;
   onSaveDraft: () => void;
   onSubmit: () => void;
+  beforeUpload?: () => Promise<void>;
 };
 
 export function SelfEvaluationFormView({
@@ -49,7 +51,10 @@ export function SelfEvaluationFormView({
   onBack,
   onSaveDraft,
   onSubmit,
+  beforeUpload,
 }: Props) {
+  const [attachmentsBusy, setAttachmentsBusy] = useState(false);
+  isBusy = isBusy || attachmentsBusy;
   const exceedsTextLimit = Object.values(form).some((value) => !isEvaluationTextWithinLimit(value));
   return (
     <div className="self-evaluation-workspace">
@@ -72,11 +77,11 @@ export function SelfEvaluationFormView({
         <div className="form-stack">
           <label className="field-group" htmlFor="self-evaluation-reflection">
             <span>Autoavaliação</span>
-            <EvaluationTextarea aria-label="Autoavaliação" id="self-evaluation-reflection" rows={6} value={form.selfReflection} onChange={(event) => onChange((current) => ({ ...current, selfReflection: event.target.value }))} disabled={!canEdit || isBusy} />
+            <EvaluationTextarea aria-label="Autoavaliação" id="self-evaluation-reflection" rows={4} value={form.selfReflection} onChange={(event) => onChange((current) => ({ ...current, selfReflection: event.target.value }))} disabled={!canEdit || isBusy} />
           </label>
           <label className="field-group" htmlFor="self-evaluation-notes">
             <span>Observações adicionais</span>
-            <EvaluationTextarea aria-label="Observações adicionais" id="self-evaluation-notes" rows={3} value={form.additionalNotes} onChange={(event) => onChange((current) => ({ ...current, additionalNotes: event.target.value }))} disabled={!canEdit || isBusy} />
+            <EvaluationTextarea aria-label="Observações adicionais" id="self-evaluation-notes" rows={2} value={form.additionalNotes} onChange={(event) => onChange((current) => ({ ...current, additionalNotes: event.target.value }))} disabled={!canEdit || isBusy} />
           </label>
         </div>
         {canEdit && (exceedsTextLimit || formIssues.length > 0) ? <p className="field-error">{exceedsTextLimit ? EVALUATION_TEXT_LIMIT_MESSAGE : formIssues[0]}</p> : null}
@@ -93,7 +98,9 @@ export function SelfEvaluationFormView({
         stageId={stageId}
         origin={EvaluationAttachmentOrigin.SELF_EVALUATION}
         editable={canEdit}
-        disabled={isBusy}
+        disabled={isBusy && !attachmentsBusy}
+        beforeUpload={beforeUpload}
+        onBusyChange={setAttachmentsBusy}
         title="Anexos da autoavaliação"
       />
     </div>

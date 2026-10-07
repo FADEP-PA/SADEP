@@ -45,13 +45,14 @@ type Props = {
   disabled?: boolean;
   onBusyChange?: (busy: boolean) => void;
   title?: string;
+  beforeUpload?: () => Promise<void>;
 };
 
 export function EvaluationAttachments(props: Props) {
   return <AttachmentsContent key={`${props.processId}:${props.stageId}:${props.origin}`} {...props} />;
 }
 
-function AttachmentsContent({ processId, stageId, origin, editable = false, disabled = false, onBusyChange, title }: Props) {
+function AttachmentsContent({ processId, stageId, origin, editable = false, disabled = false, onBusyChange, title, beforeUpload }: Props) {
   const [attachments, setAttachments] = useState<EvaluationAttachmentRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);

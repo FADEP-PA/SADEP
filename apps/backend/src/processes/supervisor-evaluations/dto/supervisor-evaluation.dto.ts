@@ -89,7 +89,6 @@ export class SupervisorEvaluationContentDto {
 
 export class UpsertSupervisorEvaluationDto {
   @IsString()
-  @IsNotEmpty()
   summary!: string;
 
   @IsString()
@@ -130,6 +129,7 @@ export interface SupervisorEvaluationWorkspaceSnapshotDto {
     id: string;
     status: ProcessStatus;
     currentStageSequence: number;
+    currentStageId: string;
   };
   supervisorEvaluation: SupervisorEvaluationResponseDto | null;
   documentContext: SupervisorEvaluationDocumentContext | null;

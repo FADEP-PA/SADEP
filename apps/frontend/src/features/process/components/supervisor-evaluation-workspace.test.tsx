@@ -217,12 +217,9 @@ describe('SupervisorEvaluationWorkspace', () => {
       expect(screen.getByText(STAGE_4_PROVISIONAL_RESULT_NOTICE)).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Resumo provisório' })).toBeInTheDocument();
       expect(screen.getAllByText('Média provisória').length).toBeGreaterThan(0);
-      expect(screen.getByText('Pontuação provisória do fator (média)')).toBeInTheDocument();
-      expect(screen.queryByText('Pontuação final do fator (média)')).not.toBeInTheDocument();
     } else {
       expect(screen.queryByText(STAGE_4_PROVISIONAL_RESULT_NOTICE)).not.toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Resumo' })).toBeInTheDocument();
-      expect(screen.getByText('Pontuação final do fator (média)')).toBeInTheDocument();
     }
   });
 
@@ -264,9 +261,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     render(<SupervisorEvaluationWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
 
-    await waitFor(() =>
-      expect(api.getSupervisorEvaluationWorkspaceSnapshot).toHaveBeenCalledWith(PROCESS_ID),
-    );
+    await screen.findByLabelText('Competências da unidade');
 
     const summaryInput = screen.getByLabelText('Competências da unidade');
     fireEvent.input(summaryInput, { target: { value: 'Competências testadas' } });
@@ -282,10 +277,9 @@ describe('SupervisorEvaluationWorkspace', () => {
       'Responsabilidade',
     ]) {
       fireEvent.click(screen.getByRole('button', { name: new RegExp(factorName, 'i') }));
-    }
-
-    for (const scoreInput of screen.getAllByRole('spinbutton')) {
-      fireEvent.change(scoreInput, { target: { value: '40' } });
+      for (const scoreInput of screen.getAllByRole('combobox', { name: /Nota:/ })) {
+        fireEvent.change(scoreInput, { target: { value: '40' } });
+      }
     }
 
     const submitButton = screen.getByRole('button', { name: /Enviar para assinatura/i });
@@ -307,16 +301,14 @@ describe('SupervisorEvaluationWorkspace', () => {
     render(<SupervisorEvaluationWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
 
-    await waitFor(() =>
-      expect(api.getSupervisorEvaluationWorkspaceSnapshot).toHaveBeenCalledWith(PROCESS_ID),
-    );
+    await screen.findByLabelText('Competências da unidade');
 
     fireEvent.input(screen.getByLabelText('Competências da unidade'), {
       target: { value: 'Competências em preenchimento' },
     });
     fireEvent.click(screen.getByRole('button', { name: /Assiduidade/i }));
 
-    const [firstScoreInput] = screen.getAllByRole('spinbutton');
+    const [firstScoreInput] = screen.getAllByRole('combobox');
     fireEvent.change(firstScoreInput, { target: { value: '40' } });
 
     await act(async () => {
@@ -335,15 +327,13 @@ describe('SupervisorEvaluationWorkspace', () => {
     render(<SupervisorEvaluationWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
 
-    await waitFor(() =>
-      expect(api.getSupervisorEvaluationWorkspaceSnapshot).toHaveBeenCalledWith(PROCESS_ID),
-    );
+    await screen.findByLabelText('Competências da unidade');
 
     fireEvent.input(screen.getByLabelText('Competências da unidade'), {
       target: { value: 'Competências testadas' },
     });
     fireEvent.click(screen.getByRole('button', { name: /Assiduidade/i }));
-    const [firstScoreInput] = screen.getAllByRole('spinbutton');
+    const [firstScoreInput] = screen.getAllByRole('combobox');
     fireEvent.change(firstScoreInput, { target: { value: '40' } });
 
     await act(async () => {
@@ -352,7 +342,7 @@ describe('SupervisorEvaluationWorkspace', () => {
 
     expect(api.submitSupervisorEvaluation).not.toHaveBeenCalled();
     expect(
-      await screen.findByText('Preencha a nota de todos os critérios antes de enviar a avaliação.'),
+      await screen.findByText('Faltam 19 notas.'),
     ).toBeInTheDocument();
   });
 
@@ -485,10 +475,8 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
     render(<SupervisorEvaluationWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
     await screen.findByLabelText('Competências da unidade');
-    for (const name of ['Assiduidade', 'Disciplina', 'Capacidade de iniciativa', 'Produtividade', 'Responsabilidade']) {
-      fireEvent.click(screen.getByRole('button', { name: new RegExp(name) }));
-    }
-    return screen.getAllByRole('spinbutton');
+    fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
+    return screen.getAllByRole('combobox', { name: /Nota:/ });
   }
 
   const scales = [
@@ -500,16 +488,13 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
   it.each(scales)('$name preserva inputs e semântica dos cálculos', async ({ markers, min, max, total, concept }) => {
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(scoreSnapshot(markers));
     const inputs = await openScores();
-    expect(inputs).toHaveLength(20);
+    expect(inputs).toHaveLength(4);
     for (const input of inputs) {
-      expect(input).toHaveAttribute('min', min);
-      expect(input).toHaveAttribute('max', max);
-      expect(input).toHaveAttribute('step', max === '100' ? '10' : '1');
-      expect(input).toHaveValue(max === '100' ? 50 : 5);
+      expect(input).toHaveValue(max === '100' ? '50' : '5');
     }
     const summary = within(screen.getByRole('heading', { name: 'Resumo' }).closest('section')!);
     expect(summary.getByText(concept)).toBeInTheDocument();
-    expect(summary.getAllByText(total).length).toBeGreaterThan(0);
+    expect(summary.getByText(max === '100' ? '50.0' : '5.0')).toBeInTheDocument();
     if (max === '5') {
       expect(summary.getByText('5.0')).toBeInTheDocument();
       expect(screen.queryByText('5/100')).not.toBeInTheDocument();
@@ -520,10 +505,7 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot());
     const inputs = await openScores();
     for (const input of inputs) {
-      expect(input).toHaveAttribute('min', '0');
-      expect(input).toHaveAttribute('max', '100');
-      expect(input).toHaveAttribute('step', '10');
-      expect(input).toHaveValue(null);
+      expect(input).toHaveValue('');
     }
     fireEvent.change(screen.getByLabelText('Competências da unidade'), { target: { value: 'Nova avaliação' } });
     fireEvent.change(inputs[0]!, { target: { value: '100' } });
@@ -531,25 +513,9 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
     await waitFor(() => expect(api.saveSupervisorEvaluationDraft).toHaveBeenCalledWith(PROCESS_ID, expect.objectContaining({ content: expect.objectContaining({ scoreScale: 'PERCENT_0_100', scoringVersion: PERCENT_EVALUATION_SCORING_VERSION, criteria: [expect.objectContaining({ rating: 100 })] }) })));
   });
 
-  it.each([1, 9, 11, 55, 99, -10, 110, 1.5])('bloqueia salvar e enviar a nota inválida %s sem arredondar', async (rating) => {
+  it.each([89, 55, 101, 838641162367, 1.5])('does not offer invalid score %s', async rating => {
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(scoreSnapshot({ scoreScale: 'PERCENT_0_100', scoringVersion: 2 }));
-    const inputs = await openScores();
-    fireEvent.change(inputs[0]!, { target: { value: String(rating) } });
-    expect(inputs[0]).toHaveValue(rating);
-    expect(inputs[0]).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByRole('alert')).toHaveTextContent('Informe notas de 0 a 100, em passos de 10.');
-    const save = screen.getByRole('button', { name: 'Salvar rascunho' });
-    const submit = screen.getByRole('button', { name: 'Enviar para assinatura' });
-    expect(save).toBeDisabled();
-    expect(submit).toBeDisabled();
-    fireEvent.click(save);
-    fireEvent.click(submit);
-    expect(api.saveSupervisorEvaluationDraft).not.toHaveBeenCalled();
-    expect(api.submitSupervisorEvaluation).not.toHaveBeenCalled();
-    fireEvent.change(inputs[0]!, { target: { value: '10' } });
-    expect(save).toBeEnabled();
-    expect(submit).toBeEnabled();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    const inputs = await openScores(); expect(Array.from((inputs[0] as HTMLSelectElement).options).map(option => option.value)).not.toContain(String(rating));
   });
 
   it('preserva zero, notas legais e critérios vazios no reload', async () => {
@@ -557,7 +523,7 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
     snapshot.supervisorEvaluation!.content.criteria = [0, 10, 50, 90, 100].map((rating, i) => ({ code: `${Math.floor(i / 4) + 1}.${i % 4 + 1}`, label: 'Critério', rating }));
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(snapshot);
     const inputs = await openScores();
-    expect(inputs.map((input) => (input as HTMLInputElement).value)).toEqual(['0', '10', '50', '90', '100', ...Array(15).fill('')]);
+    expect(inputs.map((input) => (input as HTMLSelectElement).value)).toEqual(['0', '10', '50', '90']);
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
     await waitFor(() => expect(api.saveSupervisorEvaluationDraft).toHaveBeenCalledTimes(1));
     expect(api.saveSupervisorEvaluationDraft.mock.calls[0]![1].content.criteria.map((criterion: { rating: number }) => criterion.rating)).toEqual([0, 10, 50, 90, 100]);
@@ -565,7 +531,7 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
     await screen.findByLabelText('Competências da unidade');
     fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
-    expect(screen.getAllByRole('spinbutton').map((input) => (input as HTMLInputElement).value)).toEqual(['0', '10', '50', '90']);
+    expect(screen.getAllByRole('combobox').map((input) => (input as HTMLSelectElement).value)).toEqual(['0', '10', '50', '90']);
   });
 
   it('reload de legado continua em 1–5 sem converter a nota 5', async () => {
@@ -575,10 +541,8 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
     await screen.findByLabelText('Competências da unidade');
     fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
-    for (const input of screen.getAllByRole('spinbutton')) {
-      expect(input).toHaveAttribute('min', '1');
-      expect(input).toHaveAttribute('max', '5');
-      expect(input).toHaveValue(5);
+    for (const input of screen.getAllByRole('combobox')) {
+      expect(input).toHaveValue('5');
     }
     expect(api.getSupervisorEvaluationWorkspaceSnapshot).toHaveBeenCalledTimes(2);
   });
@@ -603,7 +567,7 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
       expect(payload.content.criteria.map((criterion: { rating: number }) => criterion.rating)).toEqual(Array(20).fill(scale === 'PERCENT_0_100' ? 50 : 5));
       expect(await screen.findByText(action === 'save' ? 'Rascunho salvo.' : 'Avaliação retificada com sucesso.')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
-      expect(screen.getAllByRole('spinbutton')[0]).toHaveAttribute('max', scale === 'LEGACY_1_5' ? '5' : '100');
+      expect((screen.getAllByRole('combobox')[0] as HTMLSelectElement).options).toHaveLength(scale === 'LEGACY_1_5' ? 6 : 12);
     });
   });
 });
@@ -621,7 +585,7 @@ describe('limites de texto no workspace da chefia', () => {
   beforeEach(() => {
     vi.clearAllMocks(); api.getProcessList.mockResolvedValue(processList); api.getSelfEvaluation.mockResolvedValue(null);
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(draftSnapshot());
-    api.saveSupervisorEvaluationDraft.mockResolvedValue({}); api.submitSupervisorEvaluation.mockResolvedValue({});
+    api.saveSupervisorEvaluationDraft.mockResolvedValue(draftSnapshot().supervisorEvaluation); api.submitSupervisorEvaluation.mockResolvedValue({});
   });
   async function open() {
     render(<SupervisorEvaluationWorkspace />);
@@ -638,7 +602,7 @@ describe('limites de texto no workspace da chefia', () => {
     expect(screen.getByRole('button', { name: 'Salvar rascunho' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Enviar para assinatura' })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Voltar às avaliações/ })).toBeDisabled();
-    expect(attachmentsApi.uploadSupervisorEvaluationAttachment).toHaveBeenCalledWith(PROCESS_ID, 'stage-1', file);
+    await waitFor(() => expect(attachmentsApi.uploadSupervisorEvaluationAttachment).toHaveBeenCalledWith(PROCESS_ID, 'stage-1', file));
     await act(async () => resolve({ attachment: { id: 'persisted', evaluationProcessId: PROCESS_ID, processStageId: 'stage-1', origin: EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, uploaderUserId: 'supervisor-user-id', originalFilename: 'evidence.pdf', mimeType: 'application/pdf', sizeBytes: file.size, createdAt: '2026-10-06T12:00:00.000Z', updatedAt: '2026-10-06T12:00:00.000Z' } }));
     expect(await screen.findByText('evidence.pdf')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Enviar para assinatura' })).toBeEnabled();

@@ -268,7 +268,7 @@ describe('InternServerWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Confirmar ciência' })).toBeDisabled();
     expect(screen.queryByText(PROCESS_ID)).not.toBeInTheDocument();
     expect(
-      screen.getByText('Confirme que você leu a avaliação para liberar a autoavaliação.'),
+      screen.getByText('A ciência confirma que você recebeu e leu a avaliação. Ela não significa concordância com o conteúdo.'),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText('Autoavaliação')).not.toBeInTheDocument();
   });

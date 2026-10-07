@@ -61,6 +61,7 @@ export type SupervisorEvaluationWorkspaceSnapshot = {
     id: string;
     status: ProcessStatus;
     currentStageSequence: number;
+    currentStageId?: string;
   };
   supervisorEvaluation: SupervisorEvaluationWithDocumentContextRef | null;
   documentContext: SupervisorEvaluationDocumentContextRef | null;

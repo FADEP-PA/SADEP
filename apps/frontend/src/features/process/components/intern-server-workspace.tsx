@@ -19,7 +19,7 @@ import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { EmptyState } from '@/shared/ui/operational-states';
-import { NextAction, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
+import { WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
 import { formatDateTime } from './process-formatters';
 import { EvaluationAttachments } from './evaluation-attachments';
@@ -186,35 +186,30 @@ export function InternServerWorkspace() {
             {canConfirmScience && !acknowledgement ? (
               <>
               <WorkSection title="Registrar ciência">
-                <p>A ciência confirma o recebimento e a leitura da avaliação. Ela não representa, por si só, concordância com o conteúdo.</p>
-                <fieldset disabled={operation !== null}>
-                  <legend>Escolha a modalidade de ciência</legend>
-                  <label className="field-group">
+                <p>A ciência confirma que você recebeu e leu a avaliação. Ela não significa concordância com o conteúdo.</p>
+                <fieldset className="science-options" disabled={operation !== null}>
+                  <legend className="visually-hidden">Escolha a modalidade de ciência</legend>
+                  <label className="science-option">
                     <span><input type="radio" name="acknowledgement-mode" checked={acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED} onChange={() => setAcknowledgementMode(AcknowledgementMode.ACKNOWLEDGED)} /> Ciente</span>
                     <span>Confirmo que tomei conhecimento da avaliação.</span>
                   </label>
-                  <label className="field-group">
+                  <label className="science-option">
                     <span><input type="radio" name="acknowledgement-mode" checked={acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION} onChange={() => setAcknowledgementMode(AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION)} /> Ciente com ressalva</span>
                     <span>Confirmo que tomei conhecimento da avaliação, mas registro que não concordo com seu conteúdo.</span>
                   </label>
                 </fieldset>
+                <div className="form-actions science-actions"><button type="button" disabled={operation !== null || acknowledgementMode === null} onClick={() => void run('science')}>{operation === 'science' ? 'Confirmando…' : 'Confirmar ciência'}</button></div>
               </WorkSection>
-              <NextAction
-                title="Sua confirmação é necessária"
-                description="Confirme que você leu a avaliação para liberar a autoavaliação."
-                tone="warning"
-                action={<button type="button" disabled={operation !== null || acknowledgementMode === null} onClick={() => void run('science')}>{operation === 'science' ? 'Confirmando…' : 'Confirmar ciência'}</button>}
-              />
               </>
             ) : canEditSelfEvaluation ? (
-              <NextAction title={snapshot.selfEvaluation ? 'Continue sua autoavaliação' : 'Preencha sua autoavaliação'} action={<button type="button" onClick={() => setShowSelfEvaluation(true)}>{snapshot.selfEvaluation ? 'Continuar preenchimento' : 'Preencher autoavaliação'}</button>} />
-            ) : <NextAction title="Nenhuma ação necessária no momento" tone="success" />}
+              <div className="self-evaluation-available"><p>Autoavaliação disponível</p><button type="button" onClick={() => setShowSelfEvaluation(true)}>{snapshot.selfEvaluation ? 'Continuar preenchimento' : 'Preencher autoavaliação'}</button></div>
+            ) : <p className="muted-copy">Nenhuma ação necessária no momento.</p>}
 
             <WorkSection title="Sua avaliação">
               {snapshot.supervisorEvaluation ? (
                 <div className="evaluation-summary">
                   <div className="evaluation-summary__metrics">
-                    <div><span>Situação</span><strong>{snapshot.supervisorEvaluation.status === 'SUBMITTED' ? 'Enviada pela chefia' : 'Em elaboração'}</strong></div>
+                    <div><span>Situação</span><strong>{snapshot.supervisorEvaluation.status === 'SUBMITTED' ? 'Recebida' : 'Em elaboração'}</strong></div>
                     <div><span>Data</span><strong>{formatDateTime(snapshot.supervisorEvaluation.submittedAt)}</strong></div>
                   </div>
                   <EvaluationPdfViewer processId={snapshot.process.id} documentContext={snapshot.supervisorEvaluation.documentContext ?? null} updatedAt={snapshot.supervisorEvaluation.updatedAt} title="PDF da avaliação da Chefia" />
@@ -260,6 +255,14 @@ export function InternServerWorkspace() {
             onBack={() => setShowSelfEvaluation(false)}
             onSaveDraft={() => void run('draft')}
             onSubmit={() => void run('submit')}
+            beforeUpload={async () => {
+              if (!canEditSelfEvaluation) throw new Error('A autoavaliação não está disponível para edição.');
+              await saveSelfEvaluationDraft(snapshot.process.id, {
+                selfReflection: form.selfReflection,
+                additionalNotes: form.additionalNotes,
+                ...(form.comment.trim() ? { comment: form.comment } : {}),
+              });
+            }}
           />
         ) : null}
       </div>

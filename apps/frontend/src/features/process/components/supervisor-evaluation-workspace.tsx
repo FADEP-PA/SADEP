@@ -250,7 +250,7 @@ function buildSupervisorEvaluationPayload(
   const generalComments =
     [userGeneralComments, resultComment].filter(Boolean).join('\n\n') || INCOMPLETE_DRAFT_COMMENT;
 
-  if (!summary) {
+  if (!summary && mode === 'submit') {
     throw new Error('Informe as competências da unidade ou as atribuições do servidor antes de salvar.');
   }
 
@@ -258,9 +258,7 @@ function buildSupervisorEvaluationPayload(
     throw new Error('Preencha a nota de todos os critérios antes de enviar a avaliação.');
   }
 
-  if (mode === 'draft' && recordedCriteria.length === 0) {
-    throw new Error('Preencha ao menos uma nota antes de salvar o rascunho da avaliação.');
-  }
+
 
   return {
     summary,
@@ -451,6 +449,12 @@ export function SupervisorEvaluationWorkspace() {
     }
   }
 
+  async function initializeAttachmentDraft() {
+    if (!activeEvaluation || !workspaceSnapshot?.canEditDraft) throw new Error('A avaliação não está disponível para edição.');
+    const saved = await saveSupervisorEvaluationDraft(workspaceSnapshot.process.id, buildSupervisorEvaluationPayload(activeEvaluation, 'draft'));
+    setWorkspaceSnapshot(current => current ? { ...current, supervisorEvaluation: saved } : current);
+  }
+
   async function handleSaveDraft() {
     if (!activeEvaluation || isAttachmentsBusy) return;
 
@@ -584,16 +588,9 @@ export function SupervisorEvaluationWorkspace() {
               feedbackMessage={feedbackMessage}
               actionErrorMessage={actionErrorMessage}
               isAttachmentsBusy={isAttachmentsBusy}
-              attachmentsContent={workspaceSnapshot?.supervisorEvaluation ? (
-                <EvaluationAttachments
-                  processId={workspaceSnapshot.process.id}
-                  stageId={workspaceSnapshot.supervisorEvaluation.processStageId}
-                  origin={EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION}
-                  editable={workspaceSnapshot.canEditDraft && workspaceSnapshot.supervisorEvaluation.status === SupervisorEvaluationStatus.DRAFT}
-                  disabled={isSavingDraft || isSubmittingEvaluation || isLoadingWorkspace}
-                  onBusyChange={setIsAttachmentsBusy}
-                />
-              ) : <WorkSection title="Anexos da avaliação"><p>Salve o rascunho da avaliação antes de adicionar anexos.</p></WorkSection>}
+              attachmentsContent={workspaceSnapshot ? (
+                <EvaluationAttachments processId={workspaceSnapshot.process.id} stageId={workspaceSnapshot.supervisorEvaluation?.processStageId ?? workspaceSnapshot.process.currentStageId ?? ''} origin={EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION} editable={workspaceSnapshot.canEditDraft} disabled={isSavingDraft || isSubmittingEvaluation || isLoadingWorkspace} onBusyChange={setIsAttachmentsBusy} beforeUpload={initializeAttachmentDraft} />
+              ) : null}
               leadingContent={showSelfEvaluationCard ? (
                 <SupervisorSelfEvaluationCard
                   selfEvaluation={selfEvaluation}
