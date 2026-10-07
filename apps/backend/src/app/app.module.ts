@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
+import { AdminModule } from '../api/admin/admin.module';
 import { AuthModule } from '../auth/auth.module';
 import { CesadModule } from '../cesad/cesad.module';
 import { AppLogger } from '../common/logging/app-logger.service';
@@ -26,6 +27,7 @@ import { ProcessesModule } from '../processes/processes.module';
     ]),
     HealthModule,
     AuthModule,
+    AdminModule,
     CesadModule,
     ProcessesModule,
   ],

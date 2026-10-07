@@ -20,6 +20,7 @@ export * from './evaluation-acknowledgement';
 export * from './intern-server-workspace';
 export * from './process-ref';
 export * from './signature-metadata';
+export * from './storage-cleanup';
 
 export * from './homologation';
 export * from './process-list';

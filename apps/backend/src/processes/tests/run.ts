@@ -25,6 +25,7 @@ async function main() {
     { runDemoE2EEndpointTests },
     { runEvaluationAttachmentsServiceTests },
     { runEvaluationAttachmentsEndpointTests },
+    { runEvaluationAttachmentsCleanupTests },
     { runWorkflowCatalogTests },
     { runProcessesServiceTests },
     { runProcessesEndpointTests },
@@ -51,6 +52,7 @@ async function main() {
     import('./demo-e2e.endpoint.spec'),
     import('./evaluation-attachments.service.spec'),
     import('./evaluation-attachments.endpoint.spec'),
+    import('./evaluation-attachments-cleanup.spec'),
     import('./workflow-catalog.spec'),
     import('./processes.service.spec'),
     import('./processes.endpoint.spec'),
@@ -80,11 +82,12 @@ async function main() {
   await runDemoE2EEndpointTests();
   await runEvaluationAttachmentsServiceTests();
   await runEvaluationAttachmentsEndpointTests();
+  await runEvaluationAttachmentsCleanupTests();
   await runProcessesEndpointTests();
   await runSupervisorEvaluationsServiceTests();
   await runSelfEvaluationsTests();
   console.log(
-    'Workflow, demo E2E, CESAD current commission, CESAD commission acts, CESAD commission members, CESAD commissions, CESAD stage read, CESAD stage opinion, CESAD final opinion, supervisor evaluation, self evaluation, and evaluation attachments tests passed.',
+    'Workflow, demo E2E, CESAD current commission, CESAD commission acts, CESAD commission members, CESAD commissions, CESAD stage read, CESAD stage opinion, CESAD final opinion, supervisor evaluation, self evaluation, evaluation attachments, and storage cleanup tests passed.',
   );
 }
 

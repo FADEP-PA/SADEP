@@ -5,6 +5,7 @@ import { ProcessDocumentsService } from '../application/documents/process-docume
 import { AuthModule } from '../auth/auth.module';
 import { CesadModule } from '../cesad/cesad.module';
 import { PrismaService } from '../infrastructure/database/prisma.service';
+import { StorageCleanupModule } from '../infrastructure/storage/storage-cleanup.module';
 import { CesadFinalOpinionConsolidationService } from './cesad-final-opinions/cesad-final-opinion-consolidation.service';
 import { CesadFinalOpinionEligibilityService } from './cesad-final-opinions/cesad-final-opinion-eligibility.service';
 import { CesadFinalOpinionsController } from './cesad-final-opinions/cesad-final-opinions.controller';
@@ -28,7 +29,7 @@ import { SupervisorEvaluationsController } from './supervisor-evaluations/superv
 import { SupervisorEvaluationsService } from './supervisor-evaluations/supervisor-evaluations.service';
 
 @Module({
-  imports: [AuthModule, ApiProcessDocumentsModule, CesadModule],
+  imports: [AuthModule, ApiProcessDocumentsModule, CesadModule, StorageCleanupModule],
   controllers: [
     ProcessesController,
     CesadStageOpinionsController,
