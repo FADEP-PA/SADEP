@@ -26,7 +26,10 @@ import {
   SupervisorEvaluationWithDocumentContextRef,
   SelfEvaluationWithDocumentContextRef,
   UserRole,
+  type ApproveHomologationRequest,
+  type HomologationQueueRef,
   type HomologationStatusRef,
+  type ReturnForRegularizationRequest,
 } from '@sadep/contracts';
 
 export type { ProcessListRef };
@@ -84,7 +87,7 @@ export async function getEvaluationDocumentPdf(processId: string, documentId: st
   return pdf;
 }
 
-export async function getPersonalNotificationStatus(processId: string) {
+export async function getHomologationStatus(processId: string) {
   return httpRequest<HomologationStatusRef>(`/processes/${encodeURIComponent(processId)}/homologation`, AUTHENTICATED_REQUEST);
 }
 
@@ -98,6 +101,23 @@ export async function getPersonalNotificationPdf(processId: string) {
 export async function acknowledgePersonalNotification(processId: string) {
   return httpRequest<HomologationStatusRef>(`/processes/${encodeURIComponent(processId)}/homologation/acknowledge`,
     { ...AUTHENTICATED_REQUEST, method: 'POST' });
+}
+
+export async function getHomologationQueue() {
+  return httpRequest<HomologationQueueRef>('/processes/homologation/queue', {
+    ...AUTHENTICATED_REQUEST,
+    method: 'GET',
+  });
+}
+
+export async function approveHomologation(processId: string, body: ApproveHomologationRequest) {
+  return httpRequest<HomologationStatusRef>(`/processes/${encodeURIComponent(processId)}/homologation/approve`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST', body });
+}
+
+export async function returnHomologationForRegularization(processId: string, body: ReturnForRegularizationRequest) {
+  return httpRequest<{ processId: string; processStatus: ProcessStatus }>(`/processes/${encodeURIComponent(processId)}/homologation/return-for-regularization`,
+    { ...AUTHENTICATED_REQUEST, method: 'POST', body });
 }
 
 export async function getProcessList() {

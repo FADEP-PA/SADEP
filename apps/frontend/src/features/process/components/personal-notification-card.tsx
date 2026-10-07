@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { HomologationStatusRef } from '@sadep/contracts';
-import { acknowledgePersonalNotification, getPersonalNotificationPdf, getPersonalNotificationStatus } from '@/shared/api/services/processes-service';
+import { acknowledgePersonalNotification, getPersonalNotificationPdf, getHomologationStatus } from '@/shared/api/services/processes-service';
 import { getRequestErrorMessage } from '@/shared/api/http-error';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { WorkSection } from '@/shared/ui/work-patterns';
@@ -19,7 +19,7 @@ export function PersonalNotificationCard({ processId }: { processId: string }) {
     activeProcess.current = processId;
     let active = true;
     setStatus(null); setPdfUrl(null); setError(null);
-    getPersonalNotificationStatus(processId).then(result => { if (active) setStatus(result); })
+    getHomologationStatus(processId).then(result => { if (active) setStatus(result); })
       .catch(() => { if (active) setError('Não foi possível carregar a Notificação Pessoal.'); });
     return () => { active = false; };
   }, [processId]);
@@ -36,7 +36,7 @@ export function PersonalNotificationCard({ processId }: { processId: string }) {
       } else {
         await acknowledgePersonalNotification(processId);
       }
-      const next = await getPersonalNotificationStatus(processId);
+      const next = await getHomologationStatus(processId);
       if (activeProcess.current === processId) setStatus(next);
     } catch (requestError) {
       if (activeProcess.current === processId) setError(getRequestErrorMessage(requestError, 'Não foi possível concluir a ação. Tente novamente.'));
