@@ -34,6 +34,13 @@ export class ProcessDocumentsController {
     return { documentId: result.documentId, generated: result.generated };
   }
 
+  @Get('documents')
+  async listDocuments(@Param('id') processId: string, @CurrentUser() user?: AuthenticatedUser) {
+    if (!user) throw new UnauthorizedException('Authenticated user not found');
+    if (!this.artifactService) throw new Error('Process document artifact service is not configured');
+    return this.artifactService.listReadableDocuments(processId, user);
+  }
+
   @Get('documents/:documentId/artifact')
   @Header('Cache-Control', 'private, no-store')
   async downloadArtifact(

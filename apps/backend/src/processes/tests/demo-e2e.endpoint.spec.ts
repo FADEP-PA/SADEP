@@ -195,6 +195,23 @@ export async function runDemoE2EEndpointTests() {
     assert.notEqual(selfDocumentAfterSubmit.artifactPath, null);
     assert.notEqual(selfDocumentAfterSubmit.artifactChecksum, null);
 
+    const documentHistoryResponse = await fetch(
+      `${baseUrl}/processes/${process.id}/supervisor-evaluation/documents`,
+      { headers: authHeaders(supervisorSession.accessToken) },
+    );
+    assert.equal(documentHistoryResponse.status, 200);
+    const documentHistory = await documentHistoryResponse.json() as Array<{
+      documentId: string; stageSequence: number; hasArtifact: boolean;
+    }>;
+    for (const documentId of [supervisorDocumentAfterSubmit.id, selfDocumentAfterSubmit.id]) {
+      assert.ok(documentHistory.some(item => item.documentId === documentId && item.stageSequence === 1 && item.hasArtifact));
+      const pdf = await fetch(`${baseUrl}/processes/${process.id}/supervisor-evaluation/documents/${documentId}/artifact`, {
+        headers: authHeaders(supervisorSession.accessToken),
+      });
+      assert.equal(pdf.status, 200);
+      assert.equal(pdf.headers.get('content-type'), 'application/pdf');
+    }
+
     const supervisorSelfEvaluationResponse = await fetch(
       `${baseUrl}/processes/${process.id}/self-evaluation`,
       {

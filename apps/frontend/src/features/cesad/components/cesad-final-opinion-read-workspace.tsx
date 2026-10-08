@@ -13,6 +13,7 @@ import { EmptyState } from '@/shared/ui/operational-states';
 import { StatusBadge } from '@/shared/ui/status-badge';
 import { WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 import { CesadFinalOpinionEditor } from './cesad-final-opinion-editor';
+import { ProcessDocumentHistory } from '@/features/process/components/process-document-history';
 
 type Props = { processId: string; onBack: () => void };
 
@@ -103,7 +104,7 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
           <WorkSection title="Parecer conclusivo final"><p>As quatro etapas estão completas e o processo está elegível para consolidação.</p><button type="button" disabled={isStarting} onClick={() => void start()}>{isStarting ? 'Iniciando…' : 'Iniciar parecer final'}</button></WorkSection>
         ) : null}
         {opinion && !readOnly && editorState ? <CesadFinalOpinionEditor initialState={editorState} onSaveDraft={async (input) => { await saveCesadFinalOpinionDraft(processId, input); await load(); }} onComplete={async (input) => { await completeCesadFinalOpinion(processId, input); await load(); }} /> : null}
-        {opinion && readOnly ? (
+        {opinion && readOnly && !signatureStatus?.document?.hasArtifact ? (
           <WorkSection title="Parecer conclusivo final">
             <p><strong>Relatório</strong></p><p>{opinion.reportText || 'Não informado.'}</p>
             <p><strong>Fundamentação</strong></p><p>{opinion.legalBasis || 'Não informada.'}</p>
@@ -120,6 +121,7 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
         {opinion && readOnly ? <WorkSection title="Handoff para homologação">
           {opinion.sentToHomologationAt ? <p className="success-copy">Enviado à homologação em {new Date(opinion.sentToHomologationAt).toLocaleString('pt-BR')}.</p> : canSendToHomologation ? <button type="button" disabled={isSendingToHomologation} onClick={() => void handleSendToHomologation()}>{isSendingToHomologation ? 'Enviando…' : 'Enviar à homologação'}</button> : <p className="muted-copy">O envio fica disponível após a conclusão de todas as assinaturas obrigatórias.</p>}
         </WorkSection> : null}
+        {eligibility ? <ProcessDocumentHistory processId={processId} revision={opinion?.updatedAt ?? ''} /> : null}
         {opinion?.consolidatedSnapshot ? (
           <WorkSection title="Histórico das quatro etapas">
             <div className="task-table" role="table" aria-label="Consolidação histórica das etapas">

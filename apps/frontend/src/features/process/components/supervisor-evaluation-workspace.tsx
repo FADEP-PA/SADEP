@@ -42,6 +42,7 @@ import { EvaluationAttachments } from './evaluation-attachments';
 import { EvaluationDetailView } from './supervisor-evaluation-form';
 import { calculateEvaluationScore } from './supervisor-evaluation-scoring';
 import { SupervisorSelfEvaluationCard } from './supervisor-self-evaluation-card';
+import { ProcessDocumentHistory } from './process-document-history';
 import type {
   EvaluationDraft,
   PreviousEvaluationItem,
@@ -336,6 +337,7 @@ export function SupervisorEvaluationWorkspace() {
   const [loadErrorDetails, setLoadErrorDetails] = useState<string[]>([]);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmittingEvaluation, setIsSubmittingEvaluation] = useState(false);
+  const [isRectifying, setIsRectifying] = useState(false);
   const [isAttachmentsBusy, setIsAttachmentsBusy] = useState(false);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
@@ -440,6 +442,7 @@ export function SupervisorEvaluationWorkspace() {
     if (row.actionDisabled) return;
     setActionErrorMessage(null);
     setFeedbackMessage(null);
+    setIsRectifying(false);
 
     const snapshot = await loadSupervisorWorkspace(row.id);
     if (snapshot && snapshot.process.id === row.id) {
@@ -506,6 +509,7 @@ export function SupervisorEvaluationWorkspace() {
         setFeedbackMessage('Avaliação enviada com sucesso! O processo agora aguarda assinaturas.');
       }
       await Promise.all([loadSupervisorWorkspace(workspaceSnapshot.process.id), refreshProcessList()]);
+      setIsRectifying(false);
     } catch (error) {
       setActionErrorMessage(getRequestErrorMessage(error, 'Não foi possível enviar a avaliação da chefia.'));
     } finally {
@@ -577,8 +581,8 @@ export function SupervisorEvaluationWorkspace() {
 
         {activeEvaluation ? (
           <>
-            <EvaluationAcknowledgement acknowledgement={workspaceSnapshot?.documentContext?.acknowledgement} />
-            <EvaluationDetailView
+            {!showSelfEvaluationCard ? <EvaluationAcknowledgement acknowledgement={workspaceSnapshot?.documentContext?.acknowledgement} /> : null}
+            {canSaveActiveDraft || (workspaceSnapshot?.canRectify && isRectifying) ? <EvaluationDetailView
               evaluation={activeEvaluation}
               isSavingDraft={isSavingDraft}
               isSubmittingEvaluation={isSubmittingEvaluation}
@@ -607,7 +611,14 @@ export function SupervisorEvaluationWorkspace() {
               onBack={handleBackToDashboard}
               onSaveDraft={() => void handleSaveDraft()}
               onSubmit={() => void handleSubmitEvaluation()}
-            />
+            /> : workspaceSnapshot ? <>
+              <button type="button" className="ghost-button work-back" onClick={handleBackToDashboard}>← Voltar às avaliações</button>
+              <WorkPageHeader title="Avaliação de desempenho" description={`${activeEvaluation.row.stageLabel} · ${activeEvaluation.row.serverName}`} status="Avaliação enviada" actions={workspaceSnapshot.canRectify ? <button type="button" onClick={() => setIsRectifying(true)}>Iniciar retificação</button> : undefined} />
+              {feedbackMessage ? <FeedbackAlert title="Concluído" tone="success" description={feedbackMessage} /> : null}
+              {actionErrorMessage ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={actionErrorMessage} /> : null}
+              {showSelfEvaluationCard ? <SupervisorSelfEvaluationCard selfEvaluation={selfEvaluation} documentContext={selfEvaluation.documentContext ?? null} userName={session?.user.name ?? 'Chefia imediata'} processStatus={workspaceSnapshot.process.status} isConfirming={isConfirmingSelfEvaluation} onConfirm={() => void handleConfirmSelfEvaluation()} /> : null}
+            </> : null}
+            {workspaceSnapshot ? <ProcessDocumentHistory processId={workspaceSnapshot.process.id} revision={`${workspaceSnapshot.supervisorEvaluation?.updatedAt}:${selfEvaluation?.updatedAt}:${workspaceSnapshot.process.status}`} /> : null}
 
           </>
         ) : (

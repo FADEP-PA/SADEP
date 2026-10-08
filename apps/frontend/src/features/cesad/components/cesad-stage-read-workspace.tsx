@@ -37,6 +37,7 @@ import { EmptyState } from '@/shared/ui/operational-states';
 import { StatusBadge } from '@/shared/ui/status-badge';
 import { NextAction, WorkPageHeader, WorkSection, WorkTabs } from '@/shared/ui/work-patterns';
 
+import { CesadStageDocuments } from './cesad-stage-documents';
 import { CesadStageOpinionEditor } from './cesad-stage-opinion-editor';
 import { getCesadStageSignatureActions, getCesadStageSignatureBadge } from './cesad-stage-signature-ui';
 import { ReadOnlyOpinionShell } from './read-only-opinion-shell';
@@ -226,14 +227,7 @@ export function CesadStageReadWorkspace() {
 
         {activeTab === 'analysis' ? (
           <div id="cesad-process-panel-analysis" className="cesad-analysis" role="tabpanel" aria-labelledby="cesad-process-tab-analysis" tabIndex={0}>
-            <div className="source-summaries">
-              <WorkSection title="Avaliação da chefia">
-                {snapshot.supervisorEvaluation ? <><p>{snapshot.supervisorEvaluation.summary}</p><details className="compact-disclosure"><summary>Ver avaliação completa</summary><p>{snapshot.supervisorEvaluation.generalComments || 'Sem comentários adicionais.'}</p><div className="document-detail">{snapshot.supervisorEvaluation.content.criteria.map((criterion) => <div key={criterion.code}><strong>{criterion.label}</strong><span>{criterion.rating}</span></div>)}</div></details></> : <EmptyState title="Avaliação indisponível" description="O documento ainda não foi recebido." />}
-              </WorkSection>
-              <WorkSection title="Autoavaliação">
-                {snapshot.selfEvaluation ? <><p>{snapshot.selfEvaluation.selfReflection}</p><details className="compact-disclosure"><summary>Ver autoavaliação completa</summary><p>{snapshot.selfEvaluation.additionalNotes || 'Sem observações adicionais.'}</p></details></> : <EmptyState title="Autoavaliação indisponível" description="O documento ainda não foi recebido." />}
-              </WorkSection>
-            </div>
+            <CesadStageDocuments key={snapshot.stage.stageId} snapshot={snapshot} />
 
             {opinionIsEditable ? (
               <CesadStageOpinionEditor
@@ -241,7 +235,7 @@ export function CesadStageReadWorkspace() {
                 onSaveDraft={async (input: CesadStageOpinionInput) => { await saveCesadStageOpinionDraft(snapshot.process.id, snapshot.stage.sequence, input); setFeedback('Rascunho salvo.'); await reload(); }}
                 onComplete={async (input: CesadStageOpinionInput) => { await completeCesadStageOpinion(snapshot.process.id, snapshot.stage.sequence, input); setFeedback('Parecer concluído.'); await reload(); }}
               />
-            ) : <ReadOnlyOpinionShell opinion={snapshot.cesadStageOpinion} stageLabel={`${snapshot.stage.sequence}ª etapa`} />}
+            ) : snapshot.documents.some(document => document.documentType === DocumentType.CESAD_OPINION && document.hasArtifact) ? null : <ReadOnlyOpinionShell opinion={snapshot.cesadStageOpinion} stageLabel={`${snapshot.stage.sequence}ª etapa`} />}
 
             {opinionIsCompleted ? (
               <WorkSection title="Confirmações">
@@ -257,13 +251,7 @@ export function CesadStageReadWorkspace() {
         ) : null}
 
         {activeTab === 'documents' ? (
-          <div id="cesad-process-panel-documents" role="tabpanel" aria-labelledby="cesad-process-tab-documents" tabIndex={0}><WorkSection title="Documentos da etapa">
-            <div className="document-list">{snapshot.documents.map((document) => <article key={document.documentType} className="document-list__item">
-              <div><strong>{formatDocumentType({ documentType: document.documentType, opinionScope: 'STAGE' })}</strong><span>{document.updatedAt ? formatDateTime(document.updatedAt) : 'Sem data'}</span></div>
-              <StatusBadge label={document.exists ? formatDocumentStatus(document.documentStatus) : 'Aguardando emissão'} tone={document.exists && document.documentStatus === 'SIGNED' ? 'success' : 'warning'} />
-              {document.signatures.length > 0 ? <details><summary>Ver confirmações</summary><ul>{document.signatures.map((signature) => <li key={signature.signatureId}>{formatRole(signature.signatoryRole)} — {signature.status === SignatureStatus.COMPLETED ? 'confirmado' : 'aguardando'}</li>)}</ul></details> : null}
-            </article>)}</div>
-          </WorkSection></div>
+          <div id="cesad-process-panel-documents" role="tabpanel" aria-labelledby="cesad-process-tab-documents" tabIndex={0}><CesadStageDocuments key={snapshot.stage.stageId} snapshot={snapshot} /></div>
         ) : null}
 
         {activeTab === 'history' ? (

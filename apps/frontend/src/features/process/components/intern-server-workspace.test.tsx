@@ -484,7 +484,8 @@ describe('InternServerWorkspace', () => {
       screen.queryByRole('button', { name: 'Enviar autoavaliação' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Salvar rascunho' })).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Autoavaliação')).toBeDisabled();
+    expect(screen.queryByLabelText('Autoavaliação')).not.toBeInTheDocument();
+    expect(screen.queryByText('Minha reflexão persistida.')).not.toBeInTheDocument();
   });
 
   it('bloqueia as ações enquanto envia a autoavaliação', async () => {
@@ -531,7 +532,8 @@ describe('InternServerWorkspace', () => {
     );
 
     expect((await screen.findAllByText('Autoavaliação enviada')).length).toBeGreaterThan(0);
-    expect(screen.getByDisplayValue('Minha reflexão persistida.')).toBeDisabled();
+    expect(screen.queryByDisplayValue('Minha reflexão persistida.')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Autoavaliação')).not.toBeInTheDocument();
     expect(api.submitSelfEvaluation).not.toHaveBeenCalled();
   });
 

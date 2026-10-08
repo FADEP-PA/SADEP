@@ -24,6 +24,7 @@ describe('ProcessDocumentArtifactService', () => {
   function setup(overrides: { document?: unknown; renderer?: unknown; storage?: unknown } = {}) {
     const prisma = {
       processDocument: {
+        findMany: jest.fn().mockResolvedValue([{ id: 'document-1' }]),
         findUnique: jest.fn().mockResolvedValue(overrides.document === undefined ? document : overrides.document),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
@@ -33,7 +34,7 @@ describe('ProcessDocumentArtifactService', () => {
       cesadFinalOpinion: { findUnique: jest.fn() },
       auditEvent: { create: jest.fn().mockResolvedValue({}) },
     } as any;
-    const processes = { ensureUserHasProcessAccess: jest.fn().mockResolvedValue(undefined) } as any;
+    const processes = { ensureUserHasProcessAccess: jest.fn().mockResolvedValue(undefined), listForUser: jest.fn().mockResolvedValue({ items: [{ id: 'process-1' }] }) } as any;
     const renderer = overrides.renderer ?? { render: jest.fn().mockResolvedValue(content) };
     const storage = overrides.storage ?? {
       exists: jest.fn().mockResolvedValue(false),
@@ -42,6 +43,26 @@ describe('ProcessDocumentArtifactService', () => {
     };
     return { service: new ProcessDocumentArtifactService(prisma, processes, renderer as any, storage as any), prisma, processes, renderer: renderer as any, storage: storage as any };
   }
+
+  it('lists historical metadata with the same stage authorization as PDF download without mutations', async () => {
+    const supervisor = { ...user, role: UserRole.IMMEDIATE_SUPERVISOR };
+    const own = { ...document, documentType: DocumentType.SUPERVISOR_EVALUATION, processStage: { id: 'stage-3', sequence: 3, responsibleSupervisor: { id: user.sub } } };
+    const foreign = { ...own, id: 'foreign', processStage: { ...own.processStage, responsibleSupervisor: { id: 'other' } } };
+    const { service, prisma, processes, renderer, storage } = setup();
+    prisma.processDocument.findMany.mockResolvedValue([{ id: 'document-1' }, { id: 'foreign' }]);
+    prisma.processDocument.findUnique.mockResolvedValueOnce(own).mockResolvedValueOnce(foreign);
+    await expect(service.listReadableDocuments('process-1', supervisor)).resolves.toEqual([expect.objectContaining({ documentId: 'document-1', stageSequence: 3, version: 1, hasArtifact: false })]);
+    expect(processes.listForUser).toHaveBeenCalledWith(supervisor);
+    expect(prisma.processDocument.updateMany).not.toHaveBeenCalled();
+    expect(renderer.render).not.toHaveBeenCalled(); expect(storage.write).not.toHaveBeenCalled();
+  });
+
+  it('rejects document listing without process access', async () => {
+    const { service, prisma, processes } = setup();
+    processes.ensureUserHasProcessAccess.mockRejectedValue(new ForbiddenException());
+    await expect(service.listReadableDocuments('process-1', user)).rejects.toThrow(ForbiddenException);
+    expect(prisma.processDocument.findMany).not.toHaveBeenCalled();
+  });
 
   it('persists the artifact before linking artifactPath and audits the materialization', async () => {
     const { service, prisma, renderer, storage } = setup();

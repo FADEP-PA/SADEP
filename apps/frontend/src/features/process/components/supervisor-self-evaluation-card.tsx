@@ -69,7 +69,7 @@ export function SupervisorSelfEvaluationCard({
           </p>
         ) : null}
       </div>
-      <EvaluationAttachments processId={selfEvaluation.processId} stageId={selfEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} />
+      <EvaluationAttachments processId={selfEvaluation.processId} stageId={selfEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} title="Anexos do Servidor" />
     </WorkSection>
   );
 }

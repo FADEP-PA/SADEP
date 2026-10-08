@@ -78,6 +78,21 @@ const AUTHENTICATED_REQUEST = {
   useStoredAccessToken: true,
 } as const;
 
+export type ProcessDocumentHistoryItem = {
+  documentId: string;
+  documentType: import('@sadep/contracts').DocumentType;
+  documentStatus: import('@sadep/contracts').DocumentStatus;
+  stageSequence: number | null;
+  stageId: string | null;
+  version: number;
+  hasArtifact: boolean;
+  updatedAt: string;
+};
+
+export async function getProcessDocumentHistory(processId: string) {
+  return httpRequest<ProcessDocumentHistoryItem[]>(`/processes/${encodeURIComponent(processId)}/supervisor-evaluation/documents`, AUTHENTICATED_REQUEST);
+}
+
 export async function getEvaluationDocumentPdf(processId: string, documentId: string, signal?: AbortSignal) {
   const pdf = await httpRequest<Blob>(
     `/processes/${encodeURIComponent(processId)}/supervisor-evaluation/documents/${encodeURIComponent(documentId)}/artifact`,
