@@ -141,13 +141,13 @@ describe('EvaluationAttachments', () => {
     expect(await screen.findByText('evidence.pdf')).toBeInTheDocument();
     expect(screen.queryByLabelText('Selecionar arquivos')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Remover/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Visualizar evidence.pdf' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Visualizar PDF evidence.pdf' })).toBeEnabled();
   });
 
   it('anexos do Servidor são consultados e visualizados somente por endpoint autorizado', async () => {
     api.listEvaluationAttachments.mockResolvedValue({ attachments: [{ ...attachment, origin: EvaluationAttachmentOrigin.SELF_EVALUATION }] });
     const view = render(<EvaluationAttachments {...props} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} editable={false} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Visualizar evidence.pdf' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Visualizar PDF evidence.pdf' }));
     expect(await screen.findByTitle('Anexo evidence.pdf')).toHaveAttribute('src', 'blob:attachment');
     expect(api.listEvaluationAttachments).toHaveBeenCalledWith('process', 'stage', EvaluationAttachmentOrigin.SELF_EVALUATION, expect.any(AbortSignal));
     expect(api.downloadEvaluationAttachment).toHaveBeenCalledWith('process', 'stage', EvaluationAttachmentOrigin.SELF_EVALUATION, attachment.id);

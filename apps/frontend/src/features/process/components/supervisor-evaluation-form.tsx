@@ -103,8 +103,8 @@ export function EvaluationDetailView({
       <WorkPageHeader
         title="Avaliação de desempenho"
         description={`${evaluation.row.stageLabel} · ${evaluation.row.serverName}`}
-        status={leadingContent ? 'Aguardando confirmação' : editable ? 'Em preenchimento' : 'Somente leitura'}
-        statusTone={leadingContent ? 'warning' : editable ? 'info' : 'neutral'}
+        status={editable ? 'Em preenchimento' : 'Somente leitura'}
+        statusTone={editable ? 'info' : 'neutral'}
       />
 
       {leadingContent}

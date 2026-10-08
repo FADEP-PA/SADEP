@@ -15,7 +15,6 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { formatDateTime, formatDocumentStatus, formatDocumentType, formatHistoryAction, formatRole } from '@/features/process/components/process-formatters';
-import { EvaluationAcknowledgement } from '@/features/process/components/evaluation-acknowledgement';
 import { getRequestErrorMessage } from '@/shared/api/http-error';
 import {
   completeCesadStageOpinion,
@@ -221,7 +220,6 @@ export function CesadStageReadWorkspace() {
         {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
         {error ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={error} /> : null}
 
-        <EvaluationAcknowledgement acknowledgement={snapshot.documents.find((document) => document.documentType === DocumentType.SUPERVISOR_EVALUATION)?.serverAcknowledgement} />
 
         <WorkTabs idPrefix="cesad-process" tabs={[{ id: 'analysis', label: 'Análise' }, { id: 'documents', label: 'Documentos' }, { id: 'history', label: 'Histórico' }]} activeTab={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
 

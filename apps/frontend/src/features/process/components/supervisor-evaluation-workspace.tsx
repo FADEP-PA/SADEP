@@ -554,15 +554,7 @@ export function SupervisorEvaluationWorkspace() {
     setSelfEvaluation(null);
   }
 
-  return (
-    <AuthGuard allowedRoles={ALLOWED_ROLES}>
-      <div className="work-page">
-        {!activeEvaluation ? (
-          <WorkPageHeader
-            title="Avaliações da equipe"
-            description="Pendências que precisam da sua atenção aparecem primeiro."
-          />
-        ) : null}
+  const workspaceFeedback = <>
         {isLoadingWorkspace ? (
           <InlineLoadingState
             title="Carregando painel da chefia"
@@ -579,9 +571,21 @@ export function SupervisorEvaluationWorkspace() {
           />
         ) : null}
 
+  </>;
+
+  return (
+    <AuthGuard allowedRoles={ALLOWED_ROLES}>
+      <div className="work-page">
+        {!activeEvaluation ? (
+          <WorkPageHeader
+            title="Avaliações da equipe"
+            description="Pendências que precisam da sua atenção aparecem primeiro."
+          />
+        ) : null}
+        {!activeEvaluation ? workspaceFeedback : null}
+
         {activeEvaluation ? (
           <>
-            {!showSelfEvaluationCard ? <EvaluationAcknowledgement acknowledgement={workspaceSnapshot?.documentContext?.acknowledgement} /> : null}
             {canSaveActiveDraft || (workspaceSnapshot?.canRectify && isRectifying) ? <EvaluationDetailView
               evaluation={activeEvaluation}
               isSavingDraft={isSavingDraft}
@@ -595,7 +599,7 @@ export function SupervisorEvaluationWorkspace() {
               attachmentsContent={workspaceSnapshot ? (
                 <EvaluationAttachments processId={workspaceSnapshot.process.id} stageId={workspaceSnapshot.supervisorEvaluation?.processStageId ?? workspaceSnapshot.process.currentStageId ?? ''} origin={EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION} editable={workspaceSnapshot.canEditDraft} disabled={isSavingDraft || isSubmittingEvaluation || isLoadingWorkspace} onBusyChange={setIsAttachmentsBusy} beforeUpload={initializeAttachmentDraft} />
               ) : null}
-              leadingContent={showSelfEvaluationCard ? (
+              leadingContent={<>{workspaceFeedback}{showSelfEvaluationCard ? (
                 <SupervisorSelfEvaluationCard
                   selfEvaluation={selfEvaluation}
                   documentContext={selfEvaluation.documentContext ?? null}
@@ -604,7 +608,7 @@ export function SupervisorEvaluationWorkspace() {
                   isConfirming={isConfirmingSelfEvaluation}
                   onConfirm={() => void handleConfirmSelfEvaluation()}
                 />
-              ) : null}
+               ) : workspaceSnapshot?.documentContext?.acknowledgement ? <EvaluationAcknowledgement acknowledgement={workspaceSnapshot.documentContext.acknowledgement} /> : null}</>}
               onChange={(updater) =>
                 setActiveEvaluation((current) => (current ? updater(current) : null))
               }
@@ -614,6 +618,8 @@ export function SupervisorEvaluationWorkspace() {
             /> : workspaceSnapshot ? <>
               <button type="button" className="ghost-button work-back" onClick={handleBackToDashboard}>← Voltar às avaliações</button>
               <WorkPageHeader title="Avaliação de desempenho" description={`${activeEvaluation.row.stageLabel} · ${activeEvaluation.row.serverName}`} status="Avaliação enviada" actions={workspaceSnapshot.canRectify ? <button type="button" onClick={() => setIsRectifying(true)}>Iniciar retificação</button> : undefined} />
+              {workspaceFeedback}
+              <EvaluationAcknowledgement acknowledgement={workspaceSnapshot.documentContext?.acknowledgement} />
               {feedbackMessage ? <FeedbackAlert title="Concluído" tone="success" description={feedbackMessage} /> : null}
               {actionErrorMessage ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={actionErrorMessage} /> : null}
               {showSelfEvaluationCard ? <SupervisorSelfEvaluationCard selfEvaluation={selfEvaluation} documentContext={selfEvaluation.documentContext ?? null} userName={session?.user.name ?? 'Chefia imediata'} processStatus={workspaceSnapshot.process.status} isConfirming={isConfirmingSelfEvaluation} onConfirm={() => void handleConfirmSelfEvaluation()} /> : null}

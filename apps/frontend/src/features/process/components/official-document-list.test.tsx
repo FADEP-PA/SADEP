@@ -18,7 +18,17 @@ describe('OfficialDocumentList', () => {
     expect(api.getEvaluationDocumentPdf).not.toHaveBeenCalled();
     expect(screen.queryByTitle(/PDF —/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF — Avaliação da chefia' }));
-    expect(await screen.findByTitle('PDF — Avaliação da chefia')).toBeInTheDocument();
+    const viewer = await screen.findByTitle('PDF — Avaliação da chefia');
+    const hide = screen.getByRole('button', { name: 'Ocultar visualização — Avaliação da chefia' });
+    const download = screen.getByRole('button', { name: 'Baixar PDF — Avaliação da chefia' });
+    expect(hide.parentElement).toHaveClass('pdf-document-card__actions');
+    expect(hide.nextElementSibling).toBe(download);
+    expect(viewer.closest('.pdf-document-card__content')?.previousElementSibling).toHaveClass('pdf-document-card__header');
+    expect(screen.queryByRole('link', { name: 'Baixar PDF' })).not.toBeInTheDocument();
+    fireEvent.click(hide);
+    expect(screen.queryByTitle('PDF — Avaliação da chefia')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF — Avaliação da chefia' }));
+    await screen.findByTitle('PDF — Avaliação da chefia');
     expect(api.getEvaluationDocumentPdf).toHaveBeenCalledWith('process', 'doc-0', expect.any(AbortSignal));
     fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF — Autoavaliação' }));
     expect(await screen.findByTitle('PDF — Autoavaliação')).toBeInTheDocument();

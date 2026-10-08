@@ -96,6 +96,7 @@ export function InternServerWorkspace() {
   const canEditSelfEvaluation = capabilities?.canEditSelfEvaluation ?? false;
   const canSubmitSelfEvaluation = capabilities?.canSubmitSelfEvaluation ?? false;
   const isSubmitted = snapshot?.selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED;
+  const isEditingSelfEvaluation = Boolean(snapshot && showSelfEvaluation && !isSubmitted);
   const status = canConfirmScience
     ? { label: 'Aguardando sua confirmação', tone: 'warning' as const }
     : canEditSelfEvaluation
@@ -155,14 +156,14 @@ export function InternServerWorkspace() {
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
       <div className="work-page intern-workspace">
-        <WorkPageHeader
+        {!isEditingSelfEvaluation ? <WorkPageHeader
           title="Minha avaliação"
           description={snapshot ? `${snapshot.currentStage.sequence}ª etapa do estágio probatório` : 'Acompanhe sua etapa atual'}
           status={snapshot ? status.label : undefined}
           statusTone={status.tone}
-        />
+        /> : null}
 
-        {processes.length > 1 ? (
+        {processes.length > 1 && !isEditingSelfEvaluation ? (
           <label className="field-group process-selector" htmlFor="intern-process">
             <span>Processo</span>
             <select id="intern-process" value={selectedProcessId} onChange={async (event) => { setSelectedProcessId(event.target.value); setIsLoading(true); await loadSnapshot(event.target.value); setIsLoading(false); }}>
@@ -172,17 +173,18 @@ export function InternServerWorkspace() {
           </label>
         ) : null}
 
-        {isLoading ? <InlineLoadingState title="Carregando avaliações…" /> : null}
+        {isLoading && !isEditingSelfEvaluation ? <InlineLoadingState title="Carregando avaliações…" /> : null}
         {!isLoading && processes.length === 0 && !error ? <EmptyState title="Nenhuma avaliação disponível" description="Você não possui ações para realizar agora." /> : null}
-        {error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}
-        {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
+        {error && !isEditingSelfEvaluation ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}
+        {feedback && !isEditingSelfEvaluation ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
 
         {snapshot && [ProcessStatus.NOTIFICADO, ProcessStatus.CIENTE, ProcessStatus.ENCERRADO].includes(snapshot.process.status)
           ? <PersonalNotificationCard key={snapshot.process.id} processId={snapshot.process.id} /> : null}
 
-        {snapshot ? (
+        {snapshot && !(showSelfEvaluation && !isSubmitted) ? (
           <>
             <WorkSection title="Sua avaliação">
+              <EvaluationAcknowledgement acknowledgement={acknowledgement} />
               {snapshot.supervisorEvaluation ? (
                 <div className="evaluation-summary">
                   <div className="evaluation-summary__metrics">
@@ -204,7 +206,6 @@ export function InternServerWorkspace() {
               />
             ) : null}
 
-            <EvaluationAcknowledgement acknowledgement={acknowledgement} />
             {canConfirmScience && !acknowledgement ? (
               <>
               <WorkSection title="Registrar ciência">
@@ -240,6 +241,7 @@ export function InternServerWorkspace() {
 
         {snapshot && showSelfEvaluation && !isSubmitted ? (
           <SelfEvaluationFormView
+            leadingContent={<>{error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}{feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}</>}
             form={form}
             processId={snapshot.process.id}
             stageId={snapshot.currentStage.stageId}

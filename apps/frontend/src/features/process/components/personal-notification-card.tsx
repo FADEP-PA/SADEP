@@ -7,32 +7,39 @@ import { getRequestErrorMessage } from '@/shared/api/http-error';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { WorkSection } from '@/shared/ui/work-patterns';
 import { formatDateTime } from './process-formatters';
+import { PdfDocumentCard } from './pdf-document-card';
 
 export function PersonalNotificationCard({ processId }: { processId: string }) {
   const [status, setStatus] = useState<HomologationStatusRef | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const lock = useRef(false);
   const activeProcess = useRef(processId);
   useEffect(() => {
     activeProcess.current = processId;
     let active = true;
-    setStatus(null); setPdfUrl(null); setError(null);
+    setStatus(null); setPdfUrl(null); setError(null); setExpanded(false);
     getHomologationStatus(processId).then(result => { if (active) setStatus(result); })
       .catch(() => { if (active) setError('Não foi possível carregar a Notificação Pessoal.'); });
     return () => { active = false; };
   }, [processId]);
   useEffect(() => { if (pdfUrl) return () => URL.revokeObjectURL(pdfUrl); }, [pdfUrl]);
 
-  async function run(action: 'view' | 'acknowledge') {
+  async function run(action: 'view' | 'download' | 'acknowledge') {
     if (lock.current || (action === 'acknowledge' && !status?.notificationDocument?.canAcknowledge)) return;
     lock.current = true; setBusy(true); setError(null);
     try {
-      if (action === 'view') {
+      if (action === 'view' || action === 'download') {
         const pdf = await getPersonalNotificationPdf(processId);
         if (activeProcess.current !== processId) return;
-        setPdfUrl(URL.createObjectURL(pdf));
+        const url = URL.createObjectURL(pdf);
+        setPdfUrl(url);
+        if (action === 'view') setExpanded(true);
+        else {
+          const link = document.createElement('a'); link.href = url; link.download = 'notificacao-pessoal.pdf'; link.click();
+        }
       } else {
         await acknowledgePersonalNotification(processId);
       }
@@ -46,14 +53,16 @@ export function PersonalNotificationCard({ processId }: { processId: string }) {
   return <WorkSection title="Notificação Pessoal">
     <p>Consulte o documento oficial com o resultado homologado da sua avaliação.</p>
     {error ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={error} /> : null}
-    <button type="button" disabled={busy || !status?.notificationDocument} onClick={() => void run('view')}>{busy ? 'Processando…' : 'Visualizar Notificação Pessoal'}</button>
-    {pdfUrl ? <>
-      <iframe title="Notificação Pessoal oficial" src={pdfUrl} style={{ width: '100%', height: 650, border: '1px solid #ccc', marginTop: 16 }} />
-      <a href={pdfUrl} download="notificacao-pessoal.pdf">Baixar Notificação Pessoal</a>
-    </> : null}
-    {status?.acknowledgedAt ? <p>Ciência registrada em {formatDateTime(status.acknowledgedAt)}.</p> : <>
+    {status?.acknowledgedAt ? <p>Ciência registrada em {formatDateTime(status.acknowledgedAt)}.</p> : null}
+    <PdfDocumentCard title="Notificação Pessoal" metadata={<span>{formatDateTime(status?.notifiedAt ?? null)}</span>} actions={<>
+      <button type="button" className="secondary-button" disabled={busy || !status?.notificationDocument} aria-expanded={expanded} onClick={() => { if (expanded) setExpanded(false); else if (pdfUrl) setExpanded(true); else void run('view'); }}>{expanded ? 'Ocultar visualização' : 'Visualizar PDF'}</button>
+      {pdfUrl ? <a className="secondary-button" href={pdfUrl} download="notificacao-pessoal.pdf">Baixar PDF</a> : <button type="button" className="secondary-button" disabled={busy || !status?.notificationDocument} onClick={() => void run('download')}>Baixar PDF</button>}
+    </>}>
+      {expanded && pdfUrl ? <iframe title="Notificação Pessoal oficial" src={pdfUrl} style={{ width: '100%', height: '70vh', border: 0 }} /> : null}
+    </PdfDocumentCard>
+    {!status?.acknowledgedAt ? <>
       <p>A ciência confirma o recebimento do resultado. Visualize o documento antes de confirmar.</p>
       <button type="button" disabled={busy || !status?.notificationDocument?.canAcknowledge} onClick={() => void run('acknowledge')}>Confirmar ciência da Notificação Pessoal</button>
-    </>}
+    </> : null}
   </WorkSection>;
 }

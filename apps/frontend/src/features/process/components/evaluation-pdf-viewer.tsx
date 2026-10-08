@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { HttpError } from '@/shared/api/http-error';
 import { getEvaluationDocumentPdf } from '@/shared/api/services/processes-service';
+import { PdfDocumentCard } from './pdf-document-card';
 
 type Props = {
   processId: string;
@@ -14,6 +15,7 @@ type Props = {
   } | null;
   updatedAt: string;
   title: string;
+  controls?: boolean;
 };
 
 export function EvaluationPdfViewer(props: Props) {
@@ -21,10 +23,11 @@ export function EvaluationPdfViewer(props: Props) {
   return <PdfContent key={`${props.processId}:${props.documentContext?.documentId}:${props.updatedAt}:${props.documentContext?.hasArtifact}:${signatureVersion}`} {...props} />;
 }
 
-function PdfContent({ processId, documentContext, title }: Props) {
+function PdfContent({ processId, documentContext, title, controls = true }: Props) {
   const [attempt, setAttempt] = useState(0);
   const [url, setUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const shouldLoad = Boolean(documentContext?.hasArtifact || attempt > 0);
   const documentId = documentContext?.documentId;
 
@@ -55,16 +58,17 @@ function PdfContent({ processId, documentContext, title }: Props) {
   }, [processId, documentId, shouldLoad, attempt]);
 
   if (!documentId) return <p className="muted-copy" role="status">Documento PDF indisponível.</p>;
-  if (url) return (
-    <div className="form-stack">
-      <iframe title={title} src={url} style={{ width: '100%', height: '70vh', border: 0 }} />
-      <a className="secondary-button" href={url} download={`${documentId}.pdf`}>Baixar PDF</a>
-    </div>
-  );
-  return (
+  const content = url ? <iframe title={title} src={url} style={{ width: '100%', height: '70vh', border: 0 }} /> : (
     <div className="form-stack">
       <p className="muted-copy" role="status">{message ?? (shouldLoad ? 'Carregando PDF…' : 'PDF em preparação ou aguardando geração.')}</p>
       {!shouldLoad || message ? <button type="button" className="secondary-button" onClick={() => setAttempt((current) => current + 1)}>{message ? 'Tentar novamente' : 'Verificar PDF'}</button> : null}
     </div>
   );
+  if (!controls) return content;
+  return <PdfDocumentCard title={title} actions={<>
+    <button type="button" className="secondary-button" aria-label={`${expanded ? 'Ocultar visualização' : 'Visualizar PDF'} — ${title}`} aria-expanded={expanded} onClick={() => setExpanded(current => !current)}>{expanded ? 'Ocultar visualização' : 'Visualizar PDF'}</button>
+    {url ? <a className="secondary-button" href={url} download={`${title}.pdf`}>Baixar PDF</a> : <button type="button" className="secondary-button" disabled>Baixar PDF</button>}
+  </>}>
+    {expanded || !url ? content : null}
+  </PdfDocumentCard>;
 }

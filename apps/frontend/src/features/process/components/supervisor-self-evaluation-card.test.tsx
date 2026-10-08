@@ -91,6 +91,7 @@ describe('SupervisorSelfEvaluationCard', () => {
     api.getEvaluationDocumentPdf.mockResolvedValue(new Blob(['%PDF-test'], { type: 'application/pdf' }));
     const context = { ...createDocumentContext({ supervisorPending: true }), hasArtifact: true, artifactPath: 'private/storage.pdf' };
     render(<SupervisorSelfEvaluationCard selfEvaluation={BASE_SELF_EVALUATION} documentContext={context} userName="Chefia" processStatus={ProcessStatus.AGUARDANDO_ASSINATURA} isConfirming={false} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF — PDF da autoavaliação do Servidor' }));
     expect(await screen.findByTitle('PDF da autoavaliação do Servidor')).toHaveAttribute('src', 'blob:supervisor-pdf');
     expect(api.getEvaluationDocumentPdf).toHaveBeenCalledWith(BASE_SELF_EVALUATION.processId, 'doc-1', expect.any(AbortSignal));
     expect(screen.queryByText(BASE_SELF_EVALUATION.selfReflection)).not.toBeInTheDocument();

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
   formatDateTime,
+  formatDocumentStatus,
   formatProcessStatus,
   formatSignatureStatus,
   getProcessStatusTone,
@@ -33,6 +34,7 @@ import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { EmptyState } from '@/shared/ui/operational-states';
 import { StatusBadge } from '@/shared/ui/status-badge';
 import { NextAction, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
+import { OfficialDocumentList } from '@/features/process/components/official-document-list';
 
 const ALLOWED_ROLES = [UserRole.HOMOLOGATION_AUTHORITY, UserRole.ADMIN];
 
@@ -303,7 +305,7 @@ export function HomologationAuthorityWorkspace() {
             </WorkSection>
 
             <WorkSection title="Parecer conclusivo final">
-              {opinion ? (
+              {signatureStatus?.document?.hasArtifact ? <OfficialDocumentList processId={selected.id} documents={[{ documentId: signatureStatus.document.documentId, title: 'Parecer conclusivo final', hasArtifact: true, updatedAt: signatureStatus.document.updatedAt, status: formatDocumentStatus(signatureStatus.document.documentStatus) }]} /> : opinion ? (
                 <>
                   <p>
                     <strong>Relatório</strong>

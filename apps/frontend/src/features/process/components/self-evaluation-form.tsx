@@ -3,6 +3,7 @@
 import { EVALUATION_TEXT_LIMIT_MESSAGE, EvaluationAttachmentOrigin, isEvaluationTextWithinLimit } from '@sadep/contracts';
 import { EvaluationTextarea } from '@/shared/ui/evaluation-textarea';
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { DetailList, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
@@ -31,6 +32,7 @@ type Props = {
   onSaveDraft: () => void;
   onSubmit: () => void;
   beforeUpload?: () => Promise<void>;
+  leadingContent?: ReactNode;
 };
 
 export function SelfEvaluationFormView({
@@ -52,6 +54,7 @@ export function SelfEvaluationFormView({
   onSaveDraft,
   onSubmit,
   beforeUpload,
+  leadingContent,
 }: Props) {
   const [attachmentsBusy, setAttachmentsBusy] = useState(false);
   isBusy = isBusy || attachmentsBusy;
@@ -65,6 +68,7 @@ export function SelfEvaluationFormView({
         status={isSubmitted ? 'Enviada' : canEdit ? 'Em preenchimento' : 'Somente leitura'}
         statusTone={isSubmitted ? 'success' : canEdit ? 'info' : 'neutral'}
       />
+      {leadingContent}
 
       <WorkSection title="Identificação">
         <DetailList items={[{ label: 'Etapa', value: `${currentStageSequence}ª etapa` }, { label: 'Período', value: currentStagePeriod }]} />

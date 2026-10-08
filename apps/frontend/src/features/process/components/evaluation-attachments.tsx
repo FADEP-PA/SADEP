@@ -14,6 +14,7 @@ import {
 } from '@/shared/api/services/evaluation-attachments-service';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { WorkSection } from '@/shared/ui/work-patterns';
+import { PdfDocumentCard } from './pdf-document-card';
 
 const MAX_FILES = 5;
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -210,21 +211,18 @@ function AttachmentsContent({ processId, stageId, origin, editable = false, disa
       {feedback ? <p role="status">{feedback}</p> : null}
       {loaded && attachments.length === 0 ? <p>Nenhum anexo enviado.</p> : null}
       <ul className="document-list">
-        {attachments.map((attachment) => <li className="document-list__item" key={attachment.id}>
-          <div><strong>{attachment.originalFilename}</strong><span>{attachment.mimeType} · {formatSize(attachment.sizeBytes)}</span></div>
-          <div className="form-actions">
-            <button type="button" className="secondary-button" disabled={blocked} onClick={() => open(attachment, false)}>Visualizar {attachment.originalFilename}</button>
-            <button type="button" className="secondary-button" disabled={blocked} onClick={() => open(attachment, true)}>Baixar {attachment.originalFilename}</button>
+        {attachments.map((attachment) => <li key={attachment.id}>
+          <PdfDocumentCard title={attachment.originalFilename} metadata={<span>{attachment.mimeType} · {formatSize(attachment.sizeBytes)}</span>} actions={<>
+            <button type="button" className="secondary-button" disabled={blocked} aria-label={`${preview?.attachment.id === attachment.id ? "Ocultar visualização" : attachment.mimeType === "application/pdf" ? "Visualizar PDF" : "Visualizar"} ${attachment.originalFilename}`} aria-expanded={preview?.attachment.id === attachment.id} onClick={() => { if (preview?.attachment.id === attachment.id) setPreview(null); else open(attachment, false); }}>{preview?.attachment.id === attachment.id ? 'Ocultar visualização' : attachment.mimeType === 'application/pdf' ? 'Visualizar PDF' : 'Visualizar'}</button>
+            <button type="button" className="secondary-button" disabled={blocked} aria-label={`Baixar ${attachment.mimeType === "application/pdf" ? "PDF " : ""}${attachment.originalFilename}`} onClick={() => open(attachment, true)}>Baixar {attachment.mimeType === "application/pdf" ? "PDF" : "arquivo"}</button>
             {canManage ? <button type="button" className="secondary-button" disabled={blocked} onClick={() => remove(attachment)}>Remover {attachment.originalFilename}</button> : null}
-          </div>
+          </>}>
+            {preview?.attachment.id === attachment.id ? attachment.mimeType === 'application/pdf'
+              ? <iframe title={`Anexo ${attachment.originalFilename}`} src={preview.url} style={{ width: '100%', height: '60vh', border: 0 }} />
+              : <img alt={`Anexo ${attachment.originalFilename}`} src={preview.url} style={{ maxWidth: '100%' }} /> : null}
+          </PdfDocumentCard>
         </li>)}
       </ul>
-      {preview ? <div className="form-stack">
-        {preview.attachment.mimeType === 'application/pdf'
-          ? <iframe title={`Anexo ${preview.attachment.originalFilename}`} src={preview.url} style={{ width: '100%', height: '60vh', border: 0 }} />
-          : <img alt={`Anexo ${preview.attachment.originalFilename}`} src={preview.url} style={{ maxWidth: '100%' }} />}
-        <button type="button" className="secondary-button" onClick={() => setPreview(null)}>Fechar visualização</button>
-      </div> : null}
     </WorkSection>
   );
 }

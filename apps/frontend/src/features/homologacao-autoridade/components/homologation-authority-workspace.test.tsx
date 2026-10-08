@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   CesadFinalOpinionStatus,
+  CesadOpinionKind,
+  DocumentType,
+  DocumentStatus,
   ProcessStatus,
   SignatureStatus,
   type CesadFinalOpinionRef,
@@ -15,6 +18,7 @@ import { HomologationAuthorityWorkspace } from './homologation-authority-workspa
 
 const api = vi.hoisted(() => ({
   approveHomologation: vi.fn(),
+  getEvaluationDocumentPdf: vi.fn(),
   getCesadFinalOpinion: vi.fn(),
   getCesadFinalOpinionSignatureStatus: vi.fn(),
   getHomologationQueue: vi.fn(),
@@ -164,6 +168,34 @@ describe('HomologationAuthorityWorkspace', () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Observações da decisão')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Gerar notificação' })).not.toBeInTheDocument();
+  });
+
+  it('consulta o parecer oficial com ações à direita e preserva o cabeçalho e a homologação', async () => {
+    api.getHomologationQueue.mockResolvedValue({ items: [createQueueItem()], total: 1 });
+    api.getCesadFinalOpinionSignatureStatus.mockResolvedValue({ ...createSignatureStatus(), document: {
+      documentId: 'final-document', documentType: DocumentType.CESAD_OPINION, opinionKind: CesadOpinionKind.FINAL_CONCLUSIVE,
+      documentStatus: DocumentStatus.SIGNED, hasArtifact: true, artifactPath: 'private/final.pdf',
+      createdAt: '2026-10-04T10:00:00Z', updatedAt: '2026-10-05T10:00:00Z',
+    } });
+    api.getEvaluationDocumentPdf.mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }));
+    URL.createObjectURL = vi.fn(() => 'blob:final-opinion'); URL.revokeObjectURL = vi.fn();
+    await renderAndOpenDetail();
+    const title = screen.getByRole('heading', { level: 1, name: 'Servidor Ana' });
+    const back = screen.getByRole('button', { name: /Voltar/ });
+    const view = screen.getByRole('button', { name: 'Visualizar PDF — Parecer conclusivo final' });
+    const download = screen.getByRole('button', { name: 'Baixar PDF — Parecer conclusivo final' });
+    expect(back.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(title.compareDocumentPosition(view) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(view.parentElement).toHaveClass('pdf-document-card__actions');
+    expect(view.nextElementSibling).toBe(download);
+    expect(screen.queryByText('Relatório consolidado das quatro etapas.')).not.toBeInTheDocument();
+    fireEvent.click(view);
+    expect(await screen.findByTitle('PDF — Parecer conclusivo final')).toHaveAttribute('src', 'blob:final-opinion');
+    const hide = screen.getByRole('button', { name: 'Ocultar visualização — Parecer conclusivo final' });
+    expect(hide.nextElementSibling).toBe(download);
+    fireEvent.click(hide);
+    expect(screen.queryByTitle('PDF — Parecer conclusivo final')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Homologar resultado' })).toBeEnabled();
   });
 
   it('mostra estado vazio quando a fila está vazia', async () => {

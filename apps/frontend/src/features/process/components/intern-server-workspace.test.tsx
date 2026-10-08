@@ -262,6 +262,7 @@ describe('InternServerWorkspace', () => {
     const snapshot = createSnapshot(); snapshot.supervisorEvaluation!.documentContext!.hasArtifact = true;
     snapshot.supervisorEvaluation!.documentContext!.artifactPath = 'private/storage.pdf';
     renderWorkspace(snapshot);
+    fireEvent.click(await screen.findByRole('button', { name: 'Visualizar PDF — PDF da avaliação da Chefia' }));
     expect(await screen.findByTitle('PDF da avaliação da Chefia')).toHaveAttribute('src', 'blob:intern-pdf');
     expect(api.getEvaluationDocumentPdf).toHaveBeenCalledWith(PROCESS_ID, 'supervisor-document-1', expect.any(AbortSignal));
     expect(screen.queryByText('Desempenho satisfatório no período.')).not.toBeInTheDocument();
@@ -304,7 +305,10 @@ describe('InternServerWorkspace', () => {
     snapshot.supervisorEvaluation!.documentContext!.signatures[1]!.acknowledgementMode = AcknowledgementMode.ACKNOWLEDGED;
     const view = renderWorkspace(snapshot);
     const label = mode === null ? 'Ciência registrada — modalidade não informada (registro anterior)' : mode === AcknowledgementMode.ACKNOWLEDGED ? 'Ciente' : 'Ciente com ressalva';
-    expect(await screen.findByText(label)).toBeInTheDocument();
+    const science = await screen.findByText(label);
+    const header = screen.getByRole('heading', { name: 'Minha avaliação' });
+    expect(header.compareDocumentPosition(science) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(science.closest('.work-section__body')?.parentElement?.closest('.work-section__body')).toHaveTextContent('PDF da avaliação da Chefia');
     expect(screen.getByText('Data/hora:', { exact: false })).toHaveTextContent(formatDateTime(SIGNED_AT));
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Preencher autoavaliação' })).toBeEnabled();
@@ -421,6 +425,12 @@ describe('InternServerWorkspace', () => {
 
     render(<InternServerWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Preencher autoavaliação' }));
+    const back = screen.getByRole('button', { name: /Voltar à avaliação/ });
+    const heading = screen.getByRole('heading', { level: 1 });
+    const field = screen.getByLabelText('Autoavaliação');
+    expect(back.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(heading.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Minha avaliação' })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Autoavaliação'), {
       target: { value: 'Minha reflexão persistida.' },
     });
@@ -706,7 +716,7 @@ describe('anexos da avaliação recebida da Chefia', () => {
 
   it('visualiza o anexo da Chefia pelo endpoint autorizado sem expor caminho privado', async () => {
     renderWorkspace();
-    fireEvent.click(await screen.findByRole('button', { name: 'Visualizar evidencia-chefia.pdf' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Visualizar PDF evidencia-chefia.pdf' }));
     expect(await screen.findByTitle('Anexo evidencia-chefia.pdf')).toHaveAttribute('src', 'blob:chefia-attachment');
     expect(attachmentsApi.downloadEvaluationAttachment).toHaveBeenCalledWith(
       PROCESS_ID, 'stage-1', EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, chefiaAttachment.id,

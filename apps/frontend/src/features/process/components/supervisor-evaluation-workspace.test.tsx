@@ -158,6 +158,11 @@ describe('SupervisorEvaluationWorkspace', () => {
     const view = render(<SupervisorEvaluationWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
     await screen.findByLabelText('Competências da unidade');
+    const back = screen.getByRole('button', { name: /Voltar às avaliações/ });
+    const heading = screen.getByRole('heading', { level: 1, name: 'Avaliação de desempenho' });
+    const content = screen.getByLabelText('Competências da unidade');
+    expect(back.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(heading.compareDocumentPosition(content) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
     expect(screen.getByText('1.2 Quando presente no seu local de trabalho, pouco se ausenta para atividades particulares.')).toBeInTheDocument();
     view.unmount();
@@ -187,7 +192,12 @@ describe('SupervisorEvaluationWorkspace', () => {
     const label = modality === null ? 'Ciência registrada — modalidade não informada (registro anterior)' : modality === AcknowledgementMode.ACKNOWLEDGED ? 'Ciente' : 'Ciente com ressalva';
     render(<SupervisorEvaluationWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
-    expect(await screen.findByText(label)).toBeInTheDocument();
+    const science = await screen.findByText(label);
+    const header = screen.getByRole('heading', { name: 'Avaliação de desempenho' });
+    const back = screen.getByRole('button', { name: /Voltar às avaliações/ });
+    expect(back.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(header.compareDocumentPosition(science) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
     expect(screen.getByText(/Data\/hora:/)).toHaveTextContent(formatDateTime(acknowledgedAt));
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
     if (modality === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION) expect(screen.getByText(/O servidor registrou ciência da avaliação com ressalva/)).toBeInTheDocument();
