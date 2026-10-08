@@ -15,7 +15,7 @@ export function EvaluationAcknowledgement({ acknowledgement }: { acknowledgement
       : 'Ciência registrada — modalidade não informada (registro anterior)';
 
   return (
-    <WorkSection title="Ciência registrada">
+    <WorkSection title={withReservation ? '✓ Ciência registrada com ressalva' : '✓ Ciência registrada'}>
       <p><strong>{label}</strong></p>
       {acknowledgement.acknowledgedAt ? <p>Data/hora: {formatDateTime(acknowledgement.acknowledgedAt)}</p> : null}
       {withReservation ? <p>O servidor registrou ciência da avaliação com ressalva, indicando discordância quanto ao conteúdo.</p> : null}

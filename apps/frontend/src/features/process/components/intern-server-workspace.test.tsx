@@ -228,6 +228,24 @@ function renderWorkspace(snapshot = createSnapshot()) {
 }
 
 describe('InternServerWorkspace', () => {
+  it('mostra avaliação e anexos antes da ciência', async () => {
+    renderWorkspace(); await screen.findByRole('heading', { name: 'Registrar ciência' });
+    const titles = screen.getAllByRole('heading').map(h => h.textContent);
+    expect(titles.indexOf('Sua avaliação')).toBeLessThan(titles.indexOf('Anexos da Chefia'));
+    expect(titles.indexOf('Anexos da Chefia')).toBeLessThan(titles.indexOf('Registrar ciência'));
+  });
+  it('autosave antes do upload mantém o formulário e deixa as ações após anexos', async () => {
+    renderWorkspace(createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT }));
+    const field = await screen.findByLabelText('Autoavaliação'); fireEvent.change(field, { target: { value: 'Texto atual ainda não salvo.' } });
+    attachmentsApi.uploadSelfEvaluationAttachment.mockResolvedValue({ attachment: { id: 'new', originalFilename: 'prova.pdf', mimeType: 'application/pdf', sizeBytes: 10 } });
+    await waitFor(() => expect(screen.getByLabelText('Selecionar arquivos')).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Selecionar arquivos'), { target: { files: [new File(['%PDF'], 'prova.pdf', { type: 'application/pdf' })] } });
+    await screen.findByText('Anexos enviados.');
+    expect(api.saveSelfEvaluationDraft).toHaveBeenCalledWith(PROCESS_ID, expect.objectContaining({ selfReflection: 'Texto atual ainda não salvo.' }));
+    expect(api.saveSelfEvaluationDraft.mock.invocationCallOrder[0]).toBeLessThan(attachmentsApi.uploadSelfEvaluationAttachment.mock.invocationCallOrder[0]!);
+    expect(field).toHaveValue('Texto atual ainda não salvo.'); expect(api.getInternWorkspaceSnapshot).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('heading', { name: 'Anexos da autoavaliação' }).compareDocumentPosition(screen.getByRole('button', { name: 'Salvar rascunho' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     api.saveSelfEvaluationDraft.mockResolvedValue({});
@@ -268,7 +286,7 @@ describe('InternServerWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Confirmar ciência' })).toBeDisabled();
     expect(screen.queryByText(PROCESS_ID)).not.toBeInTheDocument();
     expect(
-      screen.getByText('Confirme que você leu a avaliação para liberar a autoavaliação.'),
+      screen.getByText('A ciência confirma que você recebeu e leu a avaliação. Ela não significa concordância com o conteúdo.'),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText('Autoavaliação')).not.toBeInTheDocument();
   });

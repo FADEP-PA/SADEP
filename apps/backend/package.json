@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "build": "npm run build --workspace @sadep/contracts && npm run prisma:generate && tsc -p tsconfig.app.json",
+    "build": "npm run build --workspace @sadep/contracts && npm run prisma:generate && tsc -p tsconfig.app.json && node scripts/copy-document-templates.mjs",
     "start": "node dist/apps/backend/src/main.js",
     "start:prod": "node dist/apps/backend/src/main.js",
     "start:dev": "npm run build --workspace @sadep/contracts && ts-node --transpile-only -r tsconfig-paths/register src/main.ts",
@@ -37,7 +37,9 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "helmet": "^8.2.0",
+    "pdf-lib": "^1.17.1",
     "pdfkit": "^0.20.2",
+    "pizzip": "^3.3.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
@@ -47,6 +49,7 @@
     "@types/node": "^22.14.0",
     "dotenv": "^17.2.3",
     "jest": "^30.3.0",
+    "pdf-parse": "^1.1.1",
     "prisma": "^6.8.2",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",

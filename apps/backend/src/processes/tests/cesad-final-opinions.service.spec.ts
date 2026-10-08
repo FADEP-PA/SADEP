@@ -962,7 +962,7 @@ export async function runCesadFinalOpinionsServiceTests() {
     assert.ok(frozenArtifact.artifactFrozenAt);
     const officialPdf = await artifactStorage.read(frozenArtifact.artifactPath!);
     assert.equal(artifactContentHash(officialPdf), frozenArtifact.artifactChecksum);
-    const officialText = [...officialPdf.toString('latin1').matchAll(/<([0-9a-f]+)>/g)].map(match => Buffer.from(match[1]!, 'hex').toString('latin1')).join('').replace(/\s/g, '');
+    const officialText = (await require('pdf-parse/lib/pdf-parse.js')(officialPdf)).text.replace(/\s/g, '');
     assert.ok(officialText.includes('PARECERCONCLUSIVO'));
     assert.ok(officialText.includes('80.0'));
     assert.ok(!officialText.includes(ready.processId));
@@ -1555,8 +1555,8 @@ export async function runCesadFinalOpinionsServiceTests() {
     assert.deepEqual(received.content, notificationBytes);
     const receiptStatus = await homologation.getStatus(ready.processId, internUser);
     assert.ok(receiptStatus.notificationDocument?.viewedAt); assert.equal(receiptStatus.notificationDocument?.canAcknowledge, true);
-    const personalText = [...received.content.toString('latin1').matchAll(/<([0-9a-f]+)>/g)].map(match => Buffer.from(match[1]!, 'hex').toString('latin1')).join('').replace(/\s/g, '');
-    assert.ok(personalText.includes('NOTIFICAÇÃOPESSOAL')); assert.ok(personalText.includes('5(cinco)dias'));
+    const personalText = (await require('pdf-parse/lib/pdf-parse.js')(received.content)).text.replace(/\s/g, '');
+    assert.ok(personalText.includes('NOTIFICAÇÃOPESSOAL')); assert.ok(personalText.includes('05(cinco)dias'));
     assert.ok(!personalText.includes(ready.processId)); assert.ok(!personalText.includes('Assinadoem'));
     const science = await homologation.acknowledge(ready.processId, internUser);
     assert.equal(science.processStatus, ProcessStatus.CIENTE); assert.ok(science.acknowledgedAt);

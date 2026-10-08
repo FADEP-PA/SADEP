@@ -93,50 +93,50 @@ const FACTOR_TEMPLATES: Array<{ id: string; title: string; items: Array<{ id: st
     id: 'assiduidade',
     title: 'Assiduidade',
     items: [
-      { id: '1.1', label: '1.1 Cumpre o horário integralmente' },
-      { id: '1.2', label: '1.2 Quando presente pouco se ausenta do local de trabalho' },
-      { id: '1.3', label: '1.3 Quase nunca falta' },
-      { id: '1.4', label: '1.4 Quando falta apresenta justificativa legal' },
+      { id: '1.1', label: '1.1 Cumpre o horário integralmente.' },
+      { id: '1.2', label: '1.2 Quando presente no seu local de trabalho, pouco se ausenta para atividades particulares.' },
+      { id: '1.3', label: '1.3 Quase nunca falta.' },
+      { id: '1.4', label: '1.4 Quando falta, apresenta justificativa.' },
     ],
   },
   {
     id: 'disciplina',
     title: 'Disciplina',
     items: [
-      { id: '2.1', label: '2.1 Observância de normas e regulamentos' },
-      { id: '2.2', label: '2.2 Urbanidade e respeito no trato' },
-      { id: '2.3', label: '2.3 Acato as ordens superiores' },
-      { id: '2.4', label: '2.4 Zelo pelo patrimônio público' },
+      { id: '2.1', label: '2.1 Cumpre as normas legais.' },
+      { id: '2.2', label: '2.2 Submete-se ao regulamento interno do órgão/entidade.' },
+      { id: '2.3', label: '2.3 É um profissional que apresenta controle sobre suas ações.' },
+      { id: '2.4', label: '2.4 Apresenta boa relação com os demais servidores do órgão/entidade.' },
     ],
   },
   {
     id: 'iniciativa',
     title: 'Capacidade de iniciativa',
     items: [
-      { id: '3.1', label: '3.1 Busca de soluções para problemas' },
-      { id: '3.2', label: '3.2 Inovação pedagógica e proatividade' },
-      { id: '3.3', label: '3.3 Colaboração institucional' },
-      { id: '3.4', label: '3.4 Sugestões para melhoria do serviço' },
+      { id: '3.1', label: '3.1 Quanto a realizar atividades rotineiras.' },
+      { id: '3.2', label: '3.2 Quanto a solucionar situações inesperadas (Proatividade).' },
+      { id: '3.3', label: '3.3 Identifica e resolve situações complexas.' },
+      { id: '3.4', label: '3.4 É seguro e dinâmico na forma de solucionar situações simples ou complexas.' },
     ],
   },
   {
     id: 'produtividade',
     title: 'Produtividade',
     items: [
-      { id: '4.1', label: '4.1 Volume e qualidade do trabalho' },
-      { id: '4.2', label: '4.2 Cumprimento de prazos e metas' },
-      { id: '4.3', label: '4.3 Eficiência na execução de tarefas' },
-      { id: '4.4', label: '4.4 Organização das atividades' },
+      { id: '4.1', label: '4.1 Atende às expectativas referentes à quantidade e à qualidade dos resultados.' },
+      { id: '4.2', label: '4.2 Tem boas idéias para melhorar as tarefas e os resultados dos trabalhos.' },
+      { id: '4.3', label: '4.3 Cumpre as metas propostas pela Instituição.' },
+      { id: '4.4', label: '4.4 Desempenha com perfeição e eficiência o trabalho a ser executado.' },
     ],
   },
   {
     id: 'responsabilidade',
     title: 'Responsabilidade',
     items: [
-      { id: '5.1', label: '5.1 Sigilo profissional e ética' },
-      { id: '5.2', label: '5.2 Cuidado com documentação escolar' },
-      { id: '5.3', label: '5.3 Compromisso com resultados' },
-      { id: '5.4', label: '5.4 Prestação de contas das atividades' },
+      { id: '5.1', label: '5.1 As tarefas são realizadas dentro dos prazos e condições estipulados.' },
+      { id: '5.2', label: '5.2 O resultado do seu trabalho é confiável.' },
+      { id: '5.3', label: '5.3 Busca solucionar as dificuldades de trabalho, destacando-se no cumprimento dos objetivos da Instituição.' },
+      { id: '5.4', label: '5.4 Demonstra conduta compatível com o cargo que ocupa, conforme o interesse público, urbanidade e lealdade.' },
     ],
   },
 ];
@@ -198,7 +198,7 @@ function createEvaluationDraft(
       const recorded = storedCriteria.find((criterion) => criterion.code === item.id);
       return {
         id: item.id,
-        label: item.label,
+        label: recorded?.label ?? item.label,
         score: recorded?.rating ?? null,
         hasRecordedScore: Boolean(recorded),
       };
@@ -250,7 +250,7 @@ function buildSupervisorEvaluationPayload(
   const generalComments =
     [userGeneralComments, resultComment].filter(Boolean).join('\n\n') || INCOMPLETE_DRAFT_COMMENT;
 
-  if (!summary) {
+  if (!summary && mode === 'submit') {
     throw new Error('Informe as competências da unidade ou as atribuições do servidor antes de salvar.');
   }
 
@@ -258,9 +258,7 @@ function buildSupervisorEvaluationPayload(
     throw new Error('Preencha a nota de todos os critérios antes de enviar a avaliação.');
   }
 
-  if (mode === 'draft' && recordedCriteria.length === 0) {
-    throw new Error('Preencha ao menos uma nota antes de salvar o rascunho da avaliação.');
-  }
+
 
   return {
     summary,
@@ -451,6 +449,12 @@ export function SupervisorEvaluationWorkspace() {
     }
   }
 
+  async function initializeAttachmentDraft() {
+    if (!activeEvaluation || !workspaceSnapshot?.canEditDraft) throw new Error('A avaliação não está disponível para edição.');
+    const saved = await saveSupervisorEvaluationDraft(workspaceSnapshot.process.id, buildSupervisorEvaluationPayload(activeEvaluation, 'draft'));
+    setWorkspaceSnapshot(current => current ? { ...current, supervisorEvaluation: saved } : current);
+  }
+
   async function handleSaveDraft() {
     if (!activeEvaluation || isAttachmentsBusy) return;
 
@@ -584,16 +588,9 @@ export function SupervisorEvaluationWorkspace() {
               feedbackMessage={feedbackMessage}
               actionErrorMessage={actionErrorMessage}
               isAttachmentsBusy={isAttachmentsBusy}
-              attachmentsContent={workspaceSnapshot?.supervisorEvaluation ? (
-                <EvaluationAttachments
-                  processId={workspaceSnapshot.process.id}
-                  stageId={workspaceSnapshot.supervisorEvaluation.processStageId}
-                  origin={EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION}
-                  editable={workspaceSnapshot.canEditDraft && workspaceSnapshot.supervisorEvaluation.status === SupervisorEvaluationStatus.DRAFT}
-                  disabled={isSavingDraft || isSubmittingEvaluation || isLoadingWorkspace}
-                  onBusyChange={setIsAttachmentsBusy}
-                />
-              ) : <WorkSection title="Anexos da avaliação"><p>Salve o rascunho da avaliação antes de adicionar anexos.</p></WorkSection>}
+              attachmentsContent={workspaceSnapshot ? (
+                <EvaluationAttachments processId={workspaceSnapshot.process.id} stageId={workspaceSnapshot.supervisorEvaluation?.processStageId ?? workspaceSnapshot.process.currentStageId ?? ''} origin={EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION} editable={workspaceSnapshot.canEditDraft} disabled={isSavingDraft || isSubmittingEvaluation || isLoadingWorkspace} onBusyChange={setIsAttachmentsBusy} beforeUpload={initializeAttachmentDraft} />
+              ) : null}
               leadingContent={showSelfEvaluationCard ? (
                 <SupervisorSelfEvaluationCard
                   selfEvaluation={selfEvaluation}

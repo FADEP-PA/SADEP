@@ -85,6 +85,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Install original DOCX PDF converter
+        run: sudo apt-get update && sudo apt-get install -y libreoffice-writer fonts-crosextra-carlito fonts-crosextra-caladea
+
       - name: Generate Prisma client
         working-directory: apps/backend
         run: npx prisma generate --schema prisma/schema.prisma

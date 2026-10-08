@@ -7978,3 +7978,19 @@ button,
   .evaluation-workspace__factors .evaluation-detail__factor-metric span { font-size: 11px; }
   .evaluation-workspace__summary .score-summary > div { padding: 11px 12px; }
 }
+
+/* Compact evaluation and accessible acknowledgement choices. */
+.evaluation-workspace .work-section__body,.intern-workspace .work-section__body { padding-block: 12px; }
+.evaluation-workspace .form-stack,.self-evaluation-workspace .form-stack { gap: 10px; }
+.evaluation-workspace__factors .evaluation-detail__score-input-wrap select { width: 72px; min-height: 32px; padding: 4px 7px; font-size: 13px; }
+.factor-progress { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.science-options { border: 0; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
+.science-option { position: relative; display: grid; gap: 4px; padding: 10px 12px 10px 36px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; }
+.science-option:has(input:checked) { background: #f0f5fa; border-color: #547294; }
+.science-option:has(input:focus-visible) { outline: 2px solid var(--primary-700); outline-offset: 2px; }
+.science-option input[type=radio] { position: absolute; left: 12px; top: 12px; width: 14px; height: 14px; min-height: 0; margin: 0; accent-color: #17365d; }
+.science-option > span:first-child { font-weight: 600; }
+.science-option > span:last-child { color: var(--text-secondary); }
+.science-actions { justify-content: flex-end; }
+.self-evaluation-available { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }

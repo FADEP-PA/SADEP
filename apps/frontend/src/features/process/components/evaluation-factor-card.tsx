@@ -1,11 +1,11 @@
 'use client';
 
-import { isValidEvaluationRating, type EvaluationScoreScale } from '@sadep/contracts';
+import { calculateEvaluationRatingsScore, isValidEvaluationRating, type EvaluationScoreScale } from '@sadep/contracts';
 import type { EvaluationFactorDraft } from './supervisor-evaluation-types';
 
-function calculateFactorAverage(factor: EvaluationFactorDraft): number | null {
+function calculateFactorAverage(factor: EvaluationFactorDraft, scoreScale: EvaluationScoreScale): number | null {
   const scores = factor.items.flatMap((item) => item.score === null ? [] : [item.score]);
-  return scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null;
+  return scores.length > 0 ? Number(calculateEvaluationRatingsScore(scores, scoreScale).stageAverage) : null;
 }
 
 export function EvaluationFactorCard({
@@ -15,6 +15,7 @@ export function EvaluationFactorCard({
   onScoreChange,
   scoreScale = 'PERCENT_0_100',
   provisional = false,
+  disabled = false,
 }: {
   factor: EvaluationFactorDraft;
   isExpanded: boolean;
@@ -22,9 +23,10 @@ export function EvaluationFactorCard({
   onScoreChange: (itemId: string, score: number | null) => void;
   scoreScale?: EvaluationScoreScale;
   provisional?: boolean;
+  disabled?: boolean;
 }) {
-  const subtotal = factor.items.reduce((sum, item) => sum + (item.score ?? 0), 0);
-  const average = calculateFactorAverage(factor);
+  const completed = factor.items.filter(item => item.score !== null).length;
+  const average = calculateFactorAverage(factor, scoreScale);
 
   return (
     <section className="evaluation-detail__factor-card">
@@ -39,6 +41,7 @@ export function EvaluationFactorCard({
           <strong>{factor.title}</strong>
         </div>
 
+        <span className="factor-progress">{completed}/{factor.items.length}</span>
         <div className="evaluation-detail__factor-metric">
           <span>{provisional ? 'Média provisória' : 'Média'}</span>
           <strong>{average === null ? '—' : average.toFixed(1)}</strong>
@@ -55,37 +58,15 @@ export function EvaluationFactorCard({
               <p>{item.label}</p>
 
               <div className="evaluation-detail__score-input-wrap">
-                <input
-                  aria-label={`Nota: ${item.label}`}
-                  type="number"
-                  min={scoreScale === 'PERCENT_0_100' ? 0 : 1}
-                  max={scoreScale === 'PERCENT_0_100' ? 100 : 5}
-                  step={scoreScale === 'PERCENT_0_100' ? 10 : 1}
-                  aria-invalid={item.score !== null && !isValidEvaluationRating(item.score, scoreScale)}
-                  aria-describedby={`score-help-${factor.id}-${item.id}`}
-                  value={
-                    item.score === null ? '' : item.score
-                  }
-                  onChange={(event) => onScoreChange(item.id, event.target.value === '' ? null : Number(event.target.value))}
-                />
-                <span>Nota</span>
-                <small id={`score-help-${factor.id}-${item.id}`}>
-                  {scoreScale === 'PERCENT_0_100' ? 'Informe uma nota de 0 a 100, em passos de 10.' : 'Informe uma nota inteira de 1 a 5.'}
-                </small>
+                <select disabled={disabled} aria-label={`Nota: ${item.label}`} value={item.score ?? ''} aria-invalid={item.score !== null && !isValidEvaluationRating(item.score, scoreScale)} onChange={(event) => { const value = event.target.value === '' ? null : Number(event.target.value); if (value === null || isValidEvaluationRating(value, scoreScale)) onScoreChange(item.id, value); }}>
+                  <option value="">—</option>
+                  {(scoreScale === 'PERCENT_0_100' ? Array.from({ length: 11 }, (_, i) => i * 10) : [1, 2, 3, 4, 5]).map(value => <option key={value} value={value}>{value}</option>)}
+                </select>
               </div>
             </div>
           ))}
 
-          <div className="evaluation-detail__factor-footer">
-            <div>
-              <span>Soma bruta subfatores</span>
-              <strong>{average === null ? '—' : subtotal.toFixed(1)}</strong>
-            </div>
-            <div>
-              <span>{provisional ? 'Pontuação provisória do fator (média)' : 'Pontuação final do fator (média)'}</span>
-              <strong>{average === null ? '—' : average.toFixed(1)}</strong>
-            </div>
-          </div>
+
         </div>
       ) : null}
     </section>

@@ -23,6 +23,32 @@ function select(files: File[]) { fireEvent.change(screen.getByLabelText('Selecio
 const pdf = () => new File(['%PDF-test'], 'local.pdf', { type: 'application/pdf' });
 
 describe('EvaluationAttachments', () => {
+  it.each([EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, EvaluationAttachmentOrigin.SELF_EVALUATION])('salva uma vez antes do lote %s e bloqueia seleção concorrente', async (origin) => {
+    const order: string[] = [];
+    let done!: () => void;
+    const beforeUpload = vi.fn(() => new Promise<void>(resolve => { done = () => { order.push('saveDraft'); resolve(); }; }));
+    const upload = origin === EvaluationAttachmentOrigin.SELF_EVALUATION ? api.uploadSelfEvaluationAttachment : api.uploadSupervisorEvaluationAttachment;
+    upload.mockImplementation(async () => { order.push('upload'); return { attachment }; });
+    const onBusyChange = vi.fn();
+    render(<EvaluationAttachments {...props} origin={origin} beforeUpload={beforeUpload} onBusyChange={onBusyChange} />);
+    await screen.findByText('Nenhum anexo enviado.');
+    select([pdf(), pdf()]); select([pdf()]);
+    expect(upload).not.toHaveBeenCalled(); expect(beforeUpload).toHaveBeenCalledTimes(1);
+    await act(async () => done());
+    await screen.findByText('Anexos enviados.');
+    expect(order).toEqual(['saveDraft', 'upload', 'upload']);
+    expect(onBusyChange.mock.calls).toEqual([[true], [false]]);
+  });
+  it.each([EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, EvaluationAttachmentOrigin.SELF_EVALUATION])('falha no autosave impede upload %s', async (origin) => {
+    const beforeUpload = vi.fn().mockRejectedValue(new Error('Falha ao salvar'));
+    const onBusyChange = vi.fn();
+    render(<EvaluationAttachments {...props} origin={origin} beforeUpload={beforeUpload} onBusyChange={onBusyChange} />);
+    await screen.findByText('Nenhum anexo enviado.'); select([pdf()]);
+    await screen.findByText('Falha ao salvar');
+    expect(api.uploadSupervisorEvaluationAttachment).not.toHaveBeenCalled(); expect(api.uploadSelfEvaluationAttachment).not.toHaveBeenCalled();
+    expect(onBusyChange).toHaveBeenLastCalledWith(false);
+  });
+
   beforeEach(() => {
     vi.resetAllMocks();
     api.listEvaluationAttachments.mockResolvedValue({ attachments: [] });

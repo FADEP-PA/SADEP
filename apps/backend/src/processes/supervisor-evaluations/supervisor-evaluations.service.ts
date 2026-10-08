@@ -137,6 +137,7 @@ export class SupervisorEvaluationsService {
         id: process.id,
         status: processStatus,
         currentStageSequence: currentStage.sequence,
+        currentStageId: currentStage.id,
       },
       supervisorEvaluation,
       documentContext,
@@ -151,7 +152,7 @@ export class SupervisorEvaluationsService {
     user: AuthenticatedUser,
     payload: UpsertSupervisorEvaluationDto,
   ): Promise<SupervisorEvaluationResponseDto> {
-    const normalizedPayload = this.normalizePayload(payload);
+    const normalizedPayload = this.normalizePayload(payload, true);
 
     return this.prismaService.$transaction(async (transaction) => {
       const { process, currentStage } = await this.assertCanWriteSupervisorEvaluation(
@@ -554,19 +555,19 @@ export class SupervisorEvaluationsService {
     }
   }
 
-  private normalizePayload(payload: UpsertSupervisorEvaluationDto): UpsertSupervisorEvaluationDto {
+  private normalizePayload(payload: UpsertSupervisorEvaluationDto, draft = false): UpsertSupervisorEvaluationDto {
     if (!payload || typeof payload !== 'object') {
       throw new BadRequestException('Supervisor evaluation payload must be an object');
     }
 
-    const content = this.normalizeContent(payload.content);
+    const content = this.normalizeContent(payload.content, draft);
     const fields = content.textFields;
     // Projections are derived, never parsed for validation or trusted from the client.
     if (!fields) {
       validateEvaluationText(payload.summary, 'summary');
       validateEvaluationText(payload.generalComments, 'generalComments');
     }
-    const summary = this.normalizeRequiredText(
+    const summary = draft && fields ? [fields.unitCompetencies.trim(), fields.serverAssignments.trim()].filter(Boolean).join('\n\n') : this.normalizeRequiredText(
       fields ? [fields.unitCompetencies.trim(), fields.serverAssignments.trim()].filter(Boolean).join('\n\n') : payload.summary,
       'summary',
     );
@@ -624,7 +625,7 @@ export class SupervisorEvaluationsService {
     return normalizedValue.length > 0 ? normalizedValue : null;
   }
 
-  private normalizeContent(value: unknown): SupervisorEvaluationContentDto {
+  private normalizeContent(value: unknown, draft = false): SupervisorEvaluationContentDto {
     if (!value || typeof value !== 'object') {
       throw new BadRequestException('Supervisor evaluation content must be an object');
     }
@@ -635,7 +636,7 @@ export class SupervisorEvaluationsService {
       scoringVersion?: unknown;
     };
     const criteria = candidateContent.criteria;
-    if (!Array.isArray(criteria) || criteria.length === 0) {
+    if (!Array.isArray(criteria) || (criteria.length === 0 && (!draft || !(value as { textFields?: unknown }).textFields))) {
       throw new BadRequestException('Supervisor evaluation content must include at least one criterion');
     }
 
