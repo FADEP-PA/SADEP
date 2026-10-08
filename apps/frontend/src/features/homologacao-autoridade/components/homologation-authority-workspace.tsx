@@ -30,12 +30,14 @@ import {
 } from '@/shared/api/services/processes-service';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { ActionFeedback } from '@/shared/ui/action-feedback';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { EmptyState } from '@/shared/ui/operational-states';
 import { StatusBadge } from '@/shared/ui/status-badge';
 import { DocumentViewerProvider } from '@/features/process/components/document-viewer-context';
 import { NextAction, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 import { OfficialDocumentList } from '@/features/process/components/official-document-list';
+import { EvaluationPdfViewer } from '@/features/process/components/evaluation-pdf-viewer';
 
 const ALLOWED_ROLES = [UserRole.HOMOLOGATION_AUTHORITY, UserRole.ADMIN];
 
@@ -220,7 +222,7 @@ export function HomologationAuthorityWorkspace() {
             title="Homologação"
             description="Secretário Adjunto: acompanhe os processos encaminhados pela CESAD e registre a decisão de homologação."
           />
-          {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
+          {feedback ? <ActionFeedback message={feedback} /> : null}
           {error ? <FeedbackAlert title="Não foi possível carregar" tone="error" description={error} /> : null}
           {isLoadingQueue ? <InlineLoadingState title="Carregando processos…" /> : null}
           {!isLoadingQueue && !error && queue.length === 0 ? (
@@ -273,7 +275,7 @@ export function HomologationAuthorityWorkspace() {
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
-      <DocumentViewerProvider><div className="work-page">
+      <DocumentViewerProvider key={selected.id}><div className="work-page">
         <button type="button" className="ghost-button work-back" onClick={backToQueue}>
           ← Voltar aos processos
         </button>
@@ -285,7 +287,7 @@ export function HomologationAuthorityWorkspace() {
         />
 
         {isLoadingDetail ? <InlineLoadingState title="Carregando processo…" /> : null}
-        {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
+        {feedback ? <ActionFeedback message={feedback} /> : null}
         {error ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={error} /> : null}
 
         {!isLoadingDetail && status && !canDecide && !isHomologated ? (
@@ -306,7 +308,7 @@ export function HomologationAuthorityWorkspace() {
             </WorkSection>
 
             <WorkSection title="Parecer conclusivo final">
-              {signatureStatus?.document?.hasArtifact ? <OfficialDocumentList processId={selected.id} documents={[{ documentId: signatureStatus.document.documentId, title: 'Parecer conclusivo final', hasArtifact: true, updatedAt: signatureStatus.document.updatedAt, status: formatDocumentStatus(signatureStatus.document.documentStatus) }]} /> : opinion ? (
+              {signatureStatus?.document?.hasArtifact ? <OfficialDocumentList processId={selected.id} documents={[{ documentId: signatureStatus.document.documentId, title: 'Documento oficial', hasArtifact: true, createdAt: signatureStatus.document.createdAt, signatures: signatureStatus.expectedSigners.map(signer => ({ status: signer.signatureStatus ?? undefined, signedAt: signer.signedAt })), updatedAt: signatureStatus.document.updatedAt, status: formatDocumentStatus(signatureStatus.document.documentStatus) }]} /> : opinion ? (
                 <>
                   <p>
                     <strong>Relatório</strong>
@@ -448,9 +450,9 @@ export function HomologationAuthorityWorkspace() {
               <WorkSection title="Notificação do resultado">
                 <p>Notificação gerada em {formatDateTime(status?.notifiedAt ?? null)}.</p>
                 <p>
-                  Situação atual: {formatProcessStatus(displayStatus)}. O servidor visualiza a
-                  Notificação Pessoal a partir deste estado.
+                  O servidor pode consultar e registrar ciência da Notificação Pessoal.
                 </p>
+                {status?.notificationDocument ? <EvaluationPdfViewer hideTitle processId={selected.id} documentContext={status.notificationDocument} updatedAt={status.notifiedAt ?? ''} title="PDF da Notificação Pessoal" chronology={{ generatedAt: status.notifiedAt }} /> : null}
               </WorkSection>
             ) : null}
           </>

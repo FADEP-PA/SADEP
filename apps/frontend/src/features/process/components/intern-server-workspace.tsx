@@ -17,6 +17,7 @@ import {
 } from '@/shared/api/services/processes-service';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { ActionFeedback } from '@/shared/ui/action-feedback';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { EmptyState } from '@/shared/ui/operational-states';
 import { WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
@@ -169,7 +170,7 @@ export function InternServerWorkspace() {
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
-      <DocumentViewerProvider key={selectedProcessId + ":" + isEditingSelfEvaluation + ":" + (snapshot?.selfEvaluation?.documentContext?.documentId ?? snapshot?.supervisorEvaluation?.documentContext?.documentId ?? "")}><div className="work-page intern-workspace">
+      <DocumentViewerProvider key={selectedProcessId + ':' + (snapshot?.currentStage.stageId ?? '')}><div className="work-page intern-workspace">
         {!selectedProcessId ? <>
           <WorkPageHeader title="Minhas avaliações" description="Acompanhe suas avaliações e acesse as etapas que precisam da sua atenção." />
           {isLoading ? <InlineLoadingState title="Carregando avaliações…" /> : null}
@@ -189,21 +190,17 @@ export function InternServerWorkspace() {
           <WorkPageHeader title="Minha avaliação" description={snapshot ? snapshot.currentStage.sequence + 'ª etapa do estágio probatório' : 'Carregando etapa'} status={situation || undefined} statusTone={snapshot ? getProcessStatusTone(snapshot.process.status) : 'neutral'} />
           {isLoading ? <InlineLoadingState title="Carregando avaliação…" /> : null}
           {error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}
-          {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
+          {feedback ? <ActionFeedback message={feedback} /> : null}
           {snapshot ? <>
-            <section className="process-status-summary" aria-label="Situação atual">
-              <h2>Situação atual</h2><strong>{situation}</strong>
-              {isSubmitted && snapshot.selfEvaluation?.submittedAt ? <p>Autoavaliação enviada em {formatDateTime(snapshot.selfEvaluation.submittedAt)}</p> : null}
-              {canEditSelfEvaluation ? <button type="button" onClick={() => setShowSelfEvaluation(true)}>{snapshot.selfEvaluation ? 'Continuar preenchimento' : 'Preencher autoavaliação'}</button> : null}
-            </section>
+            {canEditSelfEvaluation ? <button type="button" onClick={() => setShowSelfEvaluation(true)}>{snapshot.selfEvaluation ? 'Continuar preenchimento' : 'Preencher autoavaliação'}</button> : null}
             {[ProcessStatus.NOTIFICADO, ProcessStatus.CIENTE, ProcessStatus.ENCERRADO].includes(snapshot.process.status) ? <PersonalNotificationCard key={snapshot.process.id} processId={snapshot.process.id} /> : null}
             {isSubmitted && snapshot.selfEvaluation ? <WorkSection title="Autoavaliação do Servidor">
-              <EvaluationPdfViewer defaultOpen processId={snapshot.process.id} documentContext={snapshot.selfEvaluation.documentContext ?? null} updatedAt={snapshot.selfEvaluation.updatedAt} title="PDF da autoavaliação" metadata={<span>Autoavaliação enviada</span>} />
+              <EvaluationPdfViewer hideTitle processId={snapshot.process.id} documentContext={snapshot.selfEvaluation.documentContext ?? null} updatedAt={snapshot.selfEvaluation.updatedAt} title="PDF da autoavaliação" stageSequence={snapshot.currentStage.sequence} chronology={{ submittedAt: snapshot.selfEvaluation.submittedAt, createdAt: snapshot.selfEvaluation.createdAt }} metadata={<><span>Enviada</span><span>Enviada em {formatDateTime(snapshot.selfEvaluation.submittedAt)}</span></>} />
               <EvaluationAttachments compact title="Anexos" processId={snapshot.process.id} stageId={snapshot.selfEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} />
             </WorkSection> : <>
               <WorkSection title="Sua avaliação">
                 <EvaluationAcknowledgement compact acknowledgement={acknowledgement} />
-                {snapshot.supervisorEvaluation ? <EvaluationPdfViewer defaultOpen processId={snapshot.process.id} documentContext={snapshot.supervisorEvaluation.documentContext ?? null} updatedAt={snapshot.supervisorEvaluation.updatedAt} title="PDF da avaliação da Chefia" metadata={<><span>{snapshot.supervisorEvaluation.status === SupervisorEvaluationStatus.SUBMITTED ? "Recebida" : "Em elaboração"}</span><span>Data: {formatDateTime(snapshot.supervisorEvaluation.submittedAt)}</span></>} /> : <EmptyState title="Avaliação ainda não enviada" description="Aguarde a chefia concluir o preenchimento." />}
+                {snapshot.supervisorEvaluation ? <EvaluationPdfViewer hideTitle processId={snapshot.process.id} documentContext={snapshot.supervisorEvaluation.documentContext ?? null} updatedAt={snapshot.supervisorEvaluation.updatedAt} title="PDF da avaliação da Chefia" stageSequence={snapshot.currentStage.sequence} chronology={{ submittedAt: snapshot.supervisorEvaluation.submittedAt, createdAt: snapshot.supervisorEvaluation.createdAt }} metadata={<span>Enviada em {formatDateTime(snapshot.supervisorEvaluation.submittedAt)}</span>} /> : <EmptyState title="Avaliação ainda não enviada" description="Aguarde a chefia concluir o preenchimento." />}
                 {snapshot.supervisorEvaluation?.status === SupervisorEvaluationStatus.SUBMITTED ? <EvaluationAttachments compact title="Anexos da Chefia" processId={snapshot.process.id} stageId={snapshot.supervisorEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION} /> : null}
               </WorkSection>
               {canConfirmScience && !acknowledgement ? <WorkSection title="Registrar ciência">
@@ -222,12 +219,12 @@ export function InternServerWorkspace() {
                 <div className="form-actions science-actions"><button type="button" disabled={operation !== null || acknowledgementMode === null} onClick={() => void run('science')}>{operation === 'science' ? 'Confirmando…' : 'Confirmar ciência'}</button></div>
               </WorkSection> : null}
             </>}
-            <ProcessDocumentHistory showEvaluationAttachments processId={snapshot.process.id} revision={snapshot.selfEvaluation?.updatedAt ?? snapshot.supervisorEvaluation?.updatedAt ?? ''} acknowledgements={acknowledgement ? { [acknowledgement.documentId]: acknowledgement } : undefined} />
+            <ProcessDocumentHistory showEvaluationAttachments processId={snapshot.process.id} revision={snapshot.selfEvaluation?.updatedAt ?? snapshot.supervisorEvaluation?.updatedAt ?? ''} acknowledgements={isSubmitted && acknowledgement ? { [acknowledgement.documentId]: acknowledgement } : undefined} />
           </> : null}
         </> : null}
         {snapshot && showSelfEvaluation && !isSubmitted ? (
           <SelfEvaluationFormView
-            leadingContent={<>{error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}{feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}</>}
+            leadingContent={<>{error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}{feedback ? <ActionFeedback message={feedback} /> : null}</>}
             form={form}
             processId={snapshot.process.id}
             stageId={snapshot.currentStage.stageId}

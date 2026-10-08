@@ -87,6 +87,9 @@ export type ProcessDocumentHistoryItem = {
   version: number;
   hasArtifact: boolean;
   updatedAt: string;
+  createdAt?: string;
+  artifactGeneratedAt?: string | null;
+  signedAt?: string | null;
 };
 
 export async function getProcessDocumentHistory(processId: string) {

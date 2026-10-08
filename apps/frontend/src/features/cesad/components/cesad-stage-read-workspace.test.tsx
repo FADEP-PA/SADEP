@@ -253,8 +253,7 @@ describe('CesadStageReadWorkspace', () => {
     await screen.findByLabelText('Etapa dos documentos');
     for (const sequence of [1, 2, 3, 4]) {
       fireEvent.change(screen.getByLabelText('Etapa dos documentos'), { target: { value: String(sequence) } });
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Visualizar PDF — Avaliação da chefia' })).toBeEnabled());
-      fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF — Avaliação da chefia' }));
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Ocultar visualização — Avaliação da chefia' })).toBeEnabled());
       expect(await screen.findByTitle('PDF — Avaliação da chefia')).toBeInTheDocument();
       expect(api.getEvaluationDocumentPdf).toHaveBeenLastCalledWith(PROCESS_ID, DocumentType.SUPERVISOR_EVALUATION + '-' + sequence, expect.any(AbortSignal));
       fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF — Autoavaliação' }));

@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { getRequestErrorMessage, HttpError } from '@/shared/api/http-error';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { ActionFeedback } from '@/shared/ui/action-feedback';
 
 type FormState = CesadFinalOpinionInput;
 type Props = { initialState: FormState; onSaveDraft: (input: CesadFinalOpinionInput) => Promise<void>; onComplete: (input: CesadFinalOpinionInput) => Promise<void> };
@@ -54,7 +55,7 @@ export function CesadFinalOpinionEditor({ initialState, onSaveDraft, onComplete 
   return <section className="cesad-opinion-editor" aria-label="Editor do parecer conclusivo final">
     <div className="cesad-opinion-editor__header"><h3>Parecer conclusivo final</h3></div>
     <div className="cesad-opinion-editor__form">{field('reportText', 'Relatório consolidado', 6, true)}{field('legalBasis', 'Fundamentação legal')}{field('finalConclusion', 'Conclusão final', 3, true)}{field('finalResult', 'Resultado final', 0)}{field('finalConcept', 'Conceito final', 0)}{field('recommendation', 'Recomendação para homologação')}</div>
-    {feedback ? <FeedbackAlert title="Operação concluída" tone="success" description={feedback} /> : null}
+    {feedback ? <ActionFeedback message={feedback} /> : null}
     {error ? <FeedbackAlert title="Falha no parecer conclusivo" tone="error" description={error} /> : null}
     <div className="cesad-opinion-editor__actions"><button type="button" className="secondary-button" disabled={busy} onClick={() => void save()}>{saving ? 'Salvando…' : 'Salvar rascunho'}</button><button type="button" disabled={busy} onClick={() => void complete()}>{completing ? 'Concluindo…' : 'Concluir parecer'}</button></div>
   </section>;

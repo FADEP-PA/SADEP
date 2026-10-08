@@ -141,7 +141,7 @@ describe('SupervisorSelfEvaluationCard', () => {
       />,
     );
 
-    expect(screen.getByText('Autoavaliação recebida')).toBeTruthy();
+    expect(screen.getByText('Autoavaliação do Servidor')).toBeTruthy();
     expect(screen.queryByText('Minha reflexao sobre o desempenho.')).not.toBeInTheDocument();
     expect(screen.getByText('PDF em preparação ou aguardando geração.')).toBeInTheDocument();
     expect(screen.queryByText('Observacoes adicionais do servidor.')).not.toBeInTheDocument();

@@ -6,6 +6,7 @@ import type { CesadStageOpinionInput } from '@sadep/contracts';
 
 import { getRequestErrorMessage } from '@/shared/api/http-error';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { ActionFeedback } from '@/shared/ui/action-feedback';
 
 export type CesadStageOpinionFormState = {
   reportText: string;
@@ -151,7 +152,7 @@ export function CesadStageOpinionEditor({
       </div>
 
       {feedbackMessage ? (
-        <FeedbackAlert title="Operação concluída" tone="success" description={feedbackMessage} />
+        <ActionFeedback message={feedbackMessage} />
       ) : null}
 
       {errorMessage ? (

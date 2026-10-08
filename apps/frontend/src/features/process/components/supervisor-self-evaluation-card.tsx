@@ -25,6 +25,7 @@ type Props = {
   processStatus: ProcessStatus;
   isConfirming: boolean;
   onConfirm: () => void;
+  stageSequence?: number;
 };
 
 export function SupervisorSelfEvaluationCard({
@@ -34,6 +35,7 @@ export function SupervisorSelfEvaluationCard({
   processStatus,
   isConfirming,
   onConfirm,
+  stageSequence,
 }: Props) {
   if (!selfEvaluation || selfEvaluation.status !== SelfEvaluationStatus.SUBMITTED) return null;
 
@@ -46,7 +48,7 @@ export function SupervisorSelfEvaluationCard({
 
   return (
     <WorkSection
-      title="Autoavaliação recebida"
+      title="Autoavaliação do Servidor"
       action={
         isPending ? (
           <button type="button" disabled={isConfirming} onClick={onConfirm}>
@@ -61,13 +63,10 @@ export function SupervisorSelfEvaluationCard({
       }
     >
       <div className="evaluation-summary">
-        {selfEvaluation.submittedAt ? <small>Enviada em {formatDateTime(selfEvaluation.submittedAt)}</small> : null}
-        {isSigned ? (
-          <p className="success-copy">
-            Confirmada por <strong>{userName}</strong>{signature?.signedAt ? ` em ${formatDateTime(signature.signedAt)}` : ''}.
-          </p>
-        ) : null}
-        <EvaluationPdfViewer defaultOpen processId={selfEvaluation.processId} documentContext={documentContext} updatedAt={selfEvaluation.updatedAt} title="PDF da autoavaliação do Servidor" />
+        <EvaluationPdfViewer hideTitle processId={selfEvaluation.processId} documentContext={documentContext} updatedAt={selfEvaluation.updatedAt} title="PDF da autoavaliação do Servidor" stageSequence={stageSequence} chronology={{ submittedAt: selfEvaluation.submittedAt, createdAt: selfEvaluation.createdAt }} metadata={<>
+          {selfEvaluation.submittedAt ? <span>Enviada em {formatDateTime(selfEvaluation.submittedAt)}</span> : null}
+          {isSigned ? <span>Confirmada por <strong>{userName}</strong>{signature?.signedAt ? ` em ${formatDateTime(signature.signedAt)}` : ''}.</span> : null}
+        </>} />
       </div>
       <EvaluationAttachments compact processId={selfEvaluation.processId} stageId={selfEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} title="Anexos" />
     </WorkSection>

@@ -64,6 +64,17 @@ describe('ProcessDocumentArtifactService', () => {
     expect(prisma.processDocument.findMany).not.toHaveBeenCalled();
   });
 
+  it('exposes persisted chronology and the latest completed signature without writing or generating documents', async () => {
+    const signedAt = new Date('2026-10-08T11:00:00Z');
+    const generatedAt = new Date('2026-10-08T11:01:00Z');
+    const { service, prisma, renderer, storage } = setup({ document: { ...document, artifactGeneratedAt: generatedAt,
+      signatureRecords: [{ status: 'COMPLETED', signedAt }, { status: 'COMPLETED', signedAt: new Date('2026-10-08T10:00:00Z') }, { status: 'PENDING', signedAt: new Date('2030-01-01T00:00:00Z') }] } });
+    expect(await service.listReadableDocuments('process-1', user)).toEqual([expect.objectContaining({ createdAt: document.createdAt.toISOString(), artifactGeneratedAt: generatedAt.toISOString(), signedAt: signedAt.toISOString() })]);
+    expect(prisma.processDocument.updateMany).not.toHaveBeenCalled();
+    expect(renderer.render).not.toHaveBeenCalled();
+    expect(storage.write).not.toHaveBeenCalled();
+  });
+
   it('persists the artifact before linking artifactPath and audits the materialization', async () => {
     const { service, prisma, renderer, storage } = setup();
 

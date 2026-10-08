@@ -93,6 +93,11 @@ export class ProcessDocumentArtifactService {
         version: document.version,
         hasArtifact: Boolean(document.artifactPath),
         updatedAt: document.updatedAt.toISOString(),
+        createdAt: document.createdAt.toISOString(),
+        artifactGeneratedAt: document.artifactGeneratedAt?.toISOString() ?? null,
+        signedAt: document.signatureRecords
+          .filter(signature => signature.status === 'COMPLETED' && signature.signedAt)
+          .reduce<Date | null>((latest, signature) => !latest || signature.signedAt! > latest ? signature.signedAt! : latest, null)?.toISOString() ?? null,
       });
     }
     return readable;

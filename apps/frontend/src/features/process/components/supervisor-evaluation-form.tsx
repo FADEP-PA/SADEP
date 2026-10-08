@@ -6,6 +6,7 @@ import { EVALUATION_TEXT_LIMIT_MESSAGE, isEvaluationTextWithinLimit, isValidEval
 import { EvaluationTextarea } from '@/shared/ui/evaluation-textarea';
 
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { ActionFeedback } from '@/shared/ui/action-feedback';
 import { DetailList, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
 import { EvaluationFactorCard } from './evaluation-factor-card';
@@ -176,7 +177,7 @@ export function EvaluationDetailView({
         </div>
         {editable && exceedsTextLimit ? <p className="field-error">{EVALUATION_TEXT_LIMIT_MESSAGE}</p> : null}
         {editable && hasInvalidScores ? <p className="field-error" role="alert">{evaluation.scoreScale === 'PERCENT_0_100' ? 'Informe notas de 0 a 100, em passos de 10.' : 'Informe notas inteiras de 1 a 5.'}</p> : null}
-        {feedbackMessage ? <FeedbackAlert title="Avaliação atualizada" tone="success" description={feedbackMessage} /> : null}
+        {feedbackMessage ? <ActionFeedback message={feedbackMessage} /> : null}
         {actionErrorMessage ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={actionErrorMessage} /> : null}
         {editable && (missingScores > 0 || requiredFieldsMissing || !canSubmitActiveEvaluation) ? <p className="field-error" role="status">{missingScores > 0 ? `Faltam ${missingScores} notas.` : requiredFieldsMissing ? 'Revise os campos obrigatórios: competências da unidade ou atribuições no período.' : 'O envio não está disponível no estado atual do processo.'}</p> : null}
         {editable ? (

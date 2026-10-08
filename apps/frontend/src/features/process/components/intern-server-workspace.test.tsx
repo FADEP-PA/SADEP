@@ -258,7 +258,9 @@ describe('InternServerWorkspace', () => {
     ]);
     await renderWorkspace(snapshot);
     expect(await screen.findByTitle('PDF da autoavaliação')).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Situação atual' })).toHaveTextContent('Aguardando confirmação da Chefia');
+    expect(screen.getAllByText('Aguardando confirmação da Chefia')).toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Situação atual' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Concluído' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ocultar visualização — PDF da autoavaliação' })).toBeInTheDocument();
     const previous = await screen.findByRole('button', { name: 'Visualizar PDF — Avaliação da chefia' });
     expect(screen.queryByTitle('PDF — Avaliação da chefia')).not.toBeInTheDocument();
@@ -540,8 +542,10 @@ describe('InternServerWorkspace', () => {
         additionalNotes: 'Observações persistidas.',
       });
     });
-    expect((await screen.findAllByText('Autoavaliação enviada')).length).toBeGreaterThan(0);
-    expect(screen.getByRole('region', { name: 'Situação atual' })).toHaveTextContent('Aguardando confirmação da Chefia');
+    expect(await screen.findByRole('heading', { name: 'Autoavaliação do Servidor' })).toBeInTheDocument();
+    expect(screen.getAllByText('Aguardando confirmação da Chefia')).toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Situação atual' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Concluído' })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Enviar autoavaliação' }),
     ).not.toBeInTheDocument();
@@ -583,7 +587,7 @@ describe('InternServerWorkspace', () => {
     expect(api.submitSelfEvaluation).toHaveBeenCalledTimes(1);
 
     await act(async () => completeSubmit());
-    expect((await screen.findAllByText('Autoavaliação enviada')).length).toBeGreaterThan(0);
+    expect(await screen.findByRole('heading', { name: 'Autoavaliação do Servidor' })).toBeInTheDocument();
   });
 
   it('restaura uma autoavaliação SUBMITTED após novo carregamento', async () => {
@@ -594,7 +598,7 @@ describe('InternServerWorkspace', () => {
       }),
     );
 
-    expect((await screen.findAllByText('Autoavaliação enviada')).length).toBeGreaterThan(0);
+    expect(await screen.findByRole('heading', { name: 'Autoavaliação do Servidor' })).toBeInTheDocument();
     expect(screen.queryByDisplayValue('Minha reflexão persistida.')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Autoavaliação')).not.toBeInTheDocument();
     expect(api.submitSelfEvaluation).not.toHaveBeenCalled();
@@ -793,7 +797,7 @@ describe('anexos da avaliação recebida da Chefia', () => {
     snapshot.supervisorEvaluation!.status = SupervisorEvaluationStatus.DRAFT;
     snapshot.supervisorEvaluation!.submittedAt = null;
     await renderWorkspace(snapshot);
-    expect(await screen.findByText('Em elaboração')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Sua avaliação' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Anexos da Chefia' })).not.toBeInTheDocument();
     expect(screen.queryByText('evidencia-chefia.pdf')).not.toBeInTheDocument();
     expect(attachmentsApi.listEvaluationAttachments).not.toHaveBeenCalled();

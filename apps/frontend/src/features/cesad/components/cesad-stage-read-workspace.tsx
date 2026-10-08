@@ -31,6 +31,7 @@ import {
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { useAuth } from '@/shared/auth/auth-context';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { ActionFeedback } from '@/shared/ui/action-feedback';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { EmptyState } from '@/shared/ui/operational-states';
 import { StatusBadge } from '@/shared/ui/status-badge';
@@ -205,21 +206,21 @@ export function CesadStageReadWorkspace() {
 
   return (
     <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]}>
-      <DocumentViewerProvider><div className="work-page cesad-workspace">
+      <DocumentViewerProvider key={snapshot.process.id + ':' + snapshot.stage.stageId}><div className="work-page cesad-workspace">
         <button type="button" className="ghost-button work-back" onClick={() => { setSnapshot(null); setFeedback(null); setError(null); }}>← Voltar aos processos</button>
         <WorkPageHeader title={snapshot.server.displayName ?? snapshot.server.email} description={`${snapshot.stage.sequence}ª etapa`} status={processStatus.label} statusTone={processStatus.tone} actions={!isCesadMember ? <span className="read-only-label">Somente leitura</span> : null} />
 
         {completedStageMessage ? (
           <NextAction title={`Etapa ${snapshot.stage.sequence} concluída`} description={completedStageMessage} tone="success" action={<button type="button" onClick={() => setSnapshot(null)}>Voltar aos processos</button>} />
         ) : canCompleteStage ? (
-          <NextAction title="Parecer emitido" action={<button type="button" disabled={isBusy} onClick={() => void handleTransition(ProcessAction.COMPLETE_CURRENT_STAGE)}>Concluir etapa</button>} />
+          <NextAction title="Conclusão da etapa" action={<button type="button" disabled={isBusy} onClick={() => void handleTransition(ProcessAction.COMPLETE_CURRENT_STAGE)}>Concluir etapa</button>} />
         ) : canIssue ? (
           <NextAction title="Parecer pronto para emissão" description="Todas as confirmações necessárias foram registradas." tone="success" action={<button type="button" disabled={isBusy} onClick={() => void handleTransition(ProcessAction.ISSUE_CESAD_OPINION)}>Emitir parecer</button>} />
         ) : signatureActions.canSign ? (
           <NextAction title="Sua confirmação é necessária" action={<button type="button" disabled={isBusy} onClick={() => void handlePrepareOrSign()}>Confirmar parecer</button>} tone="warning" />
         ) : null}
 
-        {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
+        {feedback ? <ActionFeedback message={feedback} /> : null}
         {error ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={error} /> : null}
 
 
@@ -232,7 +233,7 @@ export function CesadStageReadWorkspace() {
             {opinionIsEditable ? (
               <CesadStageOpinionEditor
                 initialState={{ reportText: snapshot.cesadStageOpinion?.reportText ?? '', legalBasis: snapshot.cesadStageOpinion?.legalBasis ?? '', conclusion: snapshot.cesadStageOpinion?.conclusion ?? '', stageConcept: snapshot.cesadStageOpinion?.stageConcept ?? '', stageResult: snapshot.cesadStageOpinion?.stageResult ?? '' }}
-                onSaveDraft={async (input: CesadStageOpinionInput) => { await saveCesadStageOpinionDraft(snapshot.process.id, snapshot.stage.sequence, input); setFeedback('Rascunho salvo.'); await reload(); }}
+                onSaveDraft={async (input: CesadStageOpinionInput) => { await saveCesadStageOpinionDraft(snapshot.process.id, snapshot.stage.sequence, input); await reload(); }}
                 onComplete={async (input: CesadStageOpinionInput) => { await completeCesadStageOpinion(snapshot.process.id, snapshot.stage.sequence, input); setFeedback('Parecer concluído.'); await reload(); }}
               />
             ) : snapshot.documents.some(document => document.documentType === DocumentType.CESAD_OPINION && document.hasArtifact) ? null : <ReadOnlyOpinionShell opinion={snapshot.cesadStageOpinion} stageLabel={`${snapshot.stage.sequence}ª etapa`} />}

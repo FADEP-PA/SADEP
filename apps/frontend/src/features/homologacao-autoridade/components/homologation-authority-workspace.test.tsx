@@ -182,19 +182,18 @@ describe('HomologationAuthorityWorkspace', () => {
     await renderAndOpenDetail();
     const title = screen.getByRole('heading', { level: 1, name: 'Servidor Ana' });
     const back = screen.getByRole('button', { name: /Voltar/ });
-    const view = screen.getByRole('button', { name: 'Visualizar PDF — Parecer conclusivo final' });
-    const download = screen.getByRole('button', { name: 'Baixar PDF — Parecer conclusivo final' });
+    const view = await screen.findByRole('button', { name: 'Ocultar visualização — Documento oficial' });
+    const download = screen.getByRole('button', { name: 'Baixar PDF — Documento oficial' });
     expect(back.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(title.compareDocumentPosition(view) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(view.parentElement).toHaveClass('pdf-document-card__actions');
     expect(view.nextElementSibling).toBe(download);
     expect(screen.queryByText('Relatório consolidado das quatro etapas.')).not.toBeInTheDocument();
-    fireEvent.click(view);
-    expect(await screen.findByTitle('PDF — Parecer conclusivo final')).toHaveAttribute('src', 'blob:final-opinion');
-    const hide = screen.getByRole('button', { name: 'Ocultar visualização — Parecer conclusivo final' });
+    expect(await screen.findByTitle('PDF — Documento oficial')).toHaveAttribute('src', 'blob:final-opinion');
+    const hide = screen.getByRole('button', { name: 'Ocultar visualização — Documento oficial' });
     expect(hide.nextElementSibling).toBe(download);
     fireEvent.click(hide);
-    expect(screen.queryByTitle('PDF — Parecer conclusivo final')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('PDF — Documento oficial')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Homologar resultado' })).toBeEnabled();
   });
 
@@ -438,7 +437,8 @@ describe('HomologationAuthorityWorkspace', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Abrir' }));
 
     expect(await screen.findByText(/Notificação gerada em/)).toBeInTheDocument();
-    expect(await screen.findByText(/Situação atual: Notificado/)).toBeInTheDocument();
+    expect(screen.queryByText(/Situação atual: Notificado/)).not.toBeInTheDocument();
+    expect(screen.getByText('O servidor pode consultar e registrar ciência da Notificação Pessoal.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Gerar notificação' })).not.toBeInTheDocument();
   });
 

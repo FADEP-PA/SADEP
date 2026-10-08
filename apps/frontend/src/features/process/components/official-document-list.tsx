@@ -5,10 +5,11 @@ import { getEvaluationDocumentPdf } from '@/shared/api/services/processes-servic
 import { getRequestErrorMessage } from '@/shared/api/http-error';
 import { EvaluationPdfViewer } from './evaluation-pdf-viewer';
 import { formatDateTime } from './process-formatters';
-import { useDocumentViewer } from './document-viewer-context';
+import { DocumentViewerBoundary, useDocumentViewer } from './document-viewer-context';
+import { officialDocumentTimestamp, type OfficialDocumentCandidate } from './latest-official-document';
 import { PdfDocumentCard } from './pdf-document-card';
 
-export type OfficialDocumentItem = {
+export type OfficialDocumentItem = OfficialDocumentCandidate & {
   documentId: string;
   title: string;
   hasArtifact: boolean;
@@ -19,7 +20,11 @@ export type OfficialDocumentItem = {
 };
 
 export function OfficialDocumentList({ processId, documents }: { processId: string; documents: OfficialDocumentItem[] }) {
-  const viewer = useDocumentViewer();
+  return <DocumentViewerBoundary><DocumentListContent processId={processId} documents={documents} /></DocumentViewerBoundary>;
+}
+
+function DocumentListContent({ processId, documents }: { processId: string; documents: OfficialDocumentItem[] }) {
+  const viewer = useDocumentViewer(documents.map(({ metadata: _metadata, related: _related, ...document }) => document));
   const activeId = viewer.active?.startsWith(viewer.instance + ":") ? viewer.active.slice(viewer.instance.length + 1) : null;
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +48,7 @@ export function OfficialDocumentList({ processId, documents }: { processId: stri
   return <div className="form-stack">
     {error ? <p role="alert">{error}</p> : null}
     {documents.length === 0 ? <p className="muted-copy">Nenhum documento emitido nesta etapa.</p> : null}
-    {documents.map(document => <PdfDocumentCard key={document.documentId} title={document.title} metadata={<><span>{document.status} · {formatDateTime(document.updatedAt)}</span>{document.metadata}</>} actions={<>
+    {documents.map(document => <PdfDocumentCard key={document.documentId} title={document.title} metadata={<><span>{document.status} · {formatDateTime(officialDocumentTimestamp(document) === null ? document.updatedAt : new Date(officialDocumentTimestamp(document)!).toISOString())}</span>{document.metadata}</>} actions={<>
       <button type="button" className="secondary-button" aria-label={`${activeId === document.documentId ? 'Ocultar visualização' : 'Visualizar PDF'} — ${document.title}`} aria-expanded={activeId === document.documentId} onClick={() => viewer.setActive(activeId === document.documentId ? null : viewer.instance + ":" + document.documentId)}>{activeId === document.documentId ? 'Ocultar visualização' : 'Visualizar PDF'}</button>
       <button type="button" className="secondary-button" aria-label={`Baixar PDF — ${document.title}`} disabled={downloadingId !== null || !document.hasArtifact} onClick={() => void download(document)}>{downloadingId === document.documentId ? 'Baixando…' : 'Baixar PDF'}</button>
     </>}>

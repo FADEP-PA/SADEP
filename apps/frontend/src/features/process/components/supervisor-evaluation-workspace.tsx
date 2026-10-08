@@ -33,6 +33,7 @@ import {
 import { useAuth } from '@/shared/auth/auth-context';
 import { AuthGuard } from '@/shared/auth/auth-guard';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
+import { ActionFeedback } from '@/shared/ui/action-feedback';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
@@ -582,7 +583,7 @@ export function SupervisorEvaluationWorkspace() {
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
-      <DocumentViewerProvider key={(workspaceSnapshot?.process.id ?? "list") + ":" + JSON.stringify(selfEvaluation?.documentContext?.signatures ?? [])}><div className="work-page">
+      <DocumentViewerProvider key={(workspaceSnapshot?.process.id ?? 'list') + ':' + (workspaceSnapshot?.process.currentStageSequence ?? '')}><div className="work-page">
         {!activeEvaluation ? (
           <WorkPageHeader
             title="Avaliações da equipe"
@@ -614,6 +615,7 @@ export function SupervisorEvaluationWorkspace() {
                   processStatus={workspaceSnapshot.process.status}
                   isConfirming={isConfirmingSelfEvaluation}
                   onConfirm={() => void handleConfirmSelfEvaluation()}
+                  stageSequence={workspaceSnapshot.process.currentStageSequence}
                 />
                ) : workspaceSnapshot?.documentContext?.acknowledgement ? <EvaluationAcknowledgement compact acknowledgement={workspaceSnapshot.documentContext.acknowledgement} /> : null}</>}
               onChange={(updater) =>
@@ -627,9 +629,9 @@ export function SupervisorEvaluationWorkspace() {
               <WorkPageHeader title="Avaliação de desempenho" description={`${activeEvaluation.row.stageLabel} · ${activeEvaluation.row.serverName}`} status={formatProcessStatus(workspaceSnapshot.process.status)} statusTone={getProcessStatusTone(workspaceSnapshot.process.status)} actions={workspaceSnapshot.canRectify ? <button type="button" onClick={() => setIsRectifying(true)}>Iniciar retificação</button> : undefined} />
               {workspaceFeedback}
               <EvaluationAcknowledgement compact acknowledgement={workspaceSnapshot.documentContext?.acknowledgement} />
-              {feedbackMessage ? <FeedbackAlert title="Concluído" tone="success" description={feedbackMessage} /> : null}
+              {feedbackMessage ? <ActionFeedback message={feedbackMessage} /> : null}
               {actionErrorMessage ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={actionErrorMessage} /> : null}
-              {showSelfEvaluationCard ? <SupervisorSelfEvaluationCard selfEvaluation={selfEvaluation} documentContext={selfEvaluation.documentContext ?? null} userName={session?.user.name ?? 'Chefia imediata'} processStatus={workspaceSnapshot.process.status} isConfirming={isConfirmingSelfEvaluation} onConfirm={() => void handleConfirmSelfEvaluation()} /> : null}
+              {showSelfEvaluationCard ? <SupervisorSelfEvaluationCard selfEvaluation={selfEvaluation} documentContext={selfEvaluation.documentContext ?? null} userName={session?.user.name ?? 'Chefia imediata'} processStatus={workspaceSnapshot.process.status} isConfirming={isConfirmingSelfEvaluation} onConfirm={() => void handleConfirmSelfEvaluation()} stageSequence={workspaceSnapshot.process.currentStageSequence} /> : null}
             </> : null}
             {workspaceSnapshot ? <ProcessDocumentHistory showEvaluationAttachments processId={workspaceSnapshot.process.id} revision={`${workspaceSnapshot.supervisorEvaluation?.updatedAt}:${selfEvaluation?.updatedAt}:${workspaceSnapshot.process.status}`} /> : null}
 

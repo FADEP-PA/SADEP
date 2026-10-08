@@ -94,16 +94,16 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
 
   return (
     <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]}>
-      <DocumentViewerProvider><div className="work-page cesad-workspace">
+      <DocumentViewerProvider key={processId}><div className="work-page cesad-workspace">
         <button type="button" className="ghost-button work-back" onClick={onBack}>← Voltar aos processos</button>
-        <WorkPageHeader title="Parecer conclusivo final" description="Consolidação process-wide das quatro etapas" status={opinion?.status ?? 'Não iniciado'} />
+        <WorkPageHeader title="Parecer conclusivo final" description="Consolidação das quatro etapas" status={opinion ? readOnly ? 'Parecer elaborado' : 'Em preenchimento' : 'Não iniciado'} />
         {error ? <FeedbackAlert title="Não foi possível carregar" tone="error" description={error} /> : null}
         {!eligibility && !error ? <InlineLoadingState title="Carregando parecer conclusivo…" /> : null}
         {eligibility && !eligibility.isEligible ? (
           <FeedbackAlert title="Processo inelegível" tone="error" description={eligibility.reasons.join(' ')} />
         ) : null}
         {eligibility?.isEligible && !opinion ? (
-          <WorkSection title="Parecer conclusivo final"><p>As quatro etapas estão completas e o processo está elegível para consolidação.</p><button type="button" disabled={isStarting} onClick={() => void start()}>{isStarting ? 'Iniciando…' : 'Iniciar parecer final'}</button></WorkSection>
+          <WorkSection title="Elaboração"><p>As quatro etapas estão completas e o processo está elegível para consolidação.</p><button type="button" disabled={isStarting} onClick={() => void start()}>{isStarting ? 'Iniciando…' : 'Iniciar parecer final'}</button></WorkSection>
         ) : null}
         {opinion && !readOnly && editorState ? <CesadFinalOpinionEditor initialState={editorState} onSaveDraft={async (input) => { await saveCesadFinalOpinionDraft(processId, input); await load(); }} onComplete={async (input) => { await completeCesadFinalOpinion(processId, input); await load(); }} /> : null}
         {opinion && readOnly && !signatureStatus?.document?.hasArtifact ? (

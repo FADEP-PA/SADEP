@@ -423,7 +423,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Visualizar|Avaliar/i }));
 
     expect(
-      await screen.findByText('Autoavaliação recebida'),
+      await screen.findByText('Autoavaliação do Servidor'),
     ).toBeInTheDocument();
     expect(screen.queryByText('Reflexão do servidor sobre o desempenho.')).not.toBeInTheDocument();
     expect(screen.getByText('PDF em preparação ou aguardando geração.')).toBeInTheDocument();
@@ -487,7 +487,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Visualizar|Avaliar/i }));
 
     await waitFor(() =>
-      expect(screen.getByText('Autoavaliação recebida')).toBeInTheDocument(),
+      expect(screen.getByText('Autoavaliação do Servidor')).toBeInTheDocument(),
     );
 
     const confirmButton = screen.getByRole('button', {
