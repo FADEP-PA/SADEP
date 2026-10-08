@@ -21,9 +21,14 @@ import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { EmptyState } from '@/shared/ui/operational-states';
 import { WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
+import { ProcessDocumentHistory } from './process-document-history';
+import { getInternProcessSituation } from './intern-process-situation';
+import { StatusBadge } from '@/shared/ui/status-badge';
+import { getProcessStatusTone } from './process-formatters';
 import { formatDateTime } from './process-formatters';
 import { EvaluationAttachments } from './evaluation-attachments';
 import { EvaluationPdfViewer } from './evaluation-pdf-viewer';
+import { DocumentViewerProvider } from './document-viewer-context';
 import { EvaluationAcknowledgement } from './evaluation-acknowledgement';
 import { PersonalNotificationCard } from './personal-notification-card';
 import { SelfEvaluationFormView, type SelfEvaluationFormState } from './self-evaluation-form';
@@ -55,6 +60,7 @@ export function InternServerWorkspace() {
   const [operation, setOperation] = useState<Operation>(null);
   const [acknowledgementMode, setAcknowledgementMode] = useState<AcknowledgementMode | null>(null);
   const operationLock = useRef(false);
+  const activeProcess = useRef<string | null>(null);
   const [errorTitle, setErrorTitle] = useState('Não foi possível carregar');
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
@@ -62,7 +68,9 @@ export function InternServerWorkspace() {
 
   const loadSnapshot = useCallback(async (processId: string) => {
     const next = await getInternWorkspaceSnapshot(processId);
+    if (activeProcess.current !== processId) return;
     setSnapshot(next);
+    setProcesses(current => current.map(item => item.id === processId ? { ...item, status: next.process.status, currentStageSequence: next.currentStage.sequence, selfEvaluationStatus: next.selfEvaluation?.status ?? null } : item));
     setAcknowledgementMode(null);
     setForm(createForm(next));
     setShowSelfEvaluation(Boolean(next.selfEvaluation));
@@ -75,10 +83,7 @@ export function InternServerWorkspace() {
       .then(async (result) => {
         if (!active) return;
         setProcesses(result.items);
-        if (result.items.length === 1 && result.items[0]) {
-          setSelectedProcessId(result.items[0].id);
-          await loadSnapshot(result.items[0].id);
-        }
+
       })
       .catch((requestError) => {
         if (!active) return;
@@ -97,13 +102,22 @@ export function InternServerWorkspace() {
   const canSubmitSelfEvaluation = capabilities?.canSubmitSelfEvaluation ?? false;
   const isSubmitted = snapshot?.selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED;
   const isEditingSelfEvaluation = Boolean(snapshot && showSelfEvaluation && !isSubmitted);
-  const status = canConfirmScience
-    ? { label: 'Aguardando sua confirmação', tone: 'warning' as const }
-    : canEditSelfEvaluation
-      ? { label: snapshot?.selfEvaluation ? 'Autoavaliação em rascunho' : 'Autoavaliação disponível', tone: 'info' as const }
-      : isSubmitted
-        ? { label: 'Autoavaliação enviada', tone: 'success' as const }
-        : { label: 'Nenhuma ação necessária', tone: 'neutral' as const };
+  const situation = snapshot ? getInternProcessSituation({ status: snapshot.process.status, selfEvaluationStatus: snapshot.selfEvaluation?.status ?? null }, snapshot) : '';
+
+  async function openProcess(processId: string) {
+    if (operationLock.current) return;
+    activeProcess.current = processId;
+    setSelectedProcessId(processId); setSnapshot(null); setError(null); setFeedback(null); setIsLoading(true);
+    try { await loadSnapshot(processId); }
+    catch (requestError) { if (activeProcess.current !== processId) return; setErrorTitle('Não foi possível carregar sua avaliação'); setError(getRequestErrorMessage(requestError, 'Não foi possível carregar sua avaliação.')); }
+    finally { if (activeProcess.current === processId) setIsLoading(false); }
+  }
+
+  function backToList() {
+    activeProcess.current = null;
+    setSelectedProcessId(''); setSnapshot(null); setShowSelfEvaluation(false); setFeedback(null); setError(null);
+    void getProcessList().then(result => setProcesses(result.items)).catch(requestError => setError(getRequestErrorMessage(requestError, 'Não foi possível atualizar suas avaliações.')));
+  }
 
   const formIssues = useMemo(() => form.selfReflection.trim() ? [] : ['Preencha a autoavaliação antes de enviar.'], [form.selfReflection]);
 
@@ -155,60 +169,44 @@ export function InternServerWorkspace() {
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
-      <div className="work-page intern-workspace">
-        {!isEditingSelfEvaluation ? <WorkPageHeader
-          title="Minha avaliação"
-          description={snapshot ? `${snapshot.currentStage.sequence}ª etapa do estágio probatório` : 'Acompanhe sua etapa atual'}
-          status={snapshot ? status.label : undefined}
-          statusTone={status.tone}
-        /> : null}
-
-        {processes.length > 1 && !isEditingSelfEvaluation ? (
-          <label className="field-group process-selector" htmlFor="intern-process">
-            <span>Processo</span>
-            <select id="intern-process" value={selectedProcessId} onChange={async (event) => { setSelectedProcessId(event.target.value); setIsLoading(true); await loadSnapshot(event.target.value); setIsLoading(false); }}>
-              <option value="">Selecione</option>
-              {processes.map((item) => <option key={item.id} value={item.id}>{item.currentStageSequence}ª etapa · {item.evaluatedUserName}</option>)}
-            </select>
-          </label>
-        ) : null}
-
-        {isLoading && !isEditingSelfEvaluation ? <InlineLoadingState title="Carregando avaliações…" /> : null}
-        {!isLoading && processes.length === 0 && !error ? <EmptyState title="Nenhuma avaliação disponível" description="Você não possui ações para realizar agora." /> : null}
-        {error && !isEditingSelfEvaluation ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}
-        {feedback && !isEditingSelfEvaluation ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
-
-        {snapshot && [ProcessStatus.NOTIFICADO, ProcessStatus.CIENTE, ProcessStatus.ENCERRADO].includes(snapshot.process.status)
-          ? <PersonalNotificationCard key={snapshot.process.id} processId={snapshot.process.id} /> : null}
-
-        {snapshot && !(showSelfEvaluation && !isSubmitted) ? (
-          <>
-            <WorkSection title="Sua avaliação">
-              <EvaluationAcknowledgement acknowledgement={acknowledgement} />
-              {snapshot.supervisorEvaluation ? (
-                <div className="evaluation-summary">
-                  <div className="evaluation-summary__metrics">
-                    <div><span>Situação</span><strong>{snapshot.supervisorEvaluation.status === 'SUBMITTED' ? 'Recebida' : 'Em elaboração'}</strong></div>
-                    <div><span>Data</span><strong>{formatDateTime(snapshot.supervisorEvaluation.submittedAt)}</strong></div>
-                  </div>
-                  <EvaluationPdfViewer processId={snapshot.process.id} documentContext={snapshot.supervisorEvaluation.documentContext ?? null} updatedAt={snapshot.supervisorEvaluation.updatedAt} title="PDF da avaliação da Chefia" />
-                </div>
-              ) : <EmptyState title="Avaliação ainda não enviada" description="Aguarde a chefia concluir o preenchimento." />}
-            </WorkSection>
-
-            {snapshot.supervisorEvaluation?.status === SupervisorEvaluationStatus.SUBMITTED ? (
-              <EvaluationAttachments
-                processId={snapshot.process.id}
-                stageId={snapshot.supervisorEvaluation.processStageId}
-                origin={EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION}
-                editable={false}
-                title="Anexos da Chefia"
-              />
-            ) : null}
-
-            {canConfirmScience && !acknowledgement ? (
-              <>
-              <WorkSection title="Registrar ciência">
+      <DocumentViewerProvider key={selectedProcessId + ":" + isEditingSelfEvaluation + ":" + (snapshot?.selfEvaluation?.documentContext?.documentId ?? snapshot?.supervisorEvaluation?.documentContext?.documentId ?? "")}><div className="work-page intern-workspace">
+        {!selectedProcessId ? <>
+          <WorkPageHeader title="Minhas avaliações" description="Acompanhe suas avaliações e acesse as etapas que precisam da sua atenção." />
+          {isLoading ? <InlineLoadingState title="Carregando avaliações…" /> : null}
+          {error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}
+          {!isLoading && processes.length === 0 && !error ? <EmptyState title="Nenhuma avaliação disponível" description="Você não possui avaliações disponíveis para consulta." /> : null}
+          {processes.length > 0 ? <div className="task-list"><div className="task-table" role="table" aria-label="Minhas avaliações">
+            <div className="task-table__header" role="row"><span role="columnheader">Avaliação / Processo</span><span role="columnheader">Etapa</span><span role="columnheader">Situação</span><span role="columnheader">Ação</span></div>
+            {processes.map(item => <div className="task-table__row" role="row" key={item.id}>
+              <div role="cell" className="task-table__person"><strong>Estágio probatório</strong></div>
+              <div role="cell" data-label="Etapa">{item.currentStageSequence}ª etapa</div>
+              <div role="cell" data-label="Situação"><StatusBadge label={getInternProcessSituation(item)} tone={getProcessStatusTone(item.status)} /></div>
+              <div role="cell" className="task-table__action"><button type="button" disabled={isLoading} onClick={() => void openProcess(item.id)}>Visualizar</button></div>
+            </div>)}
+          </div></div> : null}
+        </> : !isEditingSelfEvaluation ? <>
+          <button type="button" className="ghost-button work-back" disabled={operation !== null} onClick={backToList}>← Voltar às minhas avaliações</button>
+          <WorkPageHeader title="Minha avaliação" description={snapshot ? snapshot.currentStage.sequence + 'ª etapa do estágio probatório' : 'Carregando etapa'} status={situation || undefined} statusTone={snapshot ? getProcessStatusTone(snapshot.process.status) : 'neutral'} />
+          {isLoading ? <InlineLoadingState title="Carregando avaliação…" /> : null}
+          {error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}
+          {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
+          {snapshot ? <>
+            <section className="process-status-summary" aria-label="Situação atual">
+              <h2>Situação atual</h2><strong>{situation}</strong>
+              {isSubmitted && snapshot.selfEvaluation?.submittedAt ? <p>Autoavaliação enviada em {formatDateTime(snapshot.selfEvaluation.submittedAt)}</p> : null}
+              {canEditSelfEvaluation ? <button type="button" onClick={() => setShowSelfEvaluation(true)}>{snapshot.selfEvaluation ? 'Continuar preenchimento' : 'Preencher autoavaliação'}</button> : null}
+            </section>
+            {[ProcessStatus.NOTIFICADO, ProcessStatus.CIENTE, ProcessStatus.ENCERRADO].includes(snapshot.process.status) ? <PersonalNotificationCard key={snapshot.process.id} processId={snapshot.process.id} /> : null}
+            {isSubmitted && snapshot.selfEvaluation ? <WorkSection title="Autoavaliação do Servidor">
+              <EvaluationPdfViewer defaultOpen processId={snapshot.process.id} documentContext={snapshot.selfEvaluation.documentContext ?? null} updatedAt={snapshot.selfEvaluation.updatedAt} title="PDF da autoavaliação" metadata={<span>Autoavaliação enviada</span>} />
+              <EvaluationAttachments compact title="Anexos" processId={snapshot.process.id} stageId={snapshot.selfEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} />
+            </WorkSection> : <>
+              <WorkSection title="Sua avaliação">
+                <EvaluationAcknowledgement compact acknowledgement={acknowledgement} />
+                {snapshot.supervisorEvaluation ? <EvaluationPdfViewer defaultOpen processId={snapshot.process.id} documentContext={snapshot.supervisorEvaluation.documentContext ?? null} updatedAt={snapshot.supervisorEvaluation.updatedAt} title="PDF da avaliação da Chefia" metadata={<><span>{snapshot.supervisorEvaluation.status === SupervisorEvaluationStatus.SUBMITTED ? "Recebida" : "Em elaboração"}</span><span>Data: {formatDateTime(snapshot.supervisorEvaluation.submittedAt)}</span></>} /> : <EmptyState title="Avaliação ainda não enviada" description="Aguarde a chefia concluir o preenchimento." />}
+                {snapshot.supervisorEvaluation?.status === SupervisorEvaluationStatus.SUBMITTED ? <EvaluationAttachments compact title="Anexos da Chefia" processId={snapshot.process.id} stageId={snapshot.supervisorEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION} /> : null}
+              </WorkSection>
+              {canConfirmScience && !acknowledgement ? <WorkSection title="Registrar ciência">
                 <p>A ciência confirma que você recebeu e leu a avaliação. Ela não significa concordância com o conteúdo.</p>
                 <fieldset className="science-options" disabled={operation !== null}>
                   <legend className="visually-hidden">Escolha a modalidade de ciência</legend>
@@ -222,23 +220,11 @@ export function InternServerWorkspace() {
                   </label>
                 </fieldset>
                 <div className="form-actions science-actions"><button type="button" disabled={operation !== null || acknowledgementMode === null} onClick={() => void run('science')}>{operation === 'science' ? 'Confirmando…' : 'Confirmar ciência'}</button></div>
-              </WorkSection>
-              </>
-            ) : canEditSelfEvaluation ? (
-              <div className="self-evaluation-available"><p>Autoavaliação disponível</p><button type="button" onClick={() => setShowSelfEvaluation(true)}>{snapshot.selfEvaluation ? 'Continuar preenchimento' : 'Preencher autoavaliação'}</button></div>
-            ) : <p className="muted-copy">Nenhuma ação necessária no momento.</p>}
-
-            {snapshot.selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED ? (
-              <WorkSection title="Autoavaliação">
-                <p className="success-copy">Autoavaliação enviada</p>
-                <p className="muted-copy">Aguarde a confirmação da chefia.</p>
-                <EvaluationPdfViewer processId={snapshot.process.id} documentContext={snapshot.selfEvaluation.documentContext ?? null} updatedAt={snapshot.selfEvaluation.updatedAt} title="PDF da autoavaliação" />
-                <EvaluationAttachments processId={snapshot.process.id} stageId={snapshot.selfEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} />
-              </WorkSection>
-            ) : null}
-          </>
-        ) : null}
-
+              </WorkSection> : null}
+            </>}
+            <ProcessDocumentHistory showEvaluationAttachments processId={snapshot.process.id} revision={snapshot.selfEvaluation?.updatedAt ?? snapshot.supervisorEvaluation?.updatedAt ?? ''} acknowledgements={acknowledgement ? { [acknowledgement.documentId]: acknowledgement } : undefined} />
+          </> : null}
+        </> : null}
         {snapshot && showSelfEvaluation && !isSubmitted ? (
           <SelfEvaluationFormView
             leadingContent={<>{error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}{feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}</>}
@@ -269,7 +255,7 @@ export function InternServerWorkspace() {
             }}
           />
         ) : null}
-      </div>
+      </div></DocumentViewerProvider>
     </AuthGuard>
   );
 }

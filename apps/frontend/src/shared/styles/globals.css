@@ -8001,3 +8001,27 @@ button,
 .science-actions { justify-content: flex-end; }
 .self-evaluation-available { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* Process reading hierarchy and compact document context. */
+.process-status-summary { display: grid; gap: 8px; padding: 4px 0 16px; border-bottom: 1px solid var(--border); }
+.process-status-summary h2 { margin: 0; color: var(--text-muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.process-status-summary p { margin: 0; color: var(--text-muted); font-size: 13px; }
+.process-status-summary button { justify-self: start; }
+.acknowledgement-context { display: grid; gap: 4px; font-size: 13px; padding: 8px 0; }
+.acknowledgement-context span { color: var(--text-muted); font-size: 12px; }
+.acknowledgement-context p { margin: 0; color: var(--text-muted); }
+.attachments-inline { border: 0; box-shadow: none; margin-top: 16px; background: transparent; }
+.attachments-inline > .work-section__header { padding: 12px 0 8px; border: 0; }
+.attachments-inline > .work-section__body { padding: 0; }
+.historical-attachments { color: var(--text-muted); font-size: 13px; }
+.historical-attachments summary { cursor: pointer; }
+.cesad-opinion-editor__form { display: grid; gap: 16px; }
+.cesad-opinion-editor__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.cesad-opinion-editor__actions { display: flex; gap: 8px; justify-content: flex-end; }
+@media (max-width: 640px) {
+  .pdf-document-card__header { grid-template-columns: minmax(0, 1fr); }
+  .pdf-document-card__actions { justify-self: stretch; }
+  .cesad-opinion-editor__row { grid-template-columns: minmax(0, 1fr); }
+  .cesad-opinion-editor__actions { flex-direction: column; }
+  .pdf-document-card iframe { max-width: 100%; }
+}

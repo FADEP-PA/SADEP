@@ -96,7 +96,7 @@ export function CesadStageOpinionEditor({
           <span>Relatório <abbr title="obrigatório">*</abbr></span>
           <textarea
             id="cesad-opinion-report"
-            rows={6}
+            rows={4}
             value={form.reportText}
             disabled={isBusy}
             onChange={(e) => update('reportText', e.target.value)}
@@ -107,7 +107,7 @@ export function CesadStageOpinionEditor({
           <span>Fundamentação legal</span>
           <textarea
             id="cesad-opinion-legal"
-            rows={3}
+            rows={2}
             value={form.legalBasis}
             disabled={isBusy}
             onChange={(e) => update('legalBasis', e.target.value)}

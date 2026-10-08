@@ -18,6 +18,7 @@ import { formatDateTime } from '@/features/process/components/process-formatters
 
 const api = vi.hoisted(() => ({
   getEvaluationDocumentPdf: vi.fn(),
+  getProcessDocumentHistory: vi.fn(),
   completeCesadStageOpinion: vi.fn(),
   getCesadStageReadSnapshot: vi.fn(),
   getCesadStageOpinionSignatureStatus: vi.fn(),
@@ -186,6 +187,7 @@ function createSignatureStatus() {
 describe('CesadStageReadWorkspace', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    api.getProcessDocumentHistory.mockResolvedValue([]);
     auth.session.user.role = 'CESAD_MEMBER';
     api.getProcessList.mockResolvedValue({
       items: [createProcessListItem()],
@@ -222,7 +224,7 @@ describe('CesadStageReadWorkspace', () => {
     const back = screen.getByRole('button', { name: /Voltar aos processos/ });
     expect(back.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(header.compareDocumentPosition(science) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(science.closest('.form-stack')?.closest('section')).toHaveTextContent('Documentos da etapa');
+    expect(science.closest('.pdf-document-card__metadata')).toBeInTheDocument();
     expect(screen.getByText(/Data\/hora:/)).toHaveTextContent(formatDateTime(acknowledgedAt));
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
     if (modality === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION) expect(screen.getByText(/O servidor registrou ciência da avaliação com ressalva/)).toBeInTheDocument();

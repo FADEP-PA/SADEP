@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 
 import { HttpError } from '@/shared/api/http-error';
 import { getEvaluationDocumentPdf } from '@/shared/api/services/processes-service';
+import { useDocumentViewer } from './document-viewer-context';
+import type { ReactNode } from 'react';
 import { PdfDocumentCard } from './pdf-document-card';
 
 type Props = {
@@ -16,6 +18,8 @@ type Props = {
   updatedAt: string;
   title: string;
   controls?: boolean;
+  defaultOpen?: boolean;
+  metadata?: ReactNode;
 };
 
 export function EvaluationPdfViewer(props: Props) {
@@ -23,11 +27,12 @@ export function EvaluationPdfViewer(props: Props) {
   return <PdfContent key={`${props.processId}:${props.documentContext?.documentId}:${props.updatedAt}:${props.documentContext?.hasArtifact}:${signatureVersion}`} {...props} />;
 }
 
-function PdfContent({ processId, documentContext, title, controls = true }: Props) {
+function PdfContent({ processId, documentContext, title, controls = true, defaultOpen = false, metadata }: Props) {
   const [attempt, setAttempt] = useState(0);
   const [url, setUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const viewer = useDocumentViewer(defaultOpen && controls);
+  const expanded = viewer.active === viewer.instance;
   const shouldLoad = Boolean(documentContext?.hasArtifact || attempt > 0);
   const documentId = documentContext?.documentId;
 
@@ -65,8 +70,8 @@ function PdfContent({ processId, documentContext, title, controls = true }: Prop
     </div>
   );
   if (!controls) return content;
-  return <PdfDocumentCard title={title} actions={<>
-    <button type="button" className="secondary-button" aria-label={`${expanded ? 'Ocultar visualização' : 'Visualizar PDF'} — ${title}`} aria-expanded={expanded} onClick={() => setExpanded(current => !current)}>{expanded ? 'Ocultar visualização' : 'Visualizar PDF'}</button>
+  return <PdfDocumentCard title={title} metadata={metadata} actions={<>
+    <button type="button" className="secondary-button" aria-label={`${expanded ? 'Ocultar visualização' : 'Visualizar PDF'} — ${title}`} aria-expanded={expanded} onClick={() => viewer.setActive(expanded ? null : viewer.instance)}>{expanded ? 'Ocultar visualização' : 'Visualizar PDF'}</button>
     {url ? <a className="secondary-button" href={url} download={`${title}.pdf`}>Baixar PDF</a> : <button type="button" className="secondary-button" disabled>Baixar PDF</button>}
   </>}>
     {expanded || !url ? content : null}

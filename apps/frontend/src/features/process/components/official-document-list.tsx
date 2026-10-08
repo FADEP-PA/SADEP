@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { getEvaluationDocumentPdf } from '@/shared/api/services/processes-service';
 import { getRequestErrorMessage } from '@/shared/api/http-error';
 import { EvaluationPdfViewer } from './evaluation-pdf-viewer';
 import { formatDateTime } from './process-formatters';
+import { useDocumentViewer } from './document-viewer-context';
 import { PdfDocumentCard } from './pdf-document-card';
 
 export type OfficialDocumentItem = {
@@ -13,10 +14,13 @@ export type OfficialDocumentItem = {
   hasArtifact: boolean;
   updatedAt: string;
   status: string;
+  metadata?: ReactNode;
+  related?: ReactNode;
 };
 
 export function OfficialDocumentList({ processId, documents }: { processId: string; documents: OfficialDocumentItem[] }) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const viewer = useDocumentViewer();
+  const activeId = viewer.active?.startsWith(viewer.instance + ":") ? viewer.active.slice(viewer.instance.length + 1) : null;
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,11 +43,12 @@ export function OfficialDocumentList({ processId, documents }: { processId: stri
   return <div className="form-stack">
     {error ? <p role="alert">{error}</p> : null}
     {documents.length === 0 ? <p className="muted-copy">Nenhum documento emitido nesta etapa.</p> : null}
-    {documents.map(document => <PdfDocumentCard key={document.documentId} title={document.title} metadata={<span>{document.status} · {formatDateTime(document.updatedAt)}</span>} actions={<>
-      <button type="button" className="secondary-button" aria-label={`${activeId === document.documentId ? 'Ocultar visualização' : 'Visualizar PDF'} — ${document.title}`} aria-expanded={activeId === document.documentId} onClick={() => setActiveId(current => current === document.documentId ? null : document.documentId)}>{activeId === document.documentId ? 'Ocultar visualização' : 'Visualizar PDF'}</button>
+    {documents.map(document => <PdfDocumentCard key={document.documentId} title={document.title} metadata={<><span>{document.status} · {formatDateTime(document.updatedAt)}</span>{document.metadata}</>} actions={<>
+      <button type="button" className="secondary-button" aria-label={`${activeId === document.documentId ? 'Ocultar visualização' : 'Visualizar PDF'} — ${document.title}`} aria-expanded={activeId === document.documentId} onClick={() => viewer.setActive(activeId === document.documentId ? null : viewer.instance + ":" + document.documentId)}>{activeId === document.documentId ? 'Ocultar visualização' : 'Visualizar PDF'}</button>
       <button type="button" className="secondary-button" aria-label={`Baixar PDF — ${document.title}`} disabled={downloadingId !== null || !document.hasArtifact} onClick={() => void download(document)}>{downloadingId === document.documentId ? 'Baixando…' : 'Baixar PDF'}</button>
     </>}>
       {activeId === document.documentId ? <EvaluationPdfViewer processId={processId} documentContext={document} updatedAt={document.updatedAt} title={`PDF — ${document.title}`} controls={false} /> : null}
+      {document.related}
     </PdfDocumentCard>)}
   </div>;
 }

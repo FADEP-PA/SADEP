@@ -76,7 +76,7 @@ describe('SupervisorSelfEvaluationCard', () => {
     }] });
     render(<SupervisorSelfEvaluationCard selfEvaluation={BASE_SELF_EVALUATION} documentContext={createDocumentContext({ supervisorSigned: true })} userName="Chefia" processStatus={ProcessStatus.EM_ANALISE_CESAD} isConfirming={false} onConfirm={onConfirm} />);
     expect(await screen.findByText('servidor.png')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Anexos do Servidor' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Anexos' })).toBeInTheDocument();
     await waitFor(() => expect(attachmentsApi.listEvaluationAttachments).toHaveBeenCalledWith(BASE_SELF_EVALUATION.processId, BASE_SELF_EVALUATION.processStageId, EvaluationAttachmentOrigin.SELF_EVALUATION, expect.any(AbortSignal)));
     expect(screen.queryByLabelText('Selecionar arquivos')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Remover/ })).not.toBeInTheDocument();
@@ -91,7 +91,6 @@ describe('SupervisorSelfEvaluationCard', () => {
     api.getEvaluationDocumentPdf.mockResolvedValue(new Blob(['%PDF-test'], { type: 'application/pdf' }));
     const context = { ...createDocumentContext({ supervisorPending: true }), hasArtifact: true, artifactPath: 'private/storage.pdf' };
     render(<SupervisorSelfEvaluationCard selfEvaluation={BASE_SELF_EVALUATION} documentContext={context} userName="Chefia" processStatus={ProcessStatus.AGUARDANDO_ASSINATURA} isConfirming={false} onConfirm={onConfirm} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF — PDF da autoavaliação do Servidor' }));
     expect(await screen.findByTitle('PDF da autoavaliação do Servidor')).toHaveAttribute('src', 'blob:supervisor-pdf');
     expect(api.getEvaluationDocumentPdf).toHaveBeenCalledWith(BASE_SELF_EVALUATION.processId, 'doc-1', expect.any(AbortSignal));
     expect(screen.queryByText(BASE_SELF_EVALUATION.selfReflection)).not.toBeInTheDocument();

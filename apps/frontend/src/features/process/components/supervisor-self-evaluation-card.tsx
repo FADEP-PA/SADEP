@@ -61,15 +61,15 @@ export function SupervisorSelfEvaluationCard({
       }
     >
       <div className="evaluation-summary">
-        <EvaluationPdfViewer processId={selfEvaluation.processId} documentContext={documentContext} updatedAt={selfEvaluation.updatedAt} title="PDF da autoavaliação do Servidor" />
         {selfEvaluation.submittedAt ? <small>Enviada em {formatDateTime(selfEvaluation.submittedAt)}</small> : null}
         {isSigned ? (
           <p className="success-copy">
             Confirmada por <strong>{userName}</strong>{signature?.signedAt ? ` em ${formatDateTime(signature.signedAt)}` : ''}.
           </p>
         ) : null}
+        <EvaluationPdfViewer defaultOpen processId={selfEvaluation.processId} documentContext={documentContext} updatedAt={selfEvaluation.updatedAt} title="PDF da autoavaliação do Servidor" />
       </div>
-      <EvaluationAttachments processId={selfEvaluation.processId} stageId={selfEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} title="Anexos do Servidor" />
+      <EvaluationAttachments compact processId={selfEvaluation.processId} stageId={selfEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} title="Anexos" />
     </WorkSection>
   );
 }

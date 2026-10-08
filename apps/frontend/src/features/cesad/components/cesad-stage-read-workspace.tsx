@@ -34,6 +34,8 @@ import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { EmptyState } from '@/shared/ui/operational-states';
 import { StatusBadge } from '@/shared/ui/status-badge';
+import { DocumentViewerProvider } from '@/features/process/components/document-viewer-context';
+import { ProcessDocumentHistory } from '@/features/process/components/process-document-history';
 import { NextAction, WorkPageHeader, WorkSection, WorkTabs } from '@/shared/ui/work-patterns';
 
 import { CesadStageDocuments } from './cesad-stage-documents';
@@ -178,7 +180,7 @@ export function CesadStageReadWorkspace() {
     }
     return (
       <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]}>
-        <div className="work-page">
+        <DocumentViewerProvider><div className="work-page">
           <WorkPageHeader title="Processos para análise" description={isCesadMember ? 'Selecione um processo para elaborar ou acompanhar o parecer.' : 'Consulte os processos encaminhados à comissão.'} status={!isCesadMember ? 'Somente leitura' : undefined} />
           {isLoading ? <InlineLoadingState title="Carregando processos…" /> : null}
           {error ? <FeedbackAlert title="Não foi possível carregar" tone="error" description={error} /> : null}
@@ -194,7 +196,7 @@ export function CesadStageReadWorkspace() {
               </div>)}
             </div>
           ) : null}
-        </div>
+        </div></DocumentViewerProvider>
       </AuthGuard>
     );
   }
@@ -203,7 +205,7 @@ export function CesadStageReadWorkspace() {
 
   return (
     <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]}>
-      <div className="work-page cesad-workspace">
+      <DocumentViewerProvider><div className="work-page cesad-workspace">
         <button type="button" className="ghost-button work-back" onClick={() => { setSnapshot(null); setFeedback(null); setError(null); }}>← Voltar aos processos</button>
         <WorkPageHeader title={snapshot.server.displayName ?? snapshot.server.email} description={`${snapshot.stage.sequence}ª etapa`} status={processStatus.label} statusTone={processStatus.tone} actions={!isCesadMember ? <span className="read-only-label">Somente leitura</span> : null} />
 
@@ -225,7 +227,7 @@ export function CesadStageReadWorkspace() {
 
         {activeTab === 'analysis' ? (
           <div id="cesad-process-panel-analysis" className="cesad-analysis" role="tabpanel" aria-labelledby="cesad-process-tab-analysis" tabIndex={0}>
-            <CesadStageDocuments key={snapshot.stage.stageId} snapshot={snapshot} />
+            <CesadStageDocuments title="Documentos para análise" key={snapshot.stage.stageId} snapshot={snapshot} />
 
             {opinionIsEditable ? (
               <CesadStageOpinionEditor
@@ -253,11 +255,11 @@ export function CesadStageReadWorkspace() {
         ) : null}
 
         {activeTab === 'history' ? (
-          <div id="cesad-process-panel-history" role="tabpanel" aria-labelledby="cesad-process-tab-history" tabIndex={0}><WorkSection title="Histórico">
+          <div id="cesad-process-panel-history" role="tabpanel" aria-labelledby="cesad-process-tab-history" tabIndex={0}><ProcessDocumentHistory processId={snapshot.process.id} revision={snapshot.cesadStageOpinion?.updatedAt ?? ""} /><WorkSection title="Histórico">
             {snapshot.history.length > 0 ? <ol className="human-timeline">{[...snapshot.history].reverse().map((item) => <li key={item.id}><time>{formatDateTime(item.occurredAt)}</time><div><strong>{formatHistoryAction(item.action)}</strong><span>{item.actorRole ? formatRole(item.actorRole) : 'Sistema'}</span>{item.comment ? <p>{item.comment}</p> : null}</div></li>)}</ol> : <EmptyState title="Nenhuma movimentação registrada" />}
           </WorkSection></div>
         ) : null}
-      </div>
+      </div></DocumentViewerProvider>
     </AuthGuard>
   );
 }

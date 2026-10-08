@@ -37,11 +37,13 @@ import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 
 import { SupervisorDashboardTable } from './supervisor-dashboard-table';
+import { DocumentViewerProvider } from './document-viewer-context';
 import { EvaluationAcknowledgement } from './evaluation-acknowledgement';
 import { EvaluationAttachments } from './evaluation-attachments';
 import { EvaluationDetailView } from './supervisor-evaluation-form';
 import { calculateEvaluationScore } from './supervisor-evaluation-scoring';
 import { SupervisorSelfEvaluationCard } from './supervisor-self-evaluation-card';
+import { formatProcessStatus, getProcessStatusTone } from './process-formatters';
 import { ProcessDocumentHistory } from './process-document-history';
 import type {
   EvaluationDraft,
@@ -409,7 +411,12 @@ export function SupervisorEvaluationWorkspace() {
       setSelfEvaluation(selfEval);
       setActiveEvaluation((current) => {
         if (!current) return current;
-        return createEvaluationDraft(createRealDashboardRow(snapshot), snapshot.supervisorEvaluation);
+        return createEvaluationDraft({
+          ...current.row,
+          status: toDashboardStatus(snapshot.process.status),
+          currentStageSequence: snapshot.process.currentStageSequence,
+          stageLabel: `${snapshot.process.currentStageSequence}ª etapa`,
+        }, snapshot.supervisorEvaluation);
       });
       return snapshot;
     } catch (error) {
@@ -575,7 +582,7 @@ export function SupervisorEvaluationWorkspace() {
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
-      <div className="work-page">
+      <DocumentViewerProvider key={(workspaceSnapshot?.process.id ?? "list") + ":" + JSON.stringify(selfEvaluation?.documentContext?.signatures ?? [])}><div className="work-page">
         {!activeEvaluation ? (
           <WorkPageHeader
             title="Avaliações da equipe"
@@ -608,7 +615,7 @@ export function SupervisorEvaluationWorkspace() {
                   isConfirming={isConfirmingSelfEvaluation}
                   onConfirm={() => void handleConfirmSelfEvaluation()}
                 />
-               ) : workspaceSnapshot?.documentContext?.acknowledgement ? <EvaluationAcknowledgement acknowledgement={workspaceSnapshot.documentContext.acknowledgement} /> : null}</>}
+               ) : workspaceSnapshot?.documentContext?.acknowledgement ? <EvaluationAcknowledgement compact acknowledgement={workspaceSnapshot.documentContext.acknowledgement} /> : null}</>}
               onChange={(updater) =>
                 setActiveEvaluation((current) => (current ? updater(current) : null))
               }
@@ -617,14 +624,14 @@ export function SupervisorEvaluationWorkspace() {
               onSubmit={() => void handleSubmitEvaluation()}
             /> : workspaceSnapshot ? <>
               <button type="button" className="ghost-button work-back" onClick={handleBackToDashboard}>← Voltar às avaliações</button>
-              <WorkPageHeader title="Avaliação de desempenho" description={`${activeEvaluation.row.stageLabel} · ${activeEvaluation.row.serverName}`} status="Avaliação enviada" actions={workspaceSnapshot.canRectify ? <button type="button" onClick={() => setIsRectifying(true)}>Iniciar retificação</button> : undefined} />
+              <WorkPageHeader title="Avaliação de desempenho" description={`${activeEvaluation.row.stageLabel} · ${activeEvaluation.row.serverName}`} status={formatProcessStatus(workspaceSnapshot.process.status)} statusTone={getProcessStatusTone(workspaceSnapshot.process.status)} actions={workspaceSnapshot.canRectify ? <button type="button" onClick={() => setIsRectifying(true)}>Iniciar retificação</button> : undefined} />
               {workspaceFeedback}
-              <EvaluationAcknowledgement acknowledgement={workspaceSnapshot.documentContext?.acknowledgement} />
+              <EvaluationAcknowledgement compact acknowledgement={workspaceSnapshot.documentContext?.acknowledgement} />
               {feedbackMessage ? <FeedbackAlert title="Concluído" tone="success" description={feedbackMessage} /> : null}
               {actionErrorMessage ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={actionErrorMessage} /> : null}
               {showSelfEvaluationCard ? <SupervisorSelfEvaluationCard selfEvaluation={selfEvaluation} documentContext={selfEvaluation.documentContext ?? null} userName={session?.user.name ?? 'Chefia imediata'} processStatus={workspaceSnapshot.process.status} isConfirming={isConfirmingSelfEvaluation} onConfirm={() => void handleConfirmSelfEvaluation()} /> : null}
             </> : null}
-            {workspaceSnapshot ? <ProcessDocumentHistory processId={workspaceSnapshot.process.id} revision={`${workspaceSnapshot.supervisorEvaluation?.updatedAt}:${selfEvaluation?.updatedAt}:${workspaceSnapshot.process.status}`} /> : null}
+            {workspaceSnapshot ? <ProcessDocumentHistory showEvaluationAttachments processId={workspaceSnapshot.process.id} revision={`${workspaceSnapshot.supervisorEvaluation?.updatedAt}:${selfEvaluation?.updatedAt}:${workspaceSnapshot.process.status}`} /> : null}
 
           </>
         ) : (
@@ -641,7 +648,7 @@ export function SupervisorEvaluationWorkspace() {
             onClosePreviousEvaluations={() => setPreviousReviewRow(null)}
           />
         )}
-      </div>
+      </div></DocumentViewerProvider>
     </AuthGuard>
   );
 }

@@ -9,7 +9,7 @@ import { formatDocumentStatus, formatDocumentType } from '@/features/process/com
 import { WorkSection } from '@/shared/ui/work-patterns';
 import { EvaluationAcknowledgement } from '@/features/process/components/evaluation-acknowledgement';
 
-export function CesadStageDocuments({ snapshot }: { snapshot: CesadStageReadSnapshotRef }) {
+export function CesadStageDocuments({ snapshot, title = "Documentos da etapa" }: { snapshot: CesadStageReadSnapshotRef; title?: string }) {
   const [selected, setSelected] = useState(snapshot.stage.sequence);
   const [historical, setHistorical] = useState<CesadStageReadSnapshotRef | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,11 +25,10 @@ export function CesadStageDocuments({ snapshot }: { snapshot: CesadStageReadSnap
     finally { setLoading(false); }
   }
 
-  return <WorkSection title="Documentos da etapa">
+  return <WorkSection title={title}>
     <label>Etapa dos documentos<select aria-label="Etapa dos documentos" value={selected} disabled={loading} onChange={event => void selectStage(Number(event.target.value))}>{Array.from({ length: Math.min(snapshot.stage.sequence, snapshot.stage.totalStages) }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}ª etapa</option>)}</select></label>
     {loading ? <p role="status">Carregando documentos…</p> : error ? <p role="alert">{error}</p> : shown ? <div className="form-stack" key={shown.stage.stageId}>
-      <EvaluationAcknowledgement acknowledgement={shown.documents.find(document => document.documentType === DocumentType.SUPERVISOR_EVALUATION)?.serverAcknowledgement} />
-      <OfficialDocumentList processId={shown.process.id} documents={shown.documents.filter(document => document.exists && document.documentId).map(document => ({ documentId: document.documentId!, title: formatDocumentType({ documentType: document.documentType, opinionScope: 'STAGE' }), hasArtifact: document.hasArtifact, updatedAt: document.updatedAt ?? document.createdAt ?? '', status: formatDocumentStatus(document.documentStatus) }))} />
+      <OfficialDocumentList processId={shown.process.id} documents={shown.documents.filter(document => document.exists && document.documentId).map(document => ({ documentId: document.documentId!, title: formatDocumentType({ documentType: document.documentType, opinionScope: 'STAGE' }), hasArtifact: document.hasArtifact, updatedAt: document.updatedAt ?? document.createdAt ?? '', status: formatDocumentStatus(document.documentStatus), metadata: document.documentType === DocumentType.SUPERVISOR_EVALUATION ? <EvaluationAcknowledgement compact acknowledgement={document.serverAcknowledgement} /> : null }))} />
     </div> : null}
   </WorkSection>;
 }

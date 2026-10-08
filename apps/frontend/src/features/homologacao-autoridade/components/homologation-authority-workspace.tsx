@@ -33,6 +33,7 @@ import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { InlineLoadingState } from '@/shared/ui/inline-loading-state';
 import { EmptyState } from '@/shared/ui/operational-states';
 import { StatusBadge } from '@/shared/ui/status-badge';
+import { DocumentViewerProvider } from '@/features/process/components/document-viewer-context';
 import { NextAction, WorkPageHeader, WorkSection } from '@/shared/ui/work-patterns';
 import { OfficialDocumentList } from '@/features/process/components/official-document-list';
 
@@ -214,7 +215,7 @@ export function HomologationAuthorityWorkspace() {
   if (!selected) {
     return (
       <AuthGuard allowedRoles={ALLOWED_ROLES}>
-        <div className="work-page">
+        <DocumentViewerProvider><div className="work-page">
           <WorkPageHeader
             title="Homologação"
             description="Secretário Adjunto: acompanhe os processos encaminhados pela CESAD e registre a decisão de homologação."
@@ -259,7 +260,7 @@ export function HomologationAuthorityWorkspace() {
               ))}
             </div>
           ) : null}
-        </div>
+        </div></DocumentViewerProvider>
       </AuthGuard>
     );
   }
@@ -272,7 +273,7 @@ export function HomologationAuthorityWorkspace() {
 
   return (
     <AuthGuard allowedRoles={ALLOWED_ROLES}>
-      <div className="work-page">
+      <DocumentViewerProvider><div className="work-page">
         <button type="button" className="ghost-button work-back" onClick={backToQueue}>
           ← Voltar aos processos
         </button>
@@ -454,7 +455,7 @@ export function HomologationAuthorityWorkspace() {
             ) : null}
           </>
         ) : null}
-      </div>
+      </div></DocumentViewerProvider>
     </AuthGuard>
   );
 }

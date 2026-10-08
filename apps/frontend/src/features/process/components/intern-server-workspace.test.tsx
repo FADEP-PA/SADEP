@@ -24,6 +24,7 @@ import { InternServerWorkspace } from './intern-server-workspace';
 
 const api = vi.hoisted(() => ({
   getEvaluationDocumentPdf: vi.fn(),
+  getProcessDocumentHistory: vi.fn(),
   getProcessList: vi.fn(),
   getWorkflowHistory: vi.fn(),
   getInternWorkspaceSnapshot: vi.fn(),
@@ -219,23 +220,67 @@ function createSnapshot(options?: {
   };
 }
 
-function renderWorkspace(snapshot = createSnapshot()) {
+async function renderWorkspace(snapshot = createSnapshot()) {
   api.getProcessList.mockResolvedValue(processList);
   api.getInternWorkspaceSnapshot.mockResolvedValue(snapshot);
   api.getWorkflowHistory.mockResolvedValue({ items: [], meta: { total: 0 } });
 
-  return render(<InternServerWorkspace />);
+  const view = render(<InternServerWorkspace />);
+  fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
+  return view;
 }
 
 describe('InternServerWorkspace', () => {
+  it('starts in Minhas avaliações even for a single process, opens it explicitly and returns to the list', async () => {
+    api.getProcessList.mockResolvedValue({ ...processList, items: [{ ...processList.items[0]!, status: ProcessStatus.EM_ANALISE_CESAD, currentStageSequence: 3 }] });
+    api.getInternWorkspaceSnapshot.mockResolvedValue({ ...createSnapshot(), process: { id: PROCESS_ID, status: ProcessStatus.EM_ANALISE_CESAD }, currentStage: { ...createSnapshot().currentStage, sequence: 3 } });
+    render(<InternServerWorkspace />);
+    expect(screen.getByRole('heading', { name: 'Minhas avaliações' })).toBeInTheDocument();
+    const show = await screen.findByRole('button', { name: 'Visualizar' });
+    expect(screen.getByRole('table', { name: 'Minhas avaliações' })).toHaveTextContent('3ª etapa');
+    expect(screen.getByText('Em análise pela CESAD')).toBeInTheDocument();
+    expect(api.getInternWorkspaceSnapshot).not.toHaveBeenCalled();
+    expect(screen.queryByRole('heading', { name: 'Minha avaliação' })).not.toBeInTheDocument();
+    fireEvent.click(show);
+    expect(await screen.findByRole('heading', { name: 'Sua avaliação' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Voltar às minhas avaliações/ }));
+    expect(screen.getByRole('heading', { name: 'Minhas avaliações' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Minha avaliação' })).not.toBeInTheDocument();
+  });
+  it('makes submitted self evaluation current and retains science, PDFs and attachments in history', async () => {
+    const snapshot = createSnapshot({ scienceConfirmed: true, acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION, selfEvaluationStatus: SelfEvaluationStatus.SUBMITTED });
+    snapshot.selfEvaluation!.documentContext!.hasArtifact = true;
+    api.getEvaluationDocumentPdf.mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }));
+    URL.createObjectURL = vi.fn(() => 'blob:submitted'); URL.revokeObjectURL = vi.fn();
+    api.getProcessDocumentHistory.mockResolvedValue([
+      { documentId: 'supervisor-document-1', documentType: DocumentType.SUPERVISOR_EVALUATION, documentStatus: DocumentStatus.SIGNED, stageSequence: 1, stageId: 'stage-1', version: 1, hasArtifact: true, updatedAt: SIGNED_AT },
+      { documentId: 'self-document-1', documentType: DocumentType.SELF_EVALUATION, documentStatus: DocumentStatus.SIGNED, stageSequence: 1, stageId: 'stage-1', version: 1, hasArtifact: true, updatedAt: SIGNED_AT },
+    ]);
+    await renderWorkspace(snapshot);
+    expect(await screen.findByTitle('PDF da autoavaliação')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Situação atual' })).toHaveTextContent('Aguardando confirmação da Chefia');
+    expect(screen.getByRole('button', { name: 'Ocultar visualização — PDF da autoavaliação' })).toBeInTheDocument();
+    const previous = await screen.findByRole('button', { name: 'Visualizar PDF — Avaliação da chefia' });
+    expect(screen.queryByTitle('PDF — Avaliação da chefia')).not.toBeInTheDocument();
+    expect(screen.getByText('Ciente com ressalva').closest('.pdf-document-card__metadata')).toBeInTheDocument();
+    expect(screen.queryByText('Nenhuma ação necessária no momento.')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Anexos' })).toBeInTheDocument();
+    fireEvent.click(previous);
+    expect(await screen.findByTitle('PDF — Avaliação da chefia')).toBeInTheDocument();
+    expect(screen.queryByTitle('PDF da autoavaliação')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Anexos da Chefia', { selector: 'summary' }));
+    await waitFor(() => expect(attachmentsApi.listEvaluationAttachments).toHaveBeenCalledWith(PROCESS_ID, 'stage-1', EvaluationAttachmentOrigin.SUPERVISOR_EVALUATION, expect.any(AbortSignal)));
+    expect(screen.getAllByTitle(/PDF/)).toHaveLength(1);
+  });
+
   it('mostra avaliação e anexos antes da ciência', async () => {
-    renderWorkspace(); await screen.findByRole('heading', { name: 'Registrar ciência' });
+    await renderWorkspace(); await screen.findByRole('heading', { name: 'Registrar ciência' });
     const titles = screen.getAllByRole('heading').map(h => h.textContent);
     expect(titles.indexOf('Sua avaliação')).toBeLessThan(titles.indexOf('Anexos da Chefia'));
     expect(titles.indexOf('Anexos da Chefia')).toBeLessThan(titles.indexOf('Registrar ciência'));
   });
   it('autosave antes do upload mantém o formulário e deixa as ações após anexos', async () => {
-    renderWorkspace(createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT }));
+    await renderWorkspace(createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT }));
     const field = await screen.findByLabelText('Autoavaliação'); fireEvent.change(field, { target: { value: 'Texto atual ainda não salvo.' } });
     attachmentsApi.uploadSelfEvaluationAttachment.mockResolvedValue({ attachment: { id: 'new', originalFilename: 'prova.pdf', mimeType: 'application/pdf', sizeBytes: 10 } });
     await waitFor(() => expect(screen.getByLabelText('Selecionar arquivos')).toBeEnabled());
@@ -248,6 +293,7 @@ describe('InternServerWorkspace', () => {
   });
   beforeEach(() => {
     vi.clearAllMocks();
+    api.getProcessDocumentHistory.mockResolvedValue([]);
     api.saveSelfEvaluationDraft.mockResolvedValue({});
     api.signSupervisorEvaluation.mockResolvedValue({});
     api.submitSelfEvaluation.mockResolvedValue({});
@@ -261,8 +307,7 @@ describe('InternServerWorkspace', () => {
     api.getEvaluationDocumentPdf.mockResolvedValue(new Blob(['%PDF-test'], { type: 'application/pdf' }));
     const snapshot = createSnapshot(); snapshot.supervisorEvaluation!.documentContext!.hasArtifact = true;
     snapshot.supervisorEvaluation!.documentContext!.artifactPath = 'private/storage.pdf';
-    renderWorkspace(snapshot);
-    fireEvent.click(await screen.findByRole('button', { name: 'Visualizar PDF — PDF da avaliação da Chefia' }));
+    await renderWorkspace(snapshot);
     expect(await screen.findByTitle('PDF da avaliação da Chefia')).toHaveAttribute('src', 'blob:intern-pdf');
     expect(api.getEvaluationDocumentPdf).toHaveBeenCalledWith(PROCESS_ID, 'supervisor-document-1', expect.any(AbortSignal));
     expect(screen.queryByText('Desempenho satisfatório no período.')).not.toBeInTheDocument();
@@ -274,16 +319,16 @@ describe('InternServerWorkspace', () => {
     expect(await screen.findByTitle('PDF da avaliação da Chefia')).toBeInTheDocument();
   });
 
-  it('carrega automaticamente o único processo e exibe a avaliação real com ciência pendente', async () => {
-    renderWorkspace();
+  it('abre o processo selecionado e exibe a avaliação real com ciência pendente', async () => {
+    await renderWorkspace();
 
-    expect(await screen.findByText('Minha avaliação')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Minha avaliação' })).toBeInTheDocument());
     expect(api.getInternWorkspaceSnapshot).toHaveBeenCalledWith(PROCESS_ID);
     expect(screen.queryByText('Desempenho satisfatório no período.')).not.toBeInTheDocument();
     expect(screen.queryByText('O servidor cumpriu as atribuições da etapa.')).not.toBeInTheDocument();
     expect(screen.queryByText('Boa frequência.')).not.toBeInTheDocument();
     expect(screen.queryByText('Ver avaliação completa')).not.toBeInTheDocument();
-    expect(screen.getByText('PDF em preparação ou aguardando geração.')).toBeInTheDocument();
+    expect(await screen.findByText('PDF em preparação ou aguardando geração.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirmar ciência' })).toBeDisabled();
     expect(screen.queryByText(PROCESS_ID)).not.toBeInTheDocument();
     expect(
@@ -294,7 +339,7 @@ describe('InternServerWorkspace', () => {
 
 
   it('starts without selection', async () => {
-    renderWorkspace();
+    await renderWorkspace();
     const radios = await screen.findAllByRole('radio');
     for (const radio of radios) expect(radio).not.toBeChecked();
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
@@ -303,19 +348,19 @@ describe('InternServerWorkspace', () => {
   it.each([AcknowledgementMode.ACKNOWLEDGED, AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION, null])('reloads persisted mode %s', async (mode) => {
     const snapshot = createSnapshot({ scienceConfirmed: true, acknowledgementMode: mode });
     snapshot.supervisorEvaluation!.documentContext!.signatures[1]!.acknowledgementMode = AcknowledgementMode.ACKNOWLEDGED;
-    const view = renderWorkspace(snapshot);
+    const view = await renderWorkspace(snapshot);
     const label = mode === null ? 'Ciência registrada — modalidade não informada (registro anterior)' : mode === AcknowledgementMode.ACKNOWLEDGED ? 'Ciente' : 'Ciente com ressalva';
     const science = await screen.findByText(label);
     const header = screen.getByRole('heading', { name: 'Minha avaliação' });
     expect(header.compareDocumentPosition(science) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(science.closest('.work-section__body')?.parentElement?.closest('.work-section__body')).toHaveTextContent('PDF da avaliação da Chefia');
+    expect(science.closest('.acknowledgement-context')).toBeInTheDocument();
     expect(screen.getByText('Data/hora:', { exact: false })).toHaveTextContent(formatDateTime(SIGNED_AT));
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Preencher autoavaliação' })).toBeEnabled();
     expect(api.signSupervisorEvaluation).not.toHaveBeenCalled();
     if (mode === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION) expect(screen.getByText(/O servidor registrou ciência da avaliação com ressalva/)).toBeInTheDocument();
     view.unmount();
-    renderWorkspace(snapshot);
+    await renderWorkspace(snapshot);
     expect(await screen.findByText(label)).toBeInTheDocument();
     expect(api.getInternWorkspaceSnapshot).toHaveBeenCalledTimes(2);
   });
@@ -323,7 +368,7 @@ describe('InternServerWorkspace', () => {
   it('não deduz manifestação de assinatura completa sem read model', async () => {
     const snapshot = createSnapshot({ scienceConfirmed: true });
     snapshot.supervisorEvaluation!.documentContext!.acknowledgement = null;
-    renderWorkspace(snapshot);
+    await renderWorkspace(snapshot);
     expect(await screen.findByRole('button', { name: 'Preencher autoavaliação' })).toBeEnabled();
     expect(screen.queryByText('Ciente')).not.toBeInTheDocument();
     expect(screen.queryByText(/modalidade não informada/)).not.toBeInTheDocument();
@@ -333,6 +378,7 @@ describe('InternServerWorkspace', () => {
     api.getProcessList.mockResolvedValue(processList);
     api.getInternWorkspaceSnapshot.mockResolvedValueOnce(createSnapshot()).mockResolvedValueOnce(createSnapshot({ scienceConfirmed: true, acknowledgementMode: AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION }));
     render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
     fireEvent.click(await screen.findByRole('radio', { name: /^Ciente com ressalva\s*Confirmo/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
     expect(await screen.findByText('Temporary failure')).toBeInTheDocument();
@@ -346,6 +392,7 @@ describe('InternServerWorkspace', () => {
     api.getProcessList.mockResolvedValue({ items: [], total: 0 });
 
     render(<InternServerWorkspace />);
+
 
     expect(
       await screen.findByText('Nenhuma avaliação disponível'),
@@ -362,9 +409,10 @@ describe('InternServerWorkspace', () => {
 
     render(<InternServerWorkspace />);
 
-    const selector = await screen.findByLabelText('Processo');
+
+    const rows = await screen.findAllByRole('button', { name: 'Visualizar' });
     expect(api.getInternWorkspaceSnapshot).not.toHaveBeenCalled();
-    fireEvent.change(selector, { target: { value: 'second-process' } });
+    fireEvent.click(rows[1]!);
 
     await waitFor(() => {
       expect(api.getInternWorkspaceSnapshot).toHaveBeenCalledWith('second-process');
@@ -379,6 +427,7 @@ describe('InternServerWorkspace', () => {
       .mockResolvedValueOnce(createSnapshot({ scienceConfirmed: true, acknowledgementMode: mode }));
 
     render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
     fireEvent.click(await screen.findByRole('radio', { name: mode === AcknowledgementMode.ACKNOWLEDGED ? /^Ciente\s*Confirmo/ : /^Ciente com ressalva\s*Confirmo/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
 
@@ -401,6 +450,7 @@ describe('InternServerWorkspace', () => {
     );
 
     render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
     fireEvent.click(await screen.findByRole('radio', { name: /^Ciente\s*Confirmo/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
 
@@ -424,6 +474,7 @@ describe('InternServerWorkspace', () => {
       .mockResolvedValueOnce(draftSnapshot);
 
     render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
     fireEvent.click(await screen.findByRole('button', { name: 'Preencher autoavaliação' }));
     const back = screen.getByRole('button', { name: /Voltar à avaliação/ });
     const heading = screen.getByRole('heading', { level: 1 });
@@ -450,7 +501,7 @@ describe('InternServerWorkspace', () => {
   });
 
   it('restaura o rascunho persistido após novo carregamento', async () => {
-    renderWorkspace(
+    await renderWorkspace(
       createSnapshot({
         scienceConfirmed: true,
         selfEvaluationStatus: SelfEvaluationStatus.DRAFT,
@@ -478,6 +529,7 @@ describe('InternServerWorkspace', () => {
       .mockResolvedValueOnce(submittedSnapshot);
 
     render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
     fireEvent.click(
       await screen.findByRole('button', { name: 'Enviar autoavaliação' }),
     );
@@ -489,7 +541,7 @@ describe('InternServerWorkspace', () => {
       });
     });
     expect((await screen.findAllByText('Autoavaliação enviada')).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Aguarde a confirmação da chefia/)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Situação atual' })).toHaveTextContent('Aguardando confirmação da Chefia');
     expect(
       screen.queryByRole('button', { name: 'Enviar autoavaliação' }),
     ).not.toBeInTheDocument();
@@ -521,6 +573,7 @@ describe('InternServerWorkspace', () => {
     );
 
     render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
     fireEvent.click(
       await screen.findByRole('button', { name: 'Enviar autoavaliação' }),
     );
@@ -534,7 +587,7 @@ describe('InternServerWorkspace', () => {
   });
 
   it('restaura uma autoavaliação SUBMITTED após novo carregamento', async () => {
-    renderWorkspace(
+    await renderWorkspace(
       createSnapshot({
         scienceConfirmed: true,
         selfEvaluationStatus: SelfEvaluationStatus.SUBMITTED,
@@ -556,6 +609,7 @@ describe('InternServerWorkspace', () => {
     );
 
     render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
     fireEvent.click(await screen.findByRole('radio', { name: /^Ciente\s*Confirmo/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
 
@@ -572,6 +626,7 @@ describe('InternServerWorkspace', () => {
     );
 
     render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
     fireEvent.click(await screen.findByRole('radio', { name: /^Ciente\s*Confirmo/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar ciência' }));
 
@@ -593,6 +648,7 @@ describe('InternServerWorkspace', () => {
     );
 
     render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
     fireEvent.click(
       await screen.findByRole('button', { name: 'Enviar autoavaliação' }),
     );
@@ -614,6 +670,7 @@ describe('InternServerWorkspace', () => {
     api.saveSelfEvaluationDraft.mockRejectedValue(new Error('Falha de conexão com o serviço.'));
 
     render(<InternServerWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Visualizar" }));
     fireEvent.click(await screen.findByRole('button', { name: 'Salvar rascunho' }));
 
     expect(await screen.findByText('Não foi possível salvar a autoavaliação')).toBeInTheDocument();
@@ -632,7 +689,7 @@ describe('limites de texto no workspace do servidor', () => {
   });
 
   it.each(['draft', 'submit'])('mantém contadores e envia exatamente o limite no %s', async (action) => {
-    renderWorkspace(createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT }));
+    await renderWorkspace(createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT }));
     const reflection = await screen.findByLabelText('Autoavaliação');
     const notes = screen.getByLabelText('Observações adicionais');
     expect(screen.getByText((reflection as HTMLTextAreaElement).value.length + ' / ' + EVALUATION_TEXT_MAX_LENGTH)).toBeInTheDocument();
@@ -653,7 +710,7 @@ describe('limites de texto no workspace do servidor', () => {
   it.each(['selfReflection', 'additionalNotes'] as const)('preserva legado em %s e bloqueia as duas ações até corrigir', async (field) => {
     const snapshot = createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT });
     snapshot.selfEvaluation![field] = 'a'.repeat(EVALUATION_TEXT_MAX_LENGTH + 2);
-    renderWorkspace(snapshot);
+    await renderWorkspace(snapshot);
     const input = await screen.findByLabelText(field === 'selfReflection' ? 'Autoavaliação' : 'Observações adicionais');
     expect(input).toHaveValue('a'.repeat(EVALUATION_TEXT_MAX_LENGTH + 2));
     const save = screen.getByRole('button', { name: 'Salvar rascunho' });
@@ -671,7 +728,7 @@ describe('limites de texto no workspace do servidor', () => {
   it.each(['draft', 'submit'])('mostra rejeição do backend no %s e preserva o texto', async (action) => {
     const request = action === 'draft' ? api.saveSelfEvaluationDraft : api.submitSelfEvaluation;
     request.mockRejectedValueOnce(new HttpError(400, EVALUATION_TEXT_LIMIT_MESSAGE));
-    renderWorkspace(createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT }));
+    await renderWorkspace(createSnapshot({ scienceConfirmed: true, selfEvaluationStatus: SelfEvaluationStatus.DRAFT }));
     const input = await screen.findByLabelText('Autoavaliação');
     fireEvent.change(input, { target: { value: 'Texto preservado.' } });
     fireEvent.click(screen.getByRole('button', { name: action === 'draft' ? 'Salvar rascunho' : 'Enviar autoavaliação' }));
@@ -700,7 +757,7 @@ describe('anexos da avaliação recebida da Chefia', () => {
   });
 
   it('lista os anexos da Chefia em somente leitura após a submissão da avaliação', async () => {
-    renderWorkspace();
+    await renderWorkspace();
     expect(await screen.findByRole('heading', { name: 'Anexos da Chefia' })).toBeInTheDocument();
     expect(await screen.findByText('evidencia-chefia.pdf')).toBeInTheDocument();
     expect(screen.getByText('application/pdf · 2 KB')).toBeInTheDocument();
@@ -715,7 +772,7 @@ describe('anexos da avaliação recebida da Chefia', () => {
   });
 
   it('visualiza o anexo da Chefia pelo endpoint autorizado sem expor caminho privado', async () => {
-    renderWorkspace();
+    await renderWorkspace();
     fireEvent.click(await screen.findByRole('button', { name: 'Visualizar PDF evidencia-chefia.pdf' }));
     expect(await screen.findByTitle('Anexo evidencia-chefia.pdf')).toHaveAttribute('src', 'blob:chefia-attachment');
     expect(attachmentsApi.downloadEvaluationAttachment).toHaveBeenCalledWith(
@@ -726,7 +783,7 @@ describe('anexos da avaliação recebida da Chefia', () => {
 
   it('exibe estado vazio quando a Chefia não enviou anexos', async () => {
     attachmentsApi.listEvaluationAttachments.mockResolvedValue({ attachments: [] });
-    renderWorkspace();
+    await renderWorkspace();
     expect(await screen.findByRole('heading', { name: 'Anexos da Chefia' })).toBeInTheDocument();
     expect(await screen.findByText('Nenhum anexo enviado.')).toBeInTheDocument();
   });
@@ -735,7 +792,7 @@ describe('anexos da avaliação recebida da Chefia', () => {
     const snapshot = createSnapshot();
     snapshot.supervisorEvaluation!.status = SupervisorEvaluationStatus.DRAFT;
     snapshot.supervisorEvaluation!.submittedAt = null;
-    renderWorkspace(snapshot);
+    await renderWorkspace(snapshot);
     expect(await screen.findByText('Em elaboração')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Anexos da Chefia' })).not.toBeInTheDocument();
     expect(screen.queryByText('evidencia-chefia.pdf')).not.toBeInTheDocument();

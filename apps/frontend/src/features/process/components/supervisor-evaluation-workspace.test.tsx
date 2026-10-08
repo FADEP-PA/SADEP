@@ -388,6 +388,27 @@ describe('SupervisorEvaluationWorkspace', () => {
     ).toBeInTheDocument();
   });
 
+  it('opens received self evaluation automatically and collapses it when history is consulted', async () => {
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot({ process: { id: PROCESS_ID, status: ProcessStatus.AGUARDANDO_ASSINATURA, currentStageSequence: 1 }, canEditDraft: false, canSubmit: false }));
+    const self = createSelfEvaluation(); self.documentContext!.hasArtifact = true;
+    api.getSelfEvaluation.mockResolvedValue(self);
+    api.getEvaluationDocumentPdf.mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }));
+    URL.createObjectURL = vi.fn(() => 'blob:received'); URL.revokeObjectURL = vi.fn();
+    api.getProcessDocumentHistory.mockResolvedValue([{ documentId: 'previous', documentType: DocumentType.SUPERVISOR_EVALUATION, documentStatus: DocumentStatus.SIGNED, stageSequence: 1, stageId: 'stage-1', version: 1, hasArtifact: true, updatedAt: '2026-10-08T12:00:00Z' }]);
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: /Visualizar|Avaliar/i }));
+    expect(await screen.findByTitle('PDF da autoavaliação do Servidor')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ocultar visualização — PDF da autoavaliação do Servidor' })).toBeInTheDocument();
+    const history = await screen.findByRole('button', { name: 'Visualizar PDF — Avaliação da chefia' });
+    expect(screen.queryByTitle('PDF — Avaliação da chefia')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Anexos' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirmar recebimento' })).toBeEnabled();
+    fireEvent.click(history);
+    expect(await screen.findByTitle('PDF — Avaliação da chefia')).toBeInTheDocument();
+    expect(screen.queryByTitle('PDF da autoavaliação do Servidor')).not.toBeInTheDocument();
+    expect(document.querySelectorAll('iframe')).toHaveLength(1);
+  });
+
   it('exibe card de autoavaliação quando SUBMITTED e processo em AGUARDANDO_ASSINATURA', async () => {
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(
       createWorkspaceSnapshot({
@@ -406,7 +427,7 @@ describe('SupervisorEvaluationWorkspace', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText('Reflexão do servidor sobre o desempenho.')).not.toBeInTheDocument();
     expect(screen.getByText('PDF em preparação ou aguardando geração.')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Anexos do Servidor' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Anexos' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirmar recebimento' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Competências da unidade')).not.toBeInTheDocument();
     expect(screen.queryByText('Fatores de desempenho')).not.toBeInTheDocument();
@@ -479,6 +500,8 @@ describe('SupervisorEvaluationWorkspace', () => {
 
     expect(api.signSelfEvaluation).toHaveBeenCalledTimes(1);
     expect(api.signSelfEvaluation).toHaveBeenCalledWith(PROCESS_ID);
+    expect(screen.getByText('1ª etapa · Servidor Demo')).toBeInTheDocument();
+    expect(screen.queryByText(/Servidor não informado/)).not.toBeInTheDocument();
   });
 
   it('mostra erro quando a lista de processos falha', async () => {

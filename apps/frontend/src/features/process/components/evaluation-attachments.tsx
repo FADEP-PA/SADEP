@@ -47,13 +47,14 @@ type Props = {
   onBusyChange?: (busy: boolean) => void;
   title?: string;
   beforeUpload?: () => Promise<void>;
+  compact?: boolean;
 };
 
 export function EvaluationAttachments(props: Props) {
   return <AttachmentsContent key={`${props.processId}:${props.stageId}:${props.origin}`} {...props} />;
 }
 
-function AttachmentsContent({ processId, stageId, origin, editable = false, disabled = false, onBusyChange, title, beforeUpload }: Props) {
+function AttachmentsContent({ processId, stageId, origin, editable = false, disabled = false, onBusyChange, title, beforeUpload, compact = false }: Props) {
   const [attachments, setAttachments] = useState<EvaluationAttachmentRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);
@@ -195,7 +196,7 @@ function AttachmentsContent({ processId, stageId, origin, editable = false, disa
   }
 
   return (
-    <WorkSection title={title ?? (origin === EvaluationAttachmentOrigin.SELF_EVALUATION ? 'Anexos do Servidor' : 'Anexos da avaliação')}>
+    <WorkSection className={compact ? "attachments-inline" : undefined} title={title ?? (origin === EvaluationAttachmentOrigin.SELF_EVALUATION ? 'Anexos do Servidor' : 'Anexos da avaliação')}>
       {canManage ? <div className="form-stack" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); upload(Array.from(event.dataTransfer.files)); }}>
         <label className="field-group">
           <span>Selecionar arquivos</span>

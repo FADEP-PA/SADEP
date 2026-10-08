@@ -7,6 +7,7 @@ import { getRequestErrorMessage } from '@/shared/api/http-error';
 import { FeedbackAlert } from '@/shared/ui/feedback-alert';
 import { WorkSection } from '@/shared/ui/work-patterns';
 import { formatDateTime } from './process-formatters';
+import { useDocumentViewer } from './document-viewer-context';
 import { PdfDocumentCard } from './pdf-document-card';
 
 export function PersonalNotificationCard({ processId }: { processId: string }) {
@@ -14,13 +15,14 @@ export function PersonalNotificationCard({ processId }: { processId: string }) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const viewer = useDocumentViewer();
+  const expanded = viewer.active === viewer.instance;
   const lock = useRef(false);
   const activeProcess = useRef(processId);
   useEffect(() => {
     activeProcess.current = processId;
     let active = true;
-    setStatus(null); setPdfUrl(null); setError(null); setExpanded(false);
+    setStatus(null); setPdfUrl(null); setError(null);
     getHomologationStatus(processId).then(result => { if (active) setStatus(result); })
       .catch(() => { if (active) setError('Não foi possível carregar a Notificação Pessoal.'); });
     return () => { active = false; };
@@ -36,7 +38,7 @@ export function PersonalNotificationCard({ processId }: { processId: string }) {
         if (activeProcess.current !== processId) return;
         const url = URL.createObjectURL(pdf);
         setPdfUrl(url);
-        if (action === 'view') setExpanded(true);
+        if (action === 'view') viewer.setActive(viewer.instance);
         else {
           const link = document.createElement('a'); link.href = url; link.download = 'notificacao-pessoal.pdf'; link.click();
         }
@@ -55,7 +57,7 @@ export function PersonalNotificationCard({ processId }: { processId: string }) {
     {error ? <FeedbackAlert title="Não foi possível concluir" tone="error" description={error} /> : null}
     {status?.acknowledgedAt ? <p>Ciência registrada em {formatDateTime(status.acknowledgedAt)}.</p> : null}
     <PdfDocumentCard title="Notificação Pessoal" metadata={<span>{formatDateTime(status?.notifiedAt ?? null)}</span>} actions={<>
-      <button type="button" className="secondary-button" disabled={busy || !status?.notificationDocument} aria-expanded={expanded} onClick={() => { if (expanded) setExpanded(false); else if (pdfUrl) setExpanded(true); else void run('view'); }}>{expanded ? 'Ocultar visualização' : 'Visualizar PDF'}</button>
+      <button type="button" className="secondary-button" disabled={busy || !status?.notificationDocument} aria-expanded={expanded} onClick={() => { if (expanded) viewer.setActive(null); else if (pdfUrl) viewer.setActive(viewer.instance); else void run('view'); }}>{expanded ? 'Ocultar visualização' : 'Visualizar PDF'}</button>
       {pdfUrl ? <a className="secondary-button" href={pdfUrl} download="notificacao-pessoal.pdf">Baixar PDF</a> : <button type="button" className="secondary-button" disabled={busy || !status?.notificationDocument} onClick={() => void run('download')}>Baixar PDF</button>}
     </>}>
       {expanded && pdfUrl ? <iframe title="Notificação Pessoal oficial" src={pdfUrl} style={{ width: '100%', height: '70vh', border: 0 }} /> : null}

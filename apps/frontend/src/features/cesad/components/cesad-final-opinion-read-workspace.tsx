@@ -1,5 +1,7 @@
 'use client';
 
+import { DocumentViewerProvider } from '@/features/process/components/document-viewer-context';
+
 import { CesadFinalOpinionStatus, DocumentStatus, SignatureStatus, type CesadFinalOpinionEligibilityRef, type CesadFinalOpinionRef, type CesadFinalOpinionSignatureStatusRef, UserRole } from '@sadep/contracts';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -92,7 +94,7 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
 
   return (
     <AuthGuard allowedRoles={[UserRole.CESAD_MEMBER, UserRole.COMMISSION_ASSISTANT]}>
-      <div className="work-page cesad-workspace">
+      <DocumentViewerProvider><div className="work-page cesad-workspace">
         <button type="button" className="ghost-button work-back" onClick={onBack}>← Voltar aos processos</button>
         <WorkPageHeader title="Parecer conclusivo final" description="Consolidação process-wide das quatro etapas" status={opinion?.status ?? 'Não iniciado'} />
         {error ? <FeedbackAlert title="Não foi possível carregar" tone="error" description={error} /> : null}
@@ -135,7 +137,7 @@ export function CesadFinalOpinionReadWorkspace({ processId, onBack }: Props) {
             </div>
           </WorkSection>
         ) : null}
-      </div>
+      </div></DocumentViewerProvider>
     </AuthGuard>
   );
 }
