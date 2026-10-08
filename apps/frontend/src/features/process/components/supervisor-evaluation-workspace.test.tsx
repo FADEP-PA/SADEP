@@ -28,6 +28,8 @@ import { SupervisorEvaluationWorkspace } from './supervisor-evaluation-workspace
 import { formatDateTime } from './process-formatters';
 
 const api = vi.hoisted(() => ({
+  getProcessDocumentHistory: vi.fn().mockResolvedValue([]),
+  getEvaluationDocumentPdf: vi.fn(),
   getProcessList: vi.fn(),
   getSelfEvaluation: vi.fn(),
   getSupervisorEvaluationWorkspaceSnapshot: vi.fn(),
@@ -49,6 +51,7 @@ const auth = vi.hoisted(() => ({
   },
 }));
 
+beforeEach(() => api.getProcessDocumentHistory.mockResolvedValue([]));
 vi.mock('@/shared/api/services/processes-service', () => api);
 const attachmentsApi = vi.hoisted(() => ({ listEvaluationAttachments: vi.fn().mockResolvedValue({ attachments: [] }), downloadEvaluationAttachment: vi.fn(), uploadSupervisorEvaluationAttachment: vi.fn(), removeSupervisorEvaluationAttachment: vi.fn() }));
 vi.mock('@/shared/api/services/evaluation-attachments-service', () => attachmentsApi);
@@ -393,6 +396,31 @@ describe('SupervisorEvaluationWorkspace', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText('Reflexão do servidor sobre o desempenho.')).not.toBeInTheDocument();
     expect(screen.getByText('PDF em preparação ou aguardando geração.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Anexos do Servidor' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirmar recebimento' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Competências da unidade')).not.toBeInTheDocument();
+    expect(screen.queryByText('Fatores de desempenho')).not.toBeInTheDocument();
+    expect(screen.queryByText('Atribuições no período')).not.toBeInTheDocument();
+  });
+
+  it('avaliação enviada é consultada no histórico por PDF, inclusive após reabrir', async () => {
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot({ canEditDraft: false, canSubmit: false, process: { id: PROCESS_ID, status: ProcessStatus.AGUARDANDO_ASSINATURA, currentStageSequence: 3 } }));
+    api.getProcessDocumentHistory.mockResolvedValue([
+      { documentId: 'supervisor-doc-3', documentType: DocumentType.SUPERVISOR_EVALUATION, documentStatus: DocumentStatus.SIGNED, stageSequence: 3, version: 1, hasArtifact: true, updatedAt: '2026-10-08T12:00:00Z' },
+      { documentId: 'self-doc-3', documentType: DocumentType.SELF_EVALUATION, documentStatus: DocumentStatus.SIGNED, stageSequence: 3, version: 1, hasArtifact: true, updatedAt: '2026-10-08T12:05:00Z' },
+    ]);
+    render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    expect(await screen.findByRole('button', { name: 'Visualizar PDF — Avaliação da chefia' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Visualizar PDF — Autoavaliação' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Etapa do histórico')).toHaveValue('3');
+    expect(screen.queryByLabelText('Competências da unidade')).not.toBeInTheDocument();
+    expect(screen.queryByText('Fatores de desempenho')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Voltar às avaliações/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    expect(await screen.findByRole('button', { name: 'Baixar PDF — Avaliação da chefia' })).toBeEnabled();
+    expect(api.getProcessDocumentHistory).toHaveBeenCalledTimes(2);
+    api.getProcessDocumentHistory.mockResolvedValue([]);
   });
 
   it('chama signSelfEvaluation ao confirmar recebimento da autoavaliação', async () => {
@@ -503,6 +531,8 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
   async function openScores() {
     render(<SupervisorEvaluationWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    await waitFor(() => expect(screen.queryByLabelText('Competências da unidade') ?? screen.queryByRole('button', { name: 'Iniciar retificação' })).toBeInTheDocument());
+    if (screen.queryByRole('button', { name: 'Iniciar retificação' })) fireEvent.click(screen.getByRole('button', { name: 'Iniciar retificação' }));
     await screen.findByLabelText('Competências da unidade');
     fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
     return screen.getAllByRole('combobox', { name: /Nota:/ });
@@ -595,6 +625,10 @@ describe('compatibilidade das escalas no workspace da chefia (#149)', () => {
       expect(payload.content.criteria).toHaveLength(20);
       expect(payload.content.criteria.map((criterion: { rating: number }) => criterion.rating)).toEqual(Array(20).fill(scale === 'PERCENT_0_100' ? 50 : 5));
       expect(await screen.findByText(action === 'save' ? 'Rascunho salvo.' : 'Avaliação retificada com sucesso.')).toBeInTheDocument();
+      if (action === 'rectify') {
+        expect(screen.queryByLabelText('Competências da unidade')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Iniciar retificação' }));
+      }
       fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
       expect((screen.getAllByRole('combobox')[0] as HTMLSelectElement).options).toHaveLength(scale === 'LEGACY_1_5' ? 6 : 12);
     });
@@ -646,6 +680,7 @@ describe('limites de texto no workspace da chefia', () => {
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(snapshot);
     render(<SupervisorEvaluationWorkspace />);
     fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Iniciar retificação' }));
     expect(await screen.findByText('Nenhum anexo enviado.')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Anexos da avaliação' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Selecionar arquivos')).not.toBeInTheDocument();

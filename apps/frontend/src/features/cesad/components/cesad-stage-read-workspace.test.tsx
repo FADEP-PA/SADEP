@@ -17,6 +17,7 @@ import { CesadStageReadWorkspace } from './cesad-stage-read-workspace';
 import { formatDateTime } from '@/features/process/components/process-formatters';
 
 const api = vi.hoisted(() => ({
+  getEvaluationDocumentPdf: vi.fn(),
   completeCesadStageOpinion: vi.fn(),
   getCesadStageReadSnapshot: vi.fn(),
   getCesadStageOpinionSignatureStatus: vi.fn(),
@@ -41,6 +42,7 @@ const auth = vi.hoisted(() => ({
 }));
 
 vi.mock('@/shared/api/services/processes-service', () => api);
+vi.mock('@/shared/api/services/evaluation-attachments-service', () => ({ listEvaluationAttachments: vi.fn().mockResolvedValue({ attachments: [] }) }));
 vi.mock('@/shared/auth/auth-context', () => ({
   useAuth: () => auth,
 }));
@@ -227,6 +229,35 @@ describe('CesadStageReadWorkspace', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Analisar' }));
     expect(await screen.findByText(label)).toBeInTheDocument();
     expect(api.getCesadStageReadSnapshot).toHaveBeenCalledTimes(2);
+  });
+
+  it('consulta PDFs nas quatro etapas sem reconstruir os campos e preserva o editor CESAD', async () => {
+    const make = (sequence: number): CesadStageReadSnapshotRef => ({
+      ...createSnapshot({ stageSequence: sequence }),
+      supervisorEvaluation: { id: 'evaluation', processId: PROCESS_ID, processStageId: 'stage-' + sequence, evaluatorUserId: 'supervisor', status: 'SUBMITTED', summary: 'Competências da unidade', generalComments: 'Fatores de desempenho', content: { criteria: [{ code: '1.1', label: 'Atribuições no período', rating: 80 }] }, createdAt: '2026-10-08T12:00:00Z', updatedAt: '2026-10-08T12:00:00Z', submittedAt: '2026-10-08T12:00:00Z' },
+      documents: [DocumentType.SUPERVISOR_EVALUATION, DocumentType.SELF_EVALUATION].map(documentType => ({ documentType, exists: true, documentId: documentType + '-' + sequence, documentStatus: DocumentStatus.SIGNED, hasArtifact: true, artifactPath: 'private.pdf', createdAt: '2026-10-08T12:00:00Z', updatedAt: '2026-10-08T12:00:00Z', stageLinkMode: 'STAGE_BOUND', signatures: [], serverAcknowledgement: null, missingReason: null })),
+    } as CesadStageReadSnapshotRef);
+    api.getProcessList.mockResolvedValue({ items: [createProcessListItem({ currentStageSequence: 4 })], total: 1 });
+    api.getCesadStageReadSnapshot.mockImplementation(async (_id, sequence) => make(sequence));
+    api.getEvaluationDocumentPdf.mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }));
+    URL.createObjectURL = vi.fn().mockReturnValue('blob:pdf'); URL.revokeObjectURL = vi.fn();
+    render(<CesadStageReadWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Analisar' }));
+    await screen.findByLabelText('Etapa dos documentos');
+    for (const sequence of [1, 2, 3, 4]) {
+      fireEvent.change(screen.getByLabelText('Etapa dos documentos'), { target: { value: String(sequence) } });
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Visualizar PDF — Avaliação da chefia' })).toBeEnabled());
+      fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF — Avaliação da chefia' }));
+      expect(await screen.findByTitle('PDF — Avaliação da chefia')).toBeInTheDocument();
+      expect(api.getEvaluationDocumentPdf).toHaveBeenLastCalledWith(PROCESS_ID, DocumentType.SUPERVISOR_EVALUATION + '-' + sequence, expect.any(AbortSignal));
+      fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF — Autoavaliação' }));
+      expect(await screen.findByTitle('PDF — Autoavaliação')).toBeInTheDocument();
+      expect(screen.queryByTitle('PDF — Avaliação da chefia')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Baixar PDF — Autoavaliação' })).toBeEnabled();
+      for (const label of ['Competências da unidade', 'Atribuições no período', 'Fatores de desempenho']) expect(screen.queryByText(label)).not.toBeInTheDocument();
+    }
+    expect(screen.getByRole('button', { name: 'Salvar rascunho' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Concluir parecer' })).toBeInTheDocument();
   });
 
   it('mostra a fila sem expor UUID e abre o processo pela ação da linha', async () => {

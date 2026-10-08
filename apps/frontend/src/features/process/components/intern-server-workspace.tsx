@@ -227,16 +227,18 @@ export function InternServerWorkspace() {
               <div className="self-evaluation-available"><p>Autoavaliação disponível</p><button type="button" onClick={() => setShowSelfEvaluation(true)}>{snapshot.selfEvaluation ? 'Continuar preenchimento' : 'Preencher autoavaliação'}</button></div>
             ) : <p className="muted-copy">Nenhuma ação necessária no momento.</p>}
 
-            {snapshot.selfEvaluation ? (
+            {snapshot.selfEvaluation?.status === SelfEvaluationStatus.SUBMITTED ? (
               <WorkSection title="Autoavaliação">
-                <p>{snapshot.selfEvaluation.selfReflection}</p>
-                <button type="button" className="secondary-button" onClick={() => setShowSelfEvaluation(true)}>Ver autoavaliação</button>
+                <p className="success-copy">Autoavaliação enviada</p>
+                <p className="muted-copy">Aguarde a confirmação da chefia.</p>
+                <EvaluationPdfViewer processId={snapshot.process.id} documentContext={snapshot.selfEvaluation.documentContext ?? null} updatedAt={snapshot.selfEvaluation.updatedAt} title="PDF da autoavaliação" />
+                <EvaluationAttachments processId={snapshot.process.id} stageId={snapshot.selfEvaluation.processStageId} origin={EvaluationAttachmentOrigin.SELF_EVALUATION} />
               </WorkSection>
             ) : null}
           </>
         ) : null}
 
-        {snapshot && showSelfEvaluation ? (
+        {snapshot && showSelfEvaluation && !isSubmitted ? (
           <SelfEvaluationFormView
             form={form}
             processId={snapshot.process.id}

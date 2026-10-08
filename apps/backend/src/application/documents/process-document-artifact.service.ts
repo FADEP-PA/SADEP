@@ -67,6 +67,37 @@ export class ProcessDocumentArtifactService {
     return this.materializeLoaded(document, user);
   }
 
+  async listReadableDocuments(processId: string, user: AuthenticatedUser) {
+    if (user.role === 'IMMEDIATE_SUPERVISOR') {
+      const processes = await this.processesService.listForUser(user);
+      if (!processes.items.some(process => process.id === processId)) throw new ForbiddenException('Authenticated supervisor cannot access this process');
+    } else {
+      await this.processesService.ensureUserHasProcessAccess(this.prismaService, processId, user);
+    }
+    const references = await this.prismaService.processDocument.findMany({
+      where: { evaluationProcessId: processId },
+      orderBy: [{ createdAt: 'asc' }, { version: 'asc' }],
+      select: { id: true },
+    });
+    const readable = [];
+    for (const reference of references) {
+      const document = await this.findDocument(reference.id);
+      try { await this.ensureCanReadDocument(document, user); }
+      catch (error) { if (error instanceof ForbiddenException) continue; throw error; }
+      readable.push({
+        documentId: document.id,
+        documentType: document.documentType,
+        documentStatus: document.documentStatus,
+        stageSequence: document.processStage?.sequence ?? null,
+        stageId: document.processStage?.id ?? null,
+        version: document.version,
+        hasArtifact: Boolean(document.artifactPath),
+        updatedAt: document.updatedAt.toISOString(),
+      });
+    }
+    return readable;
+  }
+
   /** Internal application hook for a submission already authorized by its command service. */
   async materializeAfterAuthorizedAction(documentId: string, user: AuthenticatedUser): Promise<void> {
     const document = await this.findDocument(documentId);
