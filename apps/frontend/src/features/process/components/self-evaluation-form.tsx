@@ -85,12 +85,6 @@ export function SelfEvaluationFormView({
           </label>
         </div>
         {canEdit && (exceedsTextLimit || formIssues.length > 0) ? <p className="field-error">{exceedsTextLimit ? EVALUATION_TEXT_LIMIT_MESSAGE : formIssues[0]}</p> : null}
-        {!isSubmitted ? (
-          <div className="form-actions">
-            <button type="button" className="secondary-button" onClick={onSaveDraft} disabled={!canEdit || isBusy || exceedsTextLimit}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
-            <button type="button" onClick={onSubmit} disabled={!canSubmit || isBusy || exceedsTextLimit || formIssues.length > 0}>{isSubmitting ? 'Enviando…' : 'Enviar autoavaliação'}</button>
-          </div>
-        ) : null}
       </WorkSection>
 
       <EvaluationAttachments
@@ -103,6 +97,12 @@ export function SelfEvaluationFormView({
         onBusyChange={setAttachmentsBusy}
         title="Anexos da autoavaliação"
       />
+      {!isSubmitted ? (
+        <div className="form-actions">
+          <button type="button" className="secondary-button" onClick={onSaveDraft} disabled={!canEdit || isBusy || exceedsTextLimit}>{isSavingDraft ? 'Salvando…' : 'Salvar rascunho'}</button>
+          <button type="button" onClick={onSubmit} disabled={!canSubmit || isBusy || exceedsTextLimit || formIssues.length > 0}>{isSubmitting ? 'Enviando…' : 'Enviar autoavaliação'}</button>
+        </div>
+      ) : null}
     </div>
   );
 }

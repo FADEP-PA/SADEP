@@ -13,6 +13,7 @@ import { GlobalExceptionFilter } from '../../common/filters/global-exception.fil
 import { AppLogger } from '../../common/logging/app-logger.service';
 import {
   authenticatedUser,
+  buildSupervisorEvaluationPayload,
   createProcess,
   createTestContext,
   createUser,
@@ -92,18 +93,6 @@ export async function runEvaluationAttachmentsEndpointTests() {
         },
       },
     });
-    await context.prisma.supervisorEvaluation.create({
-      data: {
-        processId: process.id,
-        processStageId: stage.id,
-        evaluatorUserId: supervisor.id,
-        status: 'DRAFT',
-        summary: 'Síntese de teste de endpoint.',
-        generalComments: 'Comentários de teste de endpoint.',
-        content: { criteria: [] },
-      },
-    });
-
     const baseUrlPath = `/processes/${process.id}/stages/${stage.id}/evaluation-attachments/SUPERVISOR_EVALUATION`;
 
     // Autenticação obrigatória.
@@ -112,6 +101,15 @@ export async function runEvaluationAttachmentsEndpointTests() {
 
     const supervisorToken = await login(baseUrl, supervisor.email);
 
+    // Avaliação inexistente: o autosave real cria o DRAFT antes do upload.
+    assert.equal(await context.prisma.supervisorEvaluation.count({ where: { processId: process.id } }), 0);
+    const payload = buildSupervisorEvaluationPayload();
+    const draftResponse = await fetch(baseUrl+'/processes/'+process.id+'/supervisor-evaluation/draft', {
+      method: 'POST', headers: { authorization: 'Bearer '+supervisorToken, 'content-type': 'application/json' }, body: JSON.stringify(payload),
+    });
+    assert.equal(draftResponse.status, 201);
+    const persistedDraft = await context.prisma.supervisorEvaluation.findFirstOrThrow({ where: { processId: process.id } });
+    assert.equal(persistedDraft.status, 'DRAFT'); assert.deepEqual(persistedDraft.content, payload.content);
     // Upload multipart com arquivo válido.
     const png = pngContent();
     const upload = buildMultipartUpload('evidencia.png', 'image/png', png);
@@ -236,6 +234,41 @@ export async function runEvaluationAttachmentsEndpointTests() {
     });
     assert.equal(uploadAuditCount, 1);
     assert.equal(removalAuditCount, 1);
+    // Submissão real mantém conteúdo e bloqueia novos anexos/removal no backend.
+    const submit = await fetch(baseUrl+'/processes/'+process.id+'/supervisor-evaluation/submit', {
+      method: 'POST', headers: { authorization: 'Bearer '+supervisorToken, 'content-type': 'application/json' }, body: JSON.stringify(payload),
+    });
+    assert.equal(submit.status, 201);
+    const submitted = await context.prisma.supervisorEvaluation.findFirstOrThrow({ where: { processId: process.id } });
+    assert.equal(submitted.status, 'SUBMITTED'); assert.deepEqual(submitted.content, payload.content);
+    const closedUpload = buildMultipartUpload('closed.png', 'image/png', pngContent());
+    const closed = await fetch(baseUrl+baseUrlPath, { method: 'POST', headers: { authorization: 'Bearer '+supervisorToken, 'content-type': closedUpload.contentType }, body: closedUpload.body });
+    assert.equal(closed.status, 400);
+    const science = await fetch(`${baseUrl}/processes/${process.id}/supervisor-evaluation/sign`, {
+      method: 'POST', headers: { authorization: `Bearer ${internToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ acknowledgementMode: 'ACKNOWLEDGED_WITH_RESERVATION' }),
+    });
+    assert.equal(science.status, 201);
+    const selfPayload = { selfReflection: 'Texto preenchido antes do primeiro anexo.', additionalNotes: 'Observação preservada.' };
+    const selfDraft = await fetch(`${baseUrl}/processes/${process.id}/self-evaluation/draft`, {
+      method: 'PUT', headers: { authorization: `Bearer ${internToken}`, 'content-type': 'application/json' }, body: JSON.stringify(selfPayload),
+    });
+    assert.equal(selfDraft.status, 200);
+    const selfPath = baseUrlPath.replace('SUPERVISOR_EVALUATION', 'SELF_EVALUATION');
+    const selfUpload = buildMultipartUpload('self.png', 'image/png', pngContent());
+    const selfAttachment = await fetch(baseUrl+selfPath, {
+      method: 'POST', headers: { authorization: `Bearer ${internToken}`, 'content-type': selfUpload.contentType }, body: selfUpload.body,
+    });
+    assert.equal(selfAttachment.status, 201);
+    const selfId = ((await selfAttachment.json()) as { attachment: { id: string } }).attachment.id;
+    const selfSubmit = await fetch(`${baseUrl}/processes/${process.id}/self-evaluation/submit`, {
+      method: 'POST', headers: { authorization: `Bearer ${internToken}`, 'content-type': 'application/json' }, body: JSON.stringify(selfPayload),
+    });
+    assert.equal(selfSubmit.status, 201);
+    const selfSaved = await context.prisma.selfEvaluation.findFirstOrThrow({ where: { processId: process.id } });
+    assert.equal(selfSaved.status, 'SUBMITTED'); assert.equal(selfSaved.selfReflection, selfPayload.selfReflection);
+    const selfDelete = await fetch(`${baseUrl}${selfPath}/${selfId}`, { method: 'DELETE', headers: { authorization: `Bearer ${internToken}` } });
+    assert.equal(selfDelete.status, 400);
   } finally {
     await app.close();
     if (previousStorageRoot === undefined) {

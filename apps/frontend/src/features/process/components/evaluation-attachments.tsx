@@ -145,7 +145,12 @@ function AttachmentsContent({ processId, stageId, origin, editable = false, disa
       }
     }
     let remaining = files;
+    let prepared = false;
     void run('Enviando anexos…', async () => {
+      if (!prepared) {
+        if (beforeUpload) await beforeUpload();
+        prepared = true;
+      }
       while (remaining.length > 0) {
         const file = remaining[0]!;
         setBusy(`Enviando ${file.name}…`);

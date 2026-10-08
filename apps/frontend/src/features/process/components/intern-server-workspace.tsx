@@ -177,34 +177,11 @@ export function InternServerWorkspace() {
         {error ? <FeedbackAlert title={errorTitle} tone="error" description={error} details={errorDetails} /> : null}
         {feedback ? <FeedbackAlert title="Concluído" tone="success" description={feedback} /> : null}
 
-        <EvaluationAcknowledgement acknowledgement={acknowledgement} />
         {snapshot && [ProcessStatus.NOTIFICADO, ProcessStatus.CIENTE, ProcessStatus.ENCERRADO].includes(snapshot.process.status)
           ? <PersonalNotificationCard key={snapshot.process.id} processId={snapshot.process.id} /> : null}
 
-        {snapshot && !showSelfEvaluation ? (
+        {snapshot ? (
           <>
-            {canConfirmScience && !acknowledgement ? (
-              <>
-              <WorkSection title="Registrar ciência">
-                <p>A ciência confirma que você recebeu e leu a avaliação. Ela não significa concordância com o conteúdo.</p>
-                <fieldset className="science-options" disabled={operation !== null}>
-                  <legend className="visually-hidden">Escolha a modalidade de ciência</legend>
-                  <label className="science-option">
-                    <span><input type="radio" name="acknowledgement-mode" checked={acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED} onChange={() => setAcknowledgementMode(AcknowledgementMode.ACKNOWLEDGED)} /> Ciente</span>
-                    <span>Confirmo que tomei conhecimento da avaliação.</span>
-                  </label>
-                  <label className="science-option">
-                    <span><input type="radio" name="acknowledgement-mode" checked={acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION} onChange={() => setAcknowledgementMode(AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION)} /> Ciente com ressalva</span>
-                    <span>Confirmo que tomei conhecimento da avaliação, mas registro que não concordo com seu conteúdo.</span>
-                  </label>
-                </fieldset>
-                <div className="form-actions science-actions"><button type="button" disabled={operation !== null || acknowledgementMode === null} onClick={() => void run('science')}>{operation === 'science' ? 'Confirmando…' : 'Confirmar ciência'}</button></div>
-              </WorkSection>
-              </>
-            ) : canEditSelfEvaluation ? (
-              <div className="self-evaluation-available"><p>Autoavaliação disponível</p><button type="button" onClick={() => setShowSelfEvaluation(true)}>{snapshot.selfEvaluation ? 'Continuar preenchimento' : 'Preencher autoavaliação'}</button></div>
-            ) : <p className="muted-copy">Nenhuma ação necessária no momento.</p>}
-
             <WorkSection title="Sua avaliação">
               {snapshot.supervisorEvaluation ? (
                 <div className="evaluation-summary">
@@ -226,6 +203,29 @@ export function InternServerWorkspace() {
                 title="Anexos da Chefia"
               />
             ) : null}
+
+            <EvaluationAcknowledgement acknowledgement={acknowledgement} />
+            {canConfirmScience && !acknowledgement ? (
+              <>
+              <WorkSection title="Registrar ciência">
+                <p>A ciência confirma que você recebeu e leu a avaliação. Ela não significa concordância com o conteúdo.</p>
+                <fieldset className="science-options" disabled={operation !== null}>
+                  <legend className="visually-hidden">Escolha a modalidade de ciência</legend>
+                  <label className="science-option">
+                    <span><input type="radio" name="acknowledgement-mode" checked={acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED} onChange={() => setAcknowledgementMode(AcknowledgementMode.ACKNOWLEDGED)} /> Ciente</span>
+                    <span>Confirmo que tomei conhecimento da avaliação.</span>
+                  </label>
+                  <label className="science-option">
+                    <span><input type="radio" name="acknowledgement-mode" checked={acknowledgementMode === AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION} onChange={() => setAcknowledgementMode(AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION)} /> Ciente com ressalva</span>
+                    <span>Confirmo que tomei conhecimento da avaliação, mas registro que não concordo com seu conteúdo.</span>
+                  </label>
+                </fieldset>
+                <div className="form-actions science-actions"><button type="button" disabled={operation !== null || acknowledgementMode === null} onClick={() => void run('science')}>{operation === 'science' ? 'Confirmando…' : 'Confirmar ciência'}</button></div>
+              </WorkSection>
+              </>
+            ) : canEditSelfEvaluation ? (
+              <div className="self-evaluation-available"><p>Autoavaliação disponível</p><button type="button" onClick={() => setShowSelfEvaluation(true)}>{snapshot.selfEvaluation ? 'Continuar preenchimento' : 'Preencher autoavaliação'}</button></div>
+            ) : <p className="muted-copy">Nenhuma ação necessária no momento.</p>}
 
             {snapshot.selfEvaluation ? (
               <WorkSection title="Autoavaliação">

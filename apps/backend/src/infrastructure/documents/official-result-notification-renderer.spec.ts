@@ -20,5 +20,12 @@ describe('Official personal notification', () => {
     const docx=await fillOriginalDocx(input,true); const xml=new PizZip(docx).file('word/document.xml')!.asText(); expect(xml).toContain('Autoridade real'); expect(xml).not.toMatch(/Hellen Nyde|\{\{|550e8400|assinado eletronicamente/);
     const a=await renderer.render(input), b=await renderer.render(input); const value=await text(a); expect(value).toContain('NOTIFICA'); expect(value).toContain('Autoridadereal'); expect(a.equals(b)).toBe(true);
   });
+  it('renderiza INAPTO / Insuficiente com a homologação real e sem assinatura fictícia', async () => {
+    const bad = { ...input, logicalContent: { ...input.logicalContent, finalResult: 'INAPTO', finalConcept: 'Insuficiente', homologatedAt: '2026-10-06T12:00:00Z' } };
+    const xml = new PizZip(await fillOriginalDocx(bad, true)).file('word/document.xml')!.asText();
+    for (const value of ['não foi confirmada', 'INAPTO', 'Insuficiente', '06/10/2026', 'Homologo o resultado do parecer conclusivo.']) expect(xml).toContain(value);
+    expect(xml).not.toMatch(/Hellen Nyde|assinado eletronicamente|\{\{|550e8400/);
+    expect(await text(await renderer.render(bad))).toContain('Resultado:INAPTO');
+  });
   it('rejects notification before a valid homologation and notification', async () => { await expect(renderer.render({ ...input, logicalContent: {} })).rejects.toThrow(/valid homologation/); });
 });

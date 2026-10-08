@@ -10,7 +10,7 @@ import type { ProcessDocumentPdfInput } from './process-document-pdf-renderer';
 import { finalOpinionForm } from './official-final-opinion-renderer';
 import { notificationForm } from './official-result-notification-renderer';
 
-const templates = resolve(process.cwd(), process.cwd().endsWith('backend') ? 'assets/document-templates' : 'apps/backend/assets/document-templates');
+const templates = resolve(__dirname, '../../../assets/document-templates');
 const sourcePath = (name: string) => join(process.env.SADEP_DOCUMENT_TEMPLATES_ROOT ?? templates, name);
 const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const decodeXml = (s: string) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -49,7 +49,7 @@ export async function renderOriginalAnnex(input: ProcessDocumentPdfInput, self: 
     page.drawText(valueText, { x: x * ratio, y: page.getHeight() - y * ratio, size: actualSize, font, maxWidth: width * ratio });
   };
   draw(0, input.presentation?.serverName, 237, 274, 425); draw(0, input.presentation?.supervisorName, 237, 353, 425);
-  draw(0, input.stageSequence ? input.stageSequence + 'ª etapa — ' + (['1º–6º mês', '7º–12º mês', '13º–24º mês', '25º–32º mês'][input.stageSequence - 1] ?? '') : '', 299, 338, 363, 7);
+  draw(0, input.stageSequence ? `${input.stageSequence}ª etapa` : '', 580, 204, 85, 8);
   const logical = input.logicalContent ?? {};
   if (self) {
     // Continue on copies of the same original page rather than clipping submitted content.
@@ -85,7 +85,10 @@ export async function renderOriginalAnnex(input: ProcessDocumentPdfInput, self: 
     if (signature.status !== 'COMPLETED' || !signature.signedAt) continue;
     const supervisor = signature.role === 'IMMEDIATE_SUPERVISOR'; const y = self ? (supervisor ? 720 : 780) : (supervisor ? 815 : 875);
     draw(signaturePage, signature.name + ' — assinatura eletrônica em ' + date(signature.signedAt), self ? 297 : 270, y, 390, 8);
-    draw(signaturePage, date(signature.signedAt), 100, y, 135, 8);
+    const [day, month, year] = date(signature.signedAt).split('/');
+    draw(signaturePage, day, self ? 112 : 108, y, 25, 8);
+    draw(signaturePage, month, self ? 158 : 149, y, 25, 8);
+    draw(signaturePage, year, self ? 204 : 191, y, 40, 8);
   }
   return normalizeTemplatePdf(await pdf.save({ useObjectStreams: false }), input);
 }
@@ -114,7 +117,8 @@ export async function fillOriginalDocx(input: ProcessDocumentPdfInput, notificat
       let result=joined.replace(/\{\{([^}]+)\}\}/g, (_, key: string) => values[key.trim()] ?? '');
       if (!notification) {
         if (joined.startsWith('A presente Comissão')) result=text(content.reportText);
-        if (joined.startsWith('Assim, o SERVIDOR')) result=text(content.finalConclusion);
+        if (joined.startsWith('Assim, o SERVIDOR')) result=[text(content.finalConclusion), text(content.finalResult) && 'Resultado: '+text(content.finalResult)+'.', text(content.finalConcept) && 'Conceito: '+text(content.finalConcept)+'.', text(content.recommendation) && 'Recomendação: '+text(content.recommendation)].filter(Boolean).join(' ');
+        if (joined.trim().startsWith('Artigo 7º')) result=text(content.legalBasis);
         if (joined.includes('MARIA RAIMUNDA') || joined.includes('LÍGIA ALICE') || joined.includes('SIMONE RAMOS')) result=input.presentation?.signatures[signerIndex++]?.name ?? '';
         if (joined.startsWith('Cargo:') && !joined.includes('{{')) result='';
         if (joined.includes('Presidente (Membro)')) result='Membro CESAD';
@@ -123,10 +127,11 @@ export async function fillOriginalDocx(input: ProcessDocumentPdfInput, notificat
         if (joined.includes('Secretária Adjunta')) result='Autoridade homologadora';
         if (result.includes('após o “CIENTE”, devolver uma via desta NOTIFICAÇÃO PESSOAL')) result=result.replace('após o “CIENTE”, devolver uma via desta NOTIFICAÇÃO PESSOAL', 'a visualização e o registro de ciência desta NOTIFICAÇÃO PESSOAL serão realizados eletronicamente no SADEP');
         if (result.includes('foi confirmada') && content.finalResult === 'INAPTO') result=result.replace('foi confirmada','não foi confirmada');
+        if (joined.trimStart().startsWith('A Secretaria Adjunta')) result += ' Resultado: '+text(content.finalResult)+'. Homologado em '+date(content.homologatedAt)+', por '+text(content.authorityName)+'.'+(text(content.homologationRemarks) ? ' '+text(content.homologationRemarks) : '');
       }
-      if (joined.includes('[assinado eletronicamente]')) { const signature=notification ? input.presentation?.signatures.find(s => s.status === 'COMPLETED') : input.presentation?.signatures[signerIndex]; result=signature?.status === 'COMPLETED' && signature.signedAt ? 'Assinado eletronicamente em '+date(signature.signedAt) : ''; }
+      if (joined.includes('[assinado eletronicamente]')) { const signature=notification ? input.presentation?.signatures.find(s => s.role === 'HOMOLOGATION_AUTHORITY' && s.status === 'COMPLETED') : input.presentation?.signatures[signerIndex]; result=signature?.status === 'COMPLETED' && signature.signedAt ? 'Assinado eletronicamente\nem '+date(signature.signedAt) : ''; }
       if (result === joined) return paragraph;
-      let first=true; return paragraph.replace(/(<w:t(?: [^>]*)?>)[\s\S]*?(<\/w:t>)/g, (_, open: string, close: string) => { const value=first ? escapeXml(result) : ''; first=false; return open+value+close; });
+      let first=true; return paragraph.replace(/(<w:t(?: [^>]*)?>)[\s\S]*?(<\/w:t>)/g, (_, open: string, close: string) => { const value=first ? escapeXml(result).replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">') : ''; first=false; return open+value+close; });
     });
     if (/\{\{/.test(xml)) throw new Error('Unresolved document template field');
     zip.file(name, xml);

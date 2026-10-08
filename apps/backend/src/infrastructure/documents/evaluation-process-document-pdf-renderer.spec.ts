@@ -26,5 +26,6 @@ describe('Official supervisor evaluation', () => {
     const request=input(scale); const a=await renderer.render(request), b=await renderer.render(request); const value=await pdfText(a);
     expect((await PDFDocument.load(a)).getPageCount()).toBe(2); expect(value).toContain('ANEXO IV'); expect(value).toContain('José Silva');
     expect(value).toContain(scale === 'LEGACY_1_5' ? '4.0' : '80.0'); expect(value).not.toMatch(/550e8400|TODO|N\/A|\{\{/); expect(a.equals(b)).toBe(true);
+    expect(value).not.toContain('1ª etapa — 1º–6º mês');
   });
 });

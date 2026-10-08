@@ -140,6 +140,35 @@ describe('SupervisorEvaluationWorkspace', () => {
     api.signSelfEvaluation.mockResolvedValue({});
   });
 
+  it('autosave antes do primeiro anexo mantém campos da chefia', async () => {
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot({ process: { id: PROCESS_ID, status: ProcessStatus.EM_AVALIACAO, currentStageSequence: 1, currentStageId: 'stage-1' } }));
+    attachmentsApi.uploadSupervisorEvaluationAttachment.mockResolvedValue({ attachment: { id: 'new', originalFilename: 'prova.pdf', mimeType: 'application/pdf', sizeBytes: 10 } });
+    render(<SupervisorEvaluationWorkspace />); fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    const field = await screen.findByLabelText('Competências da unidade'); fireEvent.change(field, { target: { value: 'Competências atuais ainda não salvas.' } });
+    await waitFor(() => expect(screen.getByLabelText('Selecionar arquivos')).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Selecionar arquivos'), { target: { files: [new File(['%PDF'], 'prova.pdf', { type: 'application/pdf' })] } });
+    await screen.findByText('Anexos enviados.'); expect(api.saveSupervisorEvaluationDraft.mock.invocationCallOrder[0]).toBeLessThan(attachmentsApi.uploadSupervisorEvaluationAttachment.mock.invocationCallOrder[0]!);
+    expect(field).toHaveValue('Competências atuais ainda não salvas.');
+  });
+  it('usa enunciados oficiais no formulário novo e preserva o enunciado histórico', async () => {
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot());
+    const view = render(<SupervisorEvaluationWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    await screen.findByLabelText('Competências da unidade');
+    fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
+    expect(screen.getByText('1.2 Quando presente no seu local de trabalho, pouco se ausenta para atividades particulares.')).toBeInTheDocument();
+    view.unmount();
+    api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot({ supervisorEvaluation: {
+      id: 'evaluation', processId: PROCESS_ID, processStageId: 'stage-1', evaluatorUserId: 'supervisor-user-id',
+      status: SupervisorEvaluationStatus.DRAFT, summary: 'Resumo', generalComments: '', submittedAt: null,
+      createdAt: '2026-10-01T12:00:00Z', updatedAt: '2026-10-01T12:00:00Z', content: { criteria: [{ code: '1.2', label: 'Enunciado histórico efetivamente persistido', rating: 4 }] },
+    } }));
+    render(<SupervisorEvaluationWorkspace />); fireEvent.click(await screen.findByRole('button', { name: 'Avaliar' }));
+    await screen.findByLabelText('Competências da unidade');
+    fireEvent.click(screen.getByRole('button', { name: /Assiduidade/ }));
+    expect(screen.getByText('Enunciado histórico efetivamente persistido')).toBeInTheDocument();
+    expect(screen.queryByText('1.2 Quando presente no seu local de trabalho, pouco se ausenta para atividades particulares.')).not.toBeInTheDocument();
+  });
   it.each([AcknowledgementMode.ACKNOWLEDGED, AcknowledgementMode.ACKNOWLEDGED_WITH_RESERVATION, null])('exibe ciência %s da Chefia após reabrir avaliação', async (modality) => {
     const acknowledgedAt = '2026-10-06T12:00:00.000Z';
     api.getSupervisorEvaluationWorkspaceSnapshot.mockResolvedValue(createWorkspaceSnapshot({
